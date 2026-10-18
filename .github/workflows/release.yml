@@ -8,30 +8,22 @@ permissions:
   contents: read
 
 jobs:
-  # A tag can name any commit, and main's required checks say nothing about the one it points at.
-  # Checking before the build costs a slow release; skipping it risks one that cannot be recalled.
-  gate:
+  # The authorizer must come from main, never from the commit being authorized: the only non-owner
+  # writer is the GitHub App, and it can edit any branch but main. A tag naming an App-edited commit
+  # would otherwise run a gate that commit wrote. Its own job keeps the event commit's filesystem and
+  # mise toolchain off a separate runner.
+  authorize:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
-      # The authorizer must come from main, never from the commit being authorized: the only non-owner
-      # writer is the GitHub App, and it can edit any branch but main. A tag naming an App-edited commit
-      # would otherwise run a gate that commit wrote.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
-          path: trust
-          persist-credentials: false
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
           persist-credentials: false
 
       - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
 
       - name: Authorize the signed release tag
-        working-directory: trust
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -40,6 +32,20 @@ jobs:
         run: |
           uv sync --locked
           mise run release:trust -- tag --tag "$TAG" --commit "$COMMIT"
+
+  # A tag can name any commit, and main's required checks say nothing about the one it points at.
+  # Checking before the build costs a slow release; skipping it risks one that cannot be recalled.
+  gate:
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
 
       - name: Sync Python tooling
         run: uv sync --locked

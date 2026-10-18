@@ -198,8 +198,8 @@ declares.
    The authority is `turboBasic`'s current GitHub SSH signing keys, including rotations and removals,
    rather than repository-pinned keys. Both SSH verification and GitHub's verified-tag result must
    succeed. The gate refuses lightweight, nested, unsigned, untrusted or mismatched tags, an existing
-   release (drafts included), and lookup errors before building. It also compares the tag and manifest
-   versions. Historical unsigned tags remain unchanged and do not satisfy this prospective policy.
+   release (drafts included), and lookup errors before building. Historical unsigned tags remain
+   unchanged and do not satisfy this prospective policy.
 3. Write the notes by hand, then publish. The workflow attaches the binaries to a **draft** with an
    empty body, so nothing is visible to a fetcher until you say so — the notes have to say that
    `schema_version` is a contract across releases while a cache or a ledger may be invalidated by this
