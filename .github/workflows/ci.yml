@@ -20,7 +20,7 @@ jobs:
   # The id names the component and composes the required context `popcircles / project-ci`. One
   # component, Rust and Python together, which is why it is named after neither.
   popcircles:
-    uses: turboBasic/github-actions/.github/workflows/project-ci.yml@v0.3
+    uses: turboBasic/github-actions/.github/workflows/project-ci.yml@v0.4
     permissions:
       contents: read
     with:

@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   commits:
-    uses: turboBasic/github-actions/.github/workflows/conventional-commits.yml@v0.3
+    uses: turboBasic/github-actions/.github/workflows/conventional-commits.yml@v0.4
     permissions:
       contents: read
       pull-requests: read
