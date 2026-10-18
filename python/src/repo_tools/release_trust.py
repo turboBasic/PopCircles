@@ -215,16 +215,18 @@ def authorize_tag(repo: str, tag: str, commit: str) -> None:
 
 
 def read_payloads(directory: Path, allow: frozenset[str] = frozenset()) -> dict[str, Path]:
-    files = {path.name: path for path in directory.iterdir() if path.is_file()}
-    expected = payload_names()
+    files = {path.name: path for path in directory.iterdir()}
+    expected = {*payload_names(), *allow}
     missing = [name for name in expected if name not in files]
-    extra = sorted(set(files) - set(expected) - set(allow))
+    extra = sorted(set(files) - expected)
     if missing or extra:
         refuse(f"payload inventory mismatch: missing={missing or 'none'} extra={extra or 'none'}")
     for name, path in files.items():
+        if path.is_symlink() or not path.is_file():
+            refuse(f"payload {name} must be a regular file")
         if path.stat().st_size == 0:
             refuse(f"payload {name} is empty")
-    return {name: path for name, path in files.items() if name in expected}
+    return {name: files[name] for name in payload_names()}
 
 
 def require_checksums(files: dict[str, Path]) -> None:
@@ -264,7 +266,9 @@ def verify_bundle(repo: str, directory: Path, bundle: Path, tag: str, commit: st
 def verify_assets(repo: str, directory: Path, bundle: Path, tag: str, commit: str) -> None:
     if not bundle.is_file():
         refuse(f"missing bundle {bundle.name}")
-    files = read_payloads(directory, allow=frozenset({bundle.name}))
+    if bundle.name != BUNDLE or bundle.resolve() != (directory / BUNDLE).resolve():
+        refuse(f"bundle must be {BUNDLE} in the payload directory")
+    files = read_payloads(directory, allow=frozenset({BUNDLE}))
     require_checksums(files)
     verify_bundle(repo, directory, bundle, tag, commit)
 
@@ -276,7 +280,6 @@ def publish(repo: str, directory: Path, bundle: Path, tag: str, commit: str) -> 
         refuse(f"the bundle must be named {BUNDLE}")
     authorize_tag(repo, tag, commit)
     verify_assets(repo, directory, bundle, tag, commit)
-    require_absent(repo, tag)
     require_no_draft(repo, tag)
     checked(
         "gh",
@@ -326,14 +329,14 @@ def main() -> int:
             print(f"authorized {args.tag} at {args.commit}")
         elif args.command == "assets":
             directory = Path(args.directory)
-            files = read_payloads(directory)
-            require_checksums(files)
             if args.bundle or args.tag or args.commit:
                 if not (args.bundle and args.tag and args.commit):
                     refuse("--bundle, --tag and --commit are supplied together")
                 if Path(args.bundle).name != BUNDLE:
                     refuse(f"the bundle must be named {BUNDLE}")
                 verify_assets(repo, directory, Path(args.bundle), str(args.tag), str(args.commit))
+            else:
+                require_checksums(read_payloads(directory))
             print("payload inventory validated")
         else:
             publish(

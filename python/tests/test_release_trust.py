@@ -481,7 +481,9 @@ def publish_state(
         return original_run(*args, cwd=cwd)
 
     monkeypatch.setattr(rt, "run", fake_run)
-    return state, directory, commit, oid
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    return state, assets, commit, oid
 
 
 def test_assets_rejects_missing_and_extra_payloads(tmp_path: Path) -> None:
@@ -537,6 +539,66 @@ def test_verify_assets_runs_every_subject_with_the_exact_policy(
             "--bundle",
             str(bundle),
         )
+    assert state.released() == []
+
+
+@pytest.mark.parametrize("with_bundle", [False, True])
+def test_assets_cli_accepts_the_workflow_inventory(
+    publish_state: tuple[PublishState, Path, str, str],
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    with_bundle: bool,
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    argv = ["release-trust", "assets", "--directory", str(directory)]
+    if with_bundle:
+        bundle = directory / rt.BUNDLE
+        bundle.write_text("{}", encoding="utf-8")
+        argv.extend(["--bundle", str(bundle), "--tag", TAG, "--commit", commit])
+    monkeypatch.setenv("GH_REPO", REPO)
+    monkeypatch.setattr("sys.argv", argv)
+    assert rt.main() == 0
+    verifies = [c for c in state.commands if c[:3] == ("gh", "attestation", "verify")]
+    assert len(verifies) == (4 if with_bundle else 0)
+    assert state.released() == []
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    ["missing", "extra", "empty", "directory", "symlink", "checksum", "bundle", "external-bundle"],
+)
+def test_publish_inventory_failures_never_mutate_a_release(
+    publish_state: tuple[PublishState, Path, str, str],
+    tmp_path: Path,
+    invalid: str,
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+    binary = directory / rt.payload_names()[0]
+    if invalid in {"missing", "directory", "symlink"}:
+        binary.unlink()
+        if invalid == "directory":
+            binary.mkdir()
+        elif invalid == "symlink":
+            target = tmp_path / "target"
+            target.write_bytes(payload_bytes(rt.TRIPLES[0]))
+            binary.symlink_to(target)
+    elif invalid == "extra":
+        (directory / "extra").mkdir()
+    elif invalid == "empty":
+        binary.write_bytes(b"")
+    elif invalid == "checksum":
+        binary.write_bytes(b"changed")
+    elif invalid == "bundle":
+        bundle.unlink()
+    else:
+        bundle = tmp_path / rt.BUNDLE
+        bundle.write_text("{}", encoding="utf-8")
+    with pytest.raises(rt.TrustError):
+        rt.publish(REPO, directory, bundle, TAG, commit)
     assert state.released() == []
 
 
@@ -615,29 +677,30 @@ def test_publish_records_no_mutation_before_each_precondition(
     bundle = directory / rt.BUNDLE
     bundle.write_text("{}", encoding="utf-8")
 
-    def assert_no_release(fn: object, *args: object) -> None:
-        with pytest.raises(rt.TrustError):
-            fn(*args)  # type: ignore[operator]
-        assert state.released() == []
-
-    assert_no_release(
-        rt.publish, REPO, directory, bundle, TAG, "0" * 40
-    )  # wrong commit → authorize fails
+    with pytest.raises(rt.TrustError):
+        rt.publish(REPO, directory, bundle, TAG, "0" * 40)
+    assert state.released() == []
     state.responses["graphql"] = response(
         json.dumps({"data": {"repository": {"name": REPO, "release": {"id": "draft"}}}})
     )
-    assert_no_release(rt.publish, REPO, directory, bundle, TAG, commit)  # draft exists
+    with pytest.raises(rt.TrustError):
+        rt.publish(REPO, directory, bundle, TAG, commit)
+    assert state.released() == []
     state.responses[RELEASE_ENDPOINT] = response(
         "HTTP/2.0 200 OK\n\n" + json.dumps({"tag_name": TAG}), 0
     )
-    assert_no_release(rt.publish, REPO, directory, bundle, TAG, commit)  # published
+    with pytest.raises(rt.TrustError):
+        rt.publish(REPO, directory, bundle, TAG, commit)
+    assert state.released() == []
 
 
+@pytest.mark.parametrize("failure", ["create conflict", "upload failed"])
 def test_publish_propagates_create_failure(
     publish_state: tuple[PublishState, Path, str, str],
     monkeypatch: pytest.MonkeyPatch,
+    failure: str,
 ) -> None:
-    _state, directory, commit, _oid = publish_state
+    state, directory, commit, _oid = publish_state
     write_payloads(directory)
     bundle = directory / rt.BUNDLE
     bundle.write_text("{}", encoding="utf-8")
@@ -645,9 +708,64 @@ def test_publish_propagates_create_failure(
 
     def failing_create(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
         if args[:3] == ("gh", "release", "create"):
-            return response("", 1, "upload failed")
+            state.commands.append(args)
+            return response("", 1, failure)
         return delegate(*args, cwd=cwd)
 
     monkeypatch.setattr(rt, "run", failing_create)
     with pytest.raises(rt.TrustError, match="gh failed"):
         rt.publish(REPO, directory, bundle, TAG, commit)
+    assert len(state.released()) == 1
+
+
+@pytest.mark.parametrize("payload", rt.payload_names())
+def test_a_failed_subject_verification_prevents_publication(
+    publish_state: tuple[PublishState, Path, str, str],
+    monkeypatch: pytest.MonkeyPatch,
+    payload: str,
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+    delegate = rt.run
+
+    def fail_subject(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+        if args[:4] == ("gh", "attestation", "verify", str(directory / payload)):
+            state.commands.append(args)
+            return response("", 1, "subject verification failed")
+        return delegate(*args, cwd=cwd)
+
+    monkeypatch.setattr(rt, "run", fail_subject)
+    with pytest.raises(rt.TrustError, match="subject verification failed"):
+        rt.publish(REPO, directory, bundle, TAG, commit)
+    assert state.released() == []
+
+
+@pytest.mark.parametrize("failure", ["published", "draft", "lookup-error"])
+def test_release_state_is_checked_again_after_verification(
+    publish_state: tuple[PublishState, Path, str, str],
+    monkeypatch: pytest.MonkeyPatch,
+    failure: str,
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+    delegate = rt.run
+
+    def change_release(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+        result = delegate(*args, cwd=cwd)
+        if args[:3] == ("gh", "attestation", "verify"):
+            if failure in {"published", "draft"}:
+                state.responses["graphql"] = response(
+                    json.dumps({"data": {"repository": {"name": REPO, "release": {"id": failure}}}})
+                )
+            else:
+                state.responses["graphql"] = response("", 1, "HTTP 503")
+        return result
+
+    monkeypatch.setattr(rt, "run", change_release)
+    with pytest.raises(rt.TrustError):
+        rt.publish(REPO, directory, bundle, TAG, commit)
+    assert state.released() == []

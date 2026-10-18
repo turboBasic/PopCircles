@@ -197,14 +197,20 @@ declares.
 
    The authority is `turboBasic`'s current GitHub SSH signing keys, including rotations and removals,
    rather than repository-pinned keys. Both SSH verification and GitHub's verified-tag result must
-   succeed. The gate refuses lightweight, nested, unsigned, untrusted or mismatched tags, an existing
-   release (drafts included), and lookup errors before building. Historical unsigned tags remain
-   unchanged and do not satisfy this prospective policy.
-3. Write the notes by hand, then publish. The workflow attaches the binaries to a **draft** with an
-   empty body, so nothing is visible to a fetcher until you say so — the notes have to say that
-   `schema_version` is a contract across releases while a cache or a ledger may be invalidated by this
-   one and rebuilt, and nothing can generate that from a commit range. Publish only a draft whose run
-   passed the `authorize` job, then `gh release edit vX.Y.Z --draft=false`.
+   succeed. The source gate refuses lightweight, nested, unsigned, untrusted or mismatched tags,
+   published releases and lookup errors before building. The publisher also refuses existing drafts.
+   Historical unsigned tags remain unchanged and do not satisfy this prospective policy.
+3. Write the notes by hand, then publish. The workflow attaches five assets to a **draft** with an
+   empty body — the two binaries, their two checksums, and one `provenance.sigstore.json` bundle
+   attesting those four payloads — so nothing is visible to a fetcher until you say so. The notes have
+   to say that `schema_version` is a contract across releases while a cache or a ledger may be
+   invalidated by this one and rebuilt, and nothing can generate that from a commit range. Publish
+   only after you have downloaded all five draft assets and verified them against their bundle, with
+   the expected tag
+   and source commit. Run `mise run release:trust -- assets --directory DIR --bundle
+   DIR/provenance.sigstore.json --tag vX.Y.Z --commit SHA` with
+   `GH_REPO=turboBasic/PopulationCircles2026`. Publish only a draft whose run passed `authorize`
+   and attestation, then `gh release edit vX.Y.Z --draft=false`.
 
 When a run fails, inspect release state before retrying; a lookup error does not establish absence.
 
@@ -212,7 +218,7 @@ When a run fails, inspect release state before retrying; a lookup error does not
   workflow if the cause was the runner rather than the commit; otherwise explicitly delete the
   unpublished tag, fix the cause, and sign the same version again.
 - **An incomplete draft exists.** Explicitly delete it as a maintainer before any rerun, including
-  after runner failures; the gate refuses existing releases. If the commit must change, explicitly
+  after runner failures; the workflow refuses existing releases. If the commit must change, explicitly
   delete the unpublished tag too before signing its replacement.
 - **It is published.** That version is spent, so the next attempt is a version bump rather than a moved
   tag — a tag that moves lies to everyone who already fetched it. Publishing the draft is therefore the
