@@ -6,7 +6,7 @@ expression: "Envelope::new(GridSummary::from(&grid))"
   "schema_version": 1,
   "document": "grid",
   "tool": "popcircles",
-  "tool_version": "0.2.0",
+  "tool_version": "0.3.0",
   "earth_model": {
     "model": "sphere",
     "radius_km": 6371.0088

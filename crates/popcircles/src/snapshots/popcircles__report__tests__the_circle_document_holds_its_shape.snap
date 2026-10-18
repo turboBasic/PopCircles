@@ -6,7 +6,7 @@ expression: "Envelope::new(CircleReport::new(requested, cell, &grid, radius, pop
   "schema_version": 1,
   "document": "circle",
   "tool": "popcircles",
-  "tool_version": "0.2.0",
+  "tool_version": "0.3.0",
   "earth_model": {
     "model": "sphere",
     "radius_km": 6371.0088
