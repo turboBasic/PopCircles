@@ -20,7 +20,7 @@ jobs:
         include:
           - runner: macos-latest
             triple: aarch64-apple-darwin
-          - runner: ubuntu-latest
+          - runner: ubuntu-26.04
             triple: x86_64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
