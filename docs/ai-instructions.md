@@ -63,7 +63,7 @@ owner already holds it. Lowest first:
 | L2 router | project invariants and the layering rule | this file |
 | L3 domain docs | judgment no tool can enforce | `docs/ai/` |
 | L4 skills and personas | one task's workflow and the judgment that task needs, or a standing stance and what it refuses | `.claude/skills/*/SKILL.md`, `.claude/agents/*.md` |
-| L5 entry points | routing only | `CLAUDE.md`, `.github/copilot-instructions.md`, `opencode.json` |
+| L5 entry points | routing only | `CLAUDE.md`, `AGENTS.md`, `.codex/agents/*.toml`, `.github/copilot-instructions.md`, `opencode.json` |
 
 Within L3, [`ai/platform.md`](ai/platform.md) wins wherever it and an application doc would
 conflict. `README.md`, `USAGE.md` and `CONTRIBUTING.md` are the human layer and may restate what these

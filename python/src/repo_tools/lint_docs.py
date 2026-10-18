@@ -28,6 +28,7 @@ def top_level_roots() -> frozenset[str]:
 def scope_files() -> list[Path]:
     fixed = [
         REPO_ROOT / "CLAUDE.md",
+        REPO_ROOT / "AGENTS.md",
         REPO_ROOT / "docs" / "ai-instructions.md",
         REPO_ROOT / ".github" / "copilot-instructions.md",
         REPO_ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md",
@@ -53,6 +54,7 @@ ROOT_FILE_ALLOWLIST = frozenset(
         "USAGE.md",
         "CONTRIBUTING.md",
         "CLAUDE.md",
+        "AGENTS.md",
         "LICENSE",
     }
 )
