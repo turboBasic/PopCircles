@@ -81,6 +81,36 @@ A [release][releases] attaches two binaries, each named by its target triple wit
 | `popcircles-aarch64-apple-darwin` | macOS on Apple silicon |
 | `popcircles-x86_64-unknown-linux-gnu` | Linux on x86-64 |
 
+Each binary has a `.sha256` checksum and the release includes `provenance.sigstore.json`. The checksum
+detects accidental damage; verify the attestation to confirm that GitHub's release workflow produced
+the downloaded bytes from the expected source commit. Release authorization trusts the current SSH
+signing keys registered to the `turboBasic` GitHub account. This governs prospective signed releases;
+historical tags remain unchanged. Signing a release tag is documented in
+[`CONTRIBUTING.md`](CONTRIBUTING.md#releasing).
+
+Set `TAG` to the release tag and `COMMIT` to its source commit. To find the commit, inspect the tag's
+commit target, for example with `git ls-remote` and the annotated tag's peeled ref:
+
+```sh
+git ls-remote https://github.com/turboBasic/PopulationCircles2026.git \
+  "refs/tags/$TAG" "refs/tags/$TAG^{}"
+```
+
+The peeled `^{}` line is the commit. Download the matching binary and `provenance.sigstore.json`
+from the release, then verify it:
+
+```sh
+gh attestation verify ./popcircles-aarch64-apple-darwin \
+  --repo turboBasic/PopulationCircles2026 \
+  --signer-workflow turboBasic/PopulationCircles2026/.github/workflows/release.yml \
+  --source-ref "refs/tags/$TAG" \
+  --source-digest "$COMMIT" \
+  --bundle ./provenance.sigstore.json
+```
+
+Use `popcircles-x86_64-unknown-linux-gnu` for Linux. The same verification command and policy apply
+to either `.sha256` file; substitute that downloaded checksum file as the first argument.
+
 Neither carries a Developer ID signature and neither is notarized, which costs you something only on
 macOS and only depending on how you fetched it. **A browser download** is tagged
 `com.apple.quarantine`, and Gatekeeper then kills the binary with "Apple could not verify … is free of
