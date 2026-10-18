@@ -203,8 +203,8 @@ declares.
 3. Write the notes by hand, then publish. The workflow attaches the binaries to a **draft** with an
    empty body, so nothing is visible to a fetcher until you say so — the notes have to say that
    `schema_version` is a contract across releases while a cache or a ledger may be invalidated by this
-   one and rebuilt, and nothing can generate that from a commit range. Publishing is
-   `gh release edit vX.Y.Z --draft=false`.
+   one and rebuilt, and nothing can generate that from a commit range. Publish only a draft whose run
+   passed the `authorize` job, then `gh release edit vX.Y.Z --draft=false`.
 
 When a run fails, inspect release state before retrying; a lookup error does not establish absence.
 
