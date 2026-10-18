@@ -105,6 +105,7 @@ def repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Repository:
         ),
         KEY_ENDPOINT: response(json.dumps([[{"key": trusted}]])),
         RELEASE_ENDPOINT: response('HTTP/2.0 404 Not Found\r\n\r\n{"message":"Not Found"}', 1),
+        "graphql": response(json.dumps({"data": {"repository": {"name": REPO, "release": None}}})),
     }
     state = Repository(directory, commit, oid, trusted, untrusted, obj, responses)
     state.tag_response(obj)
@@ -131,7 +132,16 @@ def authorize(repository: Repository) -> None:
 def test_trusted_tag_performs_real_git_ssh_verification(repository: Repository) -> None:
     authorize(repository)
     assert any("verify-tag" in command for command in repository.commands)
-    assert repository.commands[-1] == ("gh", "api", RELEASE_ENDPOINT, "--include")
+    assert ("gh", "api", RELEASE_ENDPOINT, "--include") in repository.commands
+    assert repository.commands[-1][:3] == ("gh", "api", "graphql")
+    assert repository.commands[-1][-6:] == (
+        "-f",
+        "owner=turboBasic",
+        "-f",
+        "name=PopulationCircles2026",
+        "-f",
+        f"tag={TAG}",
+    )
     signers_option = next(
         arg
         for command in repository.commands
@@ -310,12 +320,54 @@ def test_api_failures_fail_closed(repository: Repository, endpoint: str, status:
         authorize(repository)
 
 
-@pytest.mark.parametrize("draft", [True, False])
-def test_existing_release_is_refused(repository: Repository, *, draft: bool) -> None:
+def test_existing_published_release_is_refused(repository: Repository) -> None:
     repository.responses[RELEASE_ENDPOINT] = response(
-        "HTTP/2.0 200 OK\n\n" + json.dumps({"draft": draft, "tag_name": TAG}),
+        "HTTP/2.0 200 OK\n\n" + json.dumps({"draft": False, "tag_name": TAG}),
     )
     with pytest.raises(rt.TrustError, match="already exists"):
+        authorize(repository)
+
+
+def test_published_404_with_an_existing_draft_is_refused(repository: Repository) -> None:
+    repository.responses["graphql"] = response(
+        json.dumps(
+            {
+                "data": {"repository": {"name": REPO, "release": {"id": "draft-release"}}},
+            }
+        )
+    )
+    with pytest.raises(rt.TrustError, match="already exists"):
+        authorize(repository)
+    assert ("gh", "api", RELEASE_ENDPOINT, "--include") in repository.commands
+
+
+@pytest.mark.parametrize(
+    ("body", "code"),
+    [
+        ("", 1),
+        ("not json", 0),
+        ("{}", 0),
+        ('{"data":null}', 0),
+        ('{"data":{"repository":null}}', 0),
+        ('{"data":{"repository":{"name":"other/repo","release":null}}}', 0),
+        ('{"data":{"repository":{"name":"turboBasic/PopulationCircles2026"}}}', 0),
+        ('{"errors":[{"message":"Resource not accessible by integration"}]}', 0),
+        (
+            (
+                '{"data":{"repository":{"name":"turboBasic/PopulationCircles2026",'
+                '"release":null}},"errors":[{"message":"rate limit"}]}'
+            ),
+            0,
+        ),
+    ],
+)
+def test_draft_lookup_errors_cannot_turn_a_published_404_into_absence(
+    repository: Repository,
+    body: str,
+    code: int,
+) -> None:
+    repository.responses["graphql"] = response(body, code, "draft lookup failed" if code else "")
+    with pytest.raises((rt.TrustError, ValidationError)):
         authorize(repository)
 
 

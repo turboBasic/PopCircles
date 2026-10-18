@@ -73,6 +73,39 @@ def api(endpoint: str, *options: str) -> str:
     return checked("gh", "api", endpoint, *options)
 
 
+def require_no_draft(repo: str, tag: str) -> None:
+    owner, name = repo.split("/")
+    query = (
+        "query($owner: String!, $name: String!, $tag: String!) {"
+        "repository(owner: $owner, name: $name) {"
+        "name: nameWithOwner release(tagName: $tag) { id } } }"
+    )
+    mapping = TypeAdapter(dict[str, object])
+    result = mapping.validate_json(
+        api(
+            "graphql",
+            "-f",
+            f"query={query}",
+            "-f",
+            f"owner={owner}",
+            "-f",
+            f"name={name}",
+            "-f",
+            f"tag={tag}",
+        )
+    )
+    if result.get("errors", []) != []:
+        refuse("draft lookup returned GraphQL errors")
+    data = mapping.validate_python(result.get("data"), strict=True)
+    repository = mapping.validate_python(data.get("repository"), strict=True)
+    if repository.get("name") != repo or "release" not in repository:
+        refuse("draft lookup did not establish the requested repository's release state")
+    if repository["release"] is not None:
+        refuse(
+            f"release {tag} already exists, including drafts; explicit maintainer cleanup required"
+        )
+
+
 def require_absent(repo: str, tag: str) -> None:
     result = run("gh", "api", f"repos/{repo}/releases/tags/{quote(tag, safe='')}", "--include")
     headers, separator, body = result.stdout.replace("\r\n", "\n").partition("\n\n")
@@ -81,6 +114,8 @@ def require_absent(repo: str, tag: str) -> None:
         # The status must come from HTTP, not a string in a transport error or arbitrary JSON.
         error = TypeAdapter(dict[str, object]).validate_json(body)
         if error.get("message") == "Not Found":
+            # REST's tag lookup covers published releases; GraphQL also sees pending draft tags.
+            require_no_draft(repo, tag)
             return
     if separator and status and status[1] == "200" and result.returncode == 0:
         refuse(
