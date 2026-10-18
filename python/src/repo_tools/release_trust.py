@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import os
 import re
 import subprocess
@@ -13,6 +14,17 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 AUTHORITY = "turboBasic"
 SSH_BEGIN = "-----BEGIN SSH SIGNATURE-----\n"
 SSH_END = "-----END SSH SIGNATURE-----\n"
+TRIPLES = ("aarch64-apple-darwin", "x86_64-unknown-linux-gnu")
+BUNDLE = "provenance.sigstore.json"
+SIGNER_SUFFIX = "/.github/workflows/release.yml"
+
+
+def payload_names() -> tuple[str, ...]:
+    return tuple(
+        name
+        for triple in TRIPLES
+        for name in (f"popcircles-{triple}", f"popcircles-{triple}.sha256")
+    )
 
 
 class TrustError(Exception):
@@ -114,8 +126,6 @@ def require_absent(repo: str, tag: str) -> None:
         # The status must come from HTTP, not a string in a transport error or arbitrary JSON.
         error = TypeAdapter(dict[str, object]).validate_json(body)
         if error.get("message") == "Not Found":
-            # REST's tag lookup covers published releases; GraphQL also sees pending draft tags.
-            require_no_draft(repo, tag)
             return
     if separator and status and status[1] == "200" and result.returncode == 0:
         refuse(
@@ -204,6 +214,88 @@ def authorize_tag(repo: str, tag: str, commit: str) -> None:
     require_absent(repo, tag)
 
 
+def read_payloads(directory: Path, allow: frozenset[str] = frozenset()) -> dict[str, Path]:
+    files = {path.name: path for path in directory.iterdir() if path.is_file()}
+    expected = payload_names()
+    missing = [name for name in expected if name not in files]
+    extra = sorted(set(files) - set(expected) - set(allow))
+    if missing or extra:
+        refuse(f"payload inventory mismatch: missing={missing or 'none'} extra={extra or 'none'}")
+    for name, path in files.items():
+        if path.stat().st_size == 0:
+            refuse(f"payload {name} is empty")
+    return {name: path for name, path in files.items() if name in expected}
+
+
+def require_checksums(files: dict[str, Path]) -> None:
+    for triple in TRIPLES:
+        binary = files[f"popcircles-{triple}"]
+        checksum_path = files[f"popcircles-{triple}.sha256"]
+        digest = hashlib.sha256(binary.read_bytes()).hexdigest()
+        line = checksum_path.read_text(encoding="utf-8").strip()
+        if line != digest and line.split(" ", 1)[0].split("\t", 1)[0] != digest:
+            refuse(f"checksum mismatch for popcircles-{triple}")
+
+
+def signer(repo: str) -> str:
+    return f"{repo}{SIGNER_SUFFIX}"
+
+
+def verify_bundle(repo: str, directory: Path, bundle: Path, tag: str, commit: str) -> None:
+    for name in payload_names():
+        checked(
+            "gh",
+            "attestation",
+            "verify",
+            str(directory / name),
+            "--repo",
+            repo,
+            "--signer-workflow",
+            signer(repo),
+            "--source-ref",
+            f"refs/tags/{tag}",
+            "--source-digest",
+            commit,
+            "--bundle",
+            str(bundle),
+        )
+
+
+def verify_assets(repo: str, directory: Path, bundle: Path, tag: str, commit: str) -> None:
+    if not bundle.is_file():
+        refuse(f"missing bundle {bundle.name}")
+    files = read_payloads(directory, allow=frozenset({bundle.name}))
+    require_checksums(files)
+    verify_bundle(repo, directory, bundle, tag, commit)
+
+
+def publish(repo: str, directory: Path, bundle: Path, tag: str, commit: str) -> None:
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
+        refuse("GH_REPO must name owner/repository")
+    if bundle.name != BUNDLE:
+        refuse(f"the bundle must be named {BUNDLE}")
+    authorize_tag(repo, tag, commit)
+    verify_assets(repo, directory, bundle, tag, commit)
+    require_absent(repo, tag)
+    require_no_draft(repo, tag)
+    checked(
+        "gh",
+        "release",
+        "create",
+        tag,
+        "--repo",
+        repo,
+        "--title",
+        tag,
+        "--notes",
+        "",
+        "--draft",
+        "--verify-tag",
+        *[str(directory / name) for name in payload_names()],
+        str(bundle),
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Authorize release source and publication")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -212,13 +304,49 @@ def main() -> int:
     )
     tag_parser.add_argument("--tag", required=True)
     tag_parser.add_argument("--commit", required=True)
+    assets_parser = commands.add_parser(
+        "assets", help="Validate payloads, with optional provenance"
+    )
+    assets_parser.add_argument("--directory", required=True)
+    assets_parser.add_argument("--bundle")
+    assets_parser.add_argument("--tag")
+    assets_parser.add_argument("--commit")
+    publish_parser = commands.add_parser(
+        "publish", help="Authorize, verify and create a draft release"
+    )
+    publish_parser.add_argument("--directory", required=True)
+    publish_parser.add_argument("--bundle", required=True)
+    publish_parser.add_argument("--tag", required=True)
+    publish_parser.add_argument("--commit", required=True)
     args = parser.parse_args()
+    repo = os.environ.get("GH_REPO", "")
     try:
-        authorize_tag(os.environ.get("GH_REPO", ""), str(args.tag), str(args.commit))
+        if args.command == "tag":
+            authorize_tag(repo, str(args.tag), str(args.commit))
+            print(f"authorized {args.tag} at {args.commit}")
+        elif args.command == "assets":
+            directory = Path(args.directory)
+            files = read_payloads(directory)
+            require_checksums(files)
+            if args.bundle or args.tag or args.commit:
+                if not (args.bundle and args.tag and args.commit):
+                    refuse("--bundle, --tag and --commit are supplied together")
+                if Path(args.bundle).name != BUNDLE:
+                    refuse(f"the bundle must be named {BUNDLE}")
+                verify_assets(repo, directory, Path(args.bundle), str(args.tag), str(args.commit))
+            print("payload inventory validated")
+        else:
+            publish(
+                repo,
+                Path(args.directory),
+                Path(args.bundle),
+                str(args.tag),
+                str(args.commit),
+            )
+            print(f"published draft {args.tag}")
     except (TrustError, ValidationError, OSError) as error:
         print(f"release trust refused: {error}", file=sys.stderr)
         return 1
-    print(f"authorized {args.tag} at {args.commit}")
     return 0
 
 

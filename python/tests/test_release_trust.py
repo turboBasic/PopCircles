@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 from dataclasses import dataclass, field
@@ -41,26 +42,7 @@ def response(stdout: str, code: int = 0, stderr: str = "") -> subprocess.Complet
     return subprocess.CompletedProcess(["gh"], code, stdout, stderr)
 
 
-@dataclass
-class Repository:
-    directory: Path
-    commit: str
-    oid: str
-    trusted: str
-    untrusted: str
-    tag_object: rt.TagObject
-    responses: dict[str, subprocess.CompletedProcess[str]]
-    commands: list[tuple[str, ...]] = field(default_factory=list[tuple[str, ...]])
-
-    def tag_response(self, obj: rt.TagObject) -> None:
-        self.responses[f"repos/{REPO}/git/tags/{self.oid}"] = response(obj.model_dump_json())
-
-
-@pytest.fixture
-def repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Repository:
-    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
-    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/dev/null")
-    monkeypatch.delenv("GIT_CONFIG_COUNT", raising=False)
+def make_signed_tag(tmp_path: Path) -> tuple[Path, str, str, str, str, rt.TagObject]:
     directory = tmp_path / "origin"
     directory.mkdir()
     git(directory, "init")
@@ -96,6 +78,30 @@ def repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Repository:
             signature=rt.SSH_BEGIN + signature,
         ),
     )
+    return directory, commit, oid, trusted, untrusted, obj
+
+
+@dataclass
+class Repository:
+    directory: Path
+    commit: str
+    oid: str
+    trusted: str
+    untrusted: str
+    tag_object: rt.TagObject
+    responses: dict[str, subprocess.CompletedProcess[str]]
+    commands: list[tuple[str, ...]] = field(default_factory=list[tuple[str, ...]])
+
+    def tag_response(self, obj: rt.TagObject) -> None:
+        self.responses[f"repos/{REPO}/git/tags/{self.oid}"] = response(obj.model_dump_json())
+
+
+@pytest.fixture
+def repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Repository:
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/dev/null")
+    monkeypatch.delenv("GIT_CONFIG_COUNT", raising=False)
+    directory, commit, oid, trusted, untrusted, obj = make_signed_tag(tmp_path)
     responses = {
         REF_ENDPOINT: response(
             rt.TagRef(
@@ -133,15 +139,9 @@ def test_trusted_tag_performs_real_git_ssh_verification(repository: Repository) 
     authorize(repository)
     assert any("verify-tag" in command for command in repository.commands)
     assert ("gh", "api", RELEASE_ENDPOINT, "--include") in repository.commands
-    assert repository.commands[-1][:3] == ("gh", "api", "graphql")
-    assert repository.commands[-1][-6:] == (
-        "-f",
-        "owner=turboBasic",
-        "-f",
-        "name=PopulationCircles2026",
-        "-f",
-        f"tag={TAG}",
-    )
+    # The tag gate stops at published-absence; a read-only token cannot see drafts, so the
+    # GraphQL draft lookup belongs to the publish path, not to this authorization.
+    assert not any(command[:3] == ("gh", "api", "graphql") for command in repository.commands)
     signers_option = next(
         arg
         for command in repository.commands
@@ -336,9 +336,9 @@ def test_published_404_with_an_existing_draft_is_refused(repository: Repository)
             }
         )
     )
+    # The draft check lives in the publish path: a read-only gate token cannot see drafts at all.
     with pytest.raises(rt.TrustError, match="already exists"):
-        authorize(repository)
-    assert ("gh", "api", RELEASE_ENDPOINT, "--include") in repository.commands
+        rt.require_no_draft(REPO, TAG)
 
 
 @pytest.mark.parametrize(
@@ -368,7 +368,7 @@ def test_draft_lookup_errors_cannot_turn_a_published_404_into_absence(
 ) -> None:
     repository.responses["graphql"] = response(body, code, "draft lookup failed" if code else "")
     with pytest.raises((rt.TrustError, ValidationError)):
-        authorize(repository)
+        rt.require_no_draft(REPO, TAG)
 
 
 @pytest.mark.parametrize(
@@ -417,3 +417,237 @@ def test_invalid_cli_inputs_fail_before_github(
     with pytest.raises(rt.TrustError):
         rt.authorize_tag(repo, tag, commit)
     assert not any(command[0] == "gh" for command in repository.commands)
+
+
+def payload_bytes(triple: str) -> bytes:
+    return f"binary-{triple}".encode()
+
+
+def write_payloads(directory: Path, *, corrupt: str | None = None) -> None:
+    for triple in rt.TRIPLES:
+        (directory / f"popcircles-{triple}").write_bytes(payload_bytes(triple))
+        digest = hashlib.sha256(payload_bytes(triple)).hexdigest()
+        if corrupt == triple:
+            digest = "0" * 64
+        (directory / f"popcircles-{triple}.sha256").write_text(f"{digest}\n", encoding="utf-8")
+
+
+@dataclass
+class PublishState:
+    responses: dict[str, subprocess.CompletedProcess[str]]
+    commands: list[tuple[str, ...]] = field(default_factory=list[tuple[str, ...]])
+
+    def released(self) -> list[tuple[str, ...]]:
+        return [c for c in self.commands if c[:2] == ("gh", "release")]
+
+
+@pytest.fixture
+def publish_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[PublishState, Path, str, str]:
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", "/dev/null")
+    monkeypatch.delenv("GIT_CONFIG_COUNT", raising=False)
+    directory, commit, oid, trusted, _untrusted, obj = make_signed_tag(tmp_path)
+    responses = {
+        REF_ENDPOINT: response(
+            rt.TagRef(
+                ref=f"refs/tags/{TAG}",
+                object=rt.GitObject(type="tag", sha=oid),
+            ).model_dump_json()
+        ),
+        KEY_ENDPOINT: response(json.dumps([[{"key": trusted}]])),
+        RELEASE_ENDPOINT: response('HTTP/2.0 404 Not Found\r\n\r\n{"message":"Not Found"}', 1),
+        "graphql": response(json.dumps({"data": {"repository": {"name": REPO, "release": None}}})),
+    }
+    responses[f"repos/{REPO}/git/tags/{oid}"] = response(obj.model_dump_json())
+    state = PublishState(responses)
+    original_run = rt.run
+
+    def fake_run(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+        state.commands.append(args)
+        if args[:2] == ("gh", "attestation"):
+            assert args[2] == "verify", f"unexpected gh attestation mutation: {args}"
+            return response("")
+        if args[:2] == ("gh", "release"):
+            assert args[2] == "create", f"unexpected gh release mutation: {args}"
+            return response("")
+        if args[:3] == ("git", "fetch", "--no-tags"):
+            assert args[3] == f"https://github.com/{REPO}.git"
+            return original_run(*args[:3], str(directory), *args[4:], cwd=cwd)
+        if args[0] == "gh":
+            assert args[1] == "api", f"unexpected GitHub mutation: {args}"
+            return state.responses[args[2]]
+        return original_run(*args, cwd=cwd)
+
+    monkeypatch.setattr(rt, "run", fake_run)
+    return state, directory, commit, oid
+
+
+def test_assets_rejects_missing_and_extra_payloads(tmp_path: Path) -> None:
+    write_payloads(tmp_path)
+    (tmp_path / "popcircles-x86_64-unknown-linux-gnu").unlink()
+    with pytest.raises(rt.TrustError, match="missing"):
+        rt.read_payloads(tmp_path)
+    write_payloads(tmp_path)
+    (tmp_path / "stray.txt").write_text("x", encoding="utf-8")
+    with pytest.raises(rt.TrustError, match="extra"):
+        rt.read_payloads(tmp_path)
+
+
+def test_assets_requires_nonempty_files(tmp_path: Path) -> None:
+    write_payloads(tmp_path)
+    (tmp_path / "popcircles-aarch64-apple-darwin").write_bytes(b"")
+    with pytest.raises(rt.TrustError, match="empty"):
+        rt.read_payloads(tmp_path)
+
+
+def test_assets_rejects_a_bad_checksum(tmp_path: Path) -> None:
+    write_payloads(tmp_path, corrupt="aarch64-apple-darwin")
+    with pytest.raises(rt.TrustError, match="checksum mismatch"):
+        rt.require_checksums(rt.read_payloads(tmp_path))
+
+
+def test_assets_rejects_a_missing_bundle(tmp_path: Path) -> None:
+    write_payloads(tmp_path)
+    with pytest.raises(rt.TrustError, match="missing bundle"):
+        rt.verify_assets(REPO, tmp_path, tmp_path / rt.BUNDLE, TAG, "0" * 40)
+
+
+def test_verify_assets_runs_every_subject_with_the_exact_policy(
+    publish_state: tuple[PublishState, Path, str, str],
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+    rt.verify_assets(REPO, directory, bundle, TAG, commit)
+    verifies = [c for c in state.commands if c[:3] == ("gh", "attestation", "verify")]
+    assert {c[3] for c in verifies} == {str(directory / name) for name in rt.payload_names()}
+    for command in verifies:
+        assert command[4:] == (
+            "--repo",
+            REPO,
+            "--signer-workflow",
+            f"{REPO}/.github/workflows/release.yml",
+            "--source-ref",
+            f"refs/tags/{TAG}",
+            "--source-digest",
+            commit,
+            "--bundle",
+            str(bundle),
+        )
+    assert state.released() == []
+
+
+def test_verify_assets_refuses_a_failed_verification(
+    publish_state: tuple[PublishState, Path, str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+
+    def failing(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:  # noqa: ARG001
+        if args[:3] == ("gh", "attestation", "verify"):
+            return response("", 1, "failed to verify")
+        message = f"unexpected command before failure: {args}"
+        raise AssertionError(message)
+
+    monkeypatch.setattr(rt, "run", failing)
+    with pytest.raises(rt.TrustError, match="gh failed"):
+        rt.verify_assets(REPO, directory, bundle, TAG, commit)
+
+
+def test_publish_authorizes_verifies_and_creates_a_draft(
+    publish_state: tuple[PublishState, Path, str, str],
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+    rt.publish(REPO, directory, bundle, TAG, commit)
+    assert any(c[:3] == ("gh", "attestation", "verify") for c in state.commands)
+    assert any("verify-tag" in c for c in state.commands)
+    created = state.released()
+    assert len(created) == 1
+    create = created[0]
+    assert create[:2] == ("gh", "release")
+    assert create[2] == "create"
+    assert create[3] == TAG
+    assert "--draft" in create
+    assert "--verify-tag" in create
+    assert set(create) >= {
+        "--repo",
+        REPO,
+        "--title",
+        TAG,
+        "--notes",
+        "",
+        "--draft",
+        "--verify-tag",
+    }
+    assert {Path(a).name for a in create if str(a).startswith(str(directory))} == {
+        *rt.payload_names(),
+        rt.BUNDLE,
+    }
+
+
+def test_publish_requires_the_bundle_name(
+    publish_state: tuple[PublishState, Path, str, str],
+    tmp_path: Path,
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    other = tmp_path / "other.json"
+    other.write_text("{}", encoding="utf-8")
+    with pytest.raises(rt.TrustError, match="must be named"):
+        rt.publish(REPO, directory, other, TAG, commit)
+    assert state.released() == []
+
+
+def test_publish_records_no_mutation_before_each_precondition(
+    publish_state: tuple[PublishState, Path, str, str],
+) -> None:
+    state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+
+    def assert_no_release(fn: object, *args: object) -> None:
+        with pytest.raises(rt.TrustError):
+            fn(*args)  # type: ignore[operator]
+        assert state.released() == []
+
+    assert_no_release(
+        rt.publish, REPO, directory, bundle, TAG, "0" * 40
+    )  # wrong commit → authorize fails
+    state.responses["graphql"] = response(
+        json.dumps({"data": {"repository": {"name": REPO, "release": {"id": "draft"}}}})
+    )
+    assert_no_release(rt.publish, REPO, directory, bundle, TAG, commit)  # draft exists
+    state.responses[RELEASE_ENDPOINT] = response(
+        "HTTP/2.0 200 OK\n\n" + json.dumps({"tag_name": TAG}), 0
+    )
+    assert_no_release(rt.publish, REPO, directory, bundle, TAG, commit)  # published
+
+
+def test_publish_propagates_create_failure(
+    publish_state: tuple[PublishState, Path, str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _state, directory, commit, _oid = publish_state
+    write_payloads(directory)
+    bundle = directory / rt.BUNDLE
+    bundle.write_text("{}", encoding="utf-8")
+    delegate = rt.run
+
+    def failing_create(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+        if args[:3] == ("gh", "release", "create"):
+            return response("", 1, "upload failed")
+        return delegate(*args, cwd=cwd)
+
+    monkeypatch.setattr(rt, "run", failing_create)
+    with pytest.raises(rt.TrustError, match="gh failed"):
+        rt.publish(REPO, directory, bundle, TAG, commit)
