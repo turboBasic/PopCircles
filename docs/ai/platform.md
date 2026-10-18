@@ -315,6 +315,8 @@ opposite — MD013 is off, so wrapping there costs nothing — which is why this
 
 ## CI
 
+- Release authorization trusts `turboBasic`'s current GitHub SSH signing identity
+  ([ADR 0013](../decisions/0013-release-authorization-trusts-a-github-account.md)).
 - **Pin every action to a full SHA**, with the version in a trailing comment, never `@main`. A reusable
   workflow call into `turboBasic/github-actions` may pin a version tag instead: Dependabot tracks that
   repository (`.github/dependabot.yml`, `github-actions` ecosystem), so a tag costs no more than the SHA

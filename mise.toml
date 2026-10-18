@@ -263,6 +263,11 @@ depends = ["lint", "typecheck", "test"]
 description = "Compile both release legs on demand, macOS included, publishing nothing"
 run = "uv run release-smoke"
 
+# Not in `ci`: authorization reads current GitHub identity and release state over the network.
+[tasks."release:trust"]
+description = "Verify release authorization against the designated GitHub account"
+run = "uv run release-trust"
+
 # Not in `lint`, `test` or `ci`, and no later change can put it there: it reaches the network, and a CI
 # checkout deliberately has no raster.
 [tasks."data:get"]
