@@ -6,14 +6,21 @@
     "default": true,
     "MD013": false
   },
+  "ignores": [
+    "tmp/**"
+  ],
   // GitHub renders the PR title as the page's heading, so this file starts at `##` on purpose.
   // MD041 (first line must be a top-level heading) is the only rule this trips, and it is the
   // only file in the repo that needs the exception, so the exception is scoped to it instead
   // of disabled project-wide.
   "overrides": [
     {
-      "filter": [".github/PULL_REQUEST_TEMPLATE.md"],
-      "config": { "MD041": false },
+      "filter": [
+        ".github/PULL_REQUEST_TEMPLATE.md"
+      ],
+      "config": {
+        "MD041": false
+      },
       "combine": "merge"
     }
   ]
