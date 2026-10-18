@@ -173,7 +173,7 @@ mise run release:smoke  # both build legs on demand, macOS included, publishing 
 ```
 
 Run it before cutting a tag, and after bumping a pinned toolchain. Nothing else in this repository ever
-compiles for `aarch64-apple-darwin` — `ci.yml` is `ubuntu-latest` and deliberately stays that way — so
+compiles for `aarch64-apple-darwin` — `ci.yml` runs only on Linux — so
 without it the first macOS compile of a tree is the tag you are trying to ship. It builds the branch as
 `origin` has it, takes about as long as a release, and leaves a run page and its two artifacts behind:
 no tag, no Release. It runs the same build a tag runs — `.github/workflows/release-smoke.yml` and

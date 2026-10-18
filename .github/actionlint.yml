@@ -1,0 +1,4 @@
+# actionlint's built-in runner list does not yet include GitHub's Ubuntu 26.04 image.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
