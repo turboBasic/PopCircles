@@ -157,7 +157,7 @@ Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepier
 [gpw]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
 [gpw-doi]: https://doi.org/10.7927/H4PN93PB
 [license]: LICENSE
-[license-badge]: https://img.shields.io/github/license/turboBasic/PopulationCircles2026
+[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [releases]: https://github.com/turboBasic/PopulationCircles2026/releases
 [rust]: https://www.rust-lang.org/
 [rust-badge]: https://img.shields.io/badge/rust-1.97%2B-orange.svg
