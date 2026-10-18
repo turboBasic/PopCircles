@@ -11,8 +11,7 @@ tags: [adr, popcircles]
 ## Decision
 
 A release source is authorized by the current SSH signing identity of the designated GitHub account,
-`turboBasic`. Repository-pinned maintainer keys do not establish that authority. Both cryptographic
-validity and GitHub's verification of the signed tag are required.
+`turboBasic`. Repository-pinned maintainer keys do not establish that authority.
 
 ## Context
 
@@ -38,13 +37,11 @@ state part of every release decision.
 
 ## Consequences
 
-The release gate refuses a tag when either signature check fails or the account authority cannot be
-established. A valid signature from another account is insufficient. Removing a signing key can
-therefore prevent a later authorization check of an older tag; this policy governs release admission,
-not a promise that account state preserves historical trust forever.
-
-Future changes must preserve account authority unless a new record supersedes this ruling. Reopen it
-if releases must be authorized independently of GitHub's identity service.
+The release gate refuses a tag when the account authority cannot be established. A valid signature
+from another account is insufficient. Removing a signing key can therefore prevent a later
+authorization check of an older tag; this policy governs release admission, not a promise that
+account state preserves historical trust forever. Reopen it if releases must be authorized
+independently of GitHub's identity service.
 
 ## Links
 

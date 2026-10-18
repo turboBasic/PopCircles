@@ -182,10 +182,11 @@ declares.
 
 1. Bump `version` in `[workspace.package]`, which is the only place it lives, and land it on `main` like
    any other change. Every report snapshot moves with it, because every document carries `tool_version`.
-2. Sign the merged commit's tag `vX.Y.Z` for that same version using the existing 1Password SSH signing
-   agent, then push the tag. Register its public key as a **signing key** on `turboBasic`, and use an
-   email verified on that account as the tagger email. Supply the agent-backed public key and Git
-   settings per invocation; the private key stays in 1Password:
+2. Sign the merged commit's tag `vX.Y.Z` for that same version and push the tag. The gate compares the
+   two and refuses a mismatched tag, so a mismatch costs a run rather than a wrong binary.
+   Register the public key once as a **signing key** on `turboBasic`, and use an email verified on that
+   account as the tagger email. Supply the agent-backed public key and Git settings per invocation; the
+   private key stays in 1Password:
 
    ```sh
    SSH_AUTH_SOCK="$signing_agent_socket" git -c gpg.format=ssh \
@@ -207,11 +208,12 @@ declares.
 
 When a run fails, inspect release state before retrying; a lookup error does not establish absence.
 
-- **No release exists.** Re-run the workflow if the cause was the runner rather than the commit;
-  otherwise explicitly delete the unpublished tag, fix the cause, and sign the same version again.
+- **No release exists.** The tag is still retractable and the version is not spent. Re-run the
+  workflow if the cause was the runner rather than the commit; otherwise explicitly delete the
+  unpublished tag, fix the cause, and sign the same version again.
 - **An incomplete draft exists.** Explicitly delete it as a maintainer before any rerun, including
-  after runner failures. The gate refuses existing releases; draft deletion is a maintainer action.
-  If the commit must change, explicitly delete the unpublished tag too before signing its replacement.
+  after runner failures; the gate refuses existing releases. If the commit must change, explicitly
+  delete the unpublished tag too before signing its replacement.
 - **It is published.** That version is spent, so the next attempt is a version bump rather than a moved
   tag — a tag that moves lies to everyone who already fetched it. Publishing the draft is therefore the
   one step in this sequence that cannot be taken back, which is why it is yours and not the workflow's.
