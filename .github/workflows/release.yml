@@ -7,6 +7,11 @@ on:
 permissions:
   contents: read
 
+# Cancelling mid-upload can leave an incomplete draft requiring maintainer cleanup.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # The authorizer must come from main, never from the commit being authorized: the only non-owner
   # writer is the GitHub App, and it can edit any branch but main. A tag naming an App-edited commit
@@ -73,20 +78,88 @@ jobs:
     needs: gate
     uses: ./.github/workflows/build-binaries.yml
 
-  # The only job granted write permission, and the only one that writes anything outside the run. Both
-  # legs land here or none does: a leg that fails leaves no Release at all rather than a half-populated
-  # one, and re-running after a fixed leg replaces assets with --clobber instead of colliding with them.
-  publish:
+  attest:
     needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
+
+      - name: Sync Python tooling
+        run: uv sync --locked
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: popcircles-*
+          path: dist
+          merge-multiple: true
+
+      - name: Confirm the four-file payload inventory
+        run: mise run release:trust -- assets --directory dist
+
+      - name: Attest the four payloads
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            dist/popcircles-aarch64-apple-darwin
+            dist/popcircles-x86_64-unknown-linux-gnu
+            dist/popcircles-aarch64-apple-darwin.sha256
+            dist/popcircles-x86_64-unknown-linux-gnu.sha256
+
+      - name: Verify every subject against the bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          cp "${{ steps.attest.outputs.bundle-path }}" dist/provenance.sigstore.json
+          mise run release:trust -- assets --directory dist \
+            --bundle dist/provenance.sigstore.json --tag "$TAG" --commit "$COMMIT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets
+          path: |
+            dist/popcircles-aarch64-apple-darwin
+            dist/popcircles-x86_64-unknown-linux-gnu
+            dist/popcircles-aarch64-apple-darwin.sha256
+            dist/popcircles-x86_64-unknown-linux-gnu.sha256
+            dist/provenance.sigstore.json
+          if-no-files-found: error
+
+  publish:
+    needs: attest
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
+
+      - name: Sync Python tooling
+        run: uv sync --locked
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
+          name: release-assets
           path: dist
-          merge-multiple: true
 
       # No --generate-notes: the notes have to say that the wire format's schema_version still holds
       # and that a cache this release invalidates will be rebuilt, neither of which follows from the
@@ -96,14 +169,12 @@ jobs:
       # two is a published release promising nothing. A draft is not visible to a fetcher and can be
       # deleted, so the version is not spent until someone publishes it, which is
       # `gh release edit <tag> --draft=false` once the body says what it has to.
-      - name: Attach both artifacts to the Release
+      - name: Attach the attested payloads to a draft
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
         run: |
-          set -euo pipefail
-          if ! gh release view "$TAG" > /dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --notes "" --draft --verify-tag
-          fi
-          gh release upload "$TAG" --clobber dist/*
+          mise run release:trust -- publish --directory dist \
+            --bundle dist/provenance.sigstore.json --tag "$TAG" --commit "$COMMIT"

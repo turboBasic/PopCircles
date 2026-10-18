@@ -28,6 +28,7 @@ pyright
 pytest
 ruff
 shellcheck
+sigstore
 taplo
 
 # --- Domain vocabulary ---
@@ -83,6 +84,7 @@ anstream
 anstyle
 bpaf
 bytemuck
+capsys
 cartopy
 colortype
 corasick
