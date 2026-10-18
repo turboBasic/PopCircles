@@ -27,6 +27,16 @@ A task deliberately not yet wired into `lint` or `ci` carries a comment saying w
 comment and satisfy its stated condition before wiring the task in — the two Python tasks are
 waiting on sources and tests to exist, not on someone noticing them.
 
+## AI harnesses
+
+Resolve reused skills' and personas' relative paths from their real source files. Follow their
+workflows with the current harness's tools; Claude Code frontmatter, hooks and permission settings
+do not configure another harness. A persona's editing limits remain instructions in Codex, whose
+custom agents inherit the parent's permissions rather than Claude Code's withheld tools.
+
+When a workflow requests a persona, use its custom agent. Where the harness cannot select a named
+agent, use a fresh subagent instructed to read the source persona and the workflow's brief.
+
 ## Dependencies
 
 - Rust: workspace-level settings live in the root `Cargo.toml` (`[workspace.package]`,
@@ -347,6 +357,9 @@ new root.
 
 ```text
 CLAUDE.md                        Claude entry point — imports only
+AGENTS.md                        Codex entry point — follows Claude's imports
+.agents/skills                   Codex skill discovery — symlink to .claude/skills
+.codex/agents/                   Codex persona adapters — routing only
 .github/copilot-instructions.md  Copilot entry point — routing only
 opencode.json                    the agent's entry point — routing only
 .github/workflows/               CI

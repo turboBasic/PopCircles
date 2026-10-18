@@ -1,6 +1,6 @@
 # Without an explicit include, taplo walks every .toml it can reach — including the
 # thousands under .venv and build.
-include = ["*.toml", "crates/*/*.toml", "data/*.toml", ".github/**/*.toml"]
+include = ["*.toml", "crates/*/*.toml", "data/*.toml", ".github/**/*.toml", ".codex/agents/*.toml"]
 exclude = [".venv/**", "build/**", "**/site-packages/**"]
 
 [formatting]

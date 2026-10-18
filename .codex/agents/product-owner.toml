@@ -1,0 +1,6 @@
+name = "product-owner"
+description = "Use the project's product owner persona in .claude/agents/product-owner.md."
+developer_instructions = """
+Read .claude/agents/product-owner.md from the repository root and follow that persona.
+Interpret it using docs/ai/platform.md "AI harnesses".
+"""
