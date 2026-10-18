@@ -14,6 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # The authorizer must come from main, never from the commit being authorized: the only non-owner
+      # writer is the GitHub App, and it can edit any branch but main. A tag naming an App-edited commit
+      # would otherwise run a gate that commit wrote.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: trust
+          persist-credentials: false
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -21,16 +30,19 @@ jobs:
 
       - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
 
-      - name: Sync Python tooling
-        run: uv sync --locked
-
       - name: Authorize the signed release tag
+        working-directory: trust
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
           COMMIT: ${{ github.sha }}
-        run: mise run release:trust -- tag --tag "$TAG" --commit "$COMMIT"
+        run: |
+          uv sync --locked
+          mise run release:trust -- tag --tag "$TAG" --commit "$COMMIT"
+
+      - name: Sync Python tooling
+        run: uv sync --locked
 
       # The binary stamps its manifest version into every document, so a tag naming another version
       # ships documents pointing at a release that does not exist. cargo answers rather than a grep,
