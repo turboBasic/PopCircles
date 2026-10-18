@@ -198,7 +198,7 @@ declares.
    The authority is `turboBasic`'s current GitHub SSH signing keys, including rotations and removals,
    rather than repository-pinned keys. Both SSH verification and GitHub's verified-tag result must
    succeed. The source gate refuses lightweight, nested, unsigned, untrusted or mismatched tags,
-   published releases and lookup errors before building. The publisher also refuses existing drafts.
+   existing releases (drafts included) and lookup errors before building.
    Historical unsigned tags remain unchanged and do not satisfy this prospective policy.
 3. Write the notes by hand, then publish. The workflow attaches five assets to a **draft** with an
    empty body — the two binaries, their two checksums, and one `provenance.sigstore.json` bundle

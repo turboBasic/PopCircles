@@ -84,6 +84,7 @@ anstream
 anstyle
 bpaf
 bytemuck
+capsys
 cartopy
 colortype
 corasick

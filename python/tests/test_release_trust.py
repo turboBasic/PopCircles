@@ -13,7 +13,6 @@ REPO = "turboBasic/PopulationCircles2026"
 TAG = "v1.2.3"
 REF_ENDPOINT = f"repos/{REPO}/git/ref/tags/{TAG}"
 KEY_ENDPOINT = f"users/{rt.AUTHORITY}/ssh_signing_keys?per_page=100"
-RELEASE_ENDPOINT = f"repos/{REPO}/releases/tags/{TAG}"
 
 
 def git(directory: Path, *args: str, stdin: str | None = None) -> str:
@@ -110,7 +109,6 @@ def repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Repository:
             ).model_dump_json()
         ),
         KEY_ENDPOINT: response(json.dumps([[{"key": trusted}]])),
-        RELEASE_ENDPOINT: response('HTTP/2.0 404 Not Found\r\n\r\n{"message":"Not Found"}', 1),
         "graphql": response(json.dumps({"data": {"repository": {"name": REPO, "release": None}}})),
     }
     state = Repository(directory, commit, oid, trusted, untrusted, obj, responses)
@@ -138,10 +136,16 @@ def authorize(repository: Repository) -> None:
 def test_trusted_tag_performs_real_git_ssh_verification(repository: Repository) -> None:
     authorize(repository)
     assert any("verify-tag" in command for command in repository.commands)
-    assert ("gh", "api", RELEASE_ENDPOINT, "--include") in repository.commands
-    # The tag gate stops at published-absence; a read-only token cannot see drafts, so the
-    # GraphQL draft lookup belongs to the publish path, not to this authorization.
-    assert not any(command[:3] == ("gh", "api", "graphql") for command in repository.commands)
+    lookups = [c for c in repository.commands if c[:3] == ("gh", "api", "graphql")]
+    assert len(lookups) == 1
+    assert lookups[0][-6:] == (
+        "-f",
+        "owner=turboBasic",
+        "-f",
+        "name=PopulationCircles2026",
+        "-f",
+        f"tag={TAG}",
+    )
     signers_option = next(
         arg
         for command in repository.commands
@@ -193,9 +197,7 @@ def test_other_accounts_key_cannot_authorize_even_when_github_says_valid(
     with pytest.raises(rt.TrustError, match="git failed"):
         authorize(repository)
     assert any("verify-tag" in command for command in repository.commands)
-    assert not any(
-        command[2] == RELEASE_ENDPOINT for command in repository.commands if command[0] == "gh"
-    )
+    assert not any(command[:3] == ("gh", "api", "graphql") for command in repository.commands)
 
 
 @pytest.mark.parametrize(
@@ -320,25 +322,45 @@ def test_api_failures_fail_closed(repository: Repository, endpoint: str, status:
         authorize(repository)
 
 
-def test_existing_published_release_is_refused(repository: Repository) -> None:
-    repository.responses[RELEASE_ENDPOINT] = response(
-        "HTTP/2.0 200 OK\n\n" + json.dumps({"draft": False, "tag_name": TAG}),
+@pytest.mark.parametrize("kind", ["published", "draft"])
+def test_existing_release_is_refused_during_authorization(
+    repository: Repository, kind: str
+) -> None:
+    repository.responses["graphql"] = response(
+        json.dumps(
+            {
+                "data": {"repository": {"name": REPO, "release": {"id": kind}}},
+            }
+        )
     )
     with pytest.raises(rt.TrustError, match="already exists"):
         authorize(repository)
 
 
-def test_published_404_with_an_existing_draft_is_refused(repository: Repository) -> None:
+def test_read_only_draft_error_is_refused_by_the_tag_cli(
+    repository: Repository, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     repository.responses["graphql"] = response(
         json.dumps(
             {
-                "data": {"repository": {"name": REPO, "release": {"id": "draft-release"}}},
+                "data": {"repository": {"name": REPO, "release": None}},
+                "errors": [
+                    {
+                        "type": "FORBIDDEN",
+                        "path": ["repository", "release"],
+                        "message": "Resource not accessible by personal access token",
+                    }
+                ],
             }
         )
     )
-    # The draft check lives in the publish path: a read-only gate token cannot see drafts at all.
-    with pytest.raises(rt.TrustError, match="already exists"):
-        rt.require_no_draft(REPO, TAG)
+    monkeypatch.setenv("GH_REPO", REPO)
+    monkeypatch.setattr(
+        "sys.argv", ["release-trust", "tag", "--tag", TAG, "--commit", repository.commit]
+    )
+    assert rt.main() == 1
+    assert "lookup returned GraphQL errors" in capsys.readouterr().err
+    assert not any(c[:2] == ("gh", "release") for c in repository.commands)
 
 
 @pytest.mark.parametrize(
@@ -361,39 +383,26 @@ def test_published_404_with_an_existing_draft_is_refused(repository: Repository)
         ),
     ],
 )
-def test_draft_lookup_errors_cannot_turn_a_published_404_into_absence(
+def test_release_lookup_errors_never_establish_absence_during_authorization(
     repository: Repository,
     body: str,
     code: int,
 ) -> None:
     repository.responses["graphql"] = response(body, code, "draft lookup failed" if code else "")
     with pytest.raises((rt.TrustError, ValidationError)):
-        rt.require_no_draft(REPO, TAG)
+        authorize(repository)
 
 
 @pytest.mark.parametrize(
-    ("stdout", "code", "stderr"),
-    [
-        ("", 1, "could not resolve host"),
-        ('{"message":"Not Found"}', 1, "HTTP 404"),
-        ('HTTP/2.0 401 Unauthorized\n\n{"message":"Not Found"}', 1, ""),
-        ("HTTP/2.0 403 Forbidden\n\n{}", 1, ""),
-        ("HTTP/2.0 429 Too Many Requests\n\n{}", 1, ""),
-        ("HTTP/2.0 500 Server Error\n\n{}", 1, ""),
-        ("HTTP/2.0 404 Not Found\n\n{}", 1, ""),
-        ("HTTP/2.0 404 Not Found\n\nnot json", 1, ""),
-        ('HTTP/2.0 404 Not Found\n\n{"message":"Not Found"}', 0, ""),
-        ("HTTP/2.0 200 OK\n\nnot json", 0, ""),
-    ],
+    "error",
+    ["could not resolve host", "HTTP 401", "HTTP 403", "HTTP 404", "HTTP 429", "HTTP 500"],
 )
-def test_release_lookup_only_accepts_definitive_404(
+def test_release_lookup_transport_errors_fail_closed(
     repository: Repository,
-    stdout: str,
-    code: int,
-    stderr: str,
+    error: str,
 ) -> None:
-    repository.responses[RELEASE_ENDPOINT] = response(stdout, code, stderr)
-    with pytest.raises((rt.TrustError, ValidationError)):
+    repository.responses["graphql"] = response("", 1, error)
+    with pytest.raises(rt.TrustError, match="gh failed"):
         authorize(repository)
 
 
@@ -457,7 +466,6 @@ def publish_state(
             ).model_dump_json()
         ),
         KEY_ENDPOINT: response(json.dumps([[{"key": trusted}]])),
-        RELEASE_ENDPOINT: response('HTTP/2.0 404 Not Found\r\n\r\n{"message":"Not Found"}', 1),
         "graphql": response(json.dumps({"data": {"repository": {"name": REPO, "release": None}}})),
     }
     responses[f"repos/{REPO}/git/tags/{oid}"] = response(obj.model_dump_json())
@@ -686,8 +694,8 @@ def test_publish_records_no_mutation_before_each_precondition(
     with pytest.raises(rt.TrustError):
         rt.publish(REPO, directory, bundle, TAG, commit)
     assert state.released() == []
-    state.responses[RELEASE_ENDPOINT] = response(
-        "HTTP/2.0 200 OK\n\n" + json.dumps({"tag_name": TAG}), 0
+    state.responses["graphql"] = response(
+        json.dumps({"data": {"repository": {"name": REPO, "release": {"id": "published"}}}})
     )
     with pytest.raises(rt.TrustError):
         rt.publish(REPO, directory, bundle, TAG, commit)

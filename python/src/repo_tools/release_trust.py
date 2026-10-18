@@ -85,7 +85,7 @@ def api(endpoint: str, *options: str) -> str:
     return checked("gh", "api", endpoint, *options)
 
 
-def require_no_draft(repo: str, tag: str) -> None:
+def require_absent(repo: str, tag: str) -> None:
     owner, name = repo.split("/")
     query = (
         "query($owner: String!, $name: String!, $tag: String!) {"
@@ -107,31 +107,15 @@ def require_no_draft(repo: str, tag: str) -> None:
         )
     )
     if result.get("errors", []) != []:
-        refuse("draft lookup returned GraphQL errors")
+        refuse("release lookup returned GraphQL errors")
     data = mapping.validate_python(result.get("data"), strict=True)
     repository = mapping.validate_python(data.get("repository"), strict=True)
     if repository.get("name") != repo or "release" not in repository:
-        refuse("draft lookup did not establish the requested repository's release state")
+        refuse("release lookup did not establish the requested repository's release state")
     if repository["release"] is not None:
         refuse(
             f"release {tag} already exists, including drafts; explicit maintainer cleanup required"
         )
-
-
-def require_absent(repo: str, tag: str) -> None:
-    result = run("gh", "api", f"repos/{repo}/releases/tags/{quote(tag, safe='')}", "--include")
-    headers, separator, body = result.stdout.replace("\r\n", "\n").partition("\n\n")
-    status = re.fullmatch(r"HTTP/[\d.]+ (\d{3})(?: [^\n]*)?", headers.split("\n")[0])
-    if separator and status and status[1] == "404" and result.returncode:
-        # The status must come from HTTP, not a string in a transport error or arbitrary JSON.
-        error = TypeAdapter(dict[str, object]).validate_json(body)
-        if error.get("message") == "Not Found":
-            return
-    if separator and status and status[1] == "200" and result.returncode == 0:
-        refuse(
-            f"release {tag} already exists, including drafts; explicit maintainer cleanup required"
-        )
-    refuse(f"release lookup did not establish absence: {result.stderr.strip()}")
 
 
 def allowed_signers(directory: Path) -> Path:
@@ -280,7 +264,7 @@ def publish(repo: str, directory: Path, bundle: Path, tag: str, commit: str) -> 
         refuse(f"the bundle must be named {BUNDLE}")
     authorize_tag(repo, tag, commit)
     verify_assets(repo, directory, bundle, tag, commit)
-    require_no_draft(repo, tag)
+    require_absent(repo, tag)
     checked(
         "gh",
         "release",
