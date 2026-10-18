@@ -16,12 +16,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
 
       - name: Sync Python tooling
         run: uv sync --locked
+
+      - name: Authorize the signed release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: mise run release:trust -- tag --tag "$TAG" --commit "$COMMIT"
 
       # The binary stamps its manifest version into every document, so a tag naming another version
       # ships documents pointing at a release that does not exist. cargo answers rather than a grep,

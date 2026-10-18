@@ -14,6 +14,7 @@ lint-docs = "repo_tools.lint_docs:main"
 lint-version-bumps = "repo_tools.lint_version_bumps:main"
 post-agent-answer = "repo_tools.post_agent_answer:main"
 release-smoke = "repo_tools.release_smoke:main"
+release-trust = "repo_tools.release_trust:main"
 render-gallery = "population_circles.gallery:main"
 render-map = "population_circles.render_map:main"
 
