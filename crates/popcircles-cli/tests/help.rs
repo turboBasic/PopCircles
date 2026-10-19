@@ -1,7 +1,7 @@
 // Every help surface the binary has, pinned byte for byte. `--help` is the whole of what a user reads
 // before running anything, and it is assembled by clap from attributes spread across every flag group
 // and command variant — so it is the one artefact a module split can change without a single behavioural
-// test noticing. These snapshots are the net: they are written before the split and never accepted again.
+// test noticing. These snapshots are the net: changes to a help surface are reviewed in its emitted diff.
 //
 // clap is built with `default-features = false` and no `wrap_help`, so this output does not depend on
 // terminal width and the snapshots hold wherever they run. `--help` also carries no version string, so a

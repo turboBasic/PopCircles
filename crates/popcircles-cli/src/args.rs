@@ -84,19 +84,12 @@ pub(crate) struct LedgerArgs {
     pub(crate) ledger: PathBuf,
 }
 
-/// What the branch and bound needs beyond the circle it is looking for.
-///
-/// Required and with no default, deliberately. The search answers the same thing at every spacing —
-/// refinement runs to single cells — so what this changes is only how long it takes, and the useful range
-/// is a measured property of the raster and the radius that nothing here has measured. A default would
-/// make this crate the author of a figure it took from nowhere.
 #[derive(Args, Debug, Clone, Copy)]
 pub(crate) struct SearchArgs {
-    /// The side, in cells, of the blocks the first level is tiled into. It changes how long the search
-    /// takes and not what it answers: tiles as wide as one cell are a brute force over every centre, and
-    /// tiles wide enough that a block's bound covers the globe prune nothing.
+    /// Override the initial block side in cells, derived from each radius and the grid when omitted.
+    /// Changes runtime only; the answer is the same at every spacing.
     #[arg(long)]
-    pub(crate) spacing: NonZeroU32,
+    pub(crate) spacing: Option<NonZeroU32>,
 }
 
 /// A table that has already been built, named the way opening one needs: the grid it was declared over,

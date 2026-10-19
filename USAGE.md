@@ -116,22 +116,21 @@ Found by branch and bound over every cell centre — a good deal further west th
 16% of the world rather than 10%:
 
 ```sh
-$ search most-populous --radius-km 1000 --spacing 32
+$ search most-populous --radius-km 1000
 {…,"result":{"centre":{"lat":25.125,"lon":79.70833333333331},"radius_km":1000.0,
  "population":1254363867.9300776,"share_of_total":0.1616868627727305,"tolerance_persons":0.0,
- "stats":{"levels":6,"blocks_examined":13908,"blocks_pruned":12725,…}}}
+ …}}
 ```
 
-`--spacing` is required and has no default: it changes how long the search takes and not what it answers,
-and the useful value is a property of the raster and the radius that nothing here has measured.
-`blocks_pruned` against `blocks_examined` is how you tell the bound is biting — 12 725 of 13 908 here.
+`--spacing` is optional: the library derives an initial block side from this radius and grid. A positive
+`--spacing` overrides that choice exactly and changes runtime only; the answer stays the same.
 
 ### The smallest circle holding a share
 
 The question the program is named for — here, half the world's population:
 
 ```sh
-$ search smallest-for-share --share 50 --spacing 32 --ledger out/radii.json
+$ search smallest-for-share --share 50 --ledger out/radii.json
 {…,"result":{"ledger":{"path":"out/radii.json","radii":24},"circle":{"radius_km":3360,
  "centre":{"lat":28.79166666666667,"lon":100.625},"population":3879165388.019252,
  "target":{"share":0.5,"persons":3878991299.6618357,"total":7757982599.323671},
@@ -155,7 +154,7 @@ Every radius tried goes in the ledger, so a sweep of several shares pays for eac
 50% record costs no search at all, because the run above already settled its radii:
 
 ```sh
-$ search sweep --from 10 --to 50 --step 20 --spacing 32 --ledger out/radii.json
+$ search sweep --from 10 --to 50 --step 20 --ledger out/radii.json
 {…,"result":{"ledger":{"path":"out/radii.json","radii":43},"shares":{"from_percent":10,"to_percent":50,
  "step_percent":20},"records":[
   {"radius_km":702,…,"target":{"share":0.1,…},"stats":{"radii_evaluated":9,"radii_reused":11,…}},
@@ -173,7 +172,7 @@ Rendering opens one file — a document one of the commands above wrote — and 
 raster, not the table, not the ledger:
 
 ```sh
-search most-populous --radius-km 1000 --spacing 32 > out/most-populous.json
+search most-populous --radius-km 1000 > out/most-populous.json
 mise run render -- --input out/most-populous.json --output out/most-populous.png
 mise run render -- --input out/most-populous.json --output out/globe.png --projection orthographic
 ```
@@ -216,16 +215,16 @@ stdout stays exactly one JSON document at every level.
 
 ## Choosing the inputs
 
-**Two flags decide what a run costs.** `--decimate` coarsens the image before searching — bigger cells,
-fewer of them, so everything is faster and the circle's centre lands less precisely. `--spacing` sets how
-coarsely the first pass sweeps the globe for candidate centres, and it changes the time only, never the
-answer.
+**Choose the resolution with `--decimate`.** It coarsens the image before searching — bigger cells,
+fewer of them, so everything is faster and the circle's centre lands less precisely. Initial spacing is
+automatic; `--spacing` optionally overrides how coarsely the first pass sweeps for candidate centres and
+changes runtime only.
 
-**If you read nothing else: build at `--decimate 2` and search with `--spacing 1280`.** That is the same
-radius as the full raster gives, a centre within a kilometre of it, and 34 seconds against 78 minutes.
+**Build at `--decimate 2` and search without a spacing flag.** That resolution gives the same radius as
+the full raster, a centre within a kilometre of it, and a 1.8 GB table instead of 7.0 GB.
 
-The rest of this section is why those are the only two knobs and how to trade differently: the words, what
-actually costs time, what limits precision, the measured numbers, and how to pick a spacing.
+The rest of this section explains what costs time, what limits precision, the measured numbers, and when
+to override spacing.
 
 ### The five words you need
 
@@ -258,8 +257,8 @@ Three things, in order of how much they matter:
    rectangle lookup per row. A 3300 km circle spans 356 rows of the 5 arcmin image but 7130 rows of the
    full one.
 
-Spacing is deliberately *not* on that list. It changes the time and never the answer, and past a certain
-coarseness it stops changing even the time — see below.
+Spacing changes the work the search does, never its answer. The automatic choice and the earlier
+fixed-spacing measurements are described below.
 
 ### What limits precision
 
@@ -273,8 +272,9 @@ Also three things, and the surprise is that only one of them matters here:
   publishes exactly how much: **0.06 of a person** out of 3.9 billion at 1 arcmin. That is eleven correct
   significant figures. It is never the thing limiting your answer.
 
-Measured on the real raster, for half the world's population — every row an actual run, end to end, on a
-16 GB M2 Pro (6 performance and 4 efficiency cores, internal SSD) under macOS 26.6:
+Historical measurements on the real raster with explicit spacing, for half the world's population — every
+row an actual run, end to end, on a 16 GB M2 Pro (6 performance and 4 efficiency cores, internal SSD) under
+macOS 26.6:
 
 | `--decimate` | Cell size | Table | Build | Search | Radius | Centre error |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -292,13 +292,25 @@ radii answer all ten.
 about 4× the cost per halving of the cell. The last step — 1 arcmin to full — costs roughly 250× the time
 for half a kilometre of centre, because it is the step that goes over the RAM cliff.
 
-### Choosing spacing
+### Automatic spacing and overrides
 
-Use **1/16 of the image width**: 256 at `--decimate 10`, 640 at 4, 1280 at 2. The rule of thumb behind it
-is that a block should be about as wide on the ground as the radius you are searching for.
+Omit `--spacing` for normal searches. For each radius the library chooses the largest positive block side
+whose conservative distance bound, added to that radius with outward rounding, stays strictly below half
+the sphere's circumference. The side is capped at the grid's maximum dimension. The bound uses the grid's
+angular steps and assumes the equator's widest longitude distance, so the choice depends on both the radius
+and resolution rather than a fitted fraction of the image width.
 
-Below that the search does redundant work; above it nothing improves. Measured at 3300 km on the 4320-wide
-image, counting the circles actually tested:
+At or above half the circumference, no block side can satisfy that strict ceiling. Automatic mode uses the
+grid's maximum dimension instead, producing one initial block. Below the ceiling it always remains
+positive, even when only single-cell blocks fit. A smallest-circle search derives the side separately at
+each radius it probes.
+
+Use a positive `--spacing N` to reproduce or investigate a particular initial tiling. The override is used
+exactly, including values beyond the automatic ceiling. One means an exhaustive scan of cell centres;
+blocks whose widened radius covers the sphere cannot prune at that level. Spacing changes runtime, never
+the answer, and ledgers can be reused across automatic and explicit runs.
+
+The earlier fixed-spacing sweep at 3300 km on the 4320-wide image counted these circles:
 
 | `--spacing` | Circles tested |
 | --- | --- |
@@ -309,7 +321,7 @@ image, counting the circles actually tested:
 | 1024 | 371 |
 | 4319 | 379 |
 
-The counter-intuitive part: the *percentage* of blocks pruned falls the whole way, from 97% to 77%, while
-the program gets faster. A fine first pass prunes nearly everything it looks at — but only because it
+In that sweep the *percentage* of blocks pruned fell the whole way, from 97% to 77%, while
+the program got faster. A fine first pass prunes nearly everything it looks at — but only because it
 created so many blocks to look at. Percentage pruned is the wrong thing to optimise; circles tested is the
 cost.

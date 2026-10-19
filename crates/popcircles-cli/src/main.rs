@@ -257,34 +257,43 @@ mod tests {
     }
 
     #[test]
-    fn a_search_without_a_spacing_is_a_usage_error() {
-        // Required rather than defaulted, which is FU-08's distinction: a command that forwards the
-        // caller's number chooses nothing, and inventing a figure here is what that entry exists to stop.
-        let named = ["popcircles", "most-populous"];
-        let circle = ["--radius-km", "3000"];
-
-        let without =
-            Cli::try_parse_from(named.into_iter().chain(cached_table_flags()).chain(circle));
-        assert!(without.is_err());
-
-        let with = Cli::try_parse_from(
-            named
-                .into_iter()
-                .chain(cached_table_flags())
-                .chain(circle)
-                .chain(["--spacing", "8"]),
-        );
-        assert!(with.is_ok(), "{with:?}");
-
-        // Zero is not a spacing, and `NonZeroU32` is what refuses it rather than a check in this crate.
-        let zero = Cli::try_parse_from(
-            named
-                .into_iter()
-                .chain(cached_table_flags())
-                .chain(circle)
-                .chain(["--spacing", "0"]),
-        );
-        assert!(zero.is_err());
+    fn search_spacing_is_automatic_or_a_positive_override() {
+        use std::num::NonZeroU32;
+        for (command, parameters) in [
+            ("most-populous", vec!["--radius-km", "3000"]),
+            ("smallest-for-share", vec!["--share", "50"]),
+            ("sweep", vec!["--from", "10", "--to", "30", "--step", "10"]),
+        ] {
+            for (override_flags, expected) in [
+                (vec![], None),
+                (vec!["--spacing", "8"], NonZeroU32::new(8)),
+                (vec!["--spacing", "4294967295"], NonZeroU32::new(u32::MAX)),
+            ] {
+                let parsed = Cli::try_parse_from(
+                    ["popcircles", command]
+                        .into_iter()
+                        .chain(cached_table_flags())
+                        .chain(parameters.clone())
+                        .chain(override_flags),
+                )
+                .unwrap();
+                let (Command::MostPopulous { search, .. }
+                | Command::SmallestForShare { search, .. }
+                | Command::Sweep { search, .. }) = parsed.command
+                else {
+                    panic!("a search command");
+                };
+                assert_eq!(search.spacing, expected);
+            }
+            let zero = Cli::try_parse_from(
+                ["popcircles", command]
+                    .into_iter()
+                    .chain(cached_table_flags())
+                    .chain(parameters)
+                    .chain(["--spacing", "0"]),
+            );
+            assert_eq!(zero.unwrap_err().exit_code(), 2);
+        }
     }
 
     #[test]

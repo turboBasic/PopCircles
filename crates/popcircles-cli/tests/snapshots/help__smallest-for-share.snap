@@ -4,7 +4,7 @@ expression: help_for(path)
 ---
 The smallest circle whose population reaches a share of the table's own total
 
-Usage: popcircles smallest-for-share [OPTIONS] --width <WIDTH> --height <HEIGHT> --origin-lat <ORIGIN_LAT> --origin-lon <ORIGIN_LON> --lon-step <LON_STEP> --lat-step <LAT_STEP> --digest <DIGEST> --share <SHARE> --spacing <SPACING>
+Usage: popcircles smallest-for-share [OPTIONS] --width <WIDTH> --height <HEIGHT> --origin-lat <ORIGIN_LAT> --origin-lon <ORIGIN_LON> --lon-step <LON_STEP> --lat-step <LAT_STEP> --digest <DIGEST> --share <SHARE>
 
 Options:
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
@@ -18,6 +18,6 @@ Options:
       --decimate <DECIMATE>      Fold every k by k block of cells into one table cell. Must divide both grid dimensions [default: 1]
       --digest <DIGEST>          The digest a build reported, which is what names the table wanted
       --share <SHARE>            The share to reach, in whole percent. A hundred is everyone the table holds
-      --spacing <SPACING>        The side, in cells, of the blocks the first level is tiled into. It changes how long the search takes and not what it answers: tiles as wide as one cell are a brute force over every centre, and tiles wide enough that a block's bound covers the globe prune nothing
+      --spacing <SPACING>        Override the initial block side in cells, derived from each radius and the grid when omitted. Changes runtime only; the answer is the same at every spacing
       --ledger <LEDGER>          The JSON document every probe's maximum is recorded in. Under `out/` beside the cache, which is gitignored [default: out/radii.json]
   -h, --help                     Print help
