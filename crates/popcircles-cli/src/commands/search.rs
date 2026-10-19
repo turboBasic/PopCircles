@@ -83,7 +83,7 @@ pub(crate) fn most_populous(
     let total = view.population(rows, cols);
 
     let mut progress = StderrProgress::new();
-    let found = search::most_populous(&view, radius, search.spacing, &mut progress)
+    let found = search::most_populous(&view, radius, Some(search.spacing), &mut progress)
         .map_err(Failure::search)?;
     progress.finish();
 
@@ -158,8 +158,14 @@ pub(crate) fn sweep(
     let mut progress = StderrProgress::new();
     let mut records = Vec::with_capacity(walk.len());
     for share in walk {
-        let found = smallest::smallest(&view, share, search.spacing, &mut ledger, &mut progress)
-            .map_err(|error| Failure::smallest(&error))?;
+        let found = smallest::smallest(
+            &view,
+            share,
+            Some(search.spacing),
+            &mut ledger,
+            &mut progress,
+        )
+        .map_err(|error| Failure::smallest(&error))?;
         // One per settled share rather than one at the end: a sweep's answer is the whole sequence, and a
         // reader watching a long one wants each share as it lands.
         log::info!(
@@ -195,8 +201,14 @@ pub(crate) fn smallest_for_share(
     let mut ledger = open_ledger(&ledger.ledger, &cached.identity)?;
 
     let mut progress = StderrProgress::new();
-    let found = smallest::smallest(&view, share, search.spacing, &mut ledger, &mut progress)
-        .map_err(|error| Failure::smallest(&error))?;
+    let found = smallest::smallest(
+        &view,
+        share,
+        Some(search.spacing),
+        &mut ledger,
+        &mut progress,
+    )
+    .map_err(|error| Failure::smallest(&error))?;
     progress.finish();
 
     log::info!(

@@ -121,7 +121,7 @@ fn the_search_finds_a_planted_maximum_and_the_bound_prunes_most_of_the_globe() {
     let table = Table::new(grid, &cells).expect("the build emits the padded product");
 
     let spacing = std::num::NonZeroU32::new(SPACING).expect("the spacing is not zero");
-    let result = most_populous(&table, radius(RADIUS_KM), spacing, &mut ())
+    let result = most_populous(&table, radius(RADIUS_KM), Some(spacing), &mut ())
         .expect("a whole-globe grid and an ordinary radius");
 
     let expected = best_near_the_cluster(&table, &grid);

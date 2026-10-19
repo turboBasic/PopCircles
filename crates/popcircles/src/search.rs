@@ -407,10 +407,9 @@ impl HeldKernel {
 /// that way rather than as "on the globe" so a band table is answered honestly instead of refused by a
 /// guard the layer below does not have.
 ///
-/// `spacing` is the side of the blocks the first level is tiled into, in cells. It changes how long the
-/// search takes and not what it answers — every level's bound is admissible and refinement runs to single
-/// cells — so a spacing of one is a brute force over every centre and larger values are the same answer
-/// sooner. There is no default: the useful range is a measured property of the raster and the radius.
+/// `None` derives the first level's block side from this radius and grid with [`initial_spacing`].
+/// `Some(side)` uses that exact side, even beyond the automatic ceiling. Spacing changes runtime only:
+/// every bound is admissible and refinement runs to single cells; a side of one scans every centre.
 ///
 /// `progress` is advanced once per block, `(blocks done, blocks in this level)`, both absolute within the
 /// level being walked. Per level rather than overall because the number of levels is not known until the
@@ -427,11 +426,14 @@ impl HeldKernel {
 pub fn most_populous<P: Progress>(
     table: &Table<'_>,
     radius: RadiusKm,
-    spacing: NonZeroU32,
+    spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
     let grid = *table.grid();
-    let mut level = Block::tile(&grid, spacing);
+    let mut level = Block::tile(
+        &grid,
+        spacing.unwrap_or_else(|| initial_spacing(&grid, radius)),
+    );
     let mut best: Option<Candidate> = None;
     let mut stats = SearchStats::default();
 
@@ -1119,7 +1121,7 @@ mod tests {
     }
 
     fn search(table: &Table<'_>, radius_km: f64, cells: u32) -> MostPopulous {
-        most_populous(table, radius(radius_km), spacing(cells), &mut ())
+        most_populous(table, radius(radius_km), Some(spacing(cells)), &mut ())
             .expect("a whole-globe grid and a radius far from the overflow")
     }
 
@@ -1156,14 +1158,52 @@ mod tests {
 
         for radius_km in [1500.0, 8000.0] {
             let reference = search(&table, radius_km, 1).centre;
-            for cells in [2u32, 3, 5, 18] {
-                let found = search(&table, radius_km, cells).centre;
+            for cells in [Some(2u32), Some(3), Some(5), Some(18), None] {
+                let found = most_populous(&table, radius(radius_km), cells.map(spacing), &mut ())
+                    .unwrap()
+                    .centre;
                 assert_eq!(
                     (found.row, found.col, found.population.to_bits()),
                     (reference.row, reference.col, reference.population.to_bits()),
-                    "radius {radius_km} km, spacing {cells}"
+                    "radius {radius_km} km, spacing {cells:?}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn automatic_statistics_match_the_exact_derived_side() {
+        let grid = grid();
+        let payload = payload_over(&grid, distinct(&grid));
+        let table = Table::new(grid, &payload).unwrap();
+        for km in [0.0, 200.0, 3300.0, 8000.0, f64::MAX] {
+            let radius = radius(km);
+            let automatic = most_populous(&table, radius, None, &mut ()).unwrap();
+            let explicit = most_populous(
+                &table,
+                radius,
+                Some(initial_spacing(&grid, radius)),
+                &mut (),
+            )
+            .unwrap();
+            assert_eq!(automatic.stats, explicit.stats);
+            assert_eq!(
+                (
+                    automatic.centre.row,
+                    automatic.centre.col,
+                    automatic.centre.population.to_bits()
+                ),
+                (
+                    explicit.centre.row,
+                    explicit.centre.col,
+                    explicit.centre.population.to_bits()
+                )
+            );
+            assert_eq!(
+                automatic.radius.km().to_bits(),
+                explicit.radius.km().to_bits()
+            );
+            assert_eq!(automatic.tolerance_persons.to_bits(), 0.0f64.to_bits());
         }
     }
 
@@ -1176,12 +1216,14 @@ mod tests {
         let payload = payload_over(&grid, |_, _| 0.0);
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1500.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1500.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
                 (found.row.get(), found.col.get(), found.population),
                 (0, 0, 0.0),
-                "spacing {cells}"
+                "spacing {cells:?}"
             );
         }
     }
@@ -1221,7 +1263,7 @@ mod tests {
         let table = Table::new(window, &payload).expect("the build emits the padded product");
 
         assert!(matches!(
-            most_populous(&table, radius(500.0), spacing(4), &mut ()),
+            most_populous(&table, radius(500.0), Some(spacing(4)), &mut ()),
             Err(SearchError::Kernel(KernelError::ColumnsDoNotClose { .. }))
         ));
     }
@@ -1263,7 +1305,7 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let mut sink = Reported::default();
-        let result = most_populous(&table, radius(2000.0), spacing(5), &mut sink)
+        let result = most_populous(&table, radius(2000.0), Some(spacing(5)), &mut sink)
             .expect("a whole-globe grid");
 
         let mut runs: Vec<Vec<(u64, u64)>> = Vec::new();
@@ -1352,12 +1394,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 1800.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1800.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1800.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         assert_eq!(expected.population, 400.0);
@@ -1378,12 +1426,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 1500.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1500.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1500.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         // Both planted cells, which only a wrapping traversal reaches from one centre.
@@ -1408,12 +1462,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 2000.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 2000.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(2000.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         assert_eq!(expected.row.get(), 0);
@@ -1435,12 +1495,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 1500.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1500.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1500.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         // The northern cluster, which is what "north-west wins" means on this fixture.
@@ -1467,12 +1533,14 @@ mod tests {
             }
         }
 
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 0.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(0.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                heaviest,
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (heaviest.0, heaviest.1, heaviest.2.to_bits()),
+                "spacing {cells:?}"
             );
         }
     }

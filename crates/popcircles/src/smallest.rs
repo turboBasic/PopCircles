@@ -203,7 +203,7 @@ impl SmallestStats {
 /// one no radius above the answer can catch anyone new, so it reaches [`CEILING_KM`].
 ///
 /// Accumulated over the radii one search visited, which makes it a property of the table, the share and the
-/// spacing together rather than of the table alone. A warm ledger reports what a cold one did, because a
+/// probe order together rather than of the table alone. A warm ledger reports what a cold one did, because a
 /// resumed run visits the same radii.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ambiguity {
@@ -389,7 +389,7 @@ fn warn_unseparated(span: Option<Ambiguity>, answer_km: u32, slack: f64) {
 fn probe<L: RadiusLedger>(
     table: &Table<'_>,
     km: u32,
-    spacing: NonZeroU32,
+    spacing: Option<NonZeroU32>,
     ledger: &mut L,
     stats: &mut SmallestStats,
 ) -> Result<Candidate, SmallestError<L::Error>> {
@@ -437,8 +437,9 @@ fn probe<L: RadiusLedger>(
 /// centre ties and the plateau is the whole grid — is answered by one [`Table::whole`] query instead of
 /// ever being searched.
 ///
-/// `spacing` is forwarded to every probe untouched. There is no default here for the reason there is none
-/// there: the useful range is a measured property of the raster and the radius.
+/// `spacing` is forwarded untouched: `None` derives an initial side separately at every searched radius;
+/// `Some(side)` uses that exact side for all probes, even beyond the automatic ceiling. Neither changes
+/// the answer or ledger identity.
 ///
 /// `progress` is advanced once per settled radius, `(settled, settled + a bound on what remains)`. The
 /// total is a bound rather than a count because how many probes there are depends on where the answer is,
@@ -452,7 +453,7 @@ fn probe<L: RadiusLedger>(
 pub fn smallest<L: RadiusLedger, P: Progress>(
     table: &Table<'_>,
     share: Share,
-    spacing: NonZeroU32,
+    spacing: Option<NonZeroU32>,
     ledger: &mut L,
     progress: &mut P,
 ) -> Result<Smallest, SmallestError<L::Error>> {
@@ -797,13 +798,13 @@ mod tests {
     /// The maximum at one radius, by the same search a probe runs, for a test that wants to check a
     /// bracket's other end without going through `smallest` again.
     fn maximum_at(table: &Table<'_>, km: u32, cells: u32) -> Candidate {
-        search::most_populous(table, RadiusKm::from(km), spacing(cells), &mut ())
+        search::most_populous(table, RadiusKm::from(km), Some(spacing(cells)), &mut ())
             .expect("a whole-globe fixture has kernels")
             .centre
     }
 
     fn found(table: &Table<'_>, value: f64, cells: u32) -> Smallest {
-        smallest(table, share(value), spacing(cells), &mut (), &mut ())
+        smallest(table, share(value), Some(spacing(cells)), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail")
     }
 
@@ -961,13 +962,13 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let mut ledger = Recorded::default();
-        let cold = smallest(&table, share(0.25), spacing(4), &mut ledger, &mut ())
+        let cold = smallest(&table, share(0.25), Some(spacing(4)), &mut ledger, &mut ())
             .expect("a whole-globe fixture and a map cannot fail");
         assert_eq!(cold.stats.radii_reused, 0);
         assert!(cold.stats.radii_evaluated > 1);
         assert_eq!(cold.stats.radii_evaluated, ledger.entries.len() as u64);
 
-        let warm = smallest(&table, share(0.25), spacing(4), &mut ledger, &mut ())
+        let warm = smallest(&table, share(0.25), Some(spacing(4)), &mut ledger, &mut ())
             .expect("a whole-globe fixture and a map cannot fail");
         assert_eq!(warm.stats.radii_evaluated, 0);
         assert_eq!(warm.stats.radii_reused, cold.stats.radii_settled());
@@ -982,19 +983,135 @@ mod tests {
         assert_eq!(warm.short_below, cold.short_below);
     }
 
+    fn assert_same_answer(actual: Smallest, expected: Smallest) {
+        assert_eq!(actual.radius_km, expected.radius_km);
+        assert_eq!(actual.radius.km().to_bits(), expected.radius.km().to_bits());
+        assert_eq!(
+            (
+                actual.centre.row,
+                actual.centre.col,
+                actual.centre.population.to_bits()
+            ),
+            (
+                expected.centre.row,
+                expected.centre.col,
+                expected.centre.population.to_bits()
+            )
+        );
+        assert_eq!(
+            actual
+                .short_below
+                .map(|(km, people)| (km, people.to_bits())),
+            expected
+                .short_below
+                .map(|(km, people)| (km, people.to_bits()))
+        );
+        assert_eq!(actual.ambiguity, expected.ambiguity);
+        assert_eq!(actual.covers_whole_grid, expected.covers_whole_grid);
+        assert_eq!(
+            actual.predicate_slack_persons.to_bits(),
+            expected.predicate_slack_persons.to_bits()
+        );
+        assert_eq!(
+            actual.share_achieved.to_bits(),
+            expected.share_achieved.to_bits()
+        );
+        assert_eq!(
+            [
+                actual.target.share.get().to_bits(),
+                actual.target.persons.to_bits(),
+                actual.target.total.to_bits()
+            ],
+            [
+                expected.target.share.get().to_bits(),
+                expected.target.persons.to_bits(),
+                expected.target.total.to_bits()
+            ]
+        );
+    }
+
+    #[test]
+    fn automatic_probes_derive_each_radius_and_ledgers_reuse_across_policies() {
+        let grid = grid();
+        let payload = payload_over(&grid, distinct(&grid));
+        let table = Table::new(grid, &payload).unwrap();
+        let mut ledger = Recorded::default();
+        let automatic = smallest(&table, share(0.25), None, &mut ledger, &mut ()).unwrap();
+        assert_eq!(automatic.stats.radii_reused, 0);
+        assert_eq!(automatic.stats.radii_evaluated, ledger.entries.len() as u64);
+        let mut sides = std::collections::BTreeSet::new();
+        let mut sum = SearchStats::default();
+        for &km in ledger.entries.keys() {
+            let radius = RadiusKm::from(km);
+            let side = search::initial_spacing(&grid, radius);
+            sides.insert(side);
+            let run = search::most_populous(&table, radius, None, &mut ()).unwrap();
+            sum.levels += run.stats.levels;
+            sum.blocks_examined += run.stats.blocks_examined;
+            sum.blocks_pruned += run.stats.blocks_pruned;
+            sum.circles_evaluated += run.stats.circles_evaluated;
+            sum.kernels_built += run.stats.kernels_built;
+        }
+        assert!(
+            sides.len() > 1,
+            "the fixture must require per-radius derivation"
+        );
+        assert_eq!(automatic.stats.searched, sum);
+        let explicit_warm =
+            smallest(&table, share(0.25), Some(spacing(1)), &mut ledger, &mut ()).unwrap();
+        assert_same_answer(explicit_warm, automatic);
+        assert_eq!(explicit_warm.stats.radii_evaluated, 0);
+        assert_eq!(
+            explicit_warm.stats.radii_reused,
+            automatic.stats.radii_settled()
+        );
+        assert_eq!(explicit_warm.stats.searched, SearchStats::default());
+
+        let mut ledger = Recorded::default();
+        let explicit =
+            smallest(&table, share(0.25), Some(spacing(1)), &mut ledger, &mut ()).unwrap();
+        assert_same_answer(automatic, explicit);
+        let automatic_warm = smallest(&table, share(0.25), None, &mut ledger, &mut ()).unwrap();
+        assert_same_answer(automatic_warm, explicit);
+        assert_eq!(automatic_warm.stats.radii_evaluated, 0);
+        assert_eq!(
+            automatic_warm.stats.radii_reused,
+            explicit.stats.radii_settled()
+        );
+        assert_eq!(automatic_warm.stats.searched, SearchStats::default());
+    }
+
+    #[test]
+    fn automatic_smallest_preserves_zero_and_ambiguous_plateau_answers() {
+        let grid = grid();
+        for cell in [
+            planted(vec![], 100.0),
+            planted(vec![((8, 9), (15, 16))], 100.0),
+        ] {
+            let payload = payload_over(&grid, cell);
+            let table = Table::new(grid, &payload).unwrap();
+            for value in [0.25, 1.0] {
+                let explicit =
+                    smallest(&table, share(value), Some(spacing(1)), &mut (), &mut ()).unwrap();
+                let automatic = smallest(&table, share(value), None, &mut (), &mut ()).unwrap();
+                assert_same_answer(automatic, explicit);
+            }
+        }
+    }
+
     #[test]
     fn a_warm_ledger_reports_the_span_the_cold_run_measured() {
         // What accumulating over the visit buys, and what reading the ledger back would have cost: the span
-        // is a function of the table, the share and the spacing, so a run that searched nothing at all
+        // is a function of the table, the share and the probed radii, so a run that searched nothing at all
         // reports what the run that searched everything measured.
         let grid = grid();
         let payload = payload_over(&grid, planted(vec![((8, 9), (15, 16))], 100.0));
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let mut ledger = Recorded::default();
-        let cold = smallest(&table, share(1.0), spacing(4), &mut ledger, &mut ())
+        let cold = smallest(&table, share(1.0), Some(spacing(4)), &mut ledger, &mut ())
             .expect("a whole-globe fixture and a map cannot fail");
-        let warm = smallest(&table, share(1.0), spacing(4), &mut ledger, &mut ())
+        let warm = smallest(&table, share(1.0), Some(spacing(4)), &mut ledger, &mut ())
             .expect("a whole-globe fixture and a map cannot fail");
 
         assert_eq!(warm.stats.radii_evaluated, 0);
@@ -1022,7 +1139,13 @@ mod tests {
 
         let mut interrupted = FailsAfter::new(3);
         assert_eq!(
-            smallest(&table, share(0.25), spacing(4), &mut interrupted, &mut ()),
+            smallest(
+                &table,
+                share(0.25),
+                Some(spacing(4)),
+                &mut interrupted,
+                &mut ()
+            ),
             Err(SmallestError::Ledger(Stopped))
         );
         assert_eq!(interrupted.entries.len(), 3);
@@ -1035,7 +1158,7 @@ mod tests {
         let resumed = smallest(
             &table,
             share(0.25),
-            spacing(4),
+            Some(spacing(4)),
             &mut resumed_ledger,
             &mut (),
         )
@@ -1278,7 +1401,7 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let mut sink = Reported::default();
-        let answer = smallest(&table, share(0.25), spacing(4), &mut (), &mut sink)
+        let answer = smallest(&table, share(0.25), Some(spacing(4)), &mut (), &mut sink)
             .expect("a whole-globe fixture and a no-op ledger cannot fail");
 
         let settled = answer.stats.radii_settled();

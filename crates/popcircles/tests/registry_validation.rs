@@ -136,7 +136,7 @@ fn the_registry_raster_answers_the_published_half_of_the_world() {
     let share = Share::new(0.5).expect("a half is a share");
     // No ledger: a test that resumed from one would be pinning whatever a previous run left on the
     // machine, and `()` is the implementation for a caller that wants no resumption.
-    let found = smallest(&table, share, spacing, &mut (), &mut ())
+    let found = smallest(&table, share, Some(spacing), &mut (), &mut ())
         .expect("a whole-globe table and half its population");
 
     let radius = f64::from(found.radius_km);
