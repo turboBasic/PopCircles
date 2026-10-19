@@ -323,5 +323,14 @@ The earlier fixed-spacing sweep at 3300 km on the 4320-wide image counted these 
 
 In that sweep the *percentage* of blocks pruned fell the whole way, from 97% to 77%, while
 the program got faster. A fine first pass prunes nearly everything it looks at — but only because it
-created so many blocks to look at. Percentage pruned is the wrong thing to optimise; circles tested is the
-cost.
+created so many blocks to look at. Percentage pruned alone does not measure the work; tested circles and
+constructed kernels both contribute.
+
+On 2026-10-20, a release comparison on the same 5 arcmin table derived sides 2139, 2073, 1803 and 1297
+at 200, 800, 3300 and 8000 km. Three alternating-order repetitions gave automatic median times of 0.024,
+0.021, 0.057 and 0.088 s, against 0.009, 0.014, 0.034 and 0.074 s at explicit spacing 256. Every answer
+agreed bitwise. At 3300 km automatic mode tested fewer circles (356 against 390) but built more kernels
+(561 against 252): different block extents change the widened radius and require rebuilding the held
+kernel. The geometric ceiling is a guard against whole-sphere bounds, not a promise of the fastest tiling.
+The [full comparison on #71](https://github.com/turboBasic/PopulationCircles2026/issues/71) records all
+four radii, eight explicit spacings, counters and timings; no constant was fitted to these measurements.

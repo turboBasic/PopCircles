@@ -39,7 +39,7 @@ const DECIMATE: u32 = 10;
 /// The spacing the search tiles its first level into. Measured rather than chosen: issue #10's sweep found
 /// the wall clock falls monotonically with spacing and flattens from about a sixteenth of the grid's
 /// width, so this is on the plateau. It changes how long the search takes and not what it answers, which
-/// is why a test may hold one at all — see `crates/popcircles-cli/src/main.rs`'s `SearchArgs`.
+/// is why this fixture keeps its explicit side when normal searches derive theirs.
 const SPACING: u32 = 256;
 
 /// What the 5 arcmin table answers for half the world, measured on 2026-08-15.
