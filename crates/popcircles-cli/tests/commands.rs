@@ -691,8 +691,147 @@ fn a_document_answered_from_a_named_table_names_that_dataset() {
     );
 }
 
+struct TiffTag {
+    id: u16,
+    kind: u16,
+    count: u32,
+    bytes: Vec<u8>,
+}
+
+fn tiff_tag(id: u16, kind: u16, count: usize, bytes: Vec<u8>) -> TiffTag {
+    TiffTag {
+        id,
+        kind,
+        count: u32::try_from(count).expect("fixture tag count fits TIFF"),
+        bytes,
+    }
+}
+
+fn tiff_short(id: u16, value: u16) -> TiffTag {
+    tiff_tag(id, 3, 1, value.to_le_bytes().to_vec())
+}
+
+fn tiff_long(id: u16, value: u32) -> TiffTag {
+    tiff_tag(id, 4, 1, value.to_le_bytes().to_vec())
+}
+
+fn tiff_doubles(id: u16, values: &[f64]) -> TiffTag {
+    tiff_tag(
+        id,
+        12,
+        values.len(),
+        values
+            .iter()
+            .flat_map(|value| value.to_le_bytes())
+            .collect(),
+    )
+}
+
+fn assemble_tiff(mut tags: Vec<TiffTag>, pixels: &[u8]) -> Vec<u8> {
+    tags.sort_by_key(|entry| entry.id);
+    let ifd_end = 8 + 2 + tags.len() * 12 + 4;
+    let mut cursor = ifd_end;
+    let offsets: Vec<_> = tags
+        .iter()
+        .map(|entry| {
+            if entry.bytes.len() <= 4 {
+                None
+            } else {
+                if !cursor.is_multiple_of(2) {
+                    cursor += 1;
+                }
+                let offset = u32::try_from(cursor).expect("fixture TIFF offset fits");
+                cursor += entry.bytes.len();
+                Some(offset)
+            }
+        })
+        .collect();
+    let strip = tags
+        .iter()
+        .position(|entry| entry.id == 273)
+        .expect("fixture has strip offset");
+    tags[strip].bytes = u32::try_from(cursor)
+        .expect("fixture TIFF offset fits")
+        .to_le_bytes()
+        .to_vec();
+
+    let mut out = Vec::new();
+    out.extend_from_slice(b"II");
+    out.extend_from_slice(&42u16.to_le_bytes());
+    out.extend_from_slice(&8u32.to_le_bytes());
+    out.extend_from_slice(
+        &u16::try_from(tags.len())
+            .expect("fixture has few tags")
+            .to_le_bytes(),
+    );
+    for (entry, offset) in tags.iter().zip(offsets) {
+        out.extend_from_slice(&entry.id.to_le_bytes());
+        out.extend_from_slice(&entry.kind.to_le_bytes());
+        out.extend_from_slice(&entry.count.to_le_bytes());
+        if let Some(offset) = offset {
+            out.extend_from_slice(&offset.to_le_bytes());
+        } else {
+            let mut inline = entry.bytes.clone();
+            inline.resize(4, 0);
+            out.extend_from_slice(&inline);
+        }
+    }
+    out.extend_from_slice(&0u32.to_le_bytes());
+    for entry in &tags {
+        if entry.bytes.len() > 4 {
+            if !out.len().is_multiple_of(2) {
+                out.push(0);
+            }
+            out.extend_from_slice(&entry.bytes);
+        }
+    }
+    assert_eq!(out.len(), cursor);
+    out.extend_from_slice(pixels);
+    out
+}
+
+fn synthetic_tiff() -> Vec<u8> {
+    let mut pixels = Vec::new();
+    for row in 0..HEIGHT {
+        for col in 0..WIDTH {
+            pixels.extend_from_slice(&dense(row, col).to_le_bytes());
+        }
+    }
+    let mut nodata = b"-3.40282306073709653e+38".to_vec();
+    nodata.push(0);
+    let keys: Vec<u16> = [1, 1, 0, 3, 1024, 0, 1, 2, 1025, 0, 1, 1, 2048, 0, 1, 4326].into();
+    let tags = vec![
+        tiff_long(256, WIDTH),
+        tiff_long(257, HEIGHT),
+        tiff_short(258, 32),
+        tiff_short(259, 1),
+        tiff_short(262, 1),
+        tiff_long(273, 0),
+        tiff_short(277, 1),
+        tiff_long(278, HEIGHT),
+        tiff_long(279, u32::try_from(pixels.len()).expect("fixture fits TIFF")),
+        tiff_short(284, 1),
+        tiff_doubles(33550, &[10.0, 10.0, 0.0]),
+        tiff_doubles(33922, &[0.0, 0.0, 0.0, -180.0, 90.0, 0.0]),
+        tiff_short(339, 3),
+        tiff_tag(
+            34735,
+            3,
+            keys.len(),
+            keys.iter().flat_map(|value| value.to_le_bytes()).collect(),
+        ),
+        tiff_tag(42113, 2, nodata.len(), nodata),
+    ];
+    assemble_tiff(tags, &pixels)
+}
+
 fn register_fixture(fixture: &Fixture) {
     std::fs::create_dir_all(fixture.directory.path().join("data")).unwrap();
+    std::fs::write(
+        fixture.directory.path().join("data/tiny.tif"),
+        synthetic_tiff(),
+    )
+    .unwrap();
     std::fs::write(
         fixture.directory.path().join("data/registry.toml"),
         r#"
@@ -842,4 +981,97 @@ fn dataset_and_explicit_grid_refusals_keep_their_error_classes() {
     let malformed = named_command(&fixture, "grid describe", &[]);
     assert_eq!(malformed.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&malformed.stderr).contains("not the TOML document"));
+}
+
+#[test]
+fn table_build_uses_registered_defaults_and_explicit_raster_overrides() {
+    let fixture = Fixture::build();
+    register_fixture(&fixture);
+    let registry = fixture.directory.path().join("data/registry.toml");
+    let baseline = std::fs::read_to_string(&registry).unwrap();
+    let matching = baseline.replace("origin_lon = 0.0", "origin_lon = -180.0");
+    std::fs::write(&registry, &matching).unwrap();
+    let run = |cache: &str, extra: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_popcircles"))
+            .current_dir(fixture.directory.path())
+            .args([
+                "table",
+                "build",
+                "--dataset",
+                "tiny",
+                "--cache",
+                cache,
+                "--log-level",
+                "error",
+            ])
+            .args(extra)
+            .output()
+            .unwrap()
+    };
+    let defaults = run("out/default", &[]);
+    assert!(defaults.status.success(), "{defaults:?}");
+    let report: serde_json::Value = serde_json::from_slice(&defaults.stdout).unwrap();
+    assert_eq!(report["result"]["grid"]["origin"]["lon"], -180.0);
+
+    // Each incorrect registry field is refused by the tag reader unless the corresponding override wins.
+    let wrong = matching
+        .replace("origin_lon = -180.0", "origin_lon = 0.0")
+        .replace("epsg = 4326", "epsg = 3857")
+        .replace("nodata = -3.402823e38", "nodata = 0.0");
+    std::fs::write(&registry, &wrong).unwrap();
+    for (cache, correction) in [("out/wrong-grid", vec![]), ("out/wrong-spec", vec![])] {
+        let refused = run(cache, &correction);
+        assert_ne!(refused.status.code(), Some(0), "{refused:?}");
+        assert!(refused.stdout.is_empty());
+    }
+    let built = run(
+        "out/overridden",
+        &[
+            "--origin-lon",
+            "-180",
+            "--epsg",
+            "4326",
+            "--nodata",
+            "-3.402823e38",
+        ],
+    );
+    assert!(
+        built.status.success(),
+        "{}",
+        String::from_utf8_lossy(&built.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&built.stdout).unwrap();
+    assert_eq!(
+        report["result"]["digest"],
+        format!("{:#018x}", fixture.digest)
+    );
+    let query = Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(fixture.directory.path())
+        .args([
+            "population-at",
+            "--dataset",
+            "tiny",
+            "--origin-lon",
+            "-180",
+            "--cache",
+            "out/overridden",
+            "--log-level",
+            "error",
+            "--lat",
+            "45",
+            "--lon",
+            "5",
+            "--radius-km",
+            "1000",
+        ])
+        .output()
+        .unwrap();
+    assert!(query.status.success(), "{query:?}");
+    let query: serde_json::Value = serde_json::from_slice(&query.stdout).unwrap();
+    assert_eq!(query["provenance"]["digest"], report["result"]["digest"]);
+    assert_eq!(query["provenance"]["dataset"], "tiny");
+
+    let bad_dataset = run("out/not-registered", &["--raster", "data/tiny.tif"]);
+    assert_eq!(bad_dataset.status.code(), Some(2));
+    assert!(bad_dataset.stdout.is_empty());
 }

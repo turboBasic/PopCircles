@@ -50,6 +50,11 @@ $ mise run cli -- table build --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin
 {"schema_version":1, …,"result":{"digest":"0xf17aa802a6890f0c","total_population":7757982599.323671, …}}
 
+`table build` reads the raster path and defaults from `data/registry.toml`. It accepts individual
+`--width`, `--height`, origin and step overrides, plus `--nodata` and `--epsg`; each supplied value
+replaces only that registry value. The source path remains registered, and the GeoTIFF is checked
+against the resolved specification before any cache is published.
+
 $ query() { mise run cli -- table query --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin "$@"; }
 

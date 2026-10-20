@@ -7,8 +7,16 @@ Build a summation table from a registered dataset and publish it to the cache
 Usage: popcircles table build [OPTIONS] --dataset <DATASET>
 
 Options:
-      --dataset <DATASET>    The dataset to build from, which names the raster and everything its file is held to: `data/registry.toml` is the roster, and a raster it does not carry gets a row there rather than eight flags here
-      --log-level <LEVEL>    How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
-      --cache <CACHE>        Both cache files are this path plus a suffix. Under `out/` by default, which is gitignored — a generated table is never committed [default: out/table]
-      --decimate <DECIMATE>  Fold every k by k block of cells into one table cell. Must divide both grid dimensions [default: 1]
-  -h, --help                 Print help
+      --dataset <DATASET>        The dataset to build from, which names the registered raster and supplies its default grid and tags
+      --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --width <WIDTH>            
+      --height <HEIGHT>          
+      --origin-lat <ORIGIN_LAT>  
+      --origin-lon <ORIGIN_LON>  
+      --lon-step <LON_STEP>      
+      --lat-step <LAT_STEP>      
+      --nodata <NODATA>          Override the registered Float32 nodata sentinel
+      --epsg <EPSG>              Override the registered coordinate reference system
+      --cache <CACHE>            Both cache files are this path plus a suffix. Under `out/` by default, which is gitignored — a generated table is never committed [default: out/table]
+      --decimate <DECIMATE>      Fold every k by k block of cells into one table cell. Must divide both grid dimensions [default: 1]
+  -h, --help                     Print help

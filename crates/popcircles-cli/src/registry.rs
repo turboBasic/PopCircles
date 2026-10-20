@@ -62,7 +62,7 @@ pub(crate) struct Registry {
     datasets: BTreeMap<String, Row>,
 }
 
-/// A row by its kind, which is what says whether the eight grid fields are there to read. An unregistered
+/// A row by its kind, which says whether its fields describe a population raster or a boundary. An unregistered
 /// kind is a refusal rather than a row to skip, for the reason the Python reader discriminates too: a kind
 /// arrives in the commit that teaches both readers to use it.
 #[derive(Debug, Deserialize)]

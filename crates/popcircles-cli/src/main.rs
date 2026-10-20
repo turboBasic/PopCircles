@@ -122,11 +122,17 @@ enum GridCommand {
 enum TableCommand {
     /// Build a summation table from a registered dataset and publish it to the cache.
     Build {
-        /// The dataset to build from, which names the raster and everything its file is held to:
-        /// `data/registry.toml` is the roster, and a raster it does not carry gets a row there rather
-        /// than eight flags here.
+        /// The dataset to build from, which names the registered raster and supplies its default grid and tags.
         #[arg(long)]
         dataset: String,
+        #[command(flatten)]
+        grid: args::GridArgs,
+        /// Override the registered Float32 nodata sentinel.
+        #[arg(long, allow_negative_numbers = true)]
+        nodata: Option<f32>,
+        /// Override the registered coordinate reference system.
+        #[arg(long)]
+        epsg: Option<u16>,
         #[command(flatten)]
         table: TableArgs,
     },
@@ -173,8 +179,15 @@ fn run(command: Command) -> Result<String, Failure> {
             command: GridCommand::Describe { grid },
         } => describe_grid(&grid),
         Command::Table {
-            command: TableCommand::Build { dataset, table },
-        } => build_table(&dataset, &table),
+            command:
+                TableCommand::Build {
+                    dataset,
+                    grid,
+                    nodata,
+                    epsg,
+                    table,
+                },
+        } => build_table(&dataset, grid, nodata, epsg, &table),
         Command::Table {
             command: TableCommand::Query { cached, window },
         } => query_table(&cached, window.window()),
