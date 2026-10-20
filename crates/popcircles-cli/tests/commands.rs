@@ -828,11 +828,6 @@ fn synthetic_tiff() -> Vec<u8> {
 fn register_fixture(fixture: &Fixture) {
     std::fs::create_dir_all(fixture.directory.path().join("data")).unwrap();
     std::fs::write(
-        fixture.directory.path().join("data/tiny.tif"),
-        synthetic_tiff(),
-    )
-    .unwrap();
-    std::fs::write(
         fixture.directory.path().join("data/registry.toml"),
         r#"
 [datasets.tiny]
@@ -868,6 +863,7 @@ fn named_command(fixture: &Fixture, command: &str, rest: &[&str]) -> Output {
 fn all_grid_commands_resolve_dataset_defaults_without_a_raster_and_apply_overrides() {
     let fixture = Fixture::build();
     register_fixture(&fixture);
+    assert!(!fixture.directory.path().join("data/tiny.tif").exists());
     let cache = fixture.cache_base();
     let cache = cache.to_str().unwrap();
     let described = named_command(&fixture, "grid describe", &[]);
@@ -983,48 +979,87 @@ fn dataset_and_explicit_grid_refusals_keep_their_error_classes() {
     assert!(String::from_utf8_lossy(&malformed.stderr).contains("not the TOML document"));
 }
 
+fn build_command(fixture: &Fixture, cache: &str, extra: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(fixture.directory.path())
+        .args([
+            "table",
+            "build",
+            "--dataset",
+            "tiny",
+            "--cache",
+            cache,
+            "--log-level",
+            "error",
+        ])
+        .args(extra)
+        .output()
+        .unwrap()
+}
+
+fn each_bad_registry_value_is_refused_and_corrected_alone(
+    fixture: &Fixture,
+    registry: &std::path::Path,
+    matching: &str,
+) {
+    let cases = [
+        (
+            "grid",
+            matching.replace("origin_lon = -180.0", "origin_lon = 0.0"),
+            vec!["--origin-lon", "-180"],
+        ),
+        (
+            "epsg",
+            matching.replace("epsg = 4326", "epsg = 3857"),
+            vec!["--epsg", "4326"],
+        ),
+        (
+            "nodata",
+            matching.replace("nodata = -3.402823e38", "nodata = 0.0"),
+            vec!["--nodata", "-3.402823e38"],
+        ),
+    ];
+    for (field, incorrect, correction) in cases {
+        std::fs::write(registry, incorrect).unwrap();
+        let refused = build_command(fixture, &format!("out/{field}-refused"), &[]);
+        assert_ne!(refused.status.code(), Some(0), "{field}: {refused:?}");
+        assert!(refused.stdout.is_empty());
+        let corrected = build_command(fixture, &format!("out/{field}-corrected"), &correction);
+        assert!(
+            corrected.status.success(),
+            "{field}: {}",
+            String::from_utf8_lossy(&corrected.stderr)
+        );
+    }
+}
+
 #[test]
 fn table_build_uses_registered_defaults_and_explicit_raster_overrides() {
     let fixture = Fixture::build();
     register_fixture(&fixture);
+    std::fs::write(
+        fixture.directory.path().join("data/tiny.tif"),
+        synthetic_tiff(),
+    )
+    .unwrap();
     let registry = fixture.directory.path().join("data/registry.toml");
     let baseline = std::fs::read_to_string(&registry).unwrap();
     let matching = baseline.replace("origin_lon = 0.0", "origin_lon = -180.0");
     std::fs::write(&registry, &matching).unwrap();
-    let run = |cache: &str, extra: &[&str]| {
-        Command::new(env!("CARGO_BIN_EXE_popcircles"))
-            .current_dir(fixture.directory.path())
-            .args([
-                "table",
-                "build",
-                "--dataset",
-                "tiny",
-                "--cache",
-                cache,
-                "--log-level",
-                "error",
-            ])
-            .args(extra)
-            .output()
-            .unwrap()
-    };
-    let defaults = run("out/default", &[]);
+    let defaults = build_command(&fixture, "out/default", &[]);
     assert!(defaults.status.success(), "{defaults:?}");
     let report: serde_json::Value = serde_json::from_slice(&defaults.stdout).unwrap();
     assert_eq!(report["result"]["grid"]["origin"]["lon"], -180.0);
 
-    // Each incorrect registry field is refused by the tag reader unless the corresponding override wins.
+    each_bad_registry_value_is_refused_and_corrected_alone(&fixture, &registry, &matching);
+
     let wrong = matching
         .replace("origin_lon = -180.0", "origin_lon = 0.0")
         .replace("epsg = 4326", "epsg = 3857")
         .replace("nodata = -3.402823e38", "nodata = 0.0");
     std::fs::write(&registry, &wrong).unwrap();
-    for (cache, correction) in [("out/wrong-grid", vec![]), ("out/wrong-spec", vec![])] {
-        let refused = run(cache, &correction);
-        assert_ne!(refused.status.code(), Some(0), "{refused:?}");
-        assert!(refused.stdout.is_empty());
-    }
-    let built = run(
+    let built = build_command(
+        &fixture,
         "out/overridden",
         &[
             "--origin-lon",
@@ -1071,7 +1106,11 @@ fn table_build_uses_registered_defaults_and_explicit_raster_overrides() {
     assert_eq!(query["provenance"]["digest"], report["result"]["digest"]);
     assert_eq!(query["provenance"]["dataset"], "tiny");
 
-    let bad_dataset = run("out/not-registered", &["--raster", "data/tiny.tif"]);
+    let bad_dataset = build_command(
+        &fixture,
+        "out/not-registered",
+        &["--raster", "data/tiny.tif"],
+    );
     assert_eq!(bad_dataset.status.code(), Some(2));
     assert!(bad_dataset.stdout.is_empty());
 }
