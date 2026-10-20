@@ -276,28 +276,42 @@ run = "uv run fetch-data"
 
 # Not in `lint`, `test` or `ci`, and no later change can put it there: it needs the raster and one
 # full-resolution search of about ninety minutes.
-# The digest is read back from what each build printed, because a search names the table it wants by digest.
 # The ledgers go first: a resumed run answers the same but reports `radii_evaluated: 0`, which describes
 # nothing that happened.
 [tasks."results:build"]
 description = "Regenerate the committed result documents from the raster (needs mise run data:get)"
 run = '''
 #!/usr/bin/env bash
+# Regenerate the result corpus. Usage: mise run results:build (after mise run data:get).
 set -euo pipefail
-dataset=population-count-2020-30arcsec
-grid=(--width 43200 --height 21600 --origin-lat 90 --origin-lon -180
-      --lon-step 0.008333333333333333 --lat-step -0.008333333333333333)
-digest_of() { python -c 'import json,sys; print(json.load(sys.stdin)["result"]["digest"])'; }
-rm -f out/corpus-5arcmin.json out/flagship-30arcsec.json
 
-coarse=$(mise run cli -- table build --dataset "$dataset" --decimate 10 --cache out/gpw-5arcmin | digest_of)
-coarse_table=(--decimate 10 --cache out/gpw-5arcmin --digest "$coarse")
-mise run cli -- sweep "${grid[@]}" "${coarse_table[@]}" --from 10 --to 100 --step 10 --spacing 256 \
-  --ledger out/corpus-5arcmin.json > results/world-sweep-10-to-100-5arcmin.json
-mise run cli -- most-populous "${grid[@]}" "${coarse_table[@]}" --radius-km 1000 --spacing 256 \
-  > results/world-most-populous-1000km-5arcmin.json
+main() {
+  local dataset=population-count-2020-30arcsec
+  reset_ledgers
+  build_coarse_results "$dataset"
+  build_full_result "$dataset"
+}
 
-full=$(mise run cli -- table build --dataset "$dataset" --cache out/gpw-30arcsec | digest_of)
-mise run cli -- smallest-for-share "${grid[@]}" --cache out/gpw-30arcsec --digest "$full" --share 50 \
-  --spacing 2700 --ledger out/flagship-30arcsec.json > results/world-half-30arcsec.json
+reset_ledgers() {
+  rm -f out/corpus-5arcmin.json out/flagship-30arcsec.json
+}
+
+build_coarse_results() {
+  local dataset="$1"
+  local coarse_table=(--dataset "$dataset" --decimate 10 --cache out/gpw-5arcmin)
+  mise run cli -- table build "${coarse_table[@]}" > /dev/null
+  mise run cli -- sweep "${coarse_table[@]}" --from 10 --to 100 --step 10 --spacing 256 \
+    --ledger out/corpus-5arcmin.json > results/world-sweep-10-to-100-5arcmin.json
+  mise run cli -- most-populous "${coarse_table[@]}" --radius-km 1000 --spacing 256 \
+    > results/world-most-populous-1000km-5arcmin.json
+}
+
+build_full_result() {
+  local dataset="$1"
+  mise run cli -- table build --dataset "$dataset" --cache out/gpw-30arcsec > /dev/null
+  mise run cli -- smallest-for-share --dataset "$dataset" --cache out/gpw-30arcsec --share 50 \
+    --spacing 2700 --ledger out/flagship-30arcsec.json > results/world-half-30arcsec.json
+}
+
+main "$@"
 '''
