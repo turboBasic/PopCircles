@@ -121,8 +121,7 @@ impl Fixture {
         self.directory.path().join(name)
     }
 
-    /// The ten flags every command reading this cache takes, with `digest` so a case can pass one that
-    /// names another table.
+    /// Explicit cache inputs, with `digest` so a case can pass one that names another table.
     ///
     /// `--log-level error` because `info` is the default and narrates: it is what keeps the success cases
     /// silent, and with it `one_document_naming_the_fixture`'s emptiness assertion is strictly stronger
@@ -1030,6 +1029,56 @@ fn each_bad_registry_value_is_refused_and_corrected_alone(
             "{field}: {}",
             String::from_utf8_lossy(&corrected.stderr)
         );
+    }
+}
+
+#[test]
+fn dataset_build_and_all_cached_commands_agree_with_explicit_inputs() {
+    let fixture = Fixture::build();
+    register_fixture(&fixture);
+    let registry = fixture.directory.path().join("data/registry.toml");
+    let text = std::fs::read_to_string(&registry).unwrap();
+    std::fs::write(
+        &registry,
+        text.replace("origin_lon = 0.0", "origin_lon = -180.0"),
+    )
+    .unwrap();
+    std::fs::write(
+        fixture.directory.path().join("data/tiny.tif"),
+        synthetic_tiff(),
+    )
+    .unwrap();
+    let built = build_command(&fixture, "out/short-form", &["--decimate", "2"]);
+    let built = successful_document(&built);
+    let cache = fixture.directory.path().join("out/short-form");
+    let cache = cache.to_str().unwrap();
+    let mut flags = fixture.flags(built["result"]["digest"].as_str().unwrap());
+    let at = flags.iter().position(|flag| flag == "--cache").unwrap();
+    flags[at + 1] = cache.to_string();
+    flags.extend(["--decimate".to_string(), "2".to_string()]);
+
+    for command in CACHE_READERS {
+        let named_ledger = fixture.ledger(&format!("short-{command}.json"));
+        let explicit_ledger = fixture.ledger(&format!("long-{command}.json"));
+        let mut rest = vec!["--cache", cache, "--decimate", "2"];
+        rest.extend(cached_parameters(command, named_ledger.to_str().unwrap()));
+        let mut named = successful_document(&named_command(&fixture, command, &rest));
+        let mut explicit = successful_document(&run_with(
+            &flags,
+            command,
+            &cached_parameters(command, explicit_ledger.to_str().unwrap()),
+        ));
+        if matches!(command, "smallest-for-share" | "sweep") {
+            named["result"]["ledger"]["path"] = serde_json::Value::Null;
+            explicit["result"]["ledger"]["path"] = serde_json::Value::Null;
+        }
+        assert_same_bits(&named, &explicit);
+        if command == "table query" {
+            assert_eq!(named["result"]["digest"], built["result"]["digest"]);
+        } else {
+            assert_eq!(named["provenance"]["dataset"], "tiny");
+            assert_eq!(named["provenance"]["digest"], built["result"]["digest"]);
+        }
     }
 }
 

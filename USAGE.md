@@ -49,12 +49,14 @@ than the CLI's, because the same grid and table go to every query and only the w
 $ mise run cli -- table build --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin
 {"schema_version":1, …,"result":{"digest":"0xf17aa802a6890f0c","total_population":7757982599.323671, …}}
+```
 
 `table build` reads the raster path and defaults from `data/registry.toml`. It accepts individual
-`--width`, `--height`, origin and step overrides, plus `--nodata` and `--epsg`; each supplied value
-replaces only that registry value. The source path remains registered, and the GeoTIFF is checked
+grid overrides, plus `--nodata` and `--epsg`; each supplied value replaces only that registry value.
+The source path remains registered, and the GeoTIFF is checked
 against the resolved specification before any cache is published.
 
+```sh
 $ query() { mise run cli -- table query --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin "$@"; }
 
@@ -78,6 +80,13 @@ grid and decimation are still checked against the header. The Fiji window wraps
 the antimeridian, which needs nothing said about it because `west` is above `east`; the whole extent,
 though, is what a query with no window covers, because −180 and 180 reduce to the same column and so
 no pair of coordinates can mean the globe.
+
+For an explicit override and digest expectation:
+
+```sh
+mise run cli -- table query --dataset population-count-2020-30arcsec --origin-lon -180 \
+  --decimate 10 --cache out/gpw-5arcmin --digest 0xf17aa802a6890f0c
+```
 
 **A window is a box, not a country.** The middle two are the bounding boxes of Germany and Ukraine,
 and each holds a good deal more than the country it is named for: the German box takes in the
