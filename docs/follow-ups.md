@@ -47,59 +47,6 @@ Identifiers are flat, sequential and never reused.
 
 ## Entries
 
-### FU-08 - Nothing couples the search's initial spacing to a measured figure
-
-- **Status** — `dormant`.
-- **Condition** — a caller outside `search.rs` itself **chooses** the search's initial spacing. Choosing is
-  what fires it, not calling: a caller that takes a spacing as a parameter and forwards it has made no
-  choice, and the number it passes on is still its own caller's. The sweep is therefore two-part —
-  `rg -n 'most_populous\(' crates/popcircles-cli/src crates/popcircles/src --glob '!search.rs'` for the call
-  sites, and for each one, whether the spacing it passes is a literal or a constant rather than something it
-  was given.
-
-  On 2026-08-14 that names exactly one call site, `crates/popcircles/src/smallest.rs`, and it forwards: the
-  parameter arrives from its own caller untouched, and `smallest.rs` declares no spacing of its own —
-  `rg -n 'NonZeroU32::new' crates/popcircles/src/smallest.rs` matches only inside its tests. So #7 came and
-  went without firing this. #8 is where it fires, when a command surface has to put a number in a flag's
-  default or in a help string.
-
-  **#8 came and went without firing it either** (2026-08-14). The three commands that drive a search take
-  `--spacing` as a **required** flag with no default, and its help string names no figure — checkable as
-  `cargo run -p popcircles-cli -- most-populous --help` carrying no digit on the `--spacing` line. A command
-  that takes a spacing and forwards it has made no choice, which is the distinction this Condition draws, so
-  the entry is recorded as still dormant rather than left to read as an oversight. The note is here for the
-  reason the #7 one is: silence in a register is ambiguous, and a later reader should be able to tell "the
-  surface arrived and did not choose" from "nobody looked".
-
-  `crates/popcircles/tests/decimated_search.rs` is deliberately outside the sweep. It picks 32, but a
-  deselected fixture choosing a spacing to exercise pruning is a fixture and not a default, and widening the
-  sweep to catch it would leave this entry permanently `due` with nothing to do about it. The unit fixtures in
-  `smallest.rs` are outside it for the same reason.
-  `crates/popcircles/tests/registry_validation.rs` joins that exclusion (2026-08-15). It picks 256, on the
-  plateau issue #10's sweep measured, and it is a deselected fixture for the same reason the two above are.
-
-  **The curve this entry was waiting for exists, and it corrects the Condition's own arithmetic**
-  (2026-08-15, issue #10's spacing sweep). Swept over the
-  5 arcmin table at 200, 800, 3 300 and 8 000 km, the wall clock falls **monotonically** with spacing in
-  every row and flattens from about 256 — a sixteenth of the grid's width — rather than peaking at a knee.
-  The pruning *fraction* falls with it, from 97.3% at spacing 8 to 77.2% at 256, so the figure the Condition
-  reasons from is the one that must not be maximised: a fine first level prunes almost every block it makes
-  and pays for making them. What the search costs is circles evaluated, and at 3 300 km that is 4 447 at
-  spacing 8 against 390 at 256.
-
-  So "the ceiling is a sanity limit, two orders of magnitude away from the answer" is wrong, and the Fix
-  below is right for a reason it did not claim: the ceiling is the neighbourhood of the answer, and clamping
-  against it is the derivation rather than a guard on one. Nothing else about the entry changes.
-
-- **Fix** — a derivation of the initial spacing from the radius and the grid, in `search` beside the loop
-  that consumes it, bounded above by the ceiling `slack_km` already documents: once `radius + slack` reaches
-  half the circumference the widened circle is the whole sphere, every bound equals the raster's total and
-  the level prunes nothing, so a spacing past that point is strictly wasted work. The figure inside that
-  ceiling is #10's to measure — 32 on the k=10 shape prunes 86.9% of blocks at a 200 km radius, which is one
-  point and not a curve. The entry exists so the first caller does not silently become the default, and it
-  cannot be discharged by a benchmark alone: what it wants is a function of the two inputs, not a constant
-  that happened to measure well once.
-
 ### FU-13 - A published binary carries no Developer ID, and a user is told to clear an attribute by hand
 
 - **Status** — `due` (2026-08-15): `v0.1.0` is published, so both halves of the condition read true —
@@ -425,6 +372,63 @@ Identifiers are flat, sequential and never reused.
   make this due is a diff nobody can review, and one hand-edited file is not that.
 
 ## Closed and retired
+
+### FU-08 - Nothing couples the search's initial spacing to a measured figure
+
+- **Status** — `closed` (2026-10-20), #71: the library derives spacing from each radius and grid,
+  the CLI permits an exact positive override, and the four-radius comparison is recorded on the issue.
+  The exclusions were rechecked: `decimated_search.rs` still fixes 32 for its ignored pruning fixture,
+  `smallest.rs` keeps synthetic unit fixtures in the default suite, and `registry_validation.rs` still
+  fixes 256 for its ignored real-raster fixture. Their thresholds and answer assertions are unchanged.
+- **Condition** — a caller outside `search.rs` itself **chooses** the search's initial spacing. Choosing is
+  what fires it, not calling: a caller that takes a spacing as a parameter and forwards it has made no
+  choice, and the number it passes on is still its own caller's. The sweep is therefore two-part —
+  `rg -n 'most_populous\(' crates/popcircles-cli/src crates/popcircles/src --glob '!search.rs'` for the call
+  sites, and for each one, whether the spacing it passes is a literal or a constant rather than something it
+  was given.
+
+  On 2026-08-14 that names exactly one call site, `crates/popcircles/src/smallest.rs`, and it forwards: the
+  parameter arrives from its own caller untouched, and `smallest.rs` declares no spacing of its own —
+  `rg -n 'NonZeroU32::new' crates/popcircles/src/smallest.rs` matches only inside its tests. So #7 came and
+  went without firing this. #8 is where it fires, when a command surface has to put a number in a flag's
+  default or in a help string.
+
+  **#8 came and went without firing it either** (2026-08-14). The three commands that drive a search take
+  `--spacing` as a **required** flag with no default, and its help string names no figure — checkable as
+  `cargo run -p popcircles-cli -- most-populous --help` carrying no digit on the `--spacing` line. A command
+  that takes a spacing and forwards it has made no choice, which is the distinction this Condition draws, so
+  the entry is recorded as still dormant rather than left to read as an oversight. The note is here for the
+  reason the #7 one is: silence in a register is ambiguous, and a later reader should be able to tell "the
+  surface arrived and did not choose" from "nobody looked".
+
+  `crates/popcircles/tests/decimated_search.rs` is deliberately outside the sweep. It picks 32, but a
+  deselected fixture choosing a spacing to exercise pruning is a fixture and not a default, and widening the
+  sweep to catch it would leave this entry permanently `due` with nothing to do about it. The unit fixtures in
+  `smallest.rs` are outside it for the same reason.
+  `crates/popcircles/tests/registry_validation.rs` joins that exclusion (2026-08-15). It picks 256, on the
+  plateau issue #10's sweep measured, and it is a deselected fixture for the same reason the two above are.
+
+  **The curve this entry was waiting for exists, and it corrects the Condition's own arithmetic**
+  (2026-08-15, issue #10's spacing sweep). Swept over the
+  5 arcmin table at 200, 800, 3 300 and 8 000 km, the wall clock falls **monotonically** with spacing in
+  every row and flattens from about 256 — a sixteenth of the grid's width — rather than peaking at a knee.
+  The pruning *fraction* falls with it, from 97.3% at spacing 8 to 77.2% at 256, so the figure the Condition
+  reasons from is the one that must not be maximised: a fine first level prunes almost every block it makes
+  and pays for making them. What the search costs is circles evaluated, and at 3 300 km that is 4 447 at
+  spacing 8 against 390 at 256.
+
+  So "the ceiling is a sanity limit, two orders of magnitude away from the answer" is wrong, and the Fix
+  below is right for a reason it did not claim: the ceiling is the neighbourhood of the answer, and clamping
+  against it is the derivation rather than a guard on one. Nothing else about the entry changes.
+
+- **Fix** — a derivation of the initial spacing from the radius and the grid, in `search` beside the loop
+  that consumes it, bounded above by the ceiling `slack_km` already documents: once `radius + slack` reaches
+  half the circumference the widened circle is the whole sphere, every bound equals the raster's total and
+  the level prunes nothing, so a spacing past that point is strictly wasted work. The figure inside that
+  ceiling is #10's to measure — 32 on the k=10 shape prunes 86.9% of blocks at a 200 km radius, which is one
+  point and not a curve. The entry exists so the first caller does not silently become the default, and it
+  cannot be discharged by a benchmark alone: what it wants is a function of the two inputs, not a constant
+  that happened to measure well once.
 
 ### FU-30 - CI compiles from cold, because a called workflow caches only its hook runner
 

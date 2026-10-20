@@ -843,7 +843,7 @@ mod tests {
         let path = directory.path().join("radii.json");
 
         // What the answer is when nothing is interrupted, for the resumed run to be held to.
-        let uninterrupted = smallest(&table, share, spacing, &mut (), &mut ())
+        let uninterrupted = smallest(&table, share, Some(spacing), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail");
 
         // The run that dies on its fourth probe, having banked three.
@@ -853,7 +853,7 @@ mod tests {
             budget: 3,
         };
         assert!(matches!(
-            smallest(&table, share, spacing, &mut stopping, &mut ()),
+            smallest(&table, share, Some(spacing), &mut stopping, &mut ()),
             Err(crate::smallest::SmallestError::Ledger(
                 LedgerError::Write { .. }
             ))
@@ -863,7 +863,7 @@ mod tests {
         let mut resumed_ledger = Ledger::open_or_empty(&path, &identity).unwrap();
         assert_eq!(resumed_ledger.len(), 3);
 
-        let resumed = smallest(&table, share, spacing, &mut resumed_ledger, &mut ())
+        let resumed = smallest(&table, share, Some(spacing), &mut resumed_ledger, &mut ())
             .expect("the ledger is this table's and the directory is writable");
         assert_eq!(resumed.stats.radii_reused, 3);
         assert_eq!(

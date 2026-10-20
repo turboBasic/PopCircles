@@ -272,6 +272,62 @@ pub fn slack_km(grid: &Grid, block: Block) -> f64 {
     arc_km(two_hop_rad) * (1.0 + SLACK_MARGIN)
 }
 
+/// The largest initial side whose conservative equatorial bound stays below half the circumference.
+///
+/// Bounding the longitude cosine by one makes this independent of a tile's latitude. Outward rounding
+/// also covers the subtraction of rounded cell latitudes in [`slack_km`], even when a tiny step is lost
+/// beside a nonzero origin. At or above half the circumference no side can discriminate: use one block
+/// instead. Below it, a single-cell block always fits because its slack is exactly zero.
+#[must_use]
+pub fn initial_spacing(grid: &Grid, radius: RadiusKm) -> NonZeroU32 {
+    let maximum = grid.width().max(grid.height());
+    let half = arc_km(std::f64::consts::PI);
+    if radius.km() >= half {
+        return NonZeroU32::new(maximum).unwrap_or(NonZeroU32::MIN);
+    }
+
+    let fits = |side: u32| {
+        let rows = side.min(grid.height()) / 2;
+        let cols = side.min(grid.width()) / 2;
+        if rows == 0 && cols == 0 {
+            return true;
+        }
+        // Each centre multiplies an exact half-integer by the step and adds the origin, then slack
+        // subtracts two centres. Eight epsilons of their absolute scale cover that rounding; the
+        // next representable values also cover subnormal steps without a relative-error assumption.
+        let latitude = if rows == 0 {
+            0.0
+        } else {
+            let scale = (grid.origin().lat.abs()
+                + (f64::from(grid.height()) * grid.lat_step().abs()).next_up())
+            .next_up();
+            let headroom = (8.0 * f64::EPSILON * scale).next_up();
+            ((f64::from(rows) * grid.lat_step().abs()).next_up() + headroom).next_up()
+        };
+        let longitude = if cols == 0 {
+            0.0
+        } else {
+            (f64::from(cols) * grid.lon_step().abs()).next_up()
+        };
+        let angle = (latitude.to_radians().next_up() + longitude.to_radians().next_up()).next_up();
+        let slack = (arc_km(angle).next_up() * (1.0 + SLACK_MARGIN)).next_up();
+        radius.widened_by(slack).km().next_up() < half
+    };
+
+    let mut low = 1;
+    let mut high = maximum;
+    while low < high {
+        let distance = high - low;
+        let middle = low + distance / 2 + distance % 2;
+        if fits(middle) {
+            low = middle;
+        } else {
+            high = middle - 1;
+        }
+    }
+    NonZeroU32::new(low).unwrap_or(NonZeroU32::MIN)
+}
+
 /// What a search did beside finding the answer, and the only window onto whether the bound is working.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SearchStats {
@@ -351,10 +407,9 @@ impl HeldKernel {
 /// that way rather than as "on the globe" so a band table is answered honestly instead of refused by a
 /// guard the layer below does not have.
 ///
-/// `spacing` is the side of the blocks the first level is tiled into, in cells. It changes how long the
-/// search takes and not what it answers — every level's bound is admissible and refinement runs to single
-/// cells — so a spacing of one is a brute force over every centre and larger values are the same answer
-/// sooner. There is no default: the useful range is a measured property of the raster and the radius.
+/// `None` derives the first level's block side from this radius and grid with [`initial_spacing`].
+/// `Some(side)` uses that exact side, even beyond the automatic ceiling. Spacing changes runtime only:
+/// every bound is admissible and refinement runs to single cells; a side of one scans every centre.
 ///
 /// `progress` is advanced once per block, `(blocks done, blocks in this level)`, both absolute within the
 /// level being walked. Per level rather than overall because the number of levels is not known until the
@@ -371,11 +426,14 @@ impl HeldKernel {
 pub fn most_populous<P: Progress>(
     table: &Table<'_>,
     radius: RadiusKm,
-    spacing: NonZeroU32,
+    spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
     let grid = *table.grid();
-    let mut level = Block::tile(&grid, spacing);
+    let mut level = Block::tile(
+        &grid,
+        spacing.unwrap_or_else(|| initial_spacing(&grid, radius)),
+    );
     let mut best: Option<Candidate> = None;
     let mut stats = SearchStats::default();
 
@@ -508,6 +566,147 @@ mod tests {
 
     fn spacing(cells: u32) -> NonZeroU32 {
         NonZeroU32::new(cells).expect("a fixture spacing is not zero")
+    }
+
+    fn spacing_ceiling(grid: &Grid, side: u32, radius: RadiusKm) -> bool {
+        let row_offset = side.min(grid.height()) / 2;
+        let col_offset = side.min(grid.width()) / 2;
+        if row_offset == 0 && col_offset == 0 {
+            return true;
+        }
+        let lat = if row_offset == 0 {
+            0.0
+        } else {
+            let extent = (f64::from(grid.height()) * grid.lat_step().abs()).next_up();
+            let scale = (grid.origin().lat.abs() + extent).next_up();
+            let error = (8.0 * f64::EPSILON * scale).next_up();
+            ((f64::from(row_offset) * grid.lat_step().abs()).next_up() + error).next_up()
+        };
+        let lon = if col_offset == 0 {
+            0.0
+        } else {
+            (f64::from(col_offset) * grid.lon_step().abs()).next_up()
+        };
+        let angle = (lat.to_radians().next_up() + lon.to_radians().next_up()).next_up();
+        let bound = (arc_km(angle).next_up() * (1.0 + 32.0 * f64::EPSILON)).next_up();
+        (radius.km() + bound).next_up() < arc_km(std::f64::consts::PI)
+    }
+
+    fn check_initial_spacing(grid: &Grid, radius: RadiusKm) {
+        let half = arc_km(std::f64::consts::PI);
+        let selected = initial_spacing(grid, radius);
+        let maximum = grid.width().max(grid.height());
+        if radius.km() >= half {
+            assert_eq!(selected.get(), maximum);
+            assert_eq!(Block::tile(grid, selected).len(), 1);
+            return;
+        }
+        let expected = (1..=maximum)
+            .filter(|&side| spacing_ceiling(grid, side, radius))
+            .max()
+            .unwrap();
+        assert_eq!(selected.get(), expected, "{grid:?}, {radius:?}");
+        for block in Block::tile(grid, selected) {
+            assert!(
+                radius.widened_by(slack_km(grid, block)).km() < half,
+                "{grid:?}, {radius:?}, {block:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn initial_spacing_is_the_largest_feasible_side_on_small_grids() {
+        let half = arc_km(std::f64::consts::PI);
+        let fine = Grid::new(
+            72,
+            36,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            5.0,
+            -5.0,
+        )
+        .unwrap();
+        let mut shapes = vec![grid(), equatorial_grid(), fine];
+        for (width, height, lat, lon_step, lat_step) in [
+            (24, 5, 70.0, -15.0, -2.0),
+            (1, 8, 90.0, 360.0, -20.0),
+            (8, 1, 10.0, 45.0, -20.0),
+            (1, 1, 90.0, 360.0, -180.0),
+            (7, 9, 60.0, 1e-14, -1e-14),
+            (7, 9, -60.0, f64::MIN_POSITIVE, -f64::MIN_POSITIVE),
+        ] {
+            shapes.push(
+                Grid::new(width, height, LatLon { lat, lon: 0.0 }, lon_step, lat_step).unwrap(),
+            );
+        }
+        for grid in &shapes {
+            for km in [
+                0.0,
+                200.0,
+                8000.0,
+                half - 1e-10,
+                half.next_down(),
+                half,
+                half.next_up(),
+                f64::MAX,
+            ] {
+                check_initial_spacing(grid, radius(km));
+            }
+        }
+        assert_ne!(
+            initial_spacing(&grid(), radius(200.0)),
+            initial_spacing(&grid(), radius(8000.0))
+        );
+        assert_ne!(
+            initial_spacing(&shapes[0], radius(8000.0)),
+            initial_spacing(&shapes[2], radius(8000.0))
+        );
+    }
+
+    #[test]
+    fn initial_spacing_handles_both_sides_of_each_ceiling_boundary() {
+        let grid = grid();
+        let half = arc_km(std::f64::consts::PI);
+        for side in 2..=grid.width() {
+            let angle = (f64::from(side.min(grid.height()) / 2) * grid.lat_step().abs()
+                + f64::from(side / 2) * grid.lon_step().abs())
+            .to_radians();
+            let boundary = half - arc_km(angle) * (1.0 + SLACK_MARGIN);
+            if boundary >= 0.0 {
+                for km in [
+                    boundary - 1e-8,
+                    boundary.next_down(),
+                    boundary,
+                    boundary.next_up(),
+                    boundary + 1e-8,
+                ] {
+                    check_initial_spacing(&grid, radius(km.max(0.0)));
+                }
+            }
+        }
+        assert_eq!(initial_spacing(&grid, radius(half.next_down())).get(), 1);
+    }
+
+    #[test]
+    fn initial_spacing_searches_u32_dimensions_without_allocating_tiles() {
+        let grid = Grid::new(
+            u32::MAX,
+            1,
+            LatLon {
+                lat: 0.0,
+                lon: -180.0,
+            },
+            360.0 / f64::from(u32::MAX),
+            -1.0,
+        )
+        .unwrap();
+        let selected = initial_spacing(&grid, radius(8000.0)).get();
+        assert!(spacing_ceiling(&grid, selected, radius(8000.0)));
+        assert!(!spacing_ceiling(&grid, selected + 1, radius(8000.0)));
+        assert_eq!(initial_spacing(&grid, radius(0.0)).get(), u32::MAX);
+        assert_eq!(initial_spacing(&grid, radius(f64::MAX)).get(), u32::MAX);
     }
 
     /// Every cell a block speaks for, expanded.
@@ -922,7 +1121,7 @@ mod tests {
     }
 
     fn search(table: &Table<'_>, radius_km: f64, cells: u32) -> MostPopulous {
-        most_populous(table, radius(radius_km), spacing(cells), &mut ())
+        most_populous(table, radius(radius_km), Some(spacing(cells)), &mut ())
             .expect("a whole-globe grid and a radius far from the overflow")
     }
 
@@ -959,14 +1158,52 @@ mod tests {
 
         for radius_km in [1500.0, 8000.0] {
             let reference = search(&table, radius_km, 1).centre;
-            for cells in [2u32, 3, 5, 18] {
-                let found = search(&table, radius_km, cells).centre;
+            for cells in [Some(2u32), Some(3), Some(5), Some(18), None] {
+                let found = most_populous(&table, radius(radius_km), cells.map(spacing), &mut ())
+                    .unwrap()
+                    .centre;
                 assert_eq!(
                     (found.row, found.col, found.population.to_bits()),
                     (reference.row, reference.col, reference.population.to_bits()),
-                    "radius {radius_km} km, spacing {cells}"
+                    "radius {radius_km} km, spacing {cells:?}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn automatic_statistics_match_the_exact_derived_side() {
+        let grid = grid();
+        let payload = payload_over(&grid, distinct(&grid));
+        let table = Table::new(grid, &payload).unwrap();
+        for km in [0.0, 200.0, 3300.0, 8000.0, f64::MAX] {
+            let radius = radius(km);
+            let automatic = most_populous(&table, radius, None, &mut ()).unwrap();
+            let explicit = most_populous(
+                &table,
+                radius,
+                Some(initial_spacing(&grid, radius)),
+                &mut (),
+            )
+            .unwrap();
+            assert_eq!(automatic.stats, explicit.stats);
+            assert_eq!(
+                (
+                    automatic.centre.row,
+                    automatic.centre.col,
+                    automatic.centre.population.to_bits()
+                ),
+                (
+                    explicit.centre.row,
+                    explicit.centre.col,
+                    explicit.centre.population.to_bits()
+                )
+            );
+            assert_eq!(
+                automatic.radius.km().to_bits(),
+                explicit.radius.km().to_bits()
+            );
+            assert_eq!(automatic.tolerance_persons.to_bits(), 0.0f64.to_bits());
         }
     }
 
@@ -979,12 +1216,14 @@ mod tests {
         let payload = payload_over(&grid, |_, _| 0.0);
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1500.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1500.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
                 (found.row.get(), found.col.get(), found.population),
                 (0, 0, 0.0),
-                "spacing {cells}"
+                "spacing {cells:?}"
             );
         }
     }
@@ -1024,7 +1263,7 @@ mod tests {
         let table = Table::new(window, &payload).expect("the build emits the padded product");
 
         assert!(matches!(
-            most_populous(&table, radius(500.0), spacing(4), &mut ()),
+            most_populous(&table, radius(500.0), Some(spacing(4)), &mut ()),
             Err(SearchError::Kernel(KernelError::ColumnsDoNotClose { .. }))
         ));
     }
@@ -1066,7 +1305,7 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let mut sink = Reported::default();
-        let result = most_populous(&table, radius(2000.0), spacing(5), &mut sink)
+        let result = most_populous(&table, radius(2000.0), Some(spacing(5)), &mut sink)
             .expect("a whole-globe grid");
 
         let mut runs: Vec<Vec<(u64, u64)>> = Vec::new();
@@ -1155,12 +1394,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 1800.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1800.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1800.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         assert_eq!(expected.population, 400.0);
@@ -1181,12 +1426,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 1500.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1500.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1500.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         // Both planted cells, which only a wrapping traversal reaches from one centre.
@@ -1211,12 +1462,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 2000.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 2000.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(2000.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         assert_eq!(expected.row.get(), 0);
@@ -1238,12 +1495,18 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let expected = brute_force(&table, &grid, 1500.0);
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 1500.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(1500.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                (expected.row.get(), expected.col.get(), expected.population),
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (
+                    expected.row.get(),
+                    expected.col.get(),
+                    expected.population.to_bits()
+                ),
+                "spacing {cells:?}"
             );
         }
         // The northern cluster, which is what "north-west wins" means on this fixture.
@@ -1270,12 +1533,14 @@ mod tests {
             }
         }
 
-        for cells in [1u32, 4, 18] {
-            let found = search(&table, 0.0, cells).centre;
+        for cells in [Some(1u32), Some(4), Some(18), None] {
+            let found = most_populous(&table, radius(0.0), cells.map(spacing), &mut ())
+                .unwrap()
+                .centre;
             assert_eq!(
-                (found.row.get(), found.col.get(), found.population),
-                heaviest,
-                "spacing {cells}"
+                (found.row.get(), found.col.get(), found.population.to_bits()),
+                (heaviest.0, heaviest.1, heaviest.2.to_bits()),
+                "spacing {cells:?}"
             );
         }
     }

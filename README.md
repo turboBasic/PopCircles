@@ -38,8 +38,8 @@ place, so a truncated download is refused rather than parsed:
 
 [`USAGE.md`](USAGE.md) has the worked commands and their real output — a great-circle distance, the
 summation table and the queries answered from it, the four search commands, the maps, and what a run
-says about itself — together with how to choose `--decimate` and `--spacing`, which is most of what a
-run costs. `mise run cli -- --help` is the full command and flag reference.
+says about itself — together with how to choose `--decimate` and when to override automatic spacing
+with `--spacing`. `mise run cli -- --help` is the full command and flag reference.
 
 ## Validation
 

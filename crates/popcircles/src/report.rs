@@ -1154,8 +1154,9 @@ mod tests {
         let (rows, cols) = table.whole();
         let total = table.population(rows, cols);
 
-        let found = search::most_populous(&table, RadiusKm::from(3000u32), spacing(4), &mut ())
-            .expect("a whole-globe fixture has kernels");
+        let found =
+            search::most_populous(&table, RadiusKm::from(3000u32), Some(spacing(4)), &mut ())
+                .expect("a whole-globe fixture has kernels");
         assert!(found.stats.blocks_pruned > 0, "{:?}", found.stats);
         assert_ne!((found.centre.row.get(), found.centre.col.get()), (0, 0));
 
@@ -1178,7 +1179,7 @@ mod tests {
         let payload = fixture_payload();
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
-        let found = smallest::smallest(&table, share(0.25), spacing(4), &mut (), &mut ())
+        let found = smallest::smallest(&table, share(0.25), Some(spacing(4)), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail");
         let below = found.short_below.expect("the answer is not 0 km");
         assert!(below.1 < found.target.persons, "{found:?}");
@@ -1205,7 +1206,7 @@ mod tests {
         });
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
-        let found = smallest::smallest(&table, share(1.0), spacing(4), &mut (), &mut ())
+        let found = smallest::smallest(&table, share(1.0), Some(spacing(4)), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail");
         assert_eq!(found.radius_km, 1572);
         assert!(found.ambiguity.is_some(), "{found:?}");
@@ -1246,7 +1247,7 @@ mod tests {
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let mut ledger = Recorded::default();
-        let found = smallest::smallest(&table, share(0.25), spacing(4), &mut ledger, &mut ())
+        let found = smallest::smallest(&table, share(0.25), Some(spacing(4)), &mut ledger, &mut ())
             .expect("a whole-globe fixture and a map cannot fail");
         // The count is the run's own, which is what makes the block worth publishing at all.
         assert_eq!(ledger.entries.len() as u64, found.stats.radii_evaluated);
@@ -1273,9 +1274,14 @@ mod tests {
         let mut records: Vec<SmallestReport> = [0.3, 0.2, 0.1]
             .into_iter()
             .map(|value| {
-                let found =
-                    smallest::smallest(&table, share(value), spacing(4), &mut ledger, &mut ())
-                        .expect("a whole-globe fixture and a map cannot fail");
+                let found = smallest::smallest(
+                    &table,
+                    share(value),
+                    Some(spacing(4)),
+                    &mut ledger,
+                    &mut (),
+                )
+                .expect("a whole-globe fixture and a map cannot fail");
                 SmallestReport::new(&found, &grid)
             })
             .collect();
@@ -1304,7 +1310,7 @@ mod tests {
         let grid = fixture_grid();
         let payload = fixture_payload();
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
-        let found = smallest::smallest(&table, share(0.2), spacing(4), &mut (), &mut ())
+        let found = smallest::smallest(&table, share(0.2), Some(spacing(4)), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail");
         let record = SmallestReport::new(&found, &grid);
         let block = || LedgerReport::new(ledger_path(), 0);

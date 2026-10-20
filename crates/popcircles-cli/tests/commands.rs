@@ -307,6 +307,125 @@ fn sweep_answers_every_share_over_one_ledger() {
     assert_eq!(shares, vec![0.1, 0.2, 0.3]);
 }
 
+fn search_parameters<'a>(command: &str, ledger: &'a str) -> Vec<&'a str> {
+    match command {
+        "most-populous" => vec!["--radius-km", "3000"],
+        "smallest-for-share" => vec!["--share", "100", "--ledger", ledger],
+        "sweep" => vec![
+            "--from", "25", "--to", "100", "--step", "75", "--ledger", ledger,
+        ],
+        _ => panic!("a searching command"),
+    }
+}
+
+fn answers(document: &serde_json::Value) -> Vec<&serde_json::Value> {
+    let result = &document["result"];
+    if let Some(records) = result["records"].as_array() {
+        records.iter().collect()
+    } else {
+        vec![result.get("circle").unwrap_or(result)]
+    }
+}
+
+fn assert_same_bits(actual: &serde_json::Value, expected: &serde_json::Value) {
+    match (actual, expected) {
+        (serde_json::Value::Number(a), serde_json::Value::Number(b)) => {
+            assert_eq!(a.as_f64().unwrap().to_bits(), b.as_f64().unwrap().to_bits());
+        }
+        (serde_json::Value::Object(a), serde_json::Value::Object(b)) => {
+            assert_eq!(a.len(), b.len());
+            for (key, value) in a {
+                assert_same_bits(value, &b[key]);
+            }
+        }
+        _ => assert_eq!(actual, expected),
+    }
+}
+
+fn assert_same_answers(actual: &serde_json::Value, expected: &serde_json::Value) {
+    let actual = answers(actual);
+    let expected = answers(expected);
+    assert_eq!(actual.len(), expected.len());
+    for (a, b) in actual.iter().zip(expected) {
+        for field in [
+            "centre",
+            "row",
+            "col",
+            "radius_km",
+            "population",
+            "total_population",
+            "share_of_total",
+            "target",
+            "share_achieved",
+            "short_below",
+            "covers_whole_grid",
+            "predicate_slack_persons",
+            "tolerance_persons",
+            "ambiguity",
+        ] {
+            assert_same_bits(&a[field], &b[field]);
+        }
+    }
+}
+
+#[test]
+fn commands_derive_spacing_and_reuse_ledgers_across_policies() {
+    for fixture in [Fixture::build(), Fixture::clustered()] {
+        for command in ["most-populous", "smallest-for-share", "sweep"] {
+            let auto_ledger = fixture.ledger(&format!("{command}-auto.json"));
+            let explicit_ledger = fixture.ledger(&format!("{command}-explicit.json"));
+            let auto_path = auto_ledger.to_string_lossy();
+            let explicit_path = explicit_ledger.to_string_lossy();
+            let auto_flags = search_parameters(command, &auto_path);
+            let mut explicit_flags = search_parameters(command, &explicit_path);
+            explicit_flags.extend(["--spacing", "4"]);
+            let automatic =
+                one_document_naming_the_fixture(&fixture, &fixture.run_ok(command, &auto_flags));
+            let explicit = one_document_naming_the_fixture(
+                &fixture,
+                &fixture.run_ok(command, &explicit_flags),
+            );
+            assert_same_answers(&automatic, &explicit);
+            if command == "most-populous" {
+                continue;
+            }
+            let mut override_auto_ledger = auto_flags.clone();
+            override_auto_ledger.extend(["--spacing", "4"]);
+            let explicit_warm = one_document_naming_the_fixture(
+                &fixture,
+                &fixture.run_ok(command, &override_auto_ledger),
+            );
+            let auto_warm = one_document_naming_the_fixture(
+                &fixture,
+                &fixture.run_ok(command, &search_parameters(command, &explicit_path)),
+            );
+            for warm in [&explicit_warm, &auto_warm] {
+                assert_same_answers(warm, &automatic);
+                for answer in answers(warm) {
+                    assert_eq!(answer["stats"]["radii_evaluated"], 0);
+                    assert!(answer["stats"]["radii_reused"].as_u64().unwrap() > 0);
+                    for value in answer["stats"]["searched"].as_object().unwrap().values() {
+                        assert_eq!(value, 0);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn zero_spacing_is_refused_before_cache_access_on_every_search_command() {
+    let fixture = Fixture::build();
+    for command in ["most-populous", "smallest-for-share", "sweep"] {
+        let mut parameters = search_parameters(command, "unused-ledger.json");
+        parameters.extend(["--spacing", "0"]);
+        let output = fixture.run(command, "0x0000000000000001", &parameters);
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("--spacing"));
+    }
+}
+
 /// One invocation at two levels, which is what makes the flag rather than the code path the thing being
 /// checked.
 #[test]
