@@ -8,8 +8,8 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use args::{
-    CachedTableArgs, GridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs, TableArgs, WindowArgs,
-    parse_radius, parse_share,
+    CachedTableArgs, DatasetGridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs, TableArgs,
+    WindowArgs, parse_radius, parse_share,
 };
 use clap::{Parser, Subcommand};
 use commands::distance::distance_json;
@@ -109,12 +109,12 @@ enum Command {
     },
 }
 
-#[derive(Subcommand, Debug, Clone, Copy)]
+#[derive(Subcommand, Debug, Clone)]
 enum GridCommand {
     /// Describe a north-up grid without reading any raster.
     Describe {
         #[command(flatten)]
-        grid: GridArgs,
+        grid: DatasetGridArgs,
     },
 }
 
@@ -122,11 +122,17 @@ enum GridCommand {
 enum TableCommand {
     /// Build a summation table from a registered dataset and publish it to the cache.
     Build {
-        /// The dataset to build from, which names the raster and everything its file is held to:
-        /// `data/registry.toml` is the roster, and a raster it does not carry gets a row there rather
-        /// than eight flags here.
+        /// The dataset to build from, which names the registered raster and supplies its default grid and tags.
         #[arg(long)]
         dataset: String,
+        #[command(flatten)]
+        grid: args::GridArgs,
+        /// Override the registered Float32 nodata sentinel.
+        #[arg(long, allow_negative_numbers = true)]
+        nodata: Option<f32>,
+        /// Override the registered coordinate reference system.
+        #[arg(long)]
+        epsg: Option<u16>,
         #[command(flatten)]
         table: TableArgs,
     },
@@ -171,10 +177,17 @@ fn run(command: Command) -> Result<String, Failure> {
         }),
         Command::Grid {
             command: GridCommand::Describe { grid },
-        } => describe_grid(grid),
+        } => describe_grid(&grid),
         Command::Table {
-            command: TableCommand::Build { dataset, table },
-        } => build_table(&dataset, &table),
+            command:
+                TableCommand::Build {
+                    dataset,
+                    grid,
+                    nodata,
+                    epsg,
+                    table,
+                },
+        } => build_table(&dataset, grid, nodata, epsg, &table),
         Command::Table {
             command: TableCommand::Query { cached, window },
         } => query_table(&cached, window.window()),

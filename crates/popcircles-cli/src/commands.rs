@@ -47,7 +47,7 @@ impl CachedTable {
         // record is `Drop`'s: a cache that is absent still says how long finding that out took.
         let _bracket = Bracket::open(module_path!(), "table load");
 
-        let source = args.grid.grid().map_err(|error| Failure::grid(&error))?;
+        let source = args.grid.grid()?;
         let decimation =
             Decimation::new(source, args.table.decimate).map_err(|error| Failure::table(&error))?;
         let cache = Cache::new(&args.table.cache);

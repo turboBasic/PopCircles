@@ -1,9 +1,4 @@
-// `data/registry.toml` read for the one thing a build needs of it: which file, and what that file must say
-// about itself. Here rather than in the library because resolving a dataset is the shell's work — the
-// library keeps taking a `Grid` and a `RasterSpec`, and `application.md` "Architecture" is why.
-//
-// A row is the only way `table build` learns what to read, which is what keeps the sentinel, the CRS and the
-// six grid numbers spelled once — in the registry that owns them — rather than retyped on a command line.
+// Dataset defaults and registered raster paths are resolved in the CLI, outside the numeric library.
 //
 // No `deny_unknown_fields`: the licence, the checksum and the attribution are keys this reader has no use
 // for, and `python/src/population_circles/dataset_registry.py` forbids an unknown one — so a typo is caught
@@ -16,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
-use crate::args::GridArgs;
+use crate::args::GridValues;
 
 /// Relative to the working directory, which is where `out/table` and `out/radii.json` already resolve
 /// from.
@@ -51,13 +46,13 @@ pub(crate) enum RegistryError {
 
 /// What a build needs to read a raster: the file, and everything the file is held to.
 ///
-/// `grid` is [`GridArgs`] rather than six numbers of its own, because that struct already owns the
+/// `grid` is [`GridValues`] rather than six numbers of its own, because that struct already owns the
 /// conversion into a [`Grid`](popcircles::grid::Grid) and a second one here would be a second place a
 /// declared grid is assembled.
 #[derive(Debug)]
 pub(crate) struct Dataset {
     pub(crate) raster: PathBuf,
-    pub(crate) grid: GridArgs,
+    pub(crate) grid: GridValues,
     pub(crate) epsg: u16,
     pub(crate) nodata: f32,
 }
@@ -67,7 +62,7 @@ pub(crate) struct Registry {
     datasets: BTreeMap<String, Row>,
 }
 
-/// A row by its kind, which is what says whether the eight grid fields are there to read. An unregistered
+/// A row by its kind, which says whether its fields describe a population raster or a boundary. An unregistered
 /// kind is a refusal rather than a row to skip, for the reason the Python reader discriminates too: a kind
 /// arrives in the commit that teaches both readers to use it.
 #[derive(Debug, Deserialize)]
@@ -164,7 +159,7 @@ impl Registry {
 
         Ok(Dataset {
             raster: row.path.clone(),
-            grid: GridArgs {
+            grid: GridValues {
                 width: row.width,
                 height: row.height,
                 origin_lat: row.origin_lat,
