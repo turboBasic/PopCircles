@@ -26,9 +26,17 @@ table build, not after a search that disagreed with you.
 For the GPWv4.11 raster (see [`data/README.md`](data/README.md)), without reading the file itself:
 
 ```sh
-$ mise run cli -- grid describe --width 43200 --height 21600 --origin-lat 90 --origin-lon -180 \
-    --lon-step 0.008333333333333333 --lat-step -0.008333333333333333
+$ mise run cli -- grid describe --dataset population-count-2020-30arcsec
 {"schema_version":1,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
+```
+
+Grid-taking commands accept `--dataset` for registry defaults. Each explicit grid flag overrides its
+own default, including zero; the resolved geometry is checked before use. Without `--dataset`, supply
+all six flags; no registry is read. For an explicit-only grid:
+
+```sh
+mise run cli -- grid describe --width 36 --height 18 --origin-lat 90 --origin-lon -180 \
+  --lon-step 10 --lat-step -10
 ```
 
 ### The summation table, and the queries over it
@@ -42,8 +50,7 @@ $ mise run cli -- table build --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin
 {"schema_version":1, …,"result":{"digest":"0xf17aa802a6890f0c","total_population":7757982599.323671, …}}
 
-$ query() { mise run cli -- table query --width 43200 --height 21600 --origin-lat 90 \
-    --origin-lon -180 --lon-step 0.008333333333333333 --lat-step -0.008333333333333333 \
+$ query() { mise run cli -- table query --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin "$@"; }
 
 $ query                                                            # every cell there is
@@ -89,8 +96,7 @@ The four search commands read the same table, so they take the same flags — co
 function again, and the outputs below are from one run against the 5 arcmin table above:
 
 ```sh
-$ search() { local command="$1"; shift; mise run cli -- "$command" --width 43200 --height 21600 \
-    --origin-lat 90 --origin-lon -180 --lon-step 0.008333333333333333 --lat-step -0.008333333333333333 \
+$ search() { local command="$1"; shift; mise run cli -- "$command" --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin "$@"; }
 ```
 

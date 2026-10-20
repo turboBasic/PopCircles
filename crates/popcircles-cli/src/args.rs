@@ -2,7 +2,7 @@
 // because that is what a command declaration reaches for: `Command`'s variants flatten these structs
 // and cite these parsers, and nothing else in the crate constructs either.
 //
-// A conversion here calls a library constructor and computes nothing — `GridArgs::grid` hands six
+// A conversion here calls a library constructor and computes nothing — `GridValues::grid` hands six
 // numbers to `Grid::new` and `WindowArgs::window` hands four to `Window`. Arithmetic on a coordinate
 // belongs below this crate, so a method here that grew any would be a defect rather than a helper.
 
@@ -100,7 +100,7 @@ pub(crate) struct SearchArgs {
 #[derive(Args, Debug, Clone)]
 pub(crate) struct CachedTableArgs {
     #[command(flatten)]
-    pub(crate) grid: GridArgs,
+    pub(crate) grid: DatasetGridArgs,
     #[command(flatten)]
     pub(crate) table: TableArgs,
     /// Require this decoded-cells digest; otherwise use the cache header's digest.
@@ -108,29 +108,99 @@ pub(crate) struct CachedTableArgs {
     pub(crate) digest: Option<u64>,
 }
 
-/// The grid a raster is declared to be. The declared grid wins over the file's own tags, which is why
-/// every command naming a table asks for the same six numbers.
-///
-/// Two sources now, and this is the second: `table build` reads them out of a registry row rather than off
-/// the command line, so a table's grid is declared once where the dataset is described and repeated on
-/// every command that afterwards names that table.
-#[derive(Args, Debug, Clone, Copy)]
+#[derive(Args, Debug, Clone)]
+pub(crate) struct DatasetGridArgs {
+    /// Population raster in data/registry.toml supplying defaults for omitted grid flags.
+    #[arg(long)]
+    pub(crate) dataset: Option<String>,
+    #[command(flatten)]
+    pub(crate) grid: GridArgs,
+}
+
+impl DatasetGridArgs {
+    pub(crate) fn grid(&self) -> Result<Grid, crate::failure::Failure> {
+        let defaults = self
+            .dataset
+            .as_deref()
+            .map(|name| {
+                crate::registry::Registry::load(std::path::Path::new(
+                    crate::registry::REGISTRY_PATH,
+                ))
+                .and_then(|registry| registry.raster(name))
+                .map(|row| row.grid)
+                .map_err(|error| crate::failure::Failure::registry(&error))
+            })
+            .transpose()?;
+        self.grid
+            .resolve(defaults)?
+            .grid()
+            .map_err(|error| crate::failure::Failure::grid(&error))
+    }
+}
+
+#[derive(Args, Debug, Clone, Copy, Default)]
 pub(crate) struct GridArgs {
     #[arg(long)]
-    pub(crate) width: u32,
+    pub(crate) width: Option<u32>,
     #[arg(long)]
-    pub(crate) height: u32,
+    pub(crate) height: Option<u32>,
     #[arg(long, allow_negative_numbers = true)]
-    pub(crate) origin_lat: f64,
+    pub(crate) origin_lat: Option<f64>,
     #[arg(long, allow_negative_numbers = true)]
-    pub(crate) origin_lon: f64,
+    pub(crate) origin_lon: Option<f64>,
     #[arg(long, allow_negative_numbers = true)]
-    pub(crate) lon_step: f64,
+    pub(crate) lon_step: Option<f64>,
     #[arg(long, allow_negative_numbers = true)]
-    pub(crate) lat_step: f64,
+    pub(crate) lat_step: Option<f64>,
 }
 
 impl GridArgs {
+    pub(crate) fn resolve(
+        self,
+        defaults: Option<GridValues>,
+    ) -> Result<GridValues, crate::failure::Failure> {
+        let fields = [
+            ("--width", self.width.is_some()),
+            ("--height", self.height.is_some()),
+            ("--origin-lat", self.origin_lat.is_some()),
+            ("--origin-lon", self.origin_lon.is_some()),
+            ("--lon-step", self.lon_step.is_some()),
+            ("--lat-step", self.lat_step.is_some()),
+        ];
+        let missing: Vec<_> = fields
+            .into_iter()
+            .filter_map(|(name, present)| (!present).then_some(name))
+            .collect();
+        if defaults.is_none() && !missing.is_empty() {
+            return Err(crate::failure::Failure::bad_input(format!(
+                "without --dataset the missing grid flags are required: {}",
+                missing.join(", ")
+            )));
+        }
+        // All fields exist above; zero is only a fallback for construction after that check.
+        let defaults = defaults.unwrap_or_default();
+        Ok(GridValues {
+            width: self.width.unwrap_or(defaults.width),
+            height: self.height.unwrap_or(defaults.height),
+            origin_lat: self.origin_lat.unwrap_or(defaults.origin_lat),
+            origin_lon: self.origin_lon.unwrap_or(defaults.origin_lon),
+            lon_step: self.lon_step.unwrap_or(defaults.lon_step),
+            lat_step: self.lat_step.unwrap_or(defaults.lat_step),
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub(crate) struct GridValues {
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) origin_lat: f64,
+    pub(crate) origin_lon: f64,
+    pub(crate) lon_step: f64,
+    pub(crate) lat_step: f64,
+}
+
+impl GridValues {
     pub(crate) fn grid(self) -> Result<Grid, GridError> {
         Grid::new(
             self.width,
@@ -213,6 +283,86 @@ pub(crate) fn parse_share(value: &str) -> Result<Share, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_grid_override_wins_independently_including_zero() {
+        let defaults = GridValues {
+            width: 36,
+            height: 18,
+            origin_lat: 90.0,
+            origin_lon: -180.0,
+            lon_step: 10.0,
+            lat_step: -10.0,
+        };
+        for (flags, expected) in [
+            (
+                GridArgs {
+                    width: Some(0),
+                    ..GridArgs::default()
+                },
+                GridValues {
+                    width: 0,
+                    ..defaults
+                },
+            ),
+            (
+                GridArgs {
+                    height: Some(0),
+                    ..GridArgs::default()
+                },
+                GridValues {
+                    height: 0,
+                    ..defaults
+                },
+            ),
+            (
+                GridArgs {
+                    origin_lat: Some(0.0),
+                    ..GridArgs::default()
+                },
+                GridValues {
+                    origin_lat: 0.0,
+                    ..defaults
+                },
+            ),
+            (
+                GridArgs {
+                    origin_lon: Some(0.0),
+                    ..GridArgs::default()
+                },
+                GridValues {
+                    origin_lon: 0.0,
+                    ..defaults
+                },
+            ),
+            (
+                GridArgs {
+                    lon_step: Some(0.0),
+                    ..GridArgs::default()
+                },
+                GridValues {
+                    lon_step: 0.0,
+                    ..defaults
+                },
+            ),
+            (
+                GridArgs {
+                    lat_step: Some(0.0),
+                    ..GridArgs::default()
+                },
+                GridValues {
+                    lat_step: 0.0,
+                    ..defaults
+                },
+            ),
+            (GridArgs::default(), defaults),
+        ] {
+            assert_eq!(
+                flags.resolve(Some(defaults)).map_err(|error| error.message),
+                Ok(expected)
+            );
+        }
+    }
 
     #[test]
     fn a_digest_is_read_back_in_the_spelling_a_build_prints() {

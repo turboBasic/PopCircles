@@ -5,7 +5,7 @@
 // and `FU-03`, whose tripwire watches `crates/popcircles/src/snapshots/` and would not see a
 // snapshot kept here.
 //
-// No raster anywhere. `Synthetic` is public and unconditional, so the fixture streams into a real cache
+// Synthetic caches need no raster. `Synthetic` is public and unconditional, so the fixture streams into a real cache
 // through the writer a build uses, and the suite passes on a checkout with no raster in it.
 
 // unwrap/expect are warn at workspace level and lint:rust runs --all-targets, so tests need this narrow
@@ -673,7 +673,7 @@ fn a_build_naming_no_registered_dataset_is_refused_before_any_raster_is_opened()
 #[test]
 fn a_document_answered_from_a_named_table_names_that_dataset() {
     // The other side of the assertion in `one_document_naming_the_fixture`, and the only thing that pins
-    // the name reaching a document at all: the four search commands take no `--dataset`, so what they
+    // the name reaching a document at all: the four search commands publish the header name, so what they
     // publish comes off the header of the table they opened. A command that stopped reading it would leave
     // every other case in this file green.
     let fixture = Fixture::named("population-count-2020-30arcsec");
@@ -689,4 +689,157 @@ fn a_document_answered_from_a_named_table_names_that_dataset() {
         document["provenance"]["dataset"],
         serde_json::Value::from("population-count-2020-30arcsec")
     );
+}
+
+fn register_fixture(fixture: &Fixture) {
+    std::fs::create_dir_all(fixture.directory.path().join("data")).unwrap();
+    std::fs::write(
+        fixture.directory.path().join("data/registry.toml"),
+        r#"
+[datasets.tiny]
+kind = "population-raster"
+path = "data/tiny.tif"
+width = 36
+height = 18
+origin_lat = 90.0
+origin_lon = 0.0
+lon_step = 10.0
+lat_step = -10.0
+epsg = 4326
+nodata = -3.402823e38
+[datasets.vector]
+kind = "boundary-vector"
+path = "data/vector.geojson"
+"#,
+    )
+    .unwrap();
+}
+
+fn named_command(fixture: &Fixture, command: &str, rest: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(fixture.directory.path())
+        .args(command.split_whitespace())
+        .args(["--dataset", "tiny", "--log-level", "error"])
+        .args(rest)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn all_grid_commands_resolve_dataset_defaults_without_a_raster_and_apply_overrides() {
+    let fixture = Fixture::build();
+    register_fixture(&fixture);
+    let cache = fixture.cache_base();
+    let cache = cache.to_str().unwrap();
+    let described = named_command(&fixture, "grid describe", &[]);
+    assert!(described.status.success(), "{described:?}");
+    let overridden = named_command(&fixture, "grid describe", &["--origin-lon", "-180"]);
+    let explicit = run_with(
+        &fixture.flags(&hexadecimal(fixture.digest))[..12],
+        "grid describe",
+        &[],
+    );
+    assert_eq!(overridden.stdout, explicit.stdout);
+    assert_ne!(described.stdout, overridden.stdout);
+    for command in CACHE_READERS {
+        let ledger = fixture.ledger(&format!("named-{command}.json"));
+        let ledger = ledger.to_str().unwrap();
+        let params = cached_parameters(command, ledger);
+        let mut rest = vec!["--cache", cache, "--origin-lon", "-180"];
+        rest.extend_from_slice(&params);
+        let output = named_command(&fixture, command, &rest);
+        assert!(output.status.success(), "{command}: {output:?}");
+        let explicit_ledger = fixture.ledger(&format!("explicit-{command}.json"));
+        let explicit = fixture.run_inferred(
+            command,
+            &cached_parameters(command, explicit_ledger.to_str().unwrap()),
+        );
+        let mut named: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        let mut explicit: serde_json::Value = serde_json::from_slice(&explicit.stdout).unwrap();
+        named["result"]["ledger"] = serde_json::Value::Null;
+        explicit["result"]["ledger"] = serde_json::Value::Null;
+        assert_eq!(named, explicit, "{command}");
+        assert!(named["provenance"]["dataset"].is_null());
+        let registry = fixture.directory.path().join("data/registry.toml");
+        let text = std::fs::read_to_string(&registry).unwrap();
+        std::fs::write(
+            &registry,
+            text.replace("origin_lon = 0.0", "origin_lon = -180.0"),
+        )
+        .unwrap();
+        let mut defaults = vec!["--cache", cache];
+        defaults.extend_from_slice(&params);
+        let dataset_only = named_command(&fixture, command, &defaults);
+        assert!(dataset_only.status.success(), "{command}: {dataset_only:?}");
+        std::fs::write(&registry, text).unwrap();
+        let mut wrong = vec!["--cache", cache];
+        wrong.extend_from_slice(&params);
+        let output = named_command(&fixture, command, &wrong);
+        assert_eq!(output.status.code(), Some(3), "{command}: {output:?}");
+        assert!(output.stdout.is_empty());
+    }
+}
+
+#[test]
+fn dataset_and_explicit_grid_refusals_keep_their_error_classes() {
+    let fixture = Fixture::build();
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_popcircles"))
+            .current_dir(fixture.directory.path())
+            .args(args)
+            .output()
+            .unwrap()
+    };
+    let missing = run(&["grid", "describe", "--width", "36"]);
+    assert_eq!(missing.status.code(), Some(2));
+    let complaint = String::from_utf8_lossy(&missing.stderr);
+    for flag in [
+        "--height",
+        "--origin-lat",
+        "--origin-lon",
+        "--lon-step",
+        "--lat-step",
+    ] {
+        assert!(complaint.contains(flag), "{complaint}");
+    }
+    let explicit = Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(fixture.directory.path())
+        .args(["grid", "describe"])
+        .args(&fixture.flags(&hexadecimal(fixture.digest))[..12])
+        .output()
+        .unwrap();
+    assert!(explicit.status.success(), "{explicit:?}");
+    let absent = named_command(&fixture, "grid describe", &[]);
+    assert_eq!(absent.status.code(), Some(3));
+    register_fixture(&fixture);
+    for name in ["unknown", "vector"] {
+        let output = run(&["grid", "describe", "--dataset", name]);
+        assert_eq!(output.status.code(), Some(2));
+        let complaint = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            complaint.contains("the registered ones are tiny"),
+            "{complaint}"
+        );
+    }
+    for flags in [
+        vec!["--width", "0"],
+        vec!["--lat-step", "0"],
+        vec!["--origin-lat", "100"],
+    ] {
+        let output = named_command(&fixture, "grid describe", &flags);
+        assert_eq!(output.status.code(), Some(2), "{output:?}");
+    }
+    for factor in ["0", "7"] {
+        let output = named_command(&fixture, "table query", &["--decimate", factor]);
+        assert_eq!(output.status.code(), Some(2), "{output:?}");
+        assert!(output.stdout.is_empty());
+    }
+    std::fs::write(
+        fixture.directory.path().join("data/registry.toml"),
+        "malformed [",
+    )
+    .unwrap();
+    let malformed = named_command(&fixture, "grid describe", &[]);
+    assert_eq!(malformed.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&malformed.stderr).contains("not the TOML document"));
 }

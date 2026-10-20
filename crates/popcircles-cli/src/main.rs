@@ -8,8 +8,8 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use args::{
-    CachedTableArgs, GridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs, TableArgs, WindowArgs,
-    parse_radius, parse_share,
+    CachedTableArgs, DatasetGridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs, TableArgs,
+    WindowArgs, parse_radius, parse_share,
 };
 use clap::{Parser, Subcommand};
 use commands::distance::distance_json;
@@ -109,12 +109,12 @@ enum Command {
     },
 }
 
-#[derive(Subcommand, Debug, Clone, Copy)]
+#[derive(Subcommand, Debug, Clone)]
 enum GridCommand {
     /// Describe a north-up grid without reading any raster.
     Describe {
         #[command(flatten)]
-        grid: GridArgs,
+        grid: DatasetGridArgs,
     },
 }
 
@@ -171,7 +171,7 @@ fn run(command: Command) -> Result<String, Failure> {
         }),
         Command::Grid {
             command: GridCommand::Describe { grid },
-        } => describe_grid(grid),
+        } => describe_grid(&grid),
         Command::Table {
             command: TableCommand::Build { dataset, table },
         } => build_table(&dataset, &table),
