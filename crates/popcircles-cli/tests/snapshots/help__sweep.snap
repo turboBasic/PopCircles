@@ -4,7 +4,7 @@ expression: help_for(path)
 ---
 The smallest circle for each of a range of shares, over one ledger
 
-Usage: popcircles sweep [OPTIONS] --width <WIDTH> --height <HEIGHT> --origin-lat <ORIGIN_LAT> --origin-lon <ORIGIN_LON> --lon-step <LON_STEP> --lat-step <LAT_STEP> --digest <DIGEST> --from <FROM> --to <TO> --step <STEP>
+Usage: popcircles sweep [OPTIONS] --width <WIDTH> --height <HEIGHT> --origin-lat <ORIGIN_LAT> --origin-lon <ORIGIN_LON> --lon-step <LON_STEP> --lat-step <LAT_STEP> --from <FROM> --to <TO> --step <STEP>
 
 Options:
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
@@ -16,7 +16,7 @@ Options:
       --lat-step <LAT_STEP>      
       --cache <CACHE>            Both cache files are this path plus a suffix. Under `out/` by default, which is gitignored — a generated table is never committed [default: out/table]
       --decimate <DECIMATE>      Fold every k by k block of cells into one table cell. Must divide both grid dimensions [default: 1]
-      --digest <DIGEST>          The digest a build reported, which is what names the table wanted
+      --digest <DIGEST>          Require this decoded-cells digest; otherwise use the cache header's digest
       --from <FROM>              The first share to answer, in whole percent
       --to <TO>                  The last share to answer, in whole percent. A share the step would carry past it is not answered
       --step <STEP>              How much to raise the share by between records, in whole percent

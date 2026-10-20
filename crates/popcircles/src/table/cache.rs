@@ -33,7 +33,7 @@ pub enum ByteOrder {
 }
 
 impl ByteOrder {
-    /// The order every payload is written in, and the only one [`Cache::read`] accepts.
+    /// The order every payload is written in, and the only one cache readers accept.
     /// `bytemuck` casts natively and swaps nothing, so a payload from a host of the other order is
     /// rebuilt rather than reinterpreted, and a format declaring one order while casting in another
     /// would be silently wrong on half the hosts there are.
@@ -360,12 +360,13 @@ impl Header {
     }
 }
 
-/// What a checked header leaves a reader holding, which is not the header: the payload length the caller's
-/// own identity implies, and the one fact the document carries that no caller could have supplied.
+/// The checked identity and provenance travel with the payload length so opening it needs no second
+/// header read.
 #[derive(Debug)]
 struct Described {
     cells: usize,
     dataset: Option<String>,
+    identity: Identity,
 }
 
 /// The two files a cache is, at one location.
@@ -449,8 +450,24 @@ impl Cache {
     /// [`CacheError::Absent`] when no header is there, and one variant per ground when what is there
     /// is not this table: see [`CacheError`].
     pub fn open(&self, wanted: &Identity) -> Result<Mapped, CacheError> {
-        let described = self.checked_header(wanted)?;
-        Mapped::open(&self.payload, described)
+        self.open_resolved(wanted.decimation, Some(wanted.digest))
+            .map(|(mapped, _)| mapped)
+    }
+
+    /// An omitted digest selects the table at this path; it does not verify the source raster or
+    /// recompute the decoded digest. The requested geometry and factor are still checked.
+    ///
+    /// # Errors
+    /// As [`open`](Self::open), including a digest mismatch when an expectation was supplied.
+    pub fn open_resolved(
+        &self,
+        decimation: Decimation,
+        expected_digest: Option<u64>,
+    ) -> Result<(Mapped, Identity), CacheError> {
+        let described = self.checked_header(decimation, expected_digest)?;
+        let identity = described.identity;
+        let mapped = Mapped::open(&self.payload, described)?;
+        Ok((mapped, identity))
     }
 
     /// The payload behind a header that describes the table `wanted`, read into memory.
@@ -458,7 +475,9 @@ impl Cache {
     /// # Errors
     /// As [`open`](Self::open).
     pub fn read(&self, wanted: &Identity) -> Result<Payload, CacheError> {
-        let cells = self.checked_header(wanted)?.cells;
+        let cells = self
+            .checked_header(wanted.decimation, Some(wanted.digest))?
+            .cells;
         let bytes = fs::read(&self.payload).map_err(|source| CacheError::PayloadRead {
             path: self.payload.clone(),
             source,
@@ -472,9 +491,13 @@ impl Cache {
     }
 
     /// The header, checked against what the caller wants, and what a reader takes from it: the payload
-    /// length it implies, and the dataset it names. Both read paths go through here, so neither can be the
-    /// lenient one.
-    fn checked_header(&self, wanted: &Identity) -> Result<Described, CacheError> {
+    /// length it implies, the resolved identity and the dataset it names. Every read path goes through
+    /// here so none can skip a refusal ground.
+    fn checked_header(
+        &self,
+        decimation: Decimation,
+        expected_digest: Option<u64>,
+    ) -> Result<Described, CacheError> {
         let document = fs::read(&self.header).map_err(|source| {
             if source.kind() == io::ErrorKind::NotFound {
                 CacheError::Absent {
@@ -507,10 +530,15 @@ impl Cache {
                 path: self.header.clone(),
                 source,
             })?;
-        header.check(wanted)?;
+        let identity = Identity {
+            digest: expected_digest.unwrap_or(header.attestation.digest),
+            decimation,
+        };
+        header.check(&identity)?;
         Ok(Described {
-            cells: padded_len(wanted.decimation.grid()),
+            cells: padded_len(decimation.grid()),
             dataset: header.dataset,
+            identity,
         })
     }
 
@@ -1112,6 +1140,97 @@ mod tests {
             every_rectangle(&Table::new(*decimation.grid(), mapped.cells().unwrap()).unwrap()),
             every_rectangle(&Table::new(*decimation.grid(), resident.cells().unwrap()).unwrap())
         );
+    }
+
+    #[test]
+    fn resolving_a_digest_preserves_the_identity_cells_and_dataset() {
+        for dataset in [None, Some("population-count-2020-30arcsec")] {
+            let directory = TempDir::new().unwrap();
+            let cache = cache_in(&directory);
+            let decimation = Decimation::new(grid(6, 4), 2).unwrap();
+            let built = publish_named(&cache, decimation, dataset);
+            let wanted = Identity::from(&built);
+            let resident = cache.read(&wanted).unwrap();
+
+            for digest in [None, Some(built.digest)] {
+                let (mapped, identity) = cache.open_resolved(decimation, digest).unwrap();
+                assert_eq!(identity, wanted);
+                assert_eq!(mapped.cells().unwrap(), resident.cells().unwrap());
+                assert_eq!(mapped.dataset(), dataset);
+            }
+
+            assert!(matches!(
+                cache.open_resolved(decimation, Some(built.digest ^ 1)),
+                Err(CacheError::NotThisTable(Mismatch::Digest { wanted, found }))
+                    if wanted == built.digest ^ 1 && found == built.digest
+            ));
+        }
+    }
+
+    fn assert_all_openers_refuse(cache: &Cache, wanted: &Identity) {
+        let refusal = cache.read(wanted).unwrap_err().to_string();
+        assert_eq!(cache.open(wanted).unwrap_err().to_string(), refusal);
+        for digest in [None, Some(wanted.digest)] {
+            assert_eq!(
+                cache
+                    .open_resolved(wanted.decimation, digest)
+                    .unwrap_err()
+                    .to_string(),
+                refusal
+            );
+        }
+    }
+
+    #[test]
+    fn resolving_a_digest_preserves_header_refusals() {
+        let directory = TempDir::new().unwrap();
+        let cache = cache_in(&directory);
+        let built = publish(&cache, Decimation::none(grid(4, 3)));
+        let wanted = Identity::from(&built);
+        let original = serde_json::to_value(header_of(&built)).unwrap();
+        for (field, value) in [
+            ("width", serde_json::json!(5)),
+            ("height", serde_json::json!(4)),
+            ("decimation", serde_json::json!(2)),
+            ("origin_lat", serde_json::json!(80)),
+            ("origin_lon", serde_json::json!(0)),
+            ("lon_step", serde_json::json!(80)),
+            ("lat_step", serde_json::json!(-50)),
+            ("byte_order", serde_json::to_value(other_order()).unwrap()),
+        ] {
+            let mut header = original.clone();
+            header[field] = value;
+            fs::write(cache.header_path(), serde_json::to_vec(&header).unwrap()).unwrap();
+            assert_all_openers_refuse(&cache, &wanted);
+        }
+        for document in [
+            r#"{"format_version":1}"#.to_string(),
+            format!(r#"{{"format_version":{}}}"#, FORMAT_VERSION + 1),
+            r#"{"format_version":3}"#.to_string(),
+            r#"{"format_version": "#.to_string(),
+        ] {
+            fs::write(cache.header_path(), document).unwrap();
+            assert_all_openers_refuse(&cache, &wanted);
+        }
+        write_header(&cache, &header_of(&built));
+        assert_all_openers_refuse(&cache, &half_turn_from(&built));
+        fs::remove_file(cache.header_path()).unwrap();
+        assert_all_openers_refuse(&cache, &wanted);
+    }
+
+    #[test]
+    fn resolving_a_digest_preserves_payload_length_refusals() {
+        let directory = TempDir::new().unwrap();
+        let cache = cache_in(&directory);
+        let built = publish(&cache, Decimation::none(grid(4, 3)));
+        let wanted = Identity::from(&built);
+        let original = fs::read(cache.payload_path()).unwrap();
+        fs::write(cache.payload_path(), &original[..original.len() - 3]).unwrap();
+        assert_all_openers_refuse(&cache, &wanted);
+        let mut trailing = original;
+        trailing.extend_from_slice(&[0, 0, 0]);
+        fs::write(cache.payload_path(), trailing).unwrap();
+        assert_all_openers_refuse(&cache, &wanted);
     }
 
     #[test]
