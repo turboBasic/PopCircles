@@ -10,8 +10,8 @@ Worked commands and their real output, and how to choose the two flags that deci
 Wiesbaden to Rome:
 
 ```sh
-$ mise run cli -- distance 50.0782 8.2398 41.9028 12.4964
-{"schema_version":1,"tool":"popcircles","result":{"great_circle_km":966.3013398709427, …}}
+mise run cli -- distance 50.0782 8.2398 41.9028 12.4964
+# {"schema_version":1,"tool":"popcircles","result":{"great_circle_km":966.3013398709427, …}}
 ```
 
 ### Grid geometry
@@ -26,8 +26,8 @@ table build, not after a search that disagreed with you.
 For the GPWv4.11 raster (see [`data/README.md`](data/README.md)), without reading the file itself:
 
 ```sh
-$ mise run cli -- grid describe --dataset population-count-2020-30arcsec
-{"schema_version":1,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
+mise run cli -- grid describe --dataset population-count-2020-30arcsec
+# {"schema_version":1,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
 ```
 
 Grid-taking commands accept `--dataset` for registry defaults. Each explicit grid flag overrides its
@@ -35,7 +35,8 @@ own default, including zero; the resolved geometry is checked before use. Withou
 all six flags; no registry is read. For an explicit-only grid:
 
 ```sh
-mise run cli -- grid describe --width 36 --height 18 --origin-lat 90 --origin-lon -180 \
+mise run cli -- grid describe --width 36 --height 18 \
+  --origin-lat 90 --origin-lon -180 \
   --lon-step 10 --lat-step -10
 ```
 
@@ -46,9 +47,8 @@ answered from it by mmap — the payload is never resident. The `query` function
 than the CLI's, because the same grid and table go to every query and only the window changes:
 
 ```sh
-$ mise run cli -- table build --dataset population-count-2020-30arcsec \
-    --decimate 10 --cache out/gpw-5arcmin
-{"schema_version":1, …,"result":{"digest":"0xf17aa802a6890f0c","total_population":7757982599.323671, …}}
+mise run cli -- table build --dataset population-count-2020-30arcsec --decimate 10 --cache out/gpw-5arcmin
+# {"schema_version":1, …,"result":{"digest":"0xf17aa802a6890f0c","total_population":7757982599.323671, …}}
 ```
 
 `table build` reads the raster path and defaults from `data/registry.toml`. It accepts individual
@@ -57,20 +57,26 @@ The source path remains registered, and the GeoTIFF is checked
 against the resolved specification before any cache is published.
 
 ```sh
-$ query() { mise run cli -- table query --dataset population-count-2020-30arcsec \
-    --decimate 10 --cache out/gpw-5arcmin "$@"; }
+query() {
+  mise run cli -- table query --dataset population-count-2020-30arcsec \
+    --decimate 10 --cache out/gpw-5arcmin "$@";
+}
 
-$ query                                                            # every cell there is
-{…,"rows":{"north":0,"south":2159},"columns":{"west":0,"east":4319,"full_turn":true},"population":7757982599.323671}}
+query
+# every cell there is
+# {…,"rows":{"north":0,"south":2159},"columns":{"west":0,"east":4319,"full_turn":true},"population":7757982599.323671}}
 
-$ query --north 55.06 --south 47.27 --west 5.87 --east 15.04       # the box around Germany
-{…,"rows":{"north":419,"south":512},"columns":{"west":2230,"east":2340,"full_turn":false},"population":103837251.96947795}}
+query --north 55.06 --south 47.27 --west 5.87 --east 15.04
+# the box around Germany
+# {…,"rows":{"north":419,"south":512},"columns":{"west":2230,"east":2340,"full_turn":false},"population":103837251.96947795}}
 
-$ query --north 52.38 --south 44.39 --west 22.14 --east 40.23      # the box around Ukraine
-{…,"rows":{"north":451,"south":547},"columns":{"west":2425,"east":2642,"full_turn":false},"population":75109401.82679437}}
+query --north 52.38 --south 44.39 --west 22.14 --east 40.23
+# the box around Ukraine
+# {…,"rows":{"north":451,"south":547},"columns":{"west":2425,"east":2642,"full_turn":false},"population":75109401.82679437}}
 
-$ query --north -12 --south -21 --west 176 --east -178             # Fiji, across the antimeridian
-{…,"rows":{"north":1224,"south":1332},"columns":{"west":4272,"east":24,"full_turn":false},"population":919250.7823575613}}
+query --north -12 --south -21 --west 176 --east -178
+# Fiji, across the antimeridian
+# {…,"rows":{"north":1224,"south":1332},"columns":{"west":4272,"east":24,"full_turn":false},"population":919250.7823575613}}
 ```
 
 The digest names the cells a table was built from. Cached commands read it from the header; pass
@@ -110,8 +116,12 @@ The four search commands read the same table, so they take the same flags — co
 function again, and the outputs below are from one run against the 5 arcmin table above:
 
 ```sh
-$ search() { local command="$1"; shift; mise run cli -- "$command" --dataset population-count-2020-30arcsec \
-    --decimate 10 --cache out/gpw-5arcmin "$@"; }
+search() {
+  local command="$1"
+  shift
+  mise run cli -- "$command" --dataset population-count-2020-30arcsec \
+    --decimate 10 --cache out/gpw-5arcmin "$@"
+}
 ```
 
 **Every figure below is a decimated table's.** The 5 arcmin grid is a tenth of the raster's resolution in
@@ -124,9 +134,9 @@ resolution.
 A thousand kilometres around Dhaka is a tenth of everyone:
 
 ```sh
-$ search population-at --lat 23.8103 --lon 90.4125 --radius-km 1000
-{…,"result":{"requested":{"lat":23.8103,…},"centre":{"lat":23.79166666666667,"lon":90.375},
- "radius_km":1000.0,"population":769799773.1688497,"share_of_total":0.0992267981157833}}
+search population-at --lat 23.8103 --lon 90.4125 --radius-km 1000
+# {…,"result":{"requested":{"lat":23.8103,…},"centre":{"lat":23.79166666666667,"lon":90.375},
+#  "radius_km":1000.0,"population":769799773.1688497,"share_of_total":0.0992267981157833}}
 ```
 
 The centre is not the coordinate asked for: it is the centre of the cell containing it, and both are
@@ -138,10 +148,10 @@ Found by branch and bound over every cell centre — a good deal further west th
 16% of the world rather than 10%:
 
 ```sh
-$ search most-populous --radius-km 1000
-{…,"result":{"centre":{"lat":25.125,"lon":79.70833333333331},"radius_km":1000.0,
- "population":1254363867.9300776,"share_of_total":0.1616868627727305,"tolerance_persons":0.0,
- …}}
+search most-populous --radius-km 1000
+# {…,"result":{"centre":{"lat":25.125,"lon":79.70833333333331},"radius_km":1000.0,
+#  "population":1254363867.9300776,"share_of_total":0.1616868627727305,"tolerance_persons":0.0,
+#  …}}
 ```
 
 `--spacing` is optional: the library derives an initial block side from this radius and grid. A positive
@@ -152,12 +162,12 @@ $ search most-populous --radius-km 1000
 The question the program is named for — here, half the world's population:
 
 ```sh
-$ search smallest-for-share --share 50 --ledger out/radii.json
-{…,"result":{"ledger":{"path":"out/radii.json","radii":24},"circle":{"radius_km":3360,
- "centre":{"lat":28.79166666666667,"lon":100.625},"population":3879165388.019252,
- "target":{"share":0.5,"persons":3878991299.6618357,"total":7757982599.323671},
- "short_below":{"radius_km":3359,"population":3878869485.4163485},"covers_whole_grid":false,
- "predicate_slack_persons":0.01196060136531932,…}}}
+search smallest-for-share --share 50 --ledger out/radii.json
+# {…,"result":{"ledger":{"path":"out/radii.json","radii":24},"circle":{"radius_km":3360,
+#  "centre":{"lat":28.79166666666667,"lon":100.625},"population":3879165388.019252,
+#  "target":{"share":0.5,"persons":3878991299.6618357,"total":7757982599.323671},
+#  "short_below":{"radius_km":3359,"population":3878869485.4163485},"covers_whole_grid":false,
+#  "predicate_slack_persons":0.01196060136531932,…}}}
 ```
 
 3360 km, centred in western China. `short_below` is the other end of the bracket the search proved: that
@@ -176,12 +186,12 @@ Every radius tried goes in the ledger, so a sweep of several shares pays for eac
 50% record costs no search at all, because the run above already settled its radii:
 
 ```sh
-$ search sweep --from 10 --to 50 --step 20 --ledger out/radii.json
-{…,"result":{"ledger":{"path":"out/radii.json","radii":43},"shares":{"from_percent":10,"to_percent":50,
- "step_percent":20},"records":[
-  {"radius_km":702,…,"target":{"share":0.1,…},"stats":{"radii_evaluated":9,"radii_reused":11,…}},
-  {"radius_km":2129,…,"target":{"share":0.3,…},"stats":{"radii_evaluated":10,"radii_reused":14,…}},
-  {"radius_km":3360,…,"target":{"share":0.5,…},"stats":{"radii_evaluated":0,"radii_reused":24,…}}]}}
+search sweep --from 10 --to 50 --step 20 --ledger out/radii.json
+# {…,"result":{"ledger":{"path":"out/radii.json","radii":43},"shares":{"from_percent":10,"to_percent":50,
+#  "step_percent":20},"records":[
+#   {"radius_km":702,…,"target":{"share":0.1,…},"stats":{"radii_evaluated":9,"radii_reused":11,…}},
+#   {"radius_km":2129,…,"target":{"share":0.3,…},"stats":{"radii_evaluated":10,"radii_reused":14,…}},
+#   {"radius_km":3360,…,"target":{"share":0.5,…},"stats":{"radii_evaluated":0,"radii_reused":24,…}}]}}
 ```
 
 `records` ascend by requested share, which is part of the format rather than an accident of iteration.
