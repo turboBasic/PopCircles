@@ -38,8 +38,7 @@ pub(crate) struct CachedTable {
 }
 
 impl CachedTable {
-    /// Resolves the flags to a mapped table: the declared grid, the decimation, the identity wanted, and
-    /// the cache opened against it.
+    /// Resolves the flags to a mapped table and the identity checked by its header.
     ///
     /// The one place a command reads a cache, so a command asks for a table rather than assembling the
     /// path, the identity and the provenance of one for itself.
@@ -51,14 +50,9 @@ impl CachedTable {
         let source = args.grid.grid().map_err(|error| Failure::grid(&error))?;
         let decimation =
             Decimation::new(source, args.table.decimate).map_err(|error| Failure::table(&error))?;
-        let identity = Identity {
-            digest: args.digest,
-            decimation,
-        };
-
         let cache = Cache::new(&args.table.cache);
-        let mapped = cache
-            .open(&identity)
+        let (mapped, identity) = cache
+            .open_resolved(decimation, args.digest)
             .map_err(|error| Failure::cache(&error))?;
 
         // Box 6's resolved input, here because this is already the one place a cache is opened. It names

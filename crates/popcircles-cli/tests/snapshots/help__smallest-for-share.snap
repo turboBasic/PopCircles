@@ -4,7 +4,7 @@ expression: help_for(path)
 ---
 The smallest circle whose population reaches a share of the table's own total
 
-Usage: popcircles smallest-for-share [OPTIONS] --width <WIDTH> --height <HEIGHT> --origin-lat <ORIGIN_LAT> --origin-lon <ORIGIN_LON> --lon-step <LON_STEP> --lat-step <LAT_STEP> --digest <DIGEST> --share <SHARE>
+Usage: popcircles smallest-for-share [OPTIONS] --width <WIDTH> --height <HEIGHT> --origin-lat <ORIGIN_LAT> --origin-lon <ORIGIN_LON> --lon-step <LON_STEP> --lat-step <LAT_STEP> --share <SHARE>
 
 Options:
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
@@ -16,7 +16,7 @@ Options:
       --lat-step <LAT_STEP>      
       --cache <CACHE>            Both cache files are this path plus a suffix. Under `out/` by default, which is gitignored — a generated table is never committed [default: out/table]
       --decimate <DECIMATE>      Fold every k by k block of cells into one table cell. Must divide both grid dimensions [default: 1]
-      --digest <DIGEST>          The digest a build reported, which is what names the table wanted
+      --digest <DIGEST>          Require this decoded-cells digest; otherwise use the cache header's digest
       --share <SHARE>            The share to reach, in whole percent. A hundred is everyone the table holds
       --spacing <SPACING>        Override the initial block side in cells, derived from each radius and the grid when omitted. Changes runtime only; the answer is the same at every spacing
       --ledger <LEDGER>          The JSON document every probe's maximum is recorded in. Under `out/` beside the cache, which is gitignored [default: out/radii.json]

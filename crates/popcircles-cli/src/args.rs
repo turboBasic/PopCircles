@@ -93,7 +93,7 @@ pub(crate) struct SearchArgs {
 }
 
 /// A table that has already been built, named the way opening one needs: the grid it was declared over,
-/// where the cache sits, and the digest that says which table is wanted.
+/// where the cache sits, and an optional digest expectation.
 ///
 /// Flattened into every command that reads a cached table, so those flags have one spelling and one help
 /// string rather than a copy per command.
@@ -103,9 +103,9 @@ pub(crate) struct CachedTableArgs {
     pub(crate) grid: GridArgs,
     #[command(flatten)]
     pub(crate) table: TableArgs,
-    /// The digest a build reported, which is what names the table wanted.
+    /// Require this decoded-cells digest; otherwise use the cache header's digest.
     #[arg(long, value_parser = parse_digest)]
-    pub(crate) digest: u64,
+    pub(crate) digest: Option<u64>,
 }
 
 /// The grid a raster is declared to be. The declared grid wins over the file's own tags, which is why
@@ -182,8 +182,7 @@ impl WindowArgs {
     }
 }
 
-/// Accepts what a build printed, `0x` and all, because the digest a query needs is copied from one
-/// document into one flag.
+/// Accepts what a build printed, `0x` and all, so a digest expectation needs no transcription.
 pub(crate) fn parse_digest(value: &str) -> Result<u64, String> {
     let digits = value.strip_prefix("0x").unwrap_or(value);
     u64::from_str_radix(digits, 16)

@@ -35,7 +35,7 @@ $ mise run cli -- grid describe --width 43200 --height 21600 --origin-lat 90 --o
 
 A table over that raster, decimated to 5 arcmin so the cache stays small, and then population queries
 answered from it by mmap — the payload is never resident. The `query` function is this file's doing rather
-than the CLI's, because the same grid, table and digest go to every query and only the window changes:
+than the CLI's, because the same grid and table go to every query and only the window changes:
 
 ```sh
 $ mise run cli -- table build --dataset population-count-2020-30arcsec \
@@ -44,7 +44,7 @@ $ mise run cli -- table build --dataset population-count-2020-30arcsec \
 
 $ query() { mise run cli -- table query --width 43200 --height 21600 --origin-lat 90 \
     --origin-lon -180 --lon-step 0.008333333333333333 --lat-step -0.008333333333333333 \
-    --decimate 10 --cache out/gpw-5arcmin --digest 0xf17aa802a6890f0c "$@"; }
+    --decimate 10 --cache out/gpw-5arcmin "$@"; }
 
 $ query                                                            # every cell there is
 {…,"rows":{"north":0,"south":2159},"columns":{"west":0,"east":4319,"full_turn":true},"population":7757982599.323671}}
@@ -59,8 +59,10 @@ $ query --north -12 --south -21 --west 176 --east -178             # Fiji, acros
 {…,"rows":{"north":1224,"south":1332},"columns":{"west":4272,"east":24,"full_turn":false},"population":919250.7823575613}}
 ```
 
-The digest names the cells a table was built from, so it is what a query passes back to say which
-table it wants — and a cache of any other table is refused rather than reused. The Fiji window wraps
+The digest names the cells a table was built from. Cached commands read it from the header; pass
+`--digest 0xf17aa802a6890f0c` to assert that expectation and refuse a different table. Omitting it selects
+the cache at `--cache` without verifying the source raster or recomputing the decoded digest. The requested
+grid and decimation are still checked against the header. The Fiji window wraps
 the antimeridian, which needs nothing said about it because `west` is above `east`; the whole extent,
 though, is what a query with no window covers, because −180 and 180 reduce to the same column and so
 no pair of coordinates can mean the globe.
@@ -89,7 +91,7 @@ function again, and the outputs below are from one run against the 5 arcmin tabl
 ```sh
 $ search() { local command="$1"; shift; mise run cli -- "$command" --width 43200 --height 21600 \
     --origin-lat 90 --origin-lon -180 --lon-step 0.008333333333333333 --lat-step -0.008333333333333333 \
-    --decimate 10 --cache out/gpw-5arcmin --digest 0xf17aa802a6890f0c "$@"; }
+    --decimate 10 --cache out/gpw-5arcmin "$@"; }
 ```
 
 **Every figure below is a decimated table's.** The 5 arcmin grid is a tenth of the raster's resolution in

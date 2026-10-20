@@ -171,6 +171,13 @@ impl Fixture {
         self.run(command, &hexadecimal(self.digest), rest)
     }
 
+    fn run_inferred(&self, command: &str, rest: &[&str]) -> Output {
+        let mut flags = self.flags(&hexadecimal(self.digest));
+        let at = flags.iter().position(|flag| flag == "--digest").unwrap();
+        flags.drain(at..at + 2);
+        run_with(&flags, command, rest)
+    }
+
     /// The command with this fixture's own digest, at a level of the caller's choosing.
     fn run_at_level(&self, level: &str, command: &str, rest: &[&str]) -> Output {
         let flags = self.flags_at(&hexadecimal(self.digest), level);
@@ -192,7 +199,7 @@ impl Fixture {
 
 fn run_with(flags: &[String], command: &str, rest: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_popcircles"))
-        .arg(command)
+        .args(command.split_whitespace())
         .args(flags)
         .args(rest)
         .output()
@@ -315,6 +322,91 @@ fn search_parameters<'a>(command: &str, ledger: &'a str) -> Vec<&'a str> {
             "--from", "25", "--to", "100", "--step", "75", "--ledger", ledger,
         ],
         _ => panic!("a searching command"),
+    }
+}
+
+const CACHE_READERS: [&str; 5] = [
+    "table query",
+    "population-at",
+    "most-populous",
+    "smallest-for-share",
+    "sweep",
+];
+
+fn cached_parameters<'a>(command: &str, ledger: &'a str) -> Vec<&'a str> {
+    match command {
+        "table query" => vec![],
+        "population-at" => vec!["--lat", "48", "--lon", "11", "--radius-km", "1200"],
+        _ => search_parameters(command, ledger),
+    }
+}
+
+fn successful_document(output: &Output) -> serde_json::Value {
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    assert!(output.stderr.is_empty(), "{output:?}");
+    serde_json::from_slice(&output.stdout).expect("stdout is one JSON document")
+}
+
+#[test]
+fn every_cache_reader_infers_the_same_digest_and_answers() {
+    for dataset in [None, Some("population-count-2020-30arcsec")] {
+        let fixture = Fixture::over(dense, dataset);
+        for command in CACHE_READERS {
+            let inferred_path = fixture.ledger(&format!("{command}-inferred.json"));
+            let explicit_path = fixture.ledger(&format!("{command}-explicit.json"));
+            let inferred_path = inferred_path.to_string_lossy();
+            let explicit_path = explicit_path.to_string_lossy();
+            let parameters = cached_parameters(command, &inferred_path);
+            let mut inferred = successful_document(&fixture.run_inferred(command, &parameters));
+            let mut explicit = successful_document(
+                &fixture.run_ok(command, &cached_parameters(command, &explicit_path)),
+            );
+            if command == "table query" {
+                assert_eq!(inferred["result"]["digest"], hexadecimal(fixture.digest));
+            } else {
+                assert_eq!(
+                    inferred["provenance"]["digest"],
+                    hexadecimal(fixture.digest)
+                );
+                assert_eq!(
+                    inferred["provenance"]["dataset"],
+                    serde_json::json!(dataset)
+                );
+            }
+
+            if matches!(command, "smallest-for-share" | "sweep") {
+                let warm = successful_document(&fixture.run_inferred(command, &parameters));
+                assert_same_answers(&warm, &inferred);
+                for answer in answers(&warm) {
+                    assert_eq!(answer["stats"]["radii_evaluated"], 0);
+                    assert!(answer["stats"]["radii_reused"].as_u64().unwrap() > 0);
+                }
+                inferred["result"]["ledger"]["path"] = serde_json::Value::Null;
+                explicit["result"]["ledger"]["path"] = serde_json::Value::Null;
+            }
+            assert_same_bits(&inferred, &explicit);
+        }
+    }
+}
+
+#[test]
+fn inferred_digests_still_refuse_another_tables_ledger() {
+    let fixture = Fixture::build();
+    let other = Fixture::clustered();
+    assert_ne!(fixture.digest, other.digest);
+    for command in ["smallest-for-share", "sweep"] {
+        let ledger = fixture.ledger(&format!("{command}.json"));
+        let path = ledger.to_string_lossy();
+        let parameters = cached_parameters(command, &path);
+        successful_document(&fixture.run_inferred(command, &parameters));
+        let before = std::fs::read(&ledger).unwrap();
+        let output = other.run_inferred(command, &parameters);
+        assert_eq!(output.status.code(), Some(3), "{output:?}");
+        assert!(output.stdout.is_empty(), "{output:?}");
+        let complaint = String::from_utf8_lossy(&output.stderr);
+        assert!(complaint.contains("ledger"), "{complaint}");
+        assert!(complaint.contains("digest"), "{complaint}");
+        assert_eq!(std::fs::read(&ledger).unwrap(), before);
     }
 }
 
@@ -505,15 +597,21 @@ fn an_unseparated_answer_warns_on_stderr_and_a_separated_one_says_nothing() {
 #[test]
 fn a_digest_naming_another_table_is_missing_data_and_prints_nothing() {
     let fixture = Fixture::build();
-    let output = fixture.run(
-        "population-at",
-        "0x0000000000000001",
-        &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
-    );
-    assert_eq!(output.status.code(), Some(3), "{output:?}");
-    // Nothing on stdout, which is what makes a consumer's parse failure impossible rather than confusing.
-    assert!(output.stdout.is_empty(), "{output:?}");
-    assert!(!output.stderr.is_empty(), "a failure says why");
+    for command in CACHE_READERS {
+        let ledger = fixture.ledger("unused.json");
+        let path = ledger.to_string_lossy();
+        let output = fixture.run(
+            command,
+            "0x0000000000000001",
+            &cached_parameters(command, &path),
+        );
+        assert_eq!(output.status.code(), Some(3), "{output:?}");
+        // Nothing on stdout, which is what makes a consumer's parse failure impossible rather than confusing.
+        assert!(output.stdout.is_empty(), "{output:?}");
+        let complaint = String::from_utf8_lossy(&output.stderr);
+        assert!(complaint.contains("digest"), "{complaint}");
+        assert!(!ledger.exists());
+    }
 }
 
 #[test]
