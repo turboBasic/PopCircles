@@ -19,6 +19,7 @@ from population_circles.dataset_registry import (
 # mise run test and CI both run. Pinning against that, rather than against the same literal in a
 # deselected integration test, compares two values a gate enforces instead of two spellings.
 RUST_NODATA_BITS = 0xFF7FFFFD
+COUNTRY_FEATURE_COUNT = 263
 
 # Named here rather than imported from the renderer: this file tests the registry, and which row a
 # figure happens to credit is the renderer's business.
@@ -34,6 +35,25 @@ source_url = "https://example.invalid/source"
 licence = "Public domain"
 licence_url = "https://example.invalid/licence"
 attribution = ""
+"""
+COUNTRY_BOUNDARY_ROW = """
+[datasets.countries-2024]
+kind = "boundary-vector"
+path = "data/boundaries/countries-2024.geojson"
+bytes = 5
+sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+fetch_url = "https://example.invalid/countries-2024.geojson"
+source_url = "https://example.invalid/source"
+licence = "Test licence"
+licence_url = "https://example.invalid/licence"
+attribution = "Required credit"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 263
+revision = "2024"
+source_id_field = "CNTR_ID"
+identity_policy = "ADR 0015"
 """
 
 
@@ -89,7 +109,9 @@ def test_the_committed_dataset_has_no_fetch_url_and_the_published_one_does() -> 
     published = datasets[RASTER_KEY]
     assert published.fetch_url is not None
     assert published.fetch_url.endswith(PurePosixPath(published.path).name)
-    committed = [d for d in datasets.values() if isinstance(d, BoundaryVector)]
+    committed = [
+        d for d in datasets.values() if isinstance(d, BoundaryVector) and d.fetch_url is None
+    ]
     assert committed
     for dataset in committed:
         assert dataset.fetch_url is None
@@ -137,3 +159,45 @@ def test_a_boundary_carrying_grid_fields_does_not_construct() -> None:
     text = REGISTRY.read_text(encoding="utf-8") + "\nepsg = 4326\n"
     with pytest.raises(ValidationError, match="epsg"):
         parse(text)
+
+
+def test_a_country_boundary_accepts_complete_metadata_and_fetch_delivery() -> None:
+    dataset = parse(COUNTRY_BOUNDARY_ROW).datasets["countries-2024"]
+
+    assert isinstance(dataset, BoundaryVector)
+    assert dataset.format == "GeoJSON"
+    assert dataset.crs == "EPSG:4326"
+    assert dataset.axis_order == "longitude-latitude"
+    assert dataset.feature_count == COUNTRY_FEATURE_COUNT
+    assert dataset.revision == "2024"
+    assert dataset.source_id_field == "CNTR_ID"
+    assert dataset.identity_policy == "ADR 0015"
+    assert dataset.fetch_url is not None
+    assert dataset.path == "data/boundaries/countries-2024.geojson"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("feature_count", "0"), ("crs", '"EPSG:3857"')],
+)
+def test_a_country_boundary_rejects_invalid_metadata(field: str, value: str) -> None:
+    original = "feature_count = 263" if field == "feature_count" else 'crs = "EPSG:4326"'
+    text = COUNTRY_BOUNDARY_ROW.replace(original, f"{field} = {value}")
+
+    with pytest.raises(ValidationError):
+        parse(text)
+
+
+def test_a_country_boundary_rejects_missing_metadata() -> None:
+    with pytest.raises(ValidationError, match="metadata must be complete"):
+        parse(COUNTRY_BOUNDARY_ROW.replace('source_id_field = "CNTR_ID"\n', ""))
+
+
+def test_a_country_boundary_key_must_match_its_file_stem() -> None:
+    with pytest.raises(ValidationError, match="whose stem is"):
+        parse(COUNTRY_BOUNDARY_ROW.replace("countries-2024.geojson", "other.geojson"))
+
+
+def test_a_boundary_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        parse(COUNTRY_BOUNDARY_ROW + 'unexpected = "value"\n')

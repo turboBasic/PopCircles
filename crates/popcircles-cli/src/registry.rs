@@ -45,6 +45,9 @@ pub(crate) enum RegistryError {
 
     #[error("dataset `{name}` has path {path}, whose stem is not `{name}`")]
     KeyIsNotTheStem { name: String, path: String },
+
+    #[error("country boundary `{name}` has incomplete or invalid vector metadata")]
+    InvalidBoundaryMetadata { name: String },
 }
 
 /// What a build needs to read a raster: the file, and everything the file is held to.
@@ -93,8 +96,15 @@ struct PopulationRaster {
 }
 
 #[derive(Debug, Deserialize)]
-struct BoundaryVector {
-    path: PathBuf,
+pub(crate) struct BoundaryVector {
+    pub(crate) path: PathBuf,
+    pub(crate) format: Option<String>,
+    pub(crate) crs: Option<String>,
+    pub(crate) axis_order: Option<String>,
+    pub(crate) feature_count: Option<u32>,
+    pub(crate) revision: Option<String>,
+    pub(crate) source_id_field: Option<String>,
+    pub(crate) identity_policy: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -131,6 +141,26 @@ impl Registry {
                     name: name.clone(),
                     path: row.path().display().to_string(),
                 });
+            }
+            if let Some(boundary) = registry.boundary(name) {
+                let fields = [
+                    boundary.format.as_deref(),
+                    boundary.crs.as_deref(),
+                    boundary.axis_order.as_deref(),
+                    boundary.revision.as_deref(),
+                    boundary.source_id_field.as_deref(),
+                    boundary.identity_policy.as_deref(),
+                ];
+                let any_metadata =
+                    fields.iter().any(Option::is_some) || boundary.feature_count.is_some();
+                let complete = fields.iter().all(Option::is_some)
+                    && boundary.feature_count.is_some_and(|count| count > 0);
+                let valid = boundary.format.as_deref() == Some("GeoJSON")
+                    && boundary.crs.as_deref() == Some("EPSG:4326")
+                    && boundary.axis_order.as_deref() == Some("longitude-latitude");
+                if any_metadata && (!complete || !valid) {
+                    return Err(RegistryError::InvalidBoundaryMetadata { name: name.clone() });
+                }
             }
         }
         Ok(registry)
@@ -201,6 +231,14 @@ impl Registry {
                         .join(", "),
                 })
             }
+        }
+    }
+
+    /// Resolves a boundary vector's path and optional country description.
+    pub(crate) fn boundary(&self, name: &str) -> Option<&BoundaryVector> {
+        match self.datasets.get(name) {
+            Some(Row::BoundaryVector(row)) => Some(row),
+            Some(Row::PopulationRaster(_) | Row::SettlementVector(_)) | None => None,
         }
     }
 }
@@ -311,6 +349,62 @@ path = "data/settlements/example-places.geojson"
             registry.settlements("missing"),
             Err(RegistryError::UnknownSettlement { .. })
         ));
+    }
+
+    #[test]
+    fn country_boundary_description_is_available_without_population_grid_fields() {
+        let text = r#"
+[datasets.countries-2024]
+kind = "boundary-vector"
+path = "data/boundaries/countries-2024.geojson"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 263
+revision = "2024"
+source_id_field = "CNTR_ID"
+identity_policy = "ADR 0015"
+"#;
+        let registry = Registry::parse(Path::new("fixture.toml"), text)
+            .expect("the country boundary description is complete");
+        let boundary = registry
+            .boundary("countries-2024")
+            .expect("the registered boundary vector");
+
+        assert_eq!(
+            boundary.path,
+            PathBuf::from("data/boundaries/countries-2024.geojson")
+        );
+        assert_eq!(boundary.format.as_deref(), Some("GeoJSON"));
+        assert_eq!(boundary.crs.as_deref(), Some("EPSG:4326"));
+        assert_eq!(boundary.feature_count, Some(263));
+        assert!(registry.raster("countries-2024").is_err());
+    }
+
+    #[test]
+    fn incomplete_or_invalid_country_boundary_metadata_is_refused() {
+        let valid = r#"
+[datasets.countries-2024]
+kind = "boundary-vector"
+path = "data/boundaries/countries-2024.geojson"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 263
+revision = "2024"
+source_id_field = "CNTR_ID"
+identity_policy = "ADR 0015"
+"#;
+        for invalid in [
+            valid.replace("identity_policy = \"ADR 0015\"\n", ""),
+            valid.replace("feature_count = 263", "feature_count = 0"),
+            valid.replace("crs = \"EPSG:4326\"", "crs = \"EPSG:3857\""),
+        ] {
+            assert!(matches!(
+                Registry::parse(Path::new("fixture.toml"), &invalid),
+                Err(RegistryError::InvalidBoundaryMetadata { .. })
+            ));
+        }
     }
 
     #[test]

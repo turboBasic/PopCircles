@@ -176,6 +176,7 @@ WPP
 
 # --- Config keys and CLI ---
 addopts
+CNTR
 codegen
 gpgsign
 keygen
