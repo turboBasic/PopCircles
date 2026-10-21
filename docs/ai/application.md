@@ -146,6 +146,9 @@ The search is a library; the CLI and the renderer are clients of it. Dependencie
 view depends on results, CLI depends on domain, domain depends on neither — and a change that reverses
 an arrow is an architecture change, not a refactor.
 
+Combined execution is coordinated above this boundary
+([ADR 0014](../decisions/0014-python-orchestrates-above-the-result-document.md)).
+
 - **Model the domain in types, not primitives.** A latitude, a longitude, a pixel index, a radius in
   km and a population count are five different things, and a bare `f64` or `usize` standing in for
   one is where a wrong-units bug lives undetected. `Grid` is the existing example: the constructor
@@ -210,5 +213,6 @@ holds how those tests are organised.
 
 Rust owns everything numeric: geodesy, raster ingest, the table, kernels, the search, the CLI —
 including one-off utilities that reuse the reader, so there is no second raster stack to keep
-correct. Python owns rendering and figures, and reads the CLI's JSON output rather than the raster. A
-Python helper that touches raster pixels is a sign the work belongs in Rust.
+correct. Python owns rendering, figures and combined execution; its coordinator invokes the Rust CLI
+and passes the published JSON to the renderer. It reads no raster pixels, cache headers or ledger
+contents. A Python helper that touches raster pixels is a sign the work belongs in Rust.
