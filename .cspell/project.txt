@@ -25,6 +25,8 @@ ponytail
 popcircles
 prek
 pyright
+fignums
+hardlink
 pytest
 ruff
 shellcheck

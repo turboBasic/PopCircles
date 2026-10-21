@@ -37,8 +37,8 @@ place, so a truncated download is refused rather than parsed:
 ## Usage
 
 [`USAGE.md`](USAGE.md) has the worked commands and their real output — a great-circle distance, the
-summation table and the queries answered from it, the four search commands, the maps, and what a run
-says about itself — together with how to choose `--decimate` and when to override automatic spacing
+summation table and the queries answered from it, the four search commands, combined search and
+rendering, and what a run says about itself — together with how to choose `--decimate` and override spacing
 with `--spacing`. `mise run cli -- --help` is the full command and flag reference.
 
 ## Validation
@@ -151,7 +151,7 @@ which is what makes the published checksum worth checking — is
 | `crates/popcircles/` | Rust library — the search |
 | `crates/popcircles-cli/` | The `popcircles` binary — a client of the library |
 | `data/` | Input datasets, with a registry in [`data/registry.toml`](data/registry.toml) |
-| `python/` | Python project — `population_circles` renders the maps, `repo_tools` lints this repository |
+| `python/` | Python project — `population_circles` coordinates search and renders maps, `repo_tools` lints this repository |
 | `docs/ai-instructions.md` | The instruction router: project invariants, and what to read for a task |
 | `docs/ai/` | Per-task conventions: [platform](docs/ai/platform.md), [code](docs/ai/code.md), [application](docs/ai/application.md) |
 | `docs/decisions/` | Architecture decision records — one ruling each, one page each |

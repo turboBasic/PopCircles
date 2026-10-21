@@ -49,6 +49,12 @@ def view(projection: str, centre: Coordinate, radius_km: float) -> Frame:
     return frame(projection, cap(centre, radius_km, EARTH_RADIUS_KM))
 
 
+@pytest.mark.parametrize("projection", ["unknown", "", "Orthographic"])
+def test_an_unknown_projection_is_refused(projection: str) -> None:
+    with pytest.raises(ValueError, match=r"unsupported projection.*plate-carree, orthographic"):
+        view(projection, CENTRE, RADIUS_KM)
+
+
 def test_the_plate_carree_frame_is_longitude_and_latitude_themselves() -> None:
     # Nothing to project: the axes' x and y *are* degrees, so the frame is the world rectangle and a
     # coordinate reaches it unchanged. Which is why the equal aspect the renderer sets is the whole

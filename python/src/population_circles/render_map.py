@@ -160,36 +160,40 @@ def render(
     figure = plt.figure(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
         figsize=(11.0, 6.0),
     )
-    # Room for the title above and the wrapped citation below, since both are placed at figure
-    # coordinates rather than left to a layout engine.
-    figure.subplots_adjust(left=0.03, right=0.97, top=0.87, bottom=0.16)
-    axes = figure.add_subplot(1, 1, 1)
-    # Equal, because a degree of longitude and a degree of latitude are the same length on the one
-    # frame stated in degrees, and the other frame is metres in both directions.
-    axes.set_aspect("equal")
-    # The horizon is drawn rather than left to the spines: one frame's outline is a rectangle and
-    # the other's is a disc, and only one of those is an axes frame.
-    axes.set_axis_off()
-    west, south, east, north = view.horizon.bounds
-    axes.set_xlim(west, east)
-    axes.set_ylim(south, north)
+    try:
+        # Room for the title above and the wrapped citation below, since both are placed at figure
+        # coordinates rather than left to a layout engine.
+        figure.subplots_adjust(left=0.03, right=0.97, top=0.87, bottom=0.16)
+        axes = figure.add_subplot(1, 1, 1)
+        # Equal: degrees of longitude and latitude have the same length on the
+        # frame stated in degrees, and the other frame is metres in both directions.
+        axes.set_aspect("equal")
+        # The horizon replaces the spines: one frame's outline is a rectangle and
+        # the other's is a disc, and only one of those is an axes frame.
+        axes.set_axis_off()
+        west, south, east, north = view.horizon.bounds
+        axes.set_xlim(west, east)
+        axes.set_ylim(south, north)
 
-    draw(axes, view, coastline)
-    axes.plot(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-        [centre[0]],
-        [centre[1]],
-        marker="+",
-        color="black",
-        markersize=9,
-        zorder=CENTRE_LAYER,
-    )
+        draw(axes, view, coastline)
+        axes.plot(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
+            [centre[0]],
+            [centre[1]],
+            marker="+",
+            color="black",
+            markersize=9,
+            zorder=CENTRE_LAYER,
+        )
 
-    # Anchored at its top, so a title line added later grows down into the margin rather than off
-    # the top of the figure — which is silent, since nothing about a clipped artist fails.
-    annotate(figure, 0.985, title_of(circle), 12.0, "top")
-    # Wrapped rather than one line: at this width the citation runs off both edges of the figure,
-    # which is an attribution nobody can read and so not an attribution.
-    annotate(figure, 0.055, textwrap.fill(attribution, width=118), 6.5)
+        # Anchored at its top, so an added title line grows into the margin rather than off
+        # the top of the figure — which is silent, since nothing about a clipped artist fails.
+        annotate(figure, 0.985, title_of(circle), 12.0, "top")
+        # Wrapped: at this width a one-line citation runs off both edges of the figure,
+        # which is an attribution nobody can read and so not an attribution.
+        annotate(figure, 0.055, textwrap.fill(attribution, width=118), 6.5)
+    except BaseException:
+        plt.close(figure)
+        raise
     return figure
 
 
@@ -202,13 +206,13 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = parse(argv)
-    input_path: Path = args.input
-    output_path: Path = args.output
-    projection: str = args.projection
-    no_coastlines: bool = args.no_coastlines
-
+def render_file(
+    input_path: Path,
+    output_path: Path,
+    projection: str = PLATE_CARREE,
+    *,
+    no_coastlines: bool = False,
+) -> None:
     document = json.loads(input_path.read_text(encoding="utf-8"))
     circle = circle_of(document)
     figure = render(
@@ -217,15 +221,22 @@ def main(argv: list[str] | None = None) -> int:
         citation(load(), circle.dataset),
         coastline=None if no_coastlines else basemap(COASTLINE),
     )
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    # No bbox_inches="tight": the title and citation are placed at figure coordinates, and cropping
-    # to the drawn content moves them off the positions they were given.
-    figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-        output_path,
-        dpi=200,
-    )
-    plt.close(figure)
-    print(output_path)
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        # No bbox_inches="tight": the title and citation use figure coordinates; cropping
+        # to the drawn content moves them off the positions they were given.
+        figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
+            output_path,
+            dpi=200,
+        )
+    finally:
+        plt.close(figure)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse(argv)
+    render_file(args.input, args.output, args.projection, no_coastlines=args.no_coastlines)
+    print(args.output)
     return 0
 
 

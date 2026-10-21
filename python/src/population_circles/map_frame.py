@@ -78,7 +78,12 @@ def orthographic(built: Cap) -> Frame:
 
 
 def frame(projection: str, built: Cap) -> Frame:
-    return orthographic(built) if projection == ORTHOGRAPHIC else plate_carree(built)
+    if projection == ORTHOGRAPHIC:
+        return orthographic(built)
+    if projection == PLATE_CARREE:
+        return plate_carree(built)
+    message = f"unsupported projection {projection!r}; choose from {', '.join(PROJECTIONS)}"
+    raise ValueError(message)
 
 
 def project(view: Frame, geometry: BaseGeometry) -> BaseGeometry:

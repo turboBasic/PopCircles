@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 import pytest
+from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
 from population_circles.circle_document import Circle, circle_of
@@ -53,6 +54,19 @@ def document() -> dict[str, Any]:
             "share_of_total": 0.1616868627727305,
         },
     }
+
+
+def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
+    before = plt.get_fignums()
+    with pytest.raises(ValueError, match="unsupported projection 'unknown'"):
+        render(circle_of(document()), "unknown", MARKER, coastline=None)
+    assert plt.get_fignums() == before
+
+
+def test_an_unknown_terminal_projection_exits_two() -> None:
+    with pytest.raises(SystemExit) as caught:
+        main(["--input", "unused.json", "--output", "unused.png", "--projection", "unknown"])
+    assert caught.value.code == 2  # noqa: PLR2004 — argparse's usage-error exit code
 
 
 def normalised(text: str) -> str:
