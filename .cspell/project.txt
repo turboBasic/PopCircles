@@ -155,6 +155,8 @@ widenings
 
 # --- Data sources ---
 CIESIN
+EuroGeographics
+GISCO
 Chamdo
 Dibrugarh
 Earthdata
