@@ -157,6 +157,7 @@ widenings
 CIESIN
 EuroGeographics
 GISCO
+GADM
 Chamdo
 Dibrugarh
 Earthdata
