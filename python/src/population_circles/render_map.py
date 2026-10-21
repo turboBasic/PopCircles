@@ -16,6 +16,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
 
+from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.dataset_registry import Registry, load
@@ -119,7 +120,7 @@ def title_of(answer: Answer) -> str:
     return (
         f"{circle.radius_km:,.0f} km circle holding {answer.caption.share:.2%} of the population\n"
         f"{answer.caption.population:,.0f} people, "
-        f"centred {circle.centre.lat:.4f}, {circle.centre.lon:.4f}\n"
+        f"centred {textwrap.fill(plain_centre(answer), width=44, subsequent_indent='         ')}\n"
         f"answered from table {answer.provenance.table}"
     )
 
@@ -163,9 +164,12 @@ def render(
         figsize=(11.0, 6.0),
     )
     try:
+        title = title_of(answer)
         # Room for the title above and the wrapped citation below, since both are placed at figure
         # coordinates rather than left to a layout engine.
-        figure.subplots_adjust(left=0.03, right=0.97, top=0.87, bottom=0.16)
+        title_lines = title.count("\n") + 1
+        top = 0.87 - 0.035 * max(0, title_lines - 3)
+        figure.subplots_adjust(left=0.03, right=0.97, top=top, bottom=0.16)
         axes = figure.add_subplot(1, 1, 1)
         # Equal: degrees of longitude and latitude have the same length on the
         # frame stated in degrees, and the other frame is metres in both directions.
@@ -189,7 +193,7 @@ def render(
 
         # Anchored at its top, so an added title line grows into the margin rather than off
         # the top of the figure — which is silent, since nothing about a clipped artist fails.
-        annotate(figure, 0.985, title_of(answer), 12.0, "top")
+        annotate(figure, 0.985, title, 12.0, "top")
         # Wrapped: at this width a one-line citation runs off both edges of the figure,
         # which is an attribution nobody can read and so not an attribution.
         annotate(figure, 0.055, textwrap.fill(attribution, width=118), 6.5)

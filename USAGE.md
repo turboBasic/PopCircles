@@ -124,6 +124,10 @@ search() {
 }
 ```
 
+Circle searches also read the registered settlement places. Fetch it with `mise run data:get` before
+searching; if it is missing, circle commands stop with that command in the error. Distance, grid and
+table commands do not need the places file.
+
 **Every figure below is a decimated table's.** The 5 arcmin grid is a tenth of the raster's resolution in
 each direction, so a radius here is good to about the width of one of its cells — which for half the world
 turns out to be no error at all. [Validation](README.md#validation) is where that was checked at full
@@ -254,6 +258,18 @@ region it misses cut out.
 [`data/boundaries/`](data/README.md), so a figure is the same on a fresh clone as on a warm one and CI
 draws complete ones on every pull request. `--no-coastlines` draws the cap over a bare graticule, which is
 a choice about the figure rather than a way to avoid a download.
+
+Circle documents carry their nearest settlement, so a figure title can name it without opening the
+fetched places file. Markdown centre fragments use the same decision and link the circle's centre to
+OpenStreetMap. After `mise run data:get` and a circle search, format a document with:
+
+```sh
+uv run python -m population_circles.centre_caption --input results/world-half-30arcsec.json
+# [28.84 N, 100.66 E](https://www.openstreetmap.org/?mlat=28.8375&mlon=100.66250000000002) (192 km from Xichang, China)
+```
+
+Older documents and centres without a nearby settlement still produce a linked coordinate. Rendering
+and formatting need the document, basemap and dataset registry; they do not need the settlement file.
 
 ## Watching a run
 

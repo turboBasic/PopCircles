@@ -100,6 +100,7 @@ fontsize
 geoms
 figcaption
 getpid
+Ivoire
 gridlines
 horizontalalignment
 linestrings
@@ -113,6 +114,8 @@ lons
 mangen
 markersize
 memmap
+mlat
+mlon
 miniz
 ndarray
 pread
@@ -159,6 +162,7 @@ JRC
 NASA
 Palisades
 SEDAC
+Xichang
 WPP
 
 # --- Config keys and CLI ---

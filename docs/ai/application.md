@@ -111,7 +111,7 @@ names what is inside it.
    ([ADR 0007](../decisions/0007-a-result-states-what-it-could-not-separate.md)).
 5. **Rendering.** Python, from the published document and nothing else, kept out of the Rust search
    path entirely — the document is where a *result* comes from, alongside two committed inputs it reads
-   for itself, the basemap and the dataset registry. Five modules in the `population_circles` package:
+   for itself, the basemap and the dataset registry. Six modules in the `population_circles` package:
    `circle_document` is the boundary, turning a document into a frozen answer whose geometric circle,
    caption and provenance are separate, and refusing a schema version it does not know, a kind it
    cannot draw, an earth model that is not a sphere, or a document naming no dataset — a figure whose
@@ -120,7 +120,8 @@ names what is inside it.
    refusing a row whose key is not its file's stem, which is where the attribution a figure owes is read
    from; `circle_geometry` builds the cap and holds the one place a PROJ definition is spelled;
    `map_frame` is what a figure is drawn *in* — the display projection, what it can show, and the
-   graticule; `render_map` is the figure, the only one here that writes anything, and the only one that
+   graticule; `centre_caption` formats the answer's centre for Markdown and figure titles;
+   `render_map` is the figure, the only one here that writes anything, and the only one that
    resolves a dataset — by the key the answer carries, never by one of its own. It takes the answer for
    its title and passes only its circle to the geometry it draws; `render` is handed the attribution
    rather than reaching for it. A

@@ -216,8 +216,11 @@ def test_a_complete_figure_is_written_where_it_is_told(projection: str, tmp_path
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
-def test_a_complete_figure_needs_no_network(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
+def test_a_complete_figure_with_a_long_settlement_needs_no_network(
+    projection: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # The claim the committed basemap exists to make, proved by denial rather than by reading the
     # imports: sockets are taken away for the duration, so a figure that still needs a download
@@ -229,10 +232,19 @@ def test_a_complete_figure_needs_no_network(
         monkeypatch.setattr(socket, name, refuse)
 
     source = tmp_path / "circle.json"
-    source.write_text(json.dumps(document()), encoding="utf-8")
-    output = tmp_path / "map.png"
+    payload = document()
+    payload["result"]["nearest_settlement"] = {
+        "name": "An exceptionally long settlement name that should wrap rather than clip",
+        "country": "A country with a long descriptive name",
+        "distance_km": 125,
+        "short_form": False,
+    }
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / f"map-{projection}.png"
+    assert not (tmp_path / "data/settlements/populated-places-1to10m.geojson").exists()
+    monkeypatch.chdir(tmp_path)
 
-    assert main(["--input", str(source), "--output", str(output)]) == 0
+    assert main(["--input", str(source), "--output", str(output), "--projection", projection]) == 0
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
