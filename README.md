@@ -1,6 +1,6 @@
 # PopulationCircles2026
 
-[![CI][ci-badge]][ci] [![Rust 1.97+][rust-badge]][rust] [![License: MIT][license-badge]][license]
+[![CI][ci-badge]][ci] [![Rust 1.99+][rust-badge]][rust] [![License: MIT][license-badge]][license]
 
 Finds the smallest circle on Earth containing a given share of the world's population, from a
 ~1 km resolution population raster — smallest measured on the globe, not on a projected map, which
@@ -190,5 +190,5 @@ Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepier
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [releases]: https://github.com/turboBasic/PopulationCircles2026/releases
 [rust]: https://www.rust-lang.org/
-[rust-badge]: https://img.shields.io/badge/rust-1.97%2B-orange.svg
+[rust-badge]: https://img.shields.io/badge/rust-1.99%2B-orange.svg
 [valeriepieris]: https://en.wikipedia.org/wiki/Valeriepieris_circle

@@ -667,6 +667,6 @@ mod tests {
         let inner = std::io::Error::from(std::io::ErrorKind::UnexpectedEof);
         let wanted = inner.to_string();
         assert_eq!(assert_error(RasterError::Decode(Box::new(inner))), wanted);
-        assert!(assert_error(RasterError::Tiled).is_empty());
+        assert_eq!(assert_error(RasterError::Tiled), "");
     }
 }

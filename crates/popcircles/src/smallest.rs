@@ -308,7 +308,7 @@ fn north_west(grid: &Grid) -> (Row, Col) {
 fn halvings(width: u32) -> u32 {
     match width {
         0 | 1 => 0,
-        _ => u32::BITS - (width - 1).leading_zeros(),
+        _ => (width - 1).bit_width(),
     }
 }
 
