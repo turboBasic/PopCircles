@@ -2,10 +2,12 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from population_circles import render_map
+from population_circles.circle_document import circle_of
 from population_circles.circle_map import REPO_ROOT, Options, WorkflowError, workflow
 from population_circles.dataset_registry import parse
 from test_render_map import PNG_MAGIC
@@ -107,3 +109,110 @@ def test_real_build_reuse_and_missing_raster(
     assert "mise run data:get" in capsys.readouterr().err
     assert options.document.read_bytes() == current
     assert not options.output.exists()
+
+
+def test_rust_circle_documents_cross_the_python_boundary_with_optional_settlements(
+    tmp_path: Path,
+    numeric_binary: Path,
+) -> None:
+    run(
+        [
+            "cargo",
+            "run",
+            "--release",
+            "-p",
+            "popcircles-cli",
+            "--example",
+            "map_fixture",
+            "--",
+            str(tmp_path),
+        ],
+        REPO_ROOT,
+    )
+    places = [
+        {
+            "type": "Feature",
+            "properties": {"NAME": f"Place {lat:g} {lon:g}", "ADM0NAME": "Fixture"},
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+        }
+        for lat in (45.0, -45.0)
+        for lon in (-135.0, -45.0, 45.0, 135.0)
+    ]
+    (tmp_path / "data/settlements/populated-places-1to10m.geojson").write_text(
+        json.dumps({"type": "FeatureCollection", "features": places}),
+        encoding="utf-8",
+    )
+    cache = tmp_path / "table"
+    common = ["--dataset", "tiny", "--cache", str(cache), "--decimate", "1"]
+    run([str(numeric_binary), "table", "build", *common], tmp_path)
+
+    documents: dict[str, dict[str, Any]] = {}
+    for kind, command in (
+        (
+            "circle",
+            ["population-at", *common, "--lat", "48", "--lon", "11", "--radius-km", "1200"],
+        ),
+        (
+            "most-populous",
+            ["most-populous", *common, "--radius-km", "3000", "--spacing", "4"],
+        ),
+        (
+            "smallest",
+            [
+                "smallest-for-share",
+                *common,
+                "--share",
+                "25",
+                "--spacing",
+                "4",
+                "--ledger",
+                str(tmp_path / "smallest.radii.json"),
+            ],
+        ),
+    ):
+        documents[kind] = json.loads(run([str(numeric_binary), *command], tmp_path).stdout)
+
+    for kind, document in documents.items():
+        answer = circle_of(document)
+        assert answer.caption.settlement is not None
+        assert answer.caption.settlement.name == (
+            f"Place {answer.circle.centre.lat:g} {answer.circle.centre.lon:g}"
+        )
+        assert answer.caption.settlement.country == "Fixture"
+        assert answer.caption.settlement.short_form is True
+        assert answer.caption.settlement.distance_km == 0
+
+        legacy = json.loads(json.dumps(document))
+        circle_payload = legacy["result"]
+        if kind == "smallest":
+            circle_payload = circle_payload["circle"]
+        del circle_payload["nearest_settlement"]
+        legacy_answer = circle_of(legacy)
+        assert legacy_answer.caption.settlement is None
+        assert legacy_answer.circle == answer.circle
+        assert legacy_answer.caption.population == answer.caption.population
+        assert legacy_answer.caption.share == answer.caption.share
+
+    sweep = json.loads(
+        run(
+            [
+                str(numeric_binary),
+                "sweep",
+                *common,
+                "--from",
+                "25",
+                "--to",
+                "50",
+                "--step",
+                "25",
+                "--spacing",
+                "4",
+                "--ledger",
+                str(tmp_path / "sweep.radii.json"),
+            ],
+            tmp_path,
+        ).stdout
+    )
+    assert all(
+        record["nearest_settlement"]["distance_km"] == 0 for record in sweep["result"]["records"]
+    )

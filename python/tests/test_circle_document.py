@@ -31,6 +31,7 @@ SEARCHED_LAT = -85.0
 SEARCHED_RADIUS_KM = 2639
 SEARCHED_POPULATION = 52635.0
 SEARCHED_SHARE = 0.25031387319522913
+SETTLEMENT_DISTANCE_KM = 12.345
 
 
 def envelope(kind: str, result: dict[str, Any]) -> dict[str, Any]:
@@ -109,6 +110,37 @@ def test_a_smallest_document_reads_the_circle_under_its_ledger() -> None:
     assert answer.caption.population == SEARCHED_POPULATION
     assert answer.caption.share == SEARCHED_SHARE
     assert circle.centre.lat == SEARCHED_LAT
+
+
+def test_settlement_context_is_optional_and_validated_on_both_payload_shapes() -> None:
+    context = {
+        "name": "Fixture Place",
+        "country": "Fixture Country",
+        "distance_km": SETTLEMENT_DISTANCE_KM,
+        "short_form": False,
+        "a_later_field": "ignored",
+    }
+    measured_document = envelope("circle", measured())
+    measured_document["result"]["nearest_settlement"] = context
+    measured_answer = circle_of(measured_document)
+    assert measured_answer.caption.settlement is not None
+    assert measured_answer.caption.settlement.name == "Fixture Place"
+    assert measured_answer.caption.settlement.distance_km == SETTLEMENT_DISTANCE_KM
+    assert measured_answer.caption.settlement.short_form is False
+
+    smallest_document = envelope("smallest", searched())
+    smallest_document["result"]["circle"]["nearest_settlement"] = context
+    smallest_answer = circle_of(smallest_document)
+    assert smallest_answer.caption.settlement is not None
+    assert smallest_answer.caption.settlement.country == "Fixture Country"
+
+    assert circle_of(envelope("circle", measured())).caption.settlement is None
+    assert circle_of(envelope("smallest", searched())).caption.settlement is None
+
+    malformed = envelope("circle", measured())
+    malformed["result"]["nearest_settlement"] = {**context, "distance_km": -1}
+    with pytest.raises(ValidationError):
+        circle_of(malformed)
 
 
 def test_a_later_schema_version_is_refused_on_the_version_field() -> None:

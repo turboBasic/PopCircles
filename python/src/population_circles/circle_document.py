@@ -80,11 +80,21 @@ class Provenance(BaseModel):
     table: str
 
 
+class Settlement(BaseModel):
+    model_config = _CONFIG
+
+    name: Annotated[str, Field(min_length=1)]
+    country: Annotated[str, Field(min_length=1)]
+    distance_km: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    short_form: bool
+
+
 class Caption(BaseModel):
     model_config = _CONFIG
 
     population: float
     share: float
+    settlement: Settlement | None = None
 
 
 class Answer(BaseModel):
@@ -131,6 +141,7 @@ class _Measured(_Payload):
     radius_km: float
     population: float
     share_of_total: float
+    nearest_settlement: Settlement | None = None
 
     def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
         return Answer(
@@ -139,7 +150,11 @@ class _Measured(_Payload):
                 radius_km=self.radius_km,
                 earth_radius_km=earth_radius_km,
             ),
-            caption=Caption(population=self.population, share=self.share_of_total),
+            caption=Caption(
+                population=self.population,
+                share=self.share_of_total,
+                settlement=self.nearest_settlement,
+            ),
             provenance=provenance,
         )
 
@@ -151,6 +166,7 @@ class _Smallest(BaseModel):
     radius_km: float
     population: float
     share_achieved: float
+    nearest_settlement: Settlement | None = None
 
 
 class _Searched(_Payload):
@@ -163,7 +179,11 @@ class _Searched(_Payload):
                 radius_km=self.circle.radius_km,
                 earth_radius_km=earth_radius_km,
             ),
-            caption=Caption(population=self.circle.population, share=self.circle.share_achieved),
+            caption=Caption(
+                population=self.circle.population,
+                share=self.circle.share_achieved,
+                settlement=self.circle.nearest_settlement,
+            ),
             provenance=provenance,
         )
 
