@@ -57,3 +57,5 @@ tmp/
 /data/population/*.tif
 # The published settlement input, which `mise run data:get` fetches and verifies.
 /data/settlements/*.geojson
+# The published GISCO snapshot, which `mise run data:get` fetches and verifies.
+/data/boundaries/gisco-countries-2024-1m.geojson

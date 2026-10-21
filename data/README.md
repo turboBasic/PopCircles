@@ -130,3 +130,50 @@ release asset is [`populated-places-1to10m.geojson`](https://github.com/turboBas
 
 Natural Earth is in the public domain. Its [terms of use][ne-terms] require no attribution, so settlement
 names add no credit to a figure.
+
+## gisco-countries-2024-1m
+
+| Property | Value |
+| --- | --- |
+| Geometry | 263 MultiPolygon country features |
+| Coordinates | longitude, latitude (WGS 84) |
+| CRS | EPSG:4326 (GeoJSON declares `urn:ogc:def:crs:EPSG::4326`) |
+| Feature identifier | `CNTR_ID`, unique for all 263 features in this snapshot |
+| Size | 58,878,461 bytes |
+| SHA-256 | `556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f` |
+
+**GISCO Countries 2024, 1:1,000,000**, from the [publisher's country product][gisco-countries].
+The publisher serves one worldwide GeoJSON file. The 2024 product has received later corrections;
+the checksum above identifies the exact bytes selected here, and `CNTR_ID` identifies each feature
+within that snapshot. The publisher offers no DOI or validated persistent identifier for these exact
+bytes. The territorial interpretation follows [ADR 0015](../docs/decisions/0015-country-identities-follow-gisco-country-features.md):
+each published feature is retained as one identity, including multipart countries, separate
+dependencies and the publisher's disputed-area treatment. The nine invalid source geometries remain
+unchanged; country-mask work must decide their behavior explicitly.
+
+GISCO's terms permit use and distribution only for non-commercial purposes, require acknowledgment
+of EuroGeographics and UN-FAO, and require the source geometry to remain at 1:1,000,000 or smaller.
+This input is unchanged at 1:1,000,000. It is not covered by this repository's MIT software licence.
+The required English publication notice is **© EuroGeographics for the administrative boundaries**.
+
+### Obtaining it
+
+`mise run data:get` downloads the verified snapshot without an account from this project's
+[data-only release][gisco-asset]. The release copy preserves the publisher's bytes unchanged because
+the publisher's direct URL can serve corrected content under the same filename. To compare the
+current publisher file with this snapshot:
+
+```sh
+curl -fL https://gisco-services.ec.europa.eu/distribution/v2/countries/geojson/CNTR_RG_01M_2024_4326.geojson \
+  -o /tmp/CNTR_RG_01M_2024_4326.geojson
+shasum -a 256 /tmp/CNTR_RG_01M_2024_4326.geojson
+```
+
+The published file is renamed to `gisco-countries-2024-1m.geojson` in `data/boundaries/`; no
+extraction, simplification or reprojection is performed. Compare the resulting digest with the row in
+[`registry.toml`](registry.toml). The registry's `fetch_url` is the stable project release asset;
+the publisher URL above is provenance and a way to reproduce the selected bytes while it still
+serves them.
+
+[gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
+[gisco-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson
