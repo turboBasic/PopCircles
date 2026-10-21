@@ -55,3 +55,5 @@ tmp/
 # size alone — the registry-row hook cannot, because the raster has a row. So nothing bounds a published
 # dataset small enough to pass that hook; FU-22 holds the gap.
 /data/population/*.tif
+# The published settlement input, which `mise run data:get` fetches and verifies.
+/data/settlements/*.geojson
