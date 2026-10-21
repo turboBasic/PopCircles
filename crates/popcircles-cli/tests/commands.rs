@@ -512,7 +512,7 @@ fn zero_spacing_is_refused_before_cache_access_on_every_search_command() {
         parameters.extend(["--spacing", "0"]);
         let output = fixture.run(command, "0x0000000000000001", &parameters);
         assert_eq!(output.status.code(), Some(2));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&output.stderr).contains("--spacing"));
     }
 }
@@ -910,7 +910,7 @@ fn all_grid_commands_resolve_dataset_defaults_without_a_raster_and_apply_overrid
         wrong.extend_from_slice(&params);
         let output = named_command(&fixture, command, &wrong);
         assert_eq!(output.status.code(), Some(3), "{command}: {output:?}");
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
     }
 }
 
@@ -966,7 +966,7 @@ fn dataset_and_explicit_grid_refusals_keep_their_error_classes() {
     for factor in ["0", "7"] {
         let output = named_command(&fixture, "table query", &["--decimate", factor]);
         assert_eq!(output.status.code(), Some(2), "{output:?}");
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
     }
     std::fs::write(
         fixture.directory.path().join("data/registry.toml"),
@@ -1022,7 +1022,7 @@ fn each_bad_registry_value_is_refused_and_corrected_alone(
         std::fs::write(registry, incorrect).unwrap();
         let refused = build_command(fixture, &format!("out/{field}-refused"), &[]);
         assert_ne!(refused.status.code(), Some(0), "{field}: {refused:?}");
-        assert!(refused.stdout.is_empty());
+        assert_eq!(refused.stdout, [] as [u8; 0]);
         let corrected = build_command(fixture, &format!("out/{field}-corrected"), &correction);
         assert!(
             corrected.status.success(),
@@ -1161,5 +1161,5 @@ fn table_build_uses_registered_defaults_and_explicit_raster_overrides() {
         &["--raster", "data/tiny.tif"],
     );
     assert_eq!(bad_dataset.status.code(), Some(2));
-    assert!(bad_dataset.stdout.is_empty());
+    assert_eq!(bad_dataset.stdout, [] as [u8; 0]);
 }
