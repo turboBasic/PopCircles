@@ -155,13 +155,19 @@ widenings
 
 # --- Data sources ---
 CIESIN
+Chamdo
+Dibrugarh
 Earthdata
 GHSL
 GPWv
 JRC
+Karokh
+Lenger
 NASA
 Palisades
 SEDAC
+Mirzapur
+Borås
 Xichang
 WPP
 
