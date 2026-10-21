@@ -8,7 +8,7 @@ import pytest
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
-from population_circles.circle_document import Circle, circle_of
+from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
 from population_circles.dataset_registry import load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
@@ -19,6 +19,7 @@ from population_circles.render_map import (
     citation,
     main,
     render,
+    title_of,
 )
 
 REGISTRY = load()
@@ -164,7 +165,8 @@ def test_the_footer_artist_carries_the_citation() -> None:
 
 
 def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> None:
-    figure = render(circle_of(document()), ORTHOGRAPHIC, MARKER, coastline=None)
+    answer = circle_of(document())
+    figure = render(answer, ORTHOGRAPHIC, MARKER, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert "1,000 km circle" in drawn_text
     assert "16.17% of the population" in drawn_text
@@ -173,6 +175,32 @@ def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> Non
     # The decimation as well as the digest: the fixture's digest is the one both committed tables
     # carry, so a caption dropping the decimation would read the same for either of them.
     assert "0xf17aa802a6890f0c at decimation 10" in drawn_text
+
+
+def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
+    assert title_of(circle_of(document())) == (
+        "1,000 km circle holding 16.17% of the population\n"
+        "1,254,363,868 people, centred 25.1250, 79.7080\n"
+        "answered from table 0xf17aa802a6890f0c at decimation 10"
+    )
+
+    nested = document()
+    nested["document"] = "smallest"
+    nested["result"] = {
+        "ledger": {"path": "out/radii.json", "radii": 24},
+        "circle": {
+            "radius_km": 2639,
+            "centre": {"lat": -85.0, "lon": 105.0},
+            "population": 52635.0,
+            "share_achieved": 0.25031387319522913,
+            "covers_whole_grid": False,
+        },
+    }
+    assert title_of(circle_of(nested)) == (
+        "2,639 km circle holding 25.03% of the population\n"
+        "52,635 people, centred -85.0000, 105.0000\n"
+        "answered from table 0xf17aa802a6890f0c at decimation 10"
+    )
 
 
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
@@ -219,7 +247,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
-    def capture(_circle: Circle, _projection: str, attribution: str, **_options: bool) -> Figure:
+    def capture(_answer: Answer, _projection: str, attribution: str, **_options: bool) -> Figure:
         drawn.append(attribution)
         return Figure()
 

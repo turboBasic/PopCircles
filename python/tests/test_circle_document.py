@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from population_circles.circle_document import (
     CIRCLE_KINDS,
     SCHEMA_VERSION,
+    Circle,
     MissingDatasetError,
     MissingTableError,
     UnsupportedDocumentError,
@@ -28,6 +29,7 @@ MEASURED_SHARE = 0.0038996366679982498
 
 SEARCHED_LAT = -85.0
 SEARCHED_RADIUS_KM = 2639
+SEARCHED_POPULATION = 52635.0
 SEARCHED_SHARE = 0.25031387319522913
 
 
@@ -66,7 +68,7 @@ def searched() -> dict[str, Any]:
         "circle": {
             "radius_km": SEARCHED_RADIUS_KM,
             "centre": {"lat": SEARCHED_LAT, "lon": 105.0},
-            "population": 52635.0,
+            "population": SEARCHED_POPULATION,
             "share_achieved": SEARCHED_SHARE,
             "covers_whole_grid": False,
         },
@@ -77,28 +79,35 @@ def locations(error: ValidationError) -> list[tuple[int | str, ...]]:
     return [detail["loc"] for detail in error.errors()]
 
 
-def test_a_named_circle_reads_as_a_circle() -> None:
-    circle = circle_of(envelope("circle", measured()))
+def test_a_named_circle_reads_as_an_answer_with_separate_geometry_and_caption() -> None:
+    answer = circle_of(envelope("circle", measured()))
+    circle = answer.circle
     assert circle.centre.lat == MEASURED_LAT
     assert circle.centre.lon == MEASURED_LON
     assert circle.radius_km == MEASURED_RADIUS_KM
-    assert circle.population == MEASURED_POPULATION
     assert circle.earth_radius_km == EARTH_RADIUS_KM
-    assert circle.dataset == DATASET
+    assert answer.caption.population == MEASURED_POPULATION
+    assert answer.caption.share == MEASURED_SHARE
+    assert answer.provenance.dataset == DATASET
+    assert answer.provenance.table == "0xf17aa802a6890f0c at decimation 10"
+    assert list(Circle.model_fields) == ["centre", "radius_km", "earth_radius_km"]
 
 
 def test_the_most_populous_circle_reads_as_a_circle() -> None:
-    circle = circle_of(envelope("most-populous", measured()))
+    answer = circle_of(envelope("most-populous", measured()))
+    circle = answer.circle
     assert circle.radius_km == MEASURED_RADIUS_KM
-    assert circle.share == MEASURED_SHARE
+    assert answer.caption.share == MEASURED_SHARE
 
 
 def test_a_smallest_document_reads_the_circle_under_its_ledger() -> None:
     # The share arrives under a different key here — `share_achieved`, not `share_of_total` — which
     # is why this kind is a payload shape of its own rather than a superset of the other two.
-    circle = circle_of(envelope("smallest", searched()))
+    answer = circle_of(envelope("smallest", searched()))
+    circle = answer.circle
     assert circle.radius_km == SEARCHED_RADIUS_KM
-    assert circle.share == SEARCHED_SHARE
+    assert answer.caption.population == SEARCHED_POPULATION
+    assert answer.caption.share == SEARCHED_SHARE
     assert circle.centre.lat == SEARCHED_LAT
 
 
@@ -143,7 +152,7 @@ def test_a_field_the_reader_does_not_know_is_ignored_rather_than_refused() -> No
     document = envelope("circle", measured())
     document["result"]["a_field_from_a_later_release"] = 1
     document["a_document_level_field_from_a_later_release"] = 2
-    assert circle_of(document).radius_km == MEASURED_RADIUS_KM
+    assert circle_of(document).circle.radius_km == MEASURED_RADIUS_KM
 
 
 def test_a_document_naming_no_dataset_is_refused_rather_than_drawn() -> None:

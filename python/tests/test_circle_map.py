@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from shapely.geometry.base import BaseGeometry
 
 from population_circles import circle_map, render_map
-from population_circles.circle_document import Circle
+from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import load
 from population_circles.map_frame import ORTHOGRAPHIC
@@ -287,14 +287,14 @@ def test_success_uses_the_documents_credit_and_earth_model(
     original = render_map.render
 
     def capture(
-        circle: Circle,
+        answer: Answer,
         projection: str,
         attribution: str,
         *,
         coastline: BaseGeometry | None,
     ) -> Figure:
-        seen.append((circle.earth_radius_km, attribution))
-        return original(circle, projection, attribution, coastline=coastline)
+        seen.append((answer.circle.earth_radius_km, attribution))
+        return original(answer, projection, attribution, coastline=coastline)
 
     monkeypatch.setattr(render_map, "render", capture)
     payload = document()
