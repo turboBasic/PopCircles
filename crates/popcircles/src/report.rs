@@ -1193,31 +1193,45 @@ mod tests {
         let payload = fixture_payload();
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
         let centre = grid.centre_of(grid.row(4).unwrap(), grid.col(19).unwrap());
-        let place = Place::new("Example", "Example", centre).unwrap();
-        let context = crate::settlement::nearest_context(centre, &[place])
-            .unwrap()
-            .unwrap();
-
-        let (cell, radius, population, total) = circle_at(&table, centre, 1200.0);
-        let circle = Envelope::new(
-            CircleReport::new(centre, cell, &grid, radius, population, total)
-                .with_nearest_settlement(Some(&context)),
-        );
+        let (cell, radius, population, _) = circle_at(&table, centre, 1200.0);
 
         let (rows, cols) = table.whole();
         let total = table.population(rows, cols);
-        let found =
+        let most_found =
             search::most_populous(&table, RadiusKm::from(3000u32), Some(spacing(4)), &mut ())
                 .expect("a whole-globe fixture has kernels");
-        let most_populous = Envelope::new(
-            MostPopulousReport::new(&found, &grid, total).with_nearest_settlement(Some(&context)),
-        );
+        let most_centre = grid.centre_of(most_found.centre.row, most_found.centre.col);
 
         let mut ledger = Recorded::default();
         let found = smallest::smallest(&table, share(0.2), Some(spacing(4)), &mut ledger, &mut ())
             .expect("a whole-globe fixture and a ledger cannot fail");
+        let smallest_centre = grid.centre_of(found.centre.row, found.centre.col);
+
+        let places = [
+            Place::new("Circle", "Example", centre).unwrap(),
+            Place::new("Most", "Example", most_centre).unwrap(),
+            Place::new("Smallest", "Example", smallest_centre).unwrap(),
+        ];
+        let circle_context = crate::settlement::nearest_context(centre, &places)
+            .unwrap()
+            .unwrap();
+        let most_context = crate::settlement::nearest_context(most_centre, &places)
+            .unwrap()
+            .unwrap();
+        let smallest_context = crate::settlement::nearest_context(smallest_centre, &places)
+            .unwrap()
+            .unwrap();
+
+        let circle = Envelope::new(
+            CircleReport::new(centre, cell, &grid, radius, population, total)
+                .with_nearest_settlement(Some(&circle_context)),
+        );
+        let most_populous = Envelope::new(
+            MostPopulousReport::new(&most_found, &grid, total)
+                .with_nearest_settlement(Some(&most_context)),
+        );
         let smallest_report =
-            SmallestReport::new(&found, &grid).with_nearest_settlement(Some(&context));
+            SmallestReport::new(&found, &grid).with_nearest_settlement(Some(&smallest_context));
         let smallest = Envelope::new(SmallestDocument::new(
             LedgerReport::new(ledger_path(), ledger.entries.len()),
             smallest_report.clone(),

@@ -18,7 +18,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
       "nearest_settlement": {
         "country": "Example",
         "distance_km": 0.0,
-        "name": "Example",
+        "name": "Circle",
         "short_form": true
       },
       "population": 820.0,
@@ -50,7 +50,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
       "nearest_settlement": {
         "country": "Example",
         "distance_km": 0.0,
-        "name": "Example",
+        "name": "Most",
         "short_form": true
       },
       "population": 55986.0,
@@ -114,7 +114,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
         "nearest_settlement": {
           "country": "Example",
           "distance_km": 0.0,
-          "name": "Example",
+          "name": "Smallest",
           "short_form": true
         },
         "population": 42366.0,
@@ -175,7 +175,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
           "nearest_settlement": {
             "country": "Example",
             "distance_km": 0.0,
-            "name": "Example",
+            "name": "Smallest",
             "short_form": true
           },
           "population": 42366.0,

@@ -10,7 +10,7 @@ use serde::Deserialize;
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum SettlementsError {
-    #[error("settlement input at {} could not be read", path.display())]
+    #[error("settlement input at {} could not be read; run `mise run data:get`", path.display())]
     Read {
         path: PathBuf,
         #[source]
@@ -61,7 +61,6 @@ struct Properties<'a> {
 ///
 /// # Errors
 /// Returns [`SettlementsError::Read`] for filesystem errors and a format/feature error for invalid data.
-#[allow(dead_code)] // Task 2.2 wires this prepared file boundary into circle commands.
 pub(crate) fn load(path: &Path) -> Result<Vec<Place>, SettlementsError> {
     let text = fs::read_to_string(path).map_err(|source| SettlementsError::Read {
         path: path.to_path_buf(),

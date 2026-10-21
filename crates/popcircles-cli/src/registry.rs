@@ -41,7 +41,6 @@ pub(crate) enum RegistryError {
     Unknown { name: String, known: String },
 
     #[error("`{name}` is not a registered settlement vector; the registered ones are {known}")]
-    #[allow(dead_code)] // Task 2.2 is where circle commands consume this accessor.
     UnknownSettlement { name: String, known: String },
 
     #[error("dataset `{name}` has path {path}, whose stem is not `{name}`")]
@@ -187,7 +186,6 @@ impl Registry {
     ///
     /// # Errors
     /// Returns [`RegistryError::UnknownSettlement`] when the key is absent or has another kind.
-    #[allow(dead_code)] // Task 2.2 is where circle commands consume this accessor.
     pub(crate) fn settlements(&self, name: &str) -> Result<PathBuf, RegistryError> {
         match self.datasets.get(name) {
             Some(Row::SettlementVector(row)) => Ok(row.path.clone()),

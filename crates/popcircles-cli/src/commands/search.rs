@@ -14,6 +14,7 @@ use popcircles::report::{
     SweepDocument, SweepShares,
 };
 use popcircles::search;
+use popcircles::settlement::{Context, Place, nearest_context};
 use popcircles::smallest::cache::Ledger;
 use popcircles::smallest::{self, Share};
 use popcircles::table::cache::Identity;
@@ -22,6 +23,22 @@ use crate::args::{CachedTableArgs, LedgerArgs, SearchArgs, SweepArgs};
 use crate::commands::{CachedTable, make_room_for, serialised};
 use crate::failure::Failure;
 use crate::observe::StderrProgress;
+use crate::registry::{REGISTRY_PATH, Registry};
+
+const SETTLEMENTS_DATASET: &str = "populated-places-1to10m";
+
+fn settlement_places() -> Result<Vec<Place>, Failure> {
+    let registry =
+        Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
+    let path = registry
+        .settlements(SETTLEMENTS_DATASET)
+        .map_err(|error| Failure::registry(&error))?;
+    crate::settlements::load(&path).map_err(|error| Failure::settlements(&error))
+}
+
+fn settlement_context(centre: LatLon, places: &[Place]) -> Result<Option<Context>, Failure> {
+    nearest_context(centre, places).map_err(|error| Failure::bad_input(error.to_string()))
+}
 
 /// The cell holding `at`, or bad input naming the extent it is not on.
 ///
@@ -52,13 +69,15 @@ pub(crate) fn population_at(
     let view = cached.table()?;
     let requested = LatLon { lat, lon };
     let cell = centre_cell(&cached.grid, requested)?;
+    let places = settlement_places()?;
+    let centre = cached.grid.centre_of(cell.0, cell.1);
+    let context = settlement_context(centre, &places)?;
 
     let kernel = Kernel::new(cached.grid, cell.0, radius).map_err(Failure::kernel)?;
     let population = circle::population(&view, &kernel, cell.1);
     let (rows, cols) = view.whole();
     let total = view.population(rows, cols);
 
-    let centre = cached.grid.centre_of(cell.0, cell.1);
     log::info!(
         "a {} km circle centred (lat {:.4}, lon {:.4}) holds {population} of {total}",
         radius.km(),
@@ -67,7 +86,8 @@ pub(crate) fn population_at(
     );
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
-        CircleReport::new(requested, cell, &cached.grid, radius, population, total),
+        CircleReport::new(requested, cell, &cached.grid, radius, population, total)
+            .with_nearest_settlement(context.as_ref()),
         cached.provenance(),
     )))
 }
@@ -81,6 +101,7 @@ pub(crate) fn most_populous(
     let view = cached.table()?;
     let (rows, cols) = view.whole();
     let total = view.population(rows, cols);
+    let places = settlement_places()?;
 
     let mut progress = StderrProgress::new();
     let found = search::most_populous(&view, radius, search.spacing, &mut progress)
@@ -88,6 +109,7 @@ pub(crate) fn most_populous(
     progress.finish();
 
     let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
+    let context = settlement_context(centre, &places)?;
     log::info!(
         "the most populous {} km circle is centred (lat {:.4}, lon {:.4}) and holds {} of {total}",
         radius.km(),
@@ -97,7 +119,8 @@ pub(crate) fn most_populous(
     );
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
-        MostPopulousReport::new(&found, &cached.grid, total),
+        MostPopulousReport::new(&found, &cached.grid, total)
+            .with_nearest_settlement(context.as_ref()),
         cached.provenance(),
     )))
 }
@@ -153,6 +176,7 @@ pub(crate) fn sweep(
     let cached = CachedTable::open(cached)?;
     let view = cached.table()?;
     let walk = shares(range.from, range.to, range.step)?;
+    let places = settlement_places()?;
     let mut ledger = open_ledger(&ledger.ledger, &cached.identity)?;
 
     let mut progress = StderrProgress::new();
@@ -167,7 +191,11 @@ pub(crate) fn sweep(
             share.get() * 100.0,
             found.radius_km
         );
-        records.push(SmallestReport::new(&found, &cached.grid));
+        let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
+        let context = settlement_context(centre, &places)?;
+        records.push(
+            SmallestReport::new(&found, &cached.grid).with_nearest_settlement(context.as_ref()),
+        );
     }
     progress.finish();
 
@@ -192,6 +220,7 @@ pub(crate) fn smallest_for_share(
 
     // Against the same identity the table was opened with, so a ledger of some other table is refused
     // rather than resumed from — which is what makes an opt-out unnecessary.
+    let places = settlement_places()?;
     let mut ledger = open_ledger(&ledger.ledger, &cached.identity)?;
 
     let mut progress = StderrProgress::new();
@@ -205,10 +234,13 @@ pub(crate) fn smallest_for_share(
         found.radius_km
     );
 
+    let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
+    let context = settlement_context(centre, &places)?;
+
     serialised(serde_json::to_string(&Envelope::with_provenance(
         SmallestDocument::new(
             LedgerReport::new(ledger.path(), ledger.len()),
-            SmallestReport::new(&found, &cached.grid),
+            SmallestReport::new(&found, &cached.grid).with_nearest_settlement(context.as_ref()),
         ),
         cached.provenance(),
     )))

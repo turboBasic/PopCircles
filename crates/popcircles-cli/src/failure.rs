@@ -76,7 +76,6 @@ impl Failure {
         Self::new(exit_code_for_registry_error(error), error)
     }
 
-    #[allow(dead_code)] // Task 2.2 wires settlement file loading into circle commands.
     pub(crate) fn settlements(error: &SettlementsError) -> Self {
         Self::new(exit_code_for_settlements_error(error), error)
     }
