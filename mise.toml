@@ -1,7 +1,7 @@
 [tools]
-# clippy and rustfmt are named explicitly: the default rustup profile on a CI runner
-# does not install them, and `lint`/`fmt` need both.
-rust = { version = "1.99.1", components = ["clippy", "rustfmt"] }
+# clippy and rustfmt are named explicitly because CI's default profile omits them; rust-src
+# gives rust-analyzer the standard library sources for the same pinned toolchain.
+rust = { version = "1.99.1", components = ["clippy", "rustfmt", "rust-src"] }
 python = "3.14"
 uv = "latest"
 prek = "latest"
