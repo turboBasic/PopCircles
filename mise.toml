@@ -67,6 +67,11 @@ run = "cargo build --release --locked -p popcircles-cli"
 description = "Render a map from a popcircles JSON document"
 run = "uv run render-map"
 
+# Not in `lint` or `ci`: it produces files; regression tests exercise the workflow.
+[tasks.map]
+description = "Search a named dataset and render its circle map"
+run = "uv run circle-map"
+
 # Not in `lint` or `ci` for the same reason as `render`: it writes files. What CI runs on a pull request
 # is the suite, which builds this same gallery into a temporary directory and asserts against it — so a
 # broken render fails a check without this task being one.
