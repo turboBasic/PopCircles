@@ -15,6 +15,7 @@ use popcircles::table::cache::CacheError;
 use popcircles::table::{BuildError, TableError};
 
 use crate::registry::RegistryError;
+use crate::settlements::SettlementsError;
 
 /// Bad input, and data that is not there; `application.md`'s "interrupted" class has no caller yet and
 /// is not coded here ahead of one.
@@ -73,6 +74,10 @@ impl Failure {
 
     pub(crate) fn registry(error: &RegistryError) -> Self {
         Self::new(exit_code_for_registry_error(error), error)
+    }
+
+    pub(crate) fn settlements(error: &SettlementsError) -> Self {
+        Self::new(exit_code_for_settlements_error(error), error)
     }
 
     pub(crate) fn ledger(error: &LedgerError) -> Self {
@@ -223,9 +228,19 @@ fn exit_code_for_ledger_error(error: &LedgerError) -> u8 {
 /// caller's doing nor a fetch away from being right.
 fn exit_code_for_registry_error(error: &RegistryError) -> u8 {
     match error {
-        RegistryError::Unknown { .. } => EXIT_BAD_INPUT,
+        RegistryError::Unknown { .. } | RegistryError::UnknownSettlement { .. } => EXIT_BAD_INPUT,
         RegistryError::Read { .. } => EXIT_MISSING_DATA,
         RegistryError::Syntax { .. } | RegistryError::KeyIsNotTheStem { .. } => EXIT_FAILURE,
+    }
+}
+
+/// An absent file is missing data; malformed `GeoJSON` or place properties are bad input.
+const fn exit_code_for_settlements_error(error: &SettlementsError) -> u8 {
+    match error {
+        SettlementsError::Read { .. } => EXIT_MISSING_DATA,
+        SettlementsError::Format(_)
+        | SettlementsError::Feature { .. }
+        | SettlementsError::Empty => EXIT_BAD_INPUT,
     }
 }
 
@@ -379,6 +394,29 @@ mod tests {
             exit_code_for_smallest_error(&SmallestError::Search(SearchError::Kernel(
                 KernelError::ColumnsDoNotClose { lon_span: 90.0 }
             ))),
+            EXIT_BAD_INPUT
+        );
+    }
+
+    #[test]
+    fn settlement_read_failures_are_missing_data_and_invalid_geojson_is_bad_input() {
+        assert_eq!(
+            Failure::settlements(&SettlementsError::Read {
+                path: PathBuf::from("data/settlements/places.geojson"),
+                source: std::io::Error::from(std::io::ErrorKind::NotFound),
+            })
+            .code,
+            EXIT_MISSING_DATA
+        );
+        assert_eq!(
+            Failure::settlements(&SettlementsError::Empty).code,
+            EXIT_BAD_INPUT
+        );
+        assert_eq!(
+            Failure::settlements(&SettlementsError::Format(
+                serde_json::from_str::<u32>("not json").expect_err("invalid JSON"),
+            ))
+            .code,
             EXIT_BAD_INPUT
         );
     }

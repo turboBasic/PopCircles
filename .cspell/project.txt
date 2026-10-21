@@ -100,6 +100,7 @@ fontsize
 geoms
 figcaption
 getpid
+Ivoire
 gridlines
 horizontalalignment
 linestrings
@@ -113,6 +114,8 @@ lons
 mangen
 markersize
 memmap
+mlat
+mlon
 miniz
 ndarray
 pread
@@ -152,13 +155,20 @@ widenings
 
 # --- Data sources ---
 CIESIN
+Chamdo
+Dibrugarh
 Earthdata
 GHSL
 GPWv
 JRC
+Karokh
+Lenger
 NASA
 Palisades
 SEDAC
+Mirzapur
+Borås
+Xichang
 WPP
 
 # --- Config keys and CLI ---

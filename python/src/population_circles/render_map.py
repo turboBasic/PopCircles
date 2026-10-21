@@ -16,7 +16,8 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
 
-from population_circles.circle_document import Circle, circle_of
+from population_circles.centre_caption import plain_centre
+from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.dataset_registry import Registry, load
 from population_circles.map_frame import PLATE_CARREE, PROJECTIONS, Frame, frame, graticule, project
@@ -112,14 +113,15 @@ def stroke(axes: Axes, geometry: BaseGeometry, colour: str, width: float, layer:
     )
 
 
-def title_of(circle: Circle) -> str:
+def title_of(answer: Answer) -> str:
     # The table is in the caption because a reader cannot otherwise tell a 30 arc-second answer
     # from a decimated one, and the two differ by more than rounding.
+    circle = answer.circle
     return (
-        f"{circle.radius_km:,.0f} km circle holding {circle.share:.2%} of the population\n"
-        f"{circle.population:,.0f} people, "
-        f"centred {circle.centre.lat:.4f}, {circle.centre.lon:.4f}\n"
-        f"answered from table {circle.table}"
+        f"{circle.radius_km:,.0f} km circle holding {answer.caption.share:.2%} of the population\n"
+        f"{answer.caption.population:,.0f} people, "
+        f"centred {textwrap.fill(plain_centre(answer), width=44, subsequent_indent='         ')}\n"
+        f"answered from table {answer.provenance.table}"
     )
 
 
@@ -145,7 +147,7 @@ def draw(axes: Axes, view: Frame, coastline: BaseGeometry | None) -> None:
 
 
 def render(
-    circle: Circle,
+    answer: Answer,
     projection: str,
     attribution: str,
     *,
@@ -153,6 +155,7 @@ def render(
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
 ) -> Figure:
+    circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
     view = frame(projection, built)
     centre = view.to_frame.transform(circle.centre.lon, circle.centre.lat)
@@ -161,9 +164,12 @@ def render(
         figsize=(11.0, 6.0),
     )
     try:
+        title = title_of(answer)
         # Room for the title above and the wrapped citation below, since both are placed at figure
         # coordinates rather than left to a layout engine.
-        figure.subplots_adjust(left=0.03, right=0.97, top=0.87, bottom=0.16)
+        title_lines = title.count("\n") + 1
+        top = 0.87 - 0.035 * max(0, title_lines - 3)
+        figure.subplots_adjust(left=0.03, right=0.97, top=top, bottom=0.16)
         axes = figure.add_subplot(1, 1, 1)
         # Equal: degrees of longitude and latitude have the same length on the
         # frame stated in degrees, and the other frame is metres in both directions.
@@ -187,7 +193,7 @@ def render(
 
         # Anchored at its top, so an added title line grows into the margin rather than off
         # the top of the figure — which is silent, since nothing about a clipped artist fails.
-        annotate(figure, 0.985, title_of(circle), 12.0, "top")
+        annotate(figure, 0.985, title, 12.0, "top")
         # Wrapped: at this width a one-line citation runs off both edges of the figure,
         # which is an attribution nobody can read and so not an attribution.
         annotate(figure, 0.055, textwrap.fill(attribution, width=118), 6.5)
@@ -214,11 +220,11 @@ def render_file(
     no_coastlines: bool = False,
 ) -> None:
     document = json.loads(input_path.read_text(encoding="utf-8"))
-    circle = circle_of(document)
+    answer = circle_of(document)
     figure = render(
-        circle,
+        answer,
         projection,
-        citation(load(), circle.dataset),
+        citation(load(), answer.provenance.dataset),
         coastline=None if no_coastlines else basemap(COASTLINE),
     )
     try:

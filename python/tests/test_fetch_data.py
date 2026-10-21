@@ -11,7 +11,7 @@ PAYLOAD = b"hello"
 PAYLOAD_SHA = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
 
 KEY = "thing-1to2m"
-RELATIVE = f"data/boundaries/{KEY}.geojson"
+RELATIVE = f"data/settlements/{KEY}.geojson"
 SOURCE = "https://example.invalid/upstream/thing"
 
 
@@ -25,7 +25,7 @@ def registry_text(
     fetch = "" if fetch_url is None else f'fetch_url = "{fetch_url}"\n'
     return (
         f"[datasets.{KEY}]\n"
-        f'kind = "boundary-vector"\n'
+        f'kind = "settlement-vector"\n'
         f'path = "{RELATIVE}"\n'
         f"bytes = {size}\n"
         f'sha256 = "{sha256}"\n'

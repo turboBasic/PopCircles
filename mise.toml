@@ -1,7 +1,7 @@
 [tools]
-# clippy and rustfmt are named explicitly: the default rustup profile on a CI runner
-# does not install them, and `lint`/`fmt` need both.
-rust = { version = "1.99.1", components = ["clippy", "rustfmt"] }
+# clippy and rustfmt are named explicitly because CI's default profile omits them; rust-src
+# gives rust-analyzer the standard library sources for the same pinned toolchain.
+rust = { version = "1.99.1", components = ["clippy", "rustfmt", "rust-src"] }
 python = "3.14"
 uv = "latest"
 prek = "latest"
@@ -198,11 +198,11 @@ run = "uv run pytest"
 description = "Check the registry's fetched rows against the files on disk (needs the raster present)"
 run = "uv run pytest -m raster"
 
-# Never in `ci`: a checkout has no raster to read. --release: 933 120 000 cells, minutes in debug.
-# `--ignored` selects every deselected test, `test:slow`'s among them — that one runs alone instead.
+# Never in `ci`: a checkout has no raster to read. Select only this target so the other ignored
+# tests stay with their own tasks; --release matters because this reads 933 120 000 cells.
 [tasks."test:raster"]
-description = "Read the real population raster end to end (needs mise run data:get)"
-run = "cargo test --release --all-features -- --ignored"
+description = "Check the real population raster reader (needs mise run data:get)"
+run = "cargo test --release --all-features --test registry_raster -- --ignored"
 
 # Not in `test` or `ci`, for time rather than for data: the shape is 933 120 000 cells and the pass
 # takes twenty seconds in release, minutes in a debug build, and a suite that slow stops being run.

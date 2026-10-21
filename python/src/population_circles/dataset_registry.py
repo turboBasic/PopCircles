@@ -57,9 +57,15 @@ class BoundaryVector(_Dataset):
     kind: Literal["boundary-vector"]
 
 
+class SettlementVector(_Dataset):
+    kind: Literal["settlement-vector"]
+
+
 # Discriminated on `kind` so a raster without a grid does not construct, rather than every reader
 # re-checking that the eight grid fields are present.
-Dataset = Annotated[PopulationRaster | BoundaryVector, Field(discriminator="kind")]
+Dataset = Annotated[
+    PopulationRaster | BoundaryVector | SettlementVector, Field(discriminator="kind")
+]
 
 
 class Registry(BaseModel):

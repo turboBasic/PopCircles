@@ -3,6 +3,7 @@ mod commands;
 mod failure;
 mod observe;
 mod registry;
+mod settlements;
 
 use std::process::ExitCode;
 use std::time::Instant;

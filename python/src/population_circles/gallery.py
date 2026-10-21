@@ -69,11 +69,11 @@ def build(corpus: Path, output: Path) -> tuple[list[Drawn], list[Skipped]]:
             skipped.append(Skipped(source, envelope.document))
             continue
         try:
-            circle = circle_of(payload)
+            answer = circle_of(payload)
             figure = render(
-                circle,
+                answer,
                 PLATE_CARREE,
-                citation(registry, circle.dataset),
+                citation(registry, answer.provenance.dataset),
                 coastline=coastline,
             )
         except Exception as error:

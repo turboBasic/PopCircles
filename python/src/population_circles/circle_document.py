@@ -70,23 +70,42 @@ class Circle(BaseModel):
 
     centre: Coordinate
     radius_km: float
-    population: float
-    share: float
-    # The registry key the document was answered from, carried down for the same reason as the
-    # radius below: what a figure credits is a property of the answer, not of the renderer.
-    dataset: str
-    # The table that answered it, as the document states it. The digest is the raster's and is the
-    # same for every table built from one, so the decimation is what tells two of them apart — a
-    # caption naming only the digest would read identically for a 30 arc-second and a 5 arc-minute
-    # answer.
-    table: str
-    # The document's own earth model, carried down so a caller sizing a cap never needs a radius of
-    # its own — `geodesy.rs` owns that number and a second copy in Python is the defect the "Ground
-    # distance" invariant names.
     earth_radius_km: float
 
 
 class Provenance(BaseModel):
+    model_config = _CONFIG
+
+    dataset: str
+    table: str
+
+
+class Settlement(BaseModel):
+    model_config = _CONFIG
+
+    name: Annotated[str, Field(min_length=1)]
+    country: Annotated[str, Field(min_length=1)]
+    distance_km: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    short_form: bool
+
+
+class Caption(BaseModel):
+    model_config = _CONFIG
+
+    population: float
+    share: float
+    settlement: Settlement | None = None
+
+
+class Answer(BaseModel):
+    model_config = _CONFIG
+
+    circle: Circle
+    caption: Caption
+    provenance: Provenance
+
+
+class _DocumentProvenance(BaseModel):
     model_config = _CONFIG
 
     # Optional in the format, per `report.rs` "Growth", and required by this reader: a figure whose
@@ -107,14 +126,14 @@ class Envelope(BaseModel):
     earth_model: EarthModel
     # Absent from a document whose command read no cached table, which is every kind this reader
     # refuses anyway.
-    provenance: Provenance | None = None
+    provenance: _DocumentProvenance | None = None
 
 
 class _Payload(BaseModel, ABC):
     model_config = _CONFIG
 
     @abstractmethod
-    def as_circle(self, earth_radius_km: float, dataset: str, table: str) -> Circle: ...
+    def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer: ...
 
 
 class _Measured(_Payload):
@@ -122,16 +141,21 @@ class _Measured(_Payload):
     radius_km: float
     population: float
     share_of_total: float
+    nearest_settlement: Settlement | None = None
 
-    def as_circle(self, earth_radius_km: float, dataset: str, table: str) -> Circle:
-        return Circle(
-            centre=self.centre,
-            radius_km=self.radius_km,
-            population=self.population,
-            share=self.share_of_total,
-            dataset=dataset,
-            table=table,
-            earth_radius_km=earth_radius_km,
+    def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
+        return Answer(
+            circle=Circle(
+                centre=self.centre,
+                radius_km=self.radius_km,
+                earth_radius_km=earth_radius_km,
+            ),
+            caption=Caption(
+                population=self.population,
+                share=self.share_of_total,
+                settlement=self.nearest_settlement,
+            ),
+            provenance=provenance,
         )
 
 
@@ -142,20 +166,25 @@ class _Smallest(BaseModel):
     radius_km: float
     population: float
     share_achieved: float
+    nearest_settlement: Settlement | None = None
 
 
 class _Searched(_Payload):
     circle: _Smallest
 
-    def as_circle(self, earth_radius_km: float, dataset: str, table: str) -> Circle:
-        return Circle(
-            centre=self.circle.centre,
-            radius_km=self.circle.radius_km,
-            population=self.circle.population,
-            share=self.circle.share_achieved,
-            dataset=dataset,
-            table=table,
-            earth_radius_km=earth_radius_km,
+    def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
+        return Answer(
+            circle=Circle(
+                centre=self.circle.centre,
+                radius_km=self.circle.radius_km,
+                earth_radius_km=earth_radius_km,
+            ),
+            caption=Caption(
+                population=self.circle.population,
+                share=self.circle.share_achieved,
+                settlement=self.circle.nearest_settlement,
+            ),
+            provenance=provenance,
         )
 
 
@@ -171,7 +200,7 @@ _PAYLOADS: Mapping[str, type[_Payload]] = {
 CIRCLE_KINDS = frozenset(_PAYLOADS)
 
 
-def circle_of(document: Mapping[str, object]) -> Circle:
+def circle_of(document: Mapping[str, object]) -> Answer:
     envelope = Envelope.model_validate(document)
     payload = _PAYLOADS.get(envelope.document)
     if payload is None:
@@ -182,8 +211,10 @@ def circle_of(document: Mapping[str, object]) -> Circle:
         raise MissingDatasetError
     if provenance is None or provenance.digest is None or provenance.decimation is None:
         raise MissingTableError
-    return payload.model_validate(document.get("result")).as_circle(
+    return payload.model_validate(document.get("result")).as_answer(
         envelope.earth_model.radius_km,
-        dataset,
-        f"{provenance.digest} at decimation {provenance.decimation}",
+        Provenance(
+            dataset=dataset,
+            table=f"{provenance.digest} at decimation {provenance.decimation}",
+        ),
     )

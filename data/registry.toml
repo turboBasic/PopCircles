@@ -61,3 +61,18 @@ licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
 # Natural Earth asks for no attribution. Empty rather than absent, so a consumer reads the same field for
 # every dataset and an empty string means "nothing is owed" rather than "not recorded".
 attribution = ""
+
+[datasets.populated-places-1to10m]
+kind = "settlement-vector"
+path = "data/settlements/populated-places-1to10m.geojson"
+bytes = 19359003
+sha256 = "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b"
+# Natural Earth serves the source anonymously; this project's data-only release gives `data:get` a stable URL.
+fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v2/populated-places-1to10m.geojson"
+# GeoJSON published with Natural Earth vector data at v5.1.2.
+source_url = "https://github.com/nvkelso/natural-earth-vector/raw/v5.1.2/geojson/ne_10m_populated_places.geojson"
+
+licence = "public domain"
+licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
+# Natural Earth asks for no attribution.
+attribution = ""

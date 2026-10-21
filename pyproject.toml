@@ -68,6 +68,9 @@ ignore = [
 "python/src/population_circles/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
 ]
+"python/src/population_circles/centre_caption.py" = [
+  "T201", # this command's Markdown fragment is its output, not incidental debug printing
+]
 "python/src/repo_tools/*.py" = [
   "T201", # a lint script's findings are its output, not incidental debug printing
 ]

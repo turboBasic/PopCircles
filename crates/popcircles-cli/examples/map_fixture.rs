@@ -115,7 +115,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             .ok_or("provide the fixture directory")?,
     );
     std::fs::create_dir_all(root.join("data"))?;
+    std::fs::create_dir_all(root.join("data/settlements"))?;
     std::fs::write(root.join("data/tiny.tif"), raster()?)?;
+    std::fs::write(
+        root.join("data/settlements/populated-places-1to10m.geojson"),
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"NAME":"Fixture","ADM0NAME":"Fixture"},"geometry":{"type":"Point","coordinates":[0,0]}}]}"#,
+    )?;
     std::fs::write(
         root.join("data/registry.toml"),
         r#"
@@ -136,6 +141,16 @@ lat_step = -90.0
 lon_step = 90.0
 epsg = 4326
 nodata = -1.0
+
+[datasets.populated-places-1to10m]
+kind = "settlement-vector"
+path = "data/settlements/populated-places-1to10m.geojson"
+bytes = 0
+sha256 = "fixture"
+source_url = "https://example.invalid/fixture"
+licence = "public domain"
+licence_url = "https://example.invalid/licence"
+attribution = ""
 "#,
     )?;
     Ok(())

@@ -44,7 +44,7 @@ with `--spacing`. `mise run cli -- --help` is the full command and flag referenc
 ## Validation
 
 Half the world's population — half of this raster's own 7 757 982 599 persons — is held by a circle of
-**3 360 km** centred at 28.84 N, 100.66 E, in western Yunnan.
+**3 360 km** centred at [28.84 N, 100.66 E](https://www.openstreetmap.org/?mlat=28.8375&mlon=100.66250000000002) (192 km from Xichang, China).
 [`results/world-half-30arcsec.json`](results/world-half-30arcsec.json) is that answer as the program
 printed it on 2026-08-19 from the full 30 arc-second grid, and it is a bracket rather than an estimate:
 3 360 km reaches half by 655 480 persons and 3 359 km falls 75 397 short. Both were computed, and the

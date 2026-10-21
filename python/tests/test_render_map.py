@@ -8,7 +8,7 @@ import pytest
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
-from population_circles.circle_document import Circle, circle_of
+from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
 from population_circles.dataset_registry import load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
@@ -19,6 +19,7 @@ from population_circles.render_map import (
     citation,
     main,
     render,
+    title_of,
 )
 
 REGISTRY = load()
@@ -164,7 +165,8 @@ def test_the_footer_artist_carries_the_citation() -> None:
 
 
 def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> None:
-    figure = render(circle_of(document()), ORTHOGRAPHIC, MARKER, coastline=None)
+    answer = circle_of(document())
+    figure = render(answer, ORTHOGRAPHIC, MARKER, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert "1,000 km circle" in drawn_text
     assert "16.17% of the population" in drawn_text
@@ -173,6 +175,32 @@ def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> Non
     # The decimation as well as the digest: the fixture's digest is the one both committed tables
     # carry, so a caption dropping the decimation would read the same for either of them.
     assert "0xf17aa802a6890f0c at decimation 10" in drawn_text
+
+
+def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
+    assert title_of(circle_of(document())) == (
+        "1,000 km circle holding 16.17% of the population\n"
+        "1,254,363,868 people, centred 25.1250, 79.7080\n"
+        "answered from table 0xf17aa802a6890f0c at decimation 10"
+    )
+
+    nested = document()
+    nested["document"] = "smallest"
+    nested["result"] = {
+        "ledger": {"path": "out/radii.json", "radii": 24},
+        "circle": {
+            "radius_km": 2639,
+            "centre": {"lat": -85.0, "lon": 105.0},
+            "population": 52635.0,
+            "share_achieved": 0.25031387319522913,
+            "covers_whole_grid": False,
+        },
+    }
+    assert title_of(circle_of(nested)) == (
+        "2,639 km circle holding 25.03% of the population\n"
+        "52,635 people, centred -85.0000, 105.0000\n"
+        "answered from table 0xf17aa802a6890f0c at decimation 10"
+    )
 
 
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
@@ -188,8 +216,11 @@ def test_a_complete_figure_is_written_where_it_is_told(projection: str, tmp_path
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
-def test_a_complete_figure_needs_no_network(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
+def test_a_complete_figure_with_a_long_settlement_needs_no_network(
+    projection: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # The claim the committed basemap exists to make, proved by denial rather than by reading the
     # imports: sockets are taken away for the duration, so a figure that still needs a download
@@ -201,10 +232,19 @@ def test_a_complete_figure_needs_no_network(
         monkeypatch.setattr(socket, name, refuse)
 
     source = tmp_path / "circle.json"
-    source.write_text(json.dumps(document()), encoding="utf-8")
-    output = tmp_path / "map.png"
+    payload = document()
+    payload["result"]["nearest_settlement"] = {
+        "name": "An exceptionally long settlement name that should wrap rather than clip",
+        "country": "A country with a long descriptive name",
+        "distance_km": 125,
+        "short_form": False,
+    }
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / f"map-{projection}.png"
+    assert not (tmp_path / "data/settlements/populated-places-1to10m.geojson").exists()
+    monkeypatch.chdir(tmp_path)
 
-    assert main(["--input", str(source), "--output", str(output)]) == 0
+    assert main(["--input", str(source), "--output", str(output), "--projection", projection]) == 0
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
@@ -219,7 +259,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
-    def capture(_circle: Circle, _projection: str, attribution: str, **_options: bool) -> Figure:
+    def capture(_answer: Answer, _projection: str, attribution: str, **_options: bool) -> Figure:
         drawn.append(attribution)
         return Figure()
 

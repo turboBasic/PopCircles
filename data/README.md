@@ -8,6 +8,7 @@ gitignored (`*.bin`, `out/`) and reproducible from these inputs.
 data/
   population/   population rasters
   boundaries/   coastlines and country borders
+  settlements/  populated places
 ```
 
 A new kind gets its own directory, a row in [`registry.toml`](registry.toml) and an entry below. Keep
@@ -108,3 +109,24 @@ what a figure says about its sources should be what those sources ask for and no
 [ne]: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
 [ne-tag]: https://github.com/nvkelso/natural-earth-vector/releases/tag/v5.1.2
 [ne-terms]: https://www.naturalearthdata.com/about/terms-of-use/
+
+## populated-places-1to10m
+
+| Property | Value |
+| --- | --- |
+| Geometry | 7,342 Point features |
+| Coordinates | longitude, latitude (WGS 84) |
+| Size | 19,359,003 bytes |
+| SHA-256 | `9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b` |
+
+**Natural Earth 10m populated places**, in GeoJSON from its vector distribution repository at tag
+**[v5.1.2][ne-tag]**, file `geojson/ne_10m_populated_places.geojson`. It is the publisher's 10m populated
+places layer, preserved byte-for-byte; it has point coordinates and no raster grid, nodata value or cell
+size. The `NAME` and `ADM0NAME` properties supply the settlement and country labels.
+
+The upstream file is available anonymously, but its 19 MB size is above the repository's committed-file
+limit, so this exact copy is published in a data-only release and fetched by `mise run data:get`. The
+release asset is [`populated-places-1to10m.geojson`](https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v2/populated-places-1to10m.geojson).
+
+Natural Earth is in the public domain. Its [terms of use][ne-terms] require no attribution, so settlement
+names add no credit to a figure.

@@ -91,13 +91,18 @@ impl Fixture {
 
     fn over(cell: impl Fn(u32, u32) -> f32, dataset: Option<&str>) -> Self {
         let directory = TempDir::new().expect("a temporary directory");
+        let fixture = Self {
+            directory,
+            digest: 0,
+        };
+        fixture.register_settlements();
         let grid = Self::grid();
         let rows: Vec<Vec<f32>> = (0..HEIGHT)
             .map(|row| (0..WIDTH).map(|col| cell(row, col)).collect())
             .collect();
         let source = Synthetic::new(grid, NODATA, rows).expect("the rows are the grid's shape");
 
-        let cache = Cache::new(directory.path().join("table"));
+        let cache = Cache::new(fixture.directory.path().join("table"));
         let mut writer = cache.writer().expect("a writer under a fresh directory");
         let built = build(source, Decimation::none(grid), &mut (), |row| {
             writer.write_row(row)
@@ -108,13 +113,80 @@ impl Fixture {
             .expect("the cache publishes");
 
         Self {
-            directory,
             digest: built.digest,
+            ..fixture
         }
     }
 
     fn cache_base(&self) -> PathBuf {
         self.directory.path().join("table")
+    }
+
+    fn write_places(&self, places: &[(&str, &str, f64, f64)]) {
+        let features: Vec<_> = places
+            .iter()
+            .map(|(name, country, lat, lon)| {
+                serde_json::json!({
+                    "type": "Feature",
+                    "properties": {"NAME": name, "ADM0NAME": country},
+                    "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                })
+            })
+            .collect();
+        self.write_place_features(&features);
+    }
+
+    fn write_centres(&self, centres: &[[f64; 2]]) {
+        let features: Vec<_> = centres
+            .iter()
+            .enumerate()
+            .map(|(index, centre)| {
+                serde_json::json!({
+                    "type": "Feature",
+                    "properties": {
+                        "NAME": format!("Place {index}"),
+                        "ADM0NAME": "Fixture",
+                    },
+                    "geometry": {"type": "Point", "coordinates": [centre[1], centre[0]]},
+                })
+            })
+            .collect();
+        self.write_place_features(&features);
+    }
+
+    fn write_place_features(&self, features: &[serde_json::Value]) {
+        let path = self
+            .directory
+            .path()
+            .join("data/settlements/populated-places-1to10m.geojson");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(
+            path,
+            serde_json::to_vec(&serde_json::json!({
+                "type": "FeatureCollection",
+                "features": features,
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn register_settlements(&self) {
+        let data = self.directory.path().join("data");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::write(
+            data.join("registry.toml"),
+            r#"
+[datasets.populated-places-1to10m]
+kind = "settlement-vector"
+path = "data/settlements/populated-places-1to10m.geojson"
+"#,
+        )
+        .unwrap();
+        self.write_places(&[
+            ("Resolved centre", "Fixture", 45.0, 15.0),
+            ("Requested point", "Fixture", 48.0, 11.0),
+        ]);
     }
 
     fn ledger(&self, name: &str) -> PathBuf {
@@ -162,7 +234,7 @@ impl Fixture {
     }
 
     fn run(&self, command: &str, digest: &str, rest: &[&str]) -> Output {
-        run_with(&self.flags(digest), command, rest)
+        run_with(self.directory.path(), &self.flags(digest), command, rest)
     }
 
     /// The command with this fixture's own digest, which is the case every success below is.
@@ -174,13 +246,13 @@ impl Fixture {
         let mut flags = self.flags(&hexadecimal(self.digest));
         let at = flags.iter().position(|flag| flag == "--digest").unwrap();
         flags.drain(at..at + 2);
-        run_with(&flags, command, rest)
+        run_with(self.directory.path(), &flags, command, rest)
     }
 
     /// The command with this fixture's own digest, at a level of the caller's choosing.
     fn run_at_level(&self, level: &str, command: &str, rest: &[&str]) -> Output {
         let flags = self.flags_at(&hexadecimal(self.digest), level);
-        run_with(&flags, command, rest)
+        run_with(self.directory.path(), &flags, command, rest)
     }
 
     /// The same invocation with one number substituted, so a case declaring another grid differs from a
@@ -192,12 +264,13 @@ impl Fixture {
             .position(|flag| flag == "--origin-lon")
             .expect("the flag list declares an origin longitude");
         flags[at + 1] = lon.to_string();
-        run_with(&flags, command, rest)
+        run_with(self.directory.path(), &flags, command, rest)
     }
 }
 
-fn run_with(flags: &[String], command: &str, rest: &[&str]) -> Output {
+fn run_with(directory: &std::path::Path, flags: &[String], command: &str, rest: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(directory)
         .args(command.split_whitespace())
         .args(flags)
         .args(rest)
@@ -244,6 +317,13 @@ fn population_at_answers_from_the_cache() {
     let document = one_document_naming_the_fixture(&fixture, &output);
     // The figure `report.rs`'s snapshot pins, reached this time through the parser and a real cache.
     assert_eq!(document["result"]["population"], 820.0);
+    assert_eq!(document["result"]["requested"]["lat"], 48.0);
+    assert_eq!(document["result"]["centre"]["lat"], 45.0);
+    assert_eq!(
+        document["result"]["nearest_settlement"]["name"],
+        "Resolved centre"
+    );
+    assert_eq!(document["result"]["nearest_settlement"]["distance_km"], 0.0);
 }
 
 #[test]
@@ -311,6 +391,241 @@ fn sweep_answers_every_share_over_one_ledger() {
         .map(|record| record["target"]["share"].as_f64().unwrap())
         .collect();
     assert_eq!(shares, vec![0.1, 0.2, 0.3]);
+}
+
+#[test]
+fn most_populous_labels_its_own_result_centre() {
+    let fixture = Fixture::build();
+    let most_args = ["--radius-km", "3000", "--spacing", "4"];
+    let before =
+        one_document_naming_the_fixture(&fixture, &fixture.run_ok("most-populous", &most_args));
+    let centre = &before["result"]["centre"];
+    fixture.write_centres(&[[
+        centre["lat"].as_f64().unwrap(),
+        centre["lon"].as_f64().unwrap(),
+    ]]);
+    let after =
+        one_document_naming_the_fixture(&fixture, &fixture.run_ok("most-populous", &most_args));
+    assert_fields_unchanged(
+        &before["result"],
+        &after["result"],
+        &[
+            "centre",
+            "row",
+            "col",
+            "radius_km",
+            "population",
+            "total_population",
+            "share_of_total",
+        ],
+    );
+    assert_eq!(after["result"]["nearest_settlement"]["name"], "Place 0");
+    assert_eq!(after["result"]["nearest_settlement"]["distance_km"], 0.0);
+}
+
+#[test]
+fn smallest_for_share_labels_its_own_result_centre() {
+    let fixture = Fixture::build();
+    let before = one_document_naming_the_fixture(
+        &fixture,
+        &fixture.run_ok(
+            "smallest-for-share",
+            &[
+                "--share",
+                "25",
+                "--spacing",
+                "4",
+                "--ledger",
+                "smallest-before.json",
+            ],
+        ),
+    );
+    let circle = &before["result"]["circle"];
+    fixture.write_centres(&[[
+        circle["centre"]["lat"].as_f64().unwrap(),
+        circle["centre"]["lon"].as_f64().unwrap(),
+    ]]);
+    let after = one_document_naming_the_fixture(
+        &fixture,
+        &fixture.run_ok(
+            "smallest-for-share",
+            &[
+                "--share",
+                "25",
+                "--spacing",
+                "4",
+                "--ledger",
+                "smallest-after.json",
+            ],
+        ),
+    );
+    assert_fields_unchanged(
+        &before["result"]["circle"],
+        &after["result"]["circle"],
+        &[
+            "centre",
+            "row",
+            "col",
+            "radius_km",
+            "population",
+            "target",
+            "share_achieved",
+        ],
+    );
+    assert_eq!(
+        after["result"]["circle"]["nearest_settlement"]["name"],
+        "Place 0"
+    );
+    assert_eq!(
+        after["result"]["circle"]["nearest_settlement"]["distance_km"],
+        0.0
+    );
+}
+
+#[test]
+fn sweep_labels_each_record_at_its_own_result_centre() {
+    let fixture = Fixture::build();
+    let before = one_document_naming_the_fixture(
+        &fixture,
+        &fixture.run_ok(
+            "sweep",
+            &[
+                "--from",
+                "25",
+                "--to",
+                "50",
+                "--step",
+                "25",
+                "--spacing",
+                "4",
+                "--ledger",
+                "sweep-before.json",
+            ],
+        ),
+    );
+    let centres: Vec<_> = before["result"]["records"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|record| {
+            [
+                record["centre"]["lat"].as_f64().unwrap(),
+                record["centre"]["lon"].as_f64().unwrap(),
+            ]
+        })
+        .collect();
+    fixture.write_centres(&centres);
+    let after = one_document_naming_the_fixture(
+        &fixture,
+        &fixture.run_ok(
+            "sweep",
+            &[
+                "--from",
+                "25",
+                "--to",
+                "50",
+                "--step",
+                "25",
+                "--spacing",
+                "4",
+                "--ledger",
+                "sweep-after.json",
+            ],
+        ),
+    );
+    let before_records = before["result"]["records"].as_array().unwrap();
+    let after_records = after["result"]["records"].as_array().unwrap();
+    assert_eq!(before_records.len(), after_records.len());
+    for (before, after) in before_records.iter().zip(after_records) {
+        assert_fields_unchanged(
+            before,
+            after,
+            &[
+                "centre",
+                "row",
+                "col",
+                "radius_km",
+                "population",
+                "target",
+                "share_achieved",
+            ],
+        );
+        assert_eq!(after["nearest_settlement"]["distance_km"], 0.0);
+    }
+}
+
+fn assert_fields_unchanged(before: &serde_json::Value, after: &serde_json::Value, fields: &[&str]) {
+    for field in fields {
+        assert_eq!(before[*field], after[*field], "{field}");
+    }
+}
+
+#[test]
+fn missing_or_remote_settlements_do_not_affect_non_circle_commands() {
+    let fixture = Fixture::build();
+    register_fixture(&fixture);
+    std::fs::write(
+        fixture.directory.path().join("data/tiny.tif"),
+        synthetic_tiff(),
+    )
+    .unwrap();
+    let built = build_command(&fixture, "out/no-places", &["--origin-lon", "-180"]);
+    assert_eq!(built.status.code(), Some(0), "{built:?}");
+    let places_path = fixture
+        .directory
+        .path()
+        .join("data/settlements/populated-places-1to10m.geojson");
+    std::fs::remove_file(&places_path).unwrap();
+
+    let missing = fixture.run_ok(
+        "population-at",
+        &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
+    );
+    assert_eq!(missing.status.code(), Some(3), "{missing:?}");
+    assert!(missing.stdout.is_empty(), "{missing:?}");
+    assert!(
+        String::from_utf8_lossy(&missing.stderr).contains("mise run data:get"),
+        "{}",
+        String::from_utf8_lossy(&missing.stderr)
+    );
+
+    let grid = Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(fixture.directory.path())
+        .args([
+            "grid",
+            "describe",
+            "--width",
+            "36",
+            "--height",
+            "18",
+            "--origin-lat",
+            "90",
+            "--origin-lon",
+            "-180",
+            "--lon-step",
+            "10",
+            "--lat-step",
+            "-10",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(grid.status.code(), Some(0), "{grid:?}");
+    let table_query = fixture.run_ok("table query", &[]);
+    assert_eq!(table_query.status.code(), Some(0), "{table_query:?}");
+    let distance = Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(fixture.directory.path())
+        .args(["distance", "0", "0", "1", "1"])
+        .output()
+        .unwrap();
+    assert_eq!(distance.status.code(), Some(0), "{distance:?}");
+
+    fixture.write_places(&[("Remote", "Fixture", 0.0, 0.0)]);
+    let ocean = fixture.run_ok(
+        "population-at",
+        &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
+    );
+    let ocean = one_document_naming_the_fixture(&fixture, &ocean);
+    assert!(ocean["result"].get("nearest_settlement").is_none());
 }
 
 fn search_parameters<'a>(command: &str, ledger: &'a str) -> Vec<&'a str> {
@@ -843,9 +1158,14 @@ nodata = -3.402823e38
 [datasets.vector]
 kind = "boundary-vector"
 path = "data/vector.geojson"
+
+[datasets.populated-places-1to10m]
+kind = "settlement-vector"
+path = "data/settlements/populated-places-1to10m.geojson"
 "#,
     )
     .unwrap();
+    fixture.write_places(&[("Fixture", "Fixture", 0.0, 0.0)]);
 }
 
 fn named_command(fixture: &Fixture, command: &str, rest: &[&str]) -> Output {
@@ -869,6 +1189,7 @@ fn all_grid_commands_resolve_dataset_defaults_without_a_raster_and_apply_overrid
     assert!(described.status.success(), "{described:?}");
     let overridden = named_command(&fixture, "grid describe", &["--origin-lon", "-180"]);
     let explicit = run_with(
+        fixture.directory.path(),
         &fixture.flags(&hexadecimal(fixture.digest))[..12],
         "grid describe",
         &[],
@@ -943,6 +1264,7 @@ fn dataset_and_explicit_grid_refusals_keep_their_error_classes() {
         .output()
         .unwrap();
     assert!(explicit.status.success(), "{explicit:?}");
+    std::fs::remove_file(fixture.directory.path().join("data/registry.toml")).unwrap();
     let absent = named_command(&fixture, "grid describe", &[]);
     assert_eq!(absent.status.code(), Some(3));
     register_fixture(&fixture);
@@ -1064,6 +1386,7 @@ fn dataset_build_and_all_cached_commands_agree_with_explicit_inputs() {
         rest.extend(cached_parameters(command, named_ledger.to_str().unwrap()));
         let mut named = successful_document(&named_command(&fixture, command, &rest));
         let mut explicit = successful_document(&run_with(
+            fixture.directory.path(),
             &flags,
             command,
             &cached_parameters(command, explicit_ledger.to_str().unwrap()),
