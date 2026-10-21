@@ -1,0 +1,219 @@
+---
+source: crates/popcircles/src/report.rs
+expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).unwrap(), \"most_populous\":\n    serde_json::to_value(most_populous).unwrap(), \"smallest\":\n    serde_json::to_value(smallest).unwrap(), \"sweep\":\n    serde_json::to_value(sweep).unwrap(), \"ocean\":\n    serde_json::to_value(ocean).unwrap(),\n})"
+---
+{
+  "circle": {
+    "document": "circle",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "col": 19,
+      "nearest_settlement": {
+        "country": "Example",
+        "distance_km": 0.0,
+        "name": "Example",
+        "short_form": true
+      },
+      "population": 820.0,
+      "radius_km": 1200.0,
+      "requested": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "row": 4,
+      "share_of_total": 0.0038996366679982498,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "most_populous": {
+    "document": "most-populous",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": -85.0,
+        "lon": 75.0
+      },
+      "col": 25,
+      "nearest_settlement": {
+        "country": "Example",
+        "distance_km": 0.0,
+        "name": "Example",
+        "short_form": true
+      },
+      "population": 55986.0,
+      "radius_km": 3000.0,
+      "row": 17,
+      "share_of_total": 0.2662500713348171,
+      "stats": {
+        "blocks_examined": 369,
+        "blocks_pruned": 269,
+        "circles_evaluated": 100,
+        "kernels_built": 29,
+        "levels": 3
+      },
+      "tolerance_persons": 0.0,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "ocean": {
+    "document": "circle",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "col": 19,
+      "population": 820.0,
+      "radius_km": 1200.0,
+      "requested": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "row": 4,
+      "share_of_total": 0.0038996366679982498,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "smallest": {
+    "document": "smallest",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "circle": {
+        "centre": {
+          "lat": -85.0,
+          "lon": 15.0
+        },
+        "col": 19,
+        "covers_whole_grid": false,
+        "nearest_settlement": {
+          "country": "Example",
+          "distance_km": 0.0,
+          "name": "Example",
+          "short_form": true
+        },
+        "population": 42366.0,
+        "predicate_slack_persons": 0.0000000029359075170987126,
+        "radius_km": 2199,
+        "row": 17,
+        "share_achieved": 0.2014780574102608,
+        "short_below": {
+          "population": 41205.0,
+          "radius_km": 2198
+        },
+        "stats": {
+          "radii_evaluated": 24,
+          "radii_reused": 0,
+          "searched": {
+            "blocks_examined": 14200,
+            "blocks_pruned": 10454,
+            "circles_evaluated": 3746,
+            "kernels_built": 921,
+            "levels": 72
+          }
+        },
+        "target": {
+          "persons": 42055.200000000004,
+          "share": 0.2,
+          "total": 210276.0
+        },
+        "tolerance_persons": 0.0
+      },
+      "ledger": {
+        "path": "out/radii.json",
+        "radii": 24
+      }
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "sweep": {
+    "document": "sweep",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "ledger": {
+        "path": "out/radii.json",
+        "radii": 24
+      },
+      "records": [
+        {
+          "centre": {
+            "lat": -85.0,
+            "lon": 15.0
+          },
+          "col": 19,
+          "covers_whole_grid": false,
+          "nearest_settlement": {
+            "country": "Example",
+            "distance_km": 0.0,
+            "name": "Example",
+            "short_form": true
+          },
+          "population": 42366.0,
+          "predicate_slack_persons": 0.0000000029359075170987126,
+          "radius_km": 2199,
+          "row": 17,
+          "share_achieved": 0.2014780574102608,
+          "short_below": {
+            "population": 41205.0,
+            "radius_km": 2198
+          },
+          "stats": {
+            "radii_evaluated": 24,
+            "radii_reused": 0,
+            "searched": {
+              "blocks_examined": 14200,
+              "blocks_pruned": 10454,
+              "circles_evaluated": 3746,
+              "kernels_built": 921,
+              "levels": 72
+            }
+          },
+          "target": {
+            "persons": 42055.200000000004,
+            "share": 0.2,
+            "total": 210276.0
+          },
+          "tolerance_persons": 0.0
+        }
+      ],
+      "shares": {
+        "from_percent": 20,
+        "step_percent": 10,
+        "to_percent": 20
+      }
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  }
+}

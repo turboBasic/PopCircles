@@ -10,6 +10,7 @@ from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
     PopulationRaster,
+    SettlementVector,
     load,
     parse,
 )
@@ -22,6 +23,18 @@ RUST_NODATA_BITS = 0xFF7FFFFD
 # Named here rather than imported from the renderer: this file tests the registry, and which row a
 # figure happens to credit is the renderer's business.
 RASTER_KEY = "population-count-2020-30arcsec"
+SETTLEMENT_ROW = """
+[datasets.example-places]
+kind = "settlement-vector"
+path = "data/settlements/example-places.geojson"
+bytes = 5
+sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+fetch_url = "https://example.invalid/example-places.geojson"
+source_url = "https://example.invalid/source"
+licence = "Public domain"
+licence_url = "https://example.invalid/licence"
+attribution = ""
+"""
 
 
 def test_every_key_is_its_paths_filename_stem() -> None:
@@ -96,6 +109,18 @@ def test_an_unknown_kind_is_refused_rather_than_read_as_a_bare_dataset() -> None
     )
     with pytest.raises(ValidationError):
         parse(text)
+
+
+def test_a_synthetic_settlement_vector_needs_no_grid_fields() -> None:
+    dataset = parse(SETTLEMENT_ROW).datasets["example-places"]
+
+    assert isinstance(dataset, SettlementVector)
+    assert dataset.path == "data/settlements/example-places.geojson"
+
+
+def test_a_settlement_vector_key_must_match_its_file_stem() -> None:
+    with pytest.raises(ValidationError, match="whose stem is"):
+        parse(SETTLEMENT_ROW.replace("example-places.geojson", "other-places.geojson"))
 
 
 def test_a_raster_missing_a_grid_field_does_not_construct() -> None:

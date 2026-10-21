@@ -40,6 +40,10 @@ pub(crate) enum RegistryError {
     #[error("`{name}` is not a registered population raster; the registered ones are {known}")]
     Unknown { name: String, known: String },
 
+    #[error("`{name}` is not a registered settlement vector; the registered ones are {known}")]
+    #[allow(dead_code)] // Task 2.2 is where circle commands consume this accessor.
+    UnknownSettlement { name: String, known: String },
+
     #[error("dataset `{name}` has path {path}, whose stem is not `{name}`")]
     KeyIsNotTheStem { name: String, path: String },
 }
@@ -70,6 +74,7 @@ pub(crate) struct Registry {
 enum Row {
     PopulationRaster(PopulationRaster),
     BoundaryVector(BoundaryVector),
+    SettlementVector(SettlementVector),
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,11 +98,17 @@ struct BoundaryVector {
     path: PathBuf,
 }
 
+#[derive(Debug, Deserialize)]
+struct SettlementVector {
+    path: PathBuf,
+}
+
 impl Row {
     fn path(&self) -> &Path {
         match self {
             Self::PopulationRaster(row) => &row.path,
             Self::BoundaryVector(row) => &row.path,
+            Self::SettlementVector(row) => &row.path,
         }
     }
 }
@@ -141,7 +152,7 @@ impl Registry {
     pub(crate) fn raster(&self, name: &str) -> Result<Dataset, RegistryError> {
         let row = match self.datasets.get(name) {
             Some(Row::PopulationRaster(row)) => row,
-            Some(Row::BoundaryVector(_)) | None => {
+            Some(Row::BoundaryVector(_) | Row::SettlementVector(_)) | None => {
                 return Err(RegistryError::Unknown {
                     name: name.to_owned(),
                     // Ordered, because a `BTreeMap` is: the message a typo gets is the same message twice
@@ -170,6 +181,29 @@ impl Registry {
             epsg: row.epsg,
             nodata: row.nodata,
         })
+    }
+
+    /// Resolves a settlement-vector path without requiring population-grid metadata.
+    ///
+    /// # Errors
+    /// Returns [`RegistryError::UnknownSettlement`] when the key is absent or has another kind.
+    #[allow(dead_code)] // Task 2.2 is where circle commands consume this accessor.
+    pub(crate) fn settlements(&self, name: &str) -> Result<PathBuf, RegistryError> {
+        match self.datasets.get(name) {
+            Some(Row::SettlementVector(row)) => Ok(row.path.clone()),
+            Some(Row::BoundaryVector(_) | Row::PopulationRaster(_)) | None => {
+                Err(RegistryError::UnknownSettlement {
+                    name: name.to_owned(),
+                    known: self
+                        .datasets
+                        .iter()
+                        .filter(|(_, row)| matches!(row, Row::SettlementVector(_)))
+                        .map(|(key, _)| key.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                })
+            }
+        }
     }
 }
 
@@ -249,13 +283,49 @@ mod tests {
     fn a_key_that_is_not_its_files_stem_is_refused() {
         let text = r#"
 [datasets.coastline]
-kind = "boundary-vector"
-path = "data/boundaries/coastline-1to110m.geojson"
+kind = "settlement-vector"
+path = "data/settlements/coastline-1to110m.geojson"
 "#;
         let error = Registry::parse(Path::new("fixture.toml"), text)
             .expect_err("the key is not the stem")
             .to_string();
         assert!(error.contains("dataset `coastline`"), "{error}");
         assert!(error.contains("coastline-1to110m.geojson"), "{error}");
+    }
+
+    #[test]
+    fn settlement_vectors_resolve_without_grid_fields() {
+        let text = r#"
+[datasets.example-places]
+kind = "settlement-vector"
+path = "data/settlements/example-places.geojson"
+"#;
+        let registry = Registry::parse(Path::new("fixture.toml"), text)
+            .expect("the settlement row needs no population grid");
+
+        assert_eq!(
+            registry
+                .settlements("example-places")
+                .expect("the registered settlement path"),
+            PathBuf::from("data/settlements/example-places.geojson")
+        );
+        assert!(matches!(
+            registry.settlements("missing"),
+            Err(RegistryError::UnknownSettlement { .. })
+        ));
+    }
+
+    #[test]
+    fn an_unknown_registry_kind_is_a_syntax_error() {
+        let text = r#"
+[datasets.example-places]
+kind = "settlement"
+path = "data/settlements/example-places.geojson"
+"#;
+
+        assert!(matches!(
+            Registry::parse(Path::new("fixture.toml"), text),
+            Err(RegistryError::Syntax { .. })
+        ));
     }
 }

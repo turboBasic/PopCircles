@@ -114,6 +114,7 @@ use crate::geodesy::{EARTH_RADIUS_KM, LatLon, RadiusKm, wrap_lon};
 use crate::grid::{Col, Grid, Row};
 use crate::raster::CellTallies;
 use crate::search::{MostPopulous, SearchStats};
+use crate::settlement::Context;
 use crate::smallest::{Ambiguity, Smallest, SmallestStats, Target, share_of};
 use crate::table::cache::Identity;
 use crate::table::{BuiltTable, ColSpan, RowBand, Window};
@@ -470,7 +471,7 @@ impl TableQueryReport {
 /// Both coordinates are published because they are different questions. `requested` is what was asked
 /// for; `centre` is the centre of the cell the grid resolved it to, which is where the circle actually
 /// sits — up to half a cell away, and 500 m of that at the registry raster's resolution.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CircleReport {
     requested: Coordinate,
     centre: Coordinate,
@@ -480,6 +481,8 @@ pub struct CircleReport {
     population: f64,
     total_population: f64,
     share_of_total: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nearest_settlement: Option<NearestSettlementReport>,
 }
 
 impl Document for CircleReport {
@@ -506,6 +509,34 @@ impl CircleReport {
             population,
             total_population: total,
             share_of_total: share_of(population, total),
+            nearest_settlement: None,
+        }
+    }
+
+    /// Adds already-computed place context; the report layer does not perform lookups.
+    #[must_use]
+    pub fn with_nearest_settlement(mut self, context: Option<&Context>) -> Self {
+        self.nearest_settlement = context.map(Into::into);
+        self
+    }
+}
+
+/// A selected place and the distance policy decision, copied into the published contract.
+#[derive(Debug, Clone, Serialize)]
+pub struct NearestSettlementReport {
+    name: String,
+    country: String,
+    distance_km: f64,
+    short_form: bool,
+}
+
+impl From<&Context> for NearestSettlementReport {
+    fn from(context: &Context) -> Self {
+        Self {
+            name: context.name().to_owned(),
+            country: context.country().to_owned(),
+            distance_km: context.distance_km(),
+            short_form: context.short_form(),
         }
     }
 }
@@ -537,7 +568,7 @@ impl From<SearchStats> for SearchStatsReport {
 }
 
 /// The most populous circle of a fixed radius, as published.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MostPopulousReport {
     centre: Coordinate,
     row: u32,
@@ -548,6 +579,8 @@ pub struct MostPopulousReport {
     share_of_total: f64,
     tolerance_persons: f64,
     stats: SearchStatsReport,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nearest_settlement: Option<NearestSettlementReport>,
 }
 
 impl Document for MostPopulousReport {
@@ -570,7 +603,15 @@ impl MostPopulousReport {
             share_of_total: share_of(centre.population, total),
             tolerance_persons: found.tolerance_persons,
             stats: found.stats.into(),
+            nearest_settlement: None,
         }
+    }
+
+    /// Adds already-computed place context; the report layer does not perform lookups.
+    #[must_use]
+    pub fn with_nearest_settlement(mut self, context: Option<&Context>) -> Self {
+        self.nearest_settlement = context.map(Into::into);
+        self
     }
 }
 
@@ -652,7 +693,7 @@ impl From<SmallestStats> for SmallestStatsReport {
 /// beneath it can and cannot separate.
 ///
 /// The radius leads because it is the answer — every other field is what the answer rests on.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SmallestReport {
     radius_km: u32,
     centre: Coordinate,
@@ -676,6 +717,8 @@ pub struct SmallestReport {
     ambiguity: Option<AmbiguityReport>,
     tolerance_persons: f64,
     stats: SmallestStatsReport,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nearest_settlement: Option<NearestSettlementReport>,
 }
 
 impl Document for SmallestReport {
@@ -705,7 +748,15 @@ impl SmallestReport {
             ambiguity: found.ambiguity.map(Into::into),
             tolerance_persons: found.tolerance_persons,
             stats: found.stats.into(),
+            nearest_settlement: None,
         }
+    }
+
+    /// Adds already-computed place context; the report layer does not perform lookups.
+    #[must_use]
+    pub fn with_nearest_settlement(mut self, context: Option<&Context>) -> Self {
+        self.nearest_settlement = context.map(Into::into);
+        self
     }
 }
 
@@ -848,6 +899,7 @@ mod tests {
     use crate::kernel::Kernel;
     use crate::raster::Synthetic;
     use crate::search::{self, Candidate};
+    use crate::settlement::Place;
     use crate::smallest::{self, RadiusLedger, Share};
     use crate::table::{Decimation, Table, build};
 
@@ -1135,6 +1187,61 @@ mod tests {
         )));
     }
 
+    #[test]
+    fn nearest_settlement_is_additive_at_each_circle_payload_boundary() {
+        let grid = fixture_grid();
+        let payload = fixture_payload();
+        let table = Table::new(grid, &payload).expect("the build emits the padded product");
+        let centre = grid.centre_of(grid.row(4).unwrap(), grid.col(19).unwrap());
+        let place = Place::new("Example", "Example", centre).unwrap();
+        let context = crate::settlement::nearest_context(centre, &[place])
+            .unwrap()
+            .unwrap();
+
+        let (cell, radius, population, total) = circle_at(&table, centre, 1200.0);
+        let circle = Envelope::new(
+            CircleReport::new(centre, cell, &grid, radius, population, total)
+                .with_nearest_settlement(Some(&context)),
+        );
+
+        let (rows, cols) = table.whole();
+        let total = table.population(rows, cols);
+        let found =
+            search::most_populous(&table, RadiusKm::from(3000u32), Some(spacing(4)), &mut ())
+                .expect("a whole-globe fixture has kernels");
+        let most_populous = Envelope::new(
+            MostPopulousReport::new(&found, &grid, total).with_nearest_settlement(Some(&context)),
+        );
+
+        let mut ledger = Recorded::default();
+        let found = smallest::smallest(&table, share(0.2), Some(spacing(4)), &mut ledger, &mut ())
+            .expect("a whole-globe fixture and a ledger cannot fail");
+        let smallest_report =
+            SmallestReport::new(&found, &grid).with_nearest_settlement(Some(&context));
+        let smallest = Envelope::new(SmallestDocument::new(
+            LedgerReport::new(ledger_path(), ledger.entries.len()),
+            smallest_report.clone(),
+        ));
+        let sweep = Envelope::new(SweepDocument::new(
+            LedgerReport::new(ledger_path(), ledger.entries.len()),
+            SweepShares::new(20, 20, 10),
+            vec![smallest_report],
+        ));
+
+        let ocean = Envelope::new(
+            CircleReport::new(centre, cell, &grid, radius, population, total)
+                .with_nearest_settlement(None),
+        );
+
+        insta::assert_json_snapshot!(serde_json::json!({
+            "circle": serde_json::to_value(circle).unwrap(),
+            "most_populous": serde_json::to_value(most_populous).unwrap(),
+            "smallest": serde_json::to_value(smallest).unwrap(),
+            "sweep": serde_json::to_value(sweep).unwrap(),
+            "ocean": serde_json::to_value(ocean).unwrap(),
+        }));
+    }
+
     fn spacing(cells: u32) -> NonZeroU32 {
         NonZeroU32::new(cells).expect("a fixture spacing is not zero")
     }
@@ -1315,12 +1422,15 @@ mod tests {
         let record = SmallestReport::new(&found, &grid);
         let block = || LedgerReport::new(ledger_path(), 0);
 
-        let one =
-            serde_json::to_string(&Envelope::new(SmallestDocument::new(block(), record))).unwrap();
+        let one = serde_json::to_string(&Envelope::new(SmallestDocument::new(
+            block(),
+            record.clone(),
+        )))
+        .unwrap();
         let swept = serde_json::to_string(&Envelope::new(SweepDocument::new(
             block(),
             SweepShares::new(20, 20, 10),
-            vec![record, record, record],
+            vec![record.clone(), record.clone(), record],
         )))
         .unwrap();
 
