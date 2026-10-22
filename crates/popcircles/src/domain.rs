@@ -140,50 +140,7 @@ impl Domain {
         geometry: &Geometry,
         grid: Grid,
     ) -> Result<(Self, Vec<GeometryDiagnostic>), DomainError> {
-        let polygons = match geometry {
-            Geometry::Polygon(polygon) => std::slice::from_ref(polygon),
-            Geometry::MultiPolygon(polygons) => polygons,
-        };
-        let mut prepared = Vec::with_capacity(polygons.len());
-        let mut diagnostics = Vec::new();
-        for (component, polygon) in polygons.iter().enumerate() {
-            if polygon.rings.is_empty() {
-                diagnostics.push(GeometryDiagnostic {
-                    feature_id: feature_id.clone(),
-                    component,
-                    reason: DegenerateReason::MissingExteriorRing,
-                });
-                continue;
-            }
-            for (ring_index, ring) in polygon.rings.iter().enumerate() {
-                for (vertex, point) in ring.iter().enumerate() {
-                    if !point.lat.is_finite()
-                        || !point.lon.is_finite()
-                        || point.lat < -90.0 - BOUNDARY_TOLERANCE_DEG
-                        || point.lat > 90.0 + BOUNDARY_TOLERANCE_DEG
-                        || point.lon < -180.0 - BOUNDARY_TOLERANCE_DEG
-                        || point.lon > 180.0 + BOUNDARY_TOLERANCE_DEG
-                    {
-                        return Err(DomainError::InvalidCoordinate {
-                            feature_id: feature_id.as_str().to_owned(),
-                            component,
-                            ring: ring_index,
-                            vertex,
-                        });
-                    }
-                }
-            }
-            let exterior = &polygon.rings[0];
-            let Some(reason) = degenerate_reason(exterior) else {
-                prepared.push(PreparedPolygon::new(polygon));
-                continue;
-            };
-            diagnostics.push(GeometryDiagnostic {
-                feature_id: feature_id.clone(),
-                component,
-                reason,
-            });
-        }
+        let (prepared, diagnostics) = prepare_geometry(&feature_id, geometry)?;
 
         let mut rows = Vec::with_capacity(grid.height() as usize);
         for row in grid.rows() {
@@ -237,9 +194,89 @@ impl Domain {
     }
 }
 
+impl Geometry {
+    /// Rasterizes positive-area feature contact without changing cell-centre domain masks.
+    ///
+    /// A horizontal sweep splits each row at ring vertices and edge intersections. Within each
+    /// resulting latitude band, polygon edges are linear and preserve their order, so the swept
+    /// longitude intervals identify every cell with positive-area interior contact.
+    ///
+    /// # Errors
+    /// Returns [`DomainError::InvalidCoordinate`] for coordinates outside the geographic range or
+    /// non-finite coordinates.
+    pub(crate) fn positive_area_intervals(
+        &self,
+        feature_id: &FeatureId,
+        grid: Grid,
+    ) -> Result<(Vec<Vec<ColumnInterval>>, Vec<GeometryDiagnostic>), DomainError> {
+        let (prepared, diagnostics) = prepare_geometry(feature_id, self)?;
+        let mut rows = Vec::with_capacity(grid.height() as usize);
+        for row in grid.rows() {
+            let mut intervals = Vec::new();
+            for polygon in &prepared {
+                intervals.extend(polygon.positive_area_row_intervals(row, &grid));
+            }
+            rows.push(merge_intervals(intervals));
+        }
+        Ok((rows, diagnostics))
+    }
+}
+
+fn prepare_geometry(
+    feature_id: &FeatureId,
+    geometry: &Geometry,
+) -> Result<(Vec<PreparedPolygon>, Vec<GeometryDiagnostic>), DomainError> {
+    let polygons = match geometry {
+        Geometry::Polygon(polygon) => std::slice::from_ref(polygon),
+        Geometry::MultiPolygon(polygons) => polygons,
+    };
+    let mut prepared = Vec::with_capacity(polygons.len());
+    let mut diagnostics = Vec::new();
+    for (component, polygon) in polygons.iter().enumerate() {
+        if polygon.rings.is_empty() {
+            diagnostics.push(GeometryDiagnostic {
+                feature_id: feature_id.clone(),
+                component,
+                reason: DegenerateReason::MissingExteriorRing,
+            });
+            continue;
+        }
+        for (ring_index, ring) in polygon.rings.iter().enumerate() {
+            for (vertex, point) in ring.iter().enumerate() {
+                if !point.lat.is_finite()
+                    || !point.lon.is_finite()
+                    || point.lat < -90.0 - BOUNDARY_TOLERANCE_DEG
+                    || point.lat > 90.0 + BOUNDARY_TOLERANCE_DEG
+                    || point.lon < -180.0 - BOUNDARY_TOLERANCE_DEG
+                    || point.lon > 180.0 + BOUNDARY_TOLERANCE_DEG
+                {
+                    return Err(DomainError::InvalidCoordinate {
+                        feature_id: feature_id.as_str().to_owned(),
+                        component,
+                        ring: ring_index,
+                        vertex,
+                    });
+                }
+            }
+        }
+        let exterior = &polygon.rings[0];
+        let Some(reason) = degenerate_reason(exterior) else {
+            prepared.push(PreparedPolygon::new(polygon));
+            continue;
+        };
+        diagnostics.push(GeometryDiagnostic {
+            feature_id: feature_id.clone(),
+            component,
+            reason,
+        });
+    }
+    Ok((prepared, diagnostics))
+}
+
 #[derive(Debug)]
 struct PreparedPolygon {
     rings: Vec<Vec<LatLon>>,
+    scan_edges: Vec<Vec<ScanEdge>>,
     south: f64,
     north: f64,
 }
@@ -256,8 +293,10 @@ impl PreparedPolygon {
             .iter()
             .map(|point| point.lat)
             .fold(f64::NEG_INFINITY, f64::max);
+        let scan_edges = rings.iter().map(|ring| scan_edges(ring)).collect();
         Self {
             rings,
+            scan_edges,
             south,
             north,
         }
@@ -287,6 +326,239 @@ impl PreparedPolygon {
             intervals = subtract_intervals(intervals, &ring_row_intervals(hole, latitude, grid));
         }
         intervals
+    }
+
+    fn positive_area_row_intervals(&self, row: Row, grid: &Grid) -> Vec<ColumnInterval> {
+        let centre = grid.centre_lat(row);
+        let half_height = grid.lat_step().abs() / 2.0;
+        let south = (centre - half_height).max(-90.0);
+        let north = (centre + half_height).min(90.0);
+        if north <= self.south || south >= self.north {
+            return Vec::new();
+        }
+        let mut edges: Vec<ScanEdge> = self
+            .scan_edges
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|edge| edge.max_lat() > south && edge.min_lat() < north)
+            .collect();
+        if edges.is_empty() {
+            return Vec::new();
+        }
+        edges.sort_unstable_by(|first, second| first.min_lon().total_cmp(&second.min_lon()));
+
+        let mut events = vec![south, north];
+        for edge in &edges {
+            for latitude in [edge.a.lat, edge.b.lat] {
+                if south < latitude && latitude < north {
+                    events.push(latitude);
+                }
+            }
+        }
+        for (index, first) in edges.iter().enumerate() {
+            for second in &edges[index + 1..] {
+                if second.min_lon() > first.max_lon() {
+                    break;
+                }
+                if let Some(latitude) = segment_intersection_lat(*first, *second)
+                    && south < latitude
+                    && latitude < north
+                {
+                    events.push(latitude);
+                }
+            }
+        }
+        events.sort_by(f64::total_cmp);
+        events.dedup_by(|first, second| first.total_cmp(second).is_eq());
+
+        let mut intervals = Vec::new();
+        for band in events.windows(2) {
+            let low = band[0];
+            let high = band[1];
+            if low >= high {
+                continue;
+            }
+            let latitude = low + (high - low) / 2.0;
+            let mut filled = ring_band_spans(&self.scan_edges[0], latitude);
+            for hole in self.scan_edges.iter().skip(1) {
+                for removed in ring_band_spans(hole, latitude) {
+                    filled = subtract_band_spans(filled, removed, latitude);
+                }
+            }
+            for span in filled {
+                let west = span
+                    .left
+                    .longitude_at(low)
+                    .min(span.left.longitude_at(high));
+                let east = span
+                    .right
+                    .longitude_at(low)
+                    .max(span.right.longitude_at(high));
+                append_positive_area_span(west, east, grid, &mut intervals);
+            }
+        }
+        merge_intervals(intervals)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ScanEdge {
+    a: LatLon,
+    b: LatLon,
+}
+
+impl ScanEdge {
+    fn min_lat(self) -> f64 {
+        self.a.lat.min(self.b.lat)
+    }
+
+    fn max_lat(self) -> f64 {
+        self.a.lat.max(self.b.lat)
+    }
+
+    fn min_lon(self) -> f64 {
+        self.a.lon.min(self.b.lon)
+    }
+
+    fn max_lon(self) -> f64 {
+        self.a.lon.max(self.b.lon)
+    }
+
+    fn longitude_at(self, latitude: f64) -> f64 {
+        self.a.lon + (latitude - self.a.lat) * (self.b.lon - self.a.lon) / (self.b.lat - self.a.lat)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct BandSpan {
+    left: ScanEdge,
+    right: ScanEdge,
+}
+
+fn scan_edges(ring: &[LatLon]) -> Vec<ScanEdge> {
+    if ring.len() < 2 {
+        return Vec::new();
+    }
+    let mut edges: Vec<_> = ring
+        .windows(2)
+        .map(|pair| ScanEdge {
+            a: pair[0],
+            b: pair[1],
+        })
+        .collect();
+    if ring.first() != ring.last() {
+        let Some(last) = ring.last() else {
+            return edges;
+        };
+        edges.push(ScanEdge {
+            a: *last,
+            b: ring[0],
+        });
+    }
+    edges
+}
+
+fn ring_band_spans(edges: &[ScanEdge], latitude: f64) -> Vec<BandSpan> {
+    let mut crossings: Vec<_> = edges
+        .iter()
+        .copied()
+        .filter(|edge| (edge.a.lat > latitude) != (edge.b.lat > latitude))
+        .map(|edge| (edge.longitude_at(latitude), edge))
+        .collect();
+    crossings.sort_by(|first, second| first.0.total_cmp(&second.0));
+    crossings
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| BandSpan {
+            left: pair[0].1,
+            right: pair[1].1,
+        })
+        .collect()
+}
+
+fn subtract_band_spans(source: Vec<BandSpan>, removed: BandSpan, latitude: f64) -> Vec<BandSpan> {
+    let removed_left = removed.left.longitude_at(latitude);
+    let removed_right = removed.right.longitude_at(latitude);
+    let mut result = Vec::new();
+    for span in source {
+        let left = span.left.longitude_at(latitude);
+        let right = span.right.longitude_at(latitude);
+        if removed_right <= left || removed_left >= right {
+            result.push(span);
+            continue;
+        }
+        if removed_left > left {
+            result.push(BandSpan {
+                left: span.left,
+                right: removed.left,
+            });
+        }
+        if removed_right < right {
+            result.push(BandSpan {
+                left: removed.right,
+                right: span.right,
+            });
+        }
+    }
+    result
+}
+
+#[allow(clippy::float_cmp)] // Parallel edges do not exchange order inside a scan band.
+fn segment_intersection_lat(first: ScanEdge, second: ScanEdge) -> Option<f64> {
+    let first_lon = first.b.lon - first.a.lon;
+    let first_lat = first.b.lat - first.a.lat;
+    let second_lon = second.b.lon - second.a.lon;
+    let second_lat = second.b.lat - second.a.lat;
+    let denominator = first_lon * second_lat - first_lat * second_lon;
+    if denominator == 0.0 {
+        return None;
+    }
+    let offset_lon = second.a.lon - first.a.lon;
+    let offset_lat = second.a.lat - first.a.lat;
+    let first_fraction = (offset_lon * second_lat - offset_lat * second_lon) / denominator;
+    let second_fraction = (offset_lon * first_lat - offset_lat * first_lon) / denominator;
+    if !(0.0..=1.0).contains(&first_fraction) || !(0.0..=1.0).contains(&second_fraction) {
+        return None;
+    }
+    Some(first.a.lat + first_fraction * first_lat)
+}
+
+fn append_positive_area_span(
+    west: f64,
+    east: f64,
+    grid: &Grid,
+    intervals: &mut Vec<ColumnInterval>,
+) {
+    if west >= east {
+        return;
+    }
+    let origin = grid.origin().lon;
+    let step = grid.lon_step();
+    let grid_other_edge = origin + step * f64::from(grid.width());
+    let grid_west = origin.min(grid_other_edge);
+    let grid_east = origin.max(grid_other_edge);
+    let first_turn = ((grid_west - east) / 360.0).floor() + 1.0;
+    let last_turn = ((grid_east - west) / 360.0).ceil() - 1.0;
+    let mut turn = first_turn;
+    while turn <= last_turn {
+        let shift = turn * 360.0;
+        let first_position = (west + shift - origin) / step;
+        let last_position = (east + shift - origin) / step;
+        let low = first_position.min(last_position);
+        let high = first_position.max(last_position);
+        if high > low {
+            // The bounds are clamped to the grid before conversion, so both are integral indices.
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let start = low.floor().max(0.0) as u32;
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let end = high.ceil().min(f64::from(grid.width())) as u32;
+            if start < end {
+                intervals.push(ColumnInterval { start, end });
+            }
+        }
+        turn += 1.0;
     }
 }
 
