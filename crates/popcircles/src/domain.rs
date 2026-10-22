@@ -479,16 +479,19 @@ impl fmt::Display for GeometryDiagnostic {
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used)]
 mod tests {
     use super::*;
     use crate::geodesy::LatLon;
 
+    // Fixture construction must fail at its source so tests cannot silently use invalid grids.
+    #[allow(clippy::expect_used)]
     fn make_grid(width: u32, height: u32) -> Grid {
         Grid::new(width, height, LatLon { lat: 2.0, lon: 0.0 }, 1.0, -1.0)
             .expect("test grid is valid")
     }
 
+    // Fixture construction must fail at its source so tests cannot silently use invalid identities.
+    #[allow(clippy::expect_used)]
     fn id(value: &str) -> FeatureId {
         FeatureId::new(value).expect("test identifier is nonempty")
     }
@@ -510,6 +513,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid constructor fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn feature_identity_and_domain_shape_are_validated() {
         assert_eq!(FeatureId::new("  "), Err(DomainError::EmptyFeatureId));
         assert!(matches!(
@@ -530,6 +535,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid constructor fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn membership_requires_the_same_grid_and_valid_indices() {
         let grid = make_grid(2, 1);
         let domain = Domain::from_intervals(
@@ -560,6 +567,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid geometry fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn holes_are_subtracted_and_multipart_components_are_combined() {
         let grid = make_grid(5, 2);
         let mut with_hole = rectangle(0.0, 0.0, 4.0, 2.0);
@@ -591,6 +600,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid geometry fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn a_cell_centre_on_a_shared_edge_belongs_to_both_domains() {
         let grid = Grid::new(2, 1, point(-0.5, 1.0), 1.0, -1.0).expect("shared-edge grid is valid");
         let left = Domain::rasterize(
@@ -621,6 +632,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid geometry fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn antimeridian_crossing_geometry_selects_both_sides_of_the_seam() {
         let grid = Grid::new(4, 1, point(178.0, 1.0), 1.0, -1.0).expect("seam grid is valid");
         let geometry = Geometry::Polygon(rectangle(179.0, 0.0, -179.0, 1.0));
@@ -633,6 +646,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid geometry fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn even_odd_membership_keeps_self_intersections_and_rasterizes_again_identically() {
         let grid = make_grid(4, 4);
         let geometry = Geometry::Polygon(Polygon {
@@ -661,6 +676,8 @@ mod tests {
     }
 
     #[test]
+    // Expectations here make invalid geometry fixtures fail at the assertion that creates them.
+    #[allow(clippy::expect_used)]
     fn polygons_without_cell_centres_are_empty_and_degenerate_components_are_reported() {
         let grid = make_grid(2, 2);
         let (empty, diagnostics) = Domain::rasterize(
