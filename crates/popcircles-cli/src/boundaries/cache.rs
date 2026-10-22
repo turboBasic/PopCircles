@@ -1,4 +1,4 @@
-//! Versioned persistence for domain row intervals.
+//! CLI-side versioned persistence for domain row intervals.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
@@ -6,14 +6,12 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::{ColumnInterval, Domain, FeatureId};
+use popcircles::domain::{ColumnInterval, Domain, FeatureId, MEMBERSHIP_RULE_VERSION};
 #[cfg(test)]
-use crate::geodesy::LatLon;
-use crate::grid::Grid;
+use popcircles::geodesy::LatLon;
+use popcircles::grid::Grid;
 
 pub const FORMAT_VERSION: u32 = 1;
-pub const MEMBERSHIP_RULE_VERSION: u32 = 1;
-
 const HEADER_SUFFIX: &str = ".header.json";
 const PAYLOAD_SUFFIX: &str = ".payload.bin";
 const TEMPORARY_SUFFIX: &str = ".tmp";
@@ -285,18 +283,18 @@ impl Cache {
     /// # Errors
     /// Returns an error if the domain identity differs, a cache already exists, or any write/rename fails.
     pub fn publish(&self, domain: &Domain, identity: &Identity) -> Result<(), CacheError> {
-        if domain.feature_id != identity.feature_id {
+        if domain.feature_id() != &identity.feature_id {
             return Err(CacheError::Mismatch {
                 field: "feature identity",
                 wanted: identity.feature_id.as_str().to_owned(),
-                found: domain.feature_id.as_str().to_owned(),
+                found: domain.feature_id().as_str().to_owned(),
             });
         }
-        if domain.grid != identity.grid {
+        if domain.grid() != &identity.grid {
             return Err(CacheError::Mismatch {
                 field: "grid geometry",
                 wanted: format!("{} x {}", identity.grid.width(), identity.grid.height()),
-                found: format!("{} x {}", domain.grid.width(), domain.grid.height()),
+                found: format!("{} x {}", domain.grid().width(), domain.grid().height()),
             });
         }
         for path in [&self.header, &self.payload] {
@@ -314,7 +312,7 @@ impl Cache {
                 source,
             })?;
         }
-        let payload = encode_rows(&domain.rows)?;
+        let payload = encode_domain(domain)?;
         let header = serde_json::to_vec(&Header::new(
             identity,
             u64::try_from(payload.len()).unwrap_or(u64::MAX),
@@ -366,13 +364,14 @@ impl Cache {
     }
 }
 
-fn encode_rows(rows: &[Vec<ColumnInterval>]) -> Result<Vec<u8>, CacheError> {
+fn encode_domain(domain: &Domain) -> Result<Vec<u8>, CacheError> {
     let mut bytes = Vec::new();
-    for row in rows {
-        let count = u32::try_from(row.len())
+    for row in domain.grid().rows() {
+        let intervals = domain.row_intervals(row).unwrap_or_default();
+        let count = u32::try_from(intervals.len())
             .map_err(|_| CacheError::Payload("one row has too many intervals".to_owned()))?;
         bytes.extend_from_slice(&count.to_le_bytes());
-        for interval in row {
+        for interval in intervals {
             bytes.extend_from_slice(&interval.start().to_le_bytes());
             bytes.extend_from_slice(&interval.end().to_le_bytes());
         }
@@ -402,7 +401,11 @@ fn decode_rows(payload: &[u8], height: u32) -> Result<Vec<Vec<ColumnInterval>>, 
         for _ in 0..count {
             let start = read_u32(payload, &mut cursor)?;
             let end = read_u32(payload, &mut cursor)?;
-            intervals.push(ColumnInterval { start, end });
+            intervals.push(
+                ColumnInterval::new(start, end).ok_or_else(|| {
+                    CacheError::Payload("interval is empty or reversed".to_owned())
+                })?,
+            );
         }
         rows.push(intervals);
     }
@@ -494,7 +497,7 @@ mod tests {
         let rows = (0..grid.height())
             .map(|row| {
                 if row == 0 {
-                    vec![ColumnInterval { start: 1, end: 3 }]
+                    vec![ColumnInterval::new(1, 3).expect("test interval is non-empty")]
                 } else {
                     vec![]
                 }

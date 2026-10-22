@@ -2,14 +2,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use popcircles::domain::Domain;
-use popcircles::domain::cache::{Cache, Identity, MEMBERSHIP_RULE_VERSION};
+use popcircles::domain::{Domain, MEMBERSHIP_RULE_VERSION};
 use popcircles::grid::{Grid, Row};
 use popcircles::raster::geotiff::GeoTiffSource;
 use popcircles::raster::{PixelType, RasterSource, RasterSpec};
 use popcircles::table::Decimation;
 use serde::Serialize;
 
+use super::cache::{Cache, Identity};
 use super::{BoundaryFeature, load};
 
 const BOUNDARY_KEY: &str = "gisco-countries-2024-1m";

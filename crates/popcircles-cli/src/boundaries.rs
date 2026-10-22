@@ -192,6 +192,9 @@ fn feature_error(feature: &str, reason: &str) -> BoundaryError {
 mod audit;
 
 #[cfg(test)]
+mod cache;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

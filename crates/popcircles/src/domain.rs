@@ -1,11 +1,15 @@
 //! Cell membership for a named region on one effective population grid.
 
-pub mod cache;
-
 use std::fmt;
 
 use crate::geodesy::LatLon;
 use crate::grid::{BOUNDARY_TOLERANCE_DEG, Col, Grid, Row};
+
+/// Version of the cell-membership rule used to produce domain intervals.
+///
+/// Persistence layers include this value in their cache identity so a rule change cannot reuse
+/// intervals produced under older semantics.
+pub const MEMBERSHIP_RULE_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FeatureId(String);
@@ -35,6 +39,16 @@ pub struct ColumnInterval {
 }
 
 impl ColumnInterval {
+    /// Constructs a non-empty half-open column interval.
+    #[must_use]
+    pub const fn new(start: u32, end: u32) -> Option<Self> {
+        if start < end {
+            Some(Self { start, end })
+        } else {
+            None
+        }
+    }
+
     #[must_use]
     pub const fn start(self) -> u32 {
         self.start
