@@ -91,11 +91,15 @@ Identifiers are flat, sequential and never reused.
 
 ### FU-17 - The full-resolution search is page faults, not arithmetic
 
-- **Status** — `dormant` (2026-08-15): measured under issue #10, and dormant rather than due
-  because nothing in the tree asks for the runs that make it hurt. One radius at 30 arcsec is 207 s of which
-  **13.4 s is CPU**, with `iostat` reporting ~7 000 transfers a second against the 7.5 GB payload. Every
-  answer this repository has published came from a decimated table or from three certifying radii, and both
-  are affordable at that rate.
+- **Status** — `dormant` (2026-10-22): #18 still asks for a named handful of full-resolution
+  certifications, explicitly not a sweep. The #72 full-resolution run was one fixed-radius,
+  all-country composition pass through the raster, not a command needing many full-resolution radii.
+  Neither meets the condition. The measured route costs and reconciliation are recorded in [#72's
+  execution evidence](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761).
+  The earlier #10 figure remains the full-resolution search baseline: one radius at 30 arcsec is
+  207 s of which **13.4 s is CPU**, with `iostat` reporting ~7 000 transfers a second against the
+  7.5 GB payload. Every answer this repository has published came from a decimated table or from
+  three certifying radii, and both are affordable at that rate.
 - **Condition** — a command that needs many full-resolution radii becomes something this repository asks
   for: `smallest-for-share` or `sweep` at `--decimate 1` named in a mise task, in `USAGE.md`, or in
   an open issue's acceptance. Two dozen probes at 207 s is 90 minutes, and issue #18's per-country sweep is
