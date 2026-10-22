@@ -1,4 +1,5 @@
 mod args;
+pub mod boundaries;
 mod commands;
 mod failure;
 mod observe;

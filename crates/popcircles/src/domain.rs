@@ -3,7 +3,7 @@
 use std::fmt;
 
 use crate::geodesy::LatLon;
-use crate::grid::{Col, Grid, Row};
+use crate::grid::{BOUNDARY_TOLERANCE_DEG, Col, Grid, Row};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FeatureId(String);
@@ -118,7 +118,7 @@ impl Domain {
     ///
     /// # Errors
     /// Returns [`DomainError::InvalidCoordinate`] when a ring contains a non-finite coordinate or
-    /// a latitude/longitude outside the geographic coordinate range.
+    /// a coordinate beyond the geographic range and its boundary tolerance.
     pub fn rasterize(
         feature_id: FeatureId,
         geometry: &Geometry,
@@ -143,8 +143,10 @@ impl Domain {
                 for (vertex, point) in ring.iter().enumerate() {
                     if !point.lat.is_finite()
                         || !point.lon.is_finite()
-                        || !(-90.0..=90.0).contains(&point.lat)
-                        || !(-180.0..=180.0).contains(&point.lon)
+                        || point.lat < -90.0 - BOUNDARY_TOLERANCE_DEG
+                        || point.lat > 90.0 + BOUNDARY_TOLERANCE_DEG
+                        || point.lon < -180.0 - BOUNDARY_TOLERANCE_DEG
+                        || point.lon > 180.0 + BOUNDARY_TOLERANCE_DEG
                     {
                         return Err(DomainError::InvalidCoordinate {
                             feature_id: feature_id.as_str().to_owned(),
@@ -700,5 +702,28 @@ mod tests {
         assert_eq!(diagnostics[0].component, 0);
         assert_eq!(diagnostics[0].reason, DegenerateReason::CollinearVertices);
         assert!(diagnostics[0].to_string().contains("bad-feature"));
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)] // The fixture pins the registered source's floating-point edge case.
+    fn coordinate_boundary_tolerance_accepts_source_rounding_without_repair() {
+        let grid = Grid::new(2, 1, point(179.0, -77.0), 1.0, -1.0)
+            .expect("small antimeridian grid is valid");
+        let rounded_edge = 180.000_000_000_000_1;
+        let geometry = Geometry::Polygon(Polygon {
+            rings: vec![vec![
+                point(179.0, -78.0),
+                point(rounded_edge, -78.0),
+                point(rounded_edge, -77.0),
+                point(179.0, -78.0),
+            ]],
+        });
+        assert!(Domain::rasterize(id("AQ"), &geometry, grid).is_ok());
+
+        let outside_tolerance = Geometry::Polygon(rectangle(181.0, -78.0, 182.0, -77.0));
+        assert!(matches!(
+            Domain::rasterize(id("invalid"), &outside_tolerance, grid),
+            Err(DomainError::InvalidCoordinate { .. })
+        ));
     }
 }
