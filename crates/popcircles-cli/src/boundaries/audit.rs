@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use popcircles::domain::{Domain, MEMBERSHIP_RULE_VERSION};
 use popcircles::grid::{Grid, Row};
+use popcircles::ownership::{CellOwner, CellOwnership, OWNERSHIP_RULE_VERSION, UnassignedReason};
 use popcircles::raster::geotiff::GeoTiffSource;
 use popcircles::raster::{PixelType, RasterSource, RasterSpec};
 use popcircles::table::Decimation;
@@ -15,6 +16,254 @@ use super::{BoundaryFeature, load};
 const BOUNDARY_KEY: &str = "gisco-countries-2024-1m";
 const POPULATION_KEY: &str = "population-count-2020-30arcsec";
 const INVALID_SOURCE_IDS: [&str; 9] = ["CR", "DE", "ET", "GN", "UA", "IN", "LR", "MN", "NI"];
+
+#[derive(Debug, Serialize)]
+struct OwnershipFeatureAudit {
+    feature_id: String,
+    owned_cells: u64,
+    positive_population: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct OwnershipCategoryAudit {
+    cells: u64,
+    positive_cells: u64,
+    positive_population: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct ReconciliationAudit {
+    classified_positive_population: f64,
+    difference: f64,
+    absolute_error_budget: f64,
+    additions_bound: u64,
+    within_budget: bool,
+    derivation: &'static str,
+}
+
+#[derive(Debug, Serialize)]
+struct CountryOwnershipAudit {
+    boundary_key: &'static str,
+    boundary_path: PathBuf,
+    boundary_sha256: String,
+    population_key: &'static str,
+    population_path: PathBuf,
+    population_sha256: String,
+    ownership_rule_version: u32,
+    features: Vec<OwnershipFeatureAudit>,
+    outside_features: OwnershipCategoryAudit,
+    multiple_features: OwnershipCategoryAudit,
+    unassigned_positive_population: f64,
+    world_positive_population: f64,
+    raster_cells: u64,
+    raster_tallies: (u64, u64, u64, u64),
+    reconciliation: ReconciliationAudit,
+    geometry_diagnostics: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+struct OwnershipCounts {
+    cells: u64,
+    positive_cells: u64,
+    population: f64,
+}
+
+#[test]
+#[ignore = "reads the registered GISCO and population sources; writes tmpg/gh-14/audit.json"]
+#[allow(clippy::expect_used, clippy::too_many_lines)] // This is the explicit registered-source accounting audit.
+fn gisco_registered_country_accounting_audit() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let registry = crate::registry::Registry::load(&root.join(crate::registry::REGISTRY_PATH))
+        .expect("registry reads");
+    let boundary = registry
+        .boundary(BOUNDARY_KEY)
+        .expect("GISCO is registered");
+    let boundary_sha256 = boundary
+        .sha256
+        .as_deref()
+        .expect("boundary digest exists")
+        .to_owned();
+    let source_features = load(
+        &root.join(&boundary.path),
+        boundary
+            .source_id_field
+            .as_deref()
+            .expect("boundary identity field exists"),
+    )
+    .expect("registered GISCO source decodes");
+    assert_eq!(source_features.len(), 263);
+    let features: Vec<_> = source_features
+        .iter()
+        .map(|feature| (feature.id.clone(), feature.geometry.clone()))
+        .collect();
+    let population = registry
+        .raster(POPULATION_KEY)
+        .expect("population raster is registered");
+    let population_sha256 = population
+        .sha256
+        .as_deref()
+        .expect("population digest exists")
+        .to_owned();
+    let grid = Grid::new(
+        population.grid.width,
+        population.grid.height,
+        popcircles::geodesy::LatLon {
+            lat: population.grid.origin_lat,
+            lon: population.grid.origin_lon,
+        },
+        population.grid.lon_step,
+        population.grid.lat_step,
+    )
+    .expect("registered population grid is valid");
+    let (ownership, diagnostics) = CellOwnership::rasterize_features(&features, grid)
+        .expect("registered country geometries rasterize");
+    let spec = RasterSpec {
+        grid,
+        epsg: population.epsg,
+        pixel: PixelType::Float32,
+        nodata: population.nodata,
+    };
+    let mut source = GeoTiffSource::open(root.join(&population.raster), &spec)
+        .expect("registered population raster opens");
+    let mut feature_audits: Vec<_> = source_features
+        .iter()
+        .map(|feature| OwnershipFeatureAudit {
+            feature_id: feature.id.as_str().to_owned(),
+            owned_cells: 0,
+            positive_population: 0.0,
+        })
+        .collect();
+    let feature_indices: BTreeMap<_, _> = feature_audits
+        .iter()
+        .enumerate()
+        .map(|(index, feature)| (feature.feature_id.clone(), index))
+        .collect();
+    let mut outside = OwnershipCounts::default();
+    let mut multiple = OwnershipCounts::default();
+    let mut world_positive = 0.0;
+    while let Some(row) = source.next_row() {
+        let row = row.expect("registered population row decodes");
+        let intervals = ownership
+            .row_intervals(row.row.get())
+            .expect("ownership covers every raster row");
+        for interval in intervals {
+            let start = interval.start() as usize;
+            let end = interval.end() as usize;
+            let values = &row.values[start..end];
+            let cells = u64::from(interval.end() - interval.start());
+            match interval.owner() {
+                CellOwner::Feature(id) => {
+                    let feature = &mut feature_audits[*feature_indices
+                        .get(id.as_str())
+                        .expect("owner is registered")];
+                    feature.owned_cells += cells;
+                    for &value in values {
+                        let value = f64::from(value);
+                        if value > 0.0 {
+                            feature.positive_population += value;
+                        }
+                    }
+                }
+                CellOwner::Unassigned(UnassignedReason::OutsideFeatures) => {
+                    count_unassigned(&mut outside, values);
+                }
+                CellOwner::Unassigned(UnassignedReason::MultipleFeatures(_)) => {
+                    count_unassigned(&mut multiple, values);
+                }
+            }
+        }
+        world_positive += row
+            .values
+            .iter()
+            .map(|&value| f64::from(value))
+            .sum::<f64>();
+    }
+    let tallies = source.finish();
+    let classified_positive = feature_audits
+        .iter()
+        .map(|item| item.positive_population)
+        .sum::<f64>()
+        + outside.population
+        + multiple.population;
+    let additions_bound =
+        u64::from(grid.width()) * u64::from(grid.height()) + u64::from(grid.height()) + 265;
+    let exact_addition_bound = u32::try_from(additions_bound)
+        .expect("the registered source's operation count is exactly representable as f64");
+    let n_epsilon = f64::from(exact_addition_bound) * f64::EPSILON;
+    let gamma = n_epsilon / (1.0 - n_epsilon);
+    let error_budget = 2.0 * gamma * world_positive;
+    let audit = CountryOwnershipAudit {
+        boundary_key: BOUNDARY_KEY,
+        boundary_path: boundary.path.clone(),
+        boundary_sha256,
+        population_key: POPULATION_KEY,
+        population_path: population.raster,
+        population_sha256,
+        ownership_rule_version: OWNERSHIP_RULE_VERSION,
+        features: feature_audits,
+        outside_features: category_audit(&outside),
+        multiple_features: category_audit(&multiple),
+        unassigned_positive_population: outside.population + multiple.population,
+        world_positive_population: world_positive,
+        raster_cells: tallies.total(),
+        raster_tallies: (
+            tallies.nodata,
+            tallies.unexpected_negative,
+            tallies.zero,
+            tallies.populated,
+        ),
+        reconciliation: ReconciliationAudit {
+            classified_positive_population: classified_positive,
+            difference: classified_positive - world_positive,
+            absolute_error_budget: error_budget,
+            additions_bound,
+            within_budget: (classified_positive - world_positive).abs() <= error_budget,
+            derivation: "Float32-to-f64 conversion and sanitization are exact; each non-negative population sum is bounded by gamma_n = n*epsilon/(1-n*epsilon), with n covering one addition per source cell, one per raster row, and the 263 feature plus two residual reductions. The reconciliation compares two such sums, so the absolute budget is 2*gamma_n*world_positive_population.",
+        },
+        geometry_diagnostics: diagnostics.iter().map(ToString::to_string).collect(),
+    };
+    assert_eq!(
+        audit.raster_cells,
+        u64::from(grid.width()) * u64::from(grid.height())
+    );
+    assert!(
+        audit.reconciliation.within_budget,
+        "country totals and residual exceed the derived arithmetic budget"
+    );
+    let output_dir = root.join("tmpg/gh-14");
+    fs::create_dir_all(&output_dir).expect("audit output directory creates");
+    let document = serde_json::to_vec_pretty(&audit).expect("country accounting audit serializes");
+    fs::write(output_dir.join("audit.json"), &document).expect("country audit writes");
+    fs::write(
+        output_dir.join("command.txt"),
+        "# If either registered input is absent, fetch it with `mise run data:get`.\nmkdir -p tmpg/gh-14/tmp\nTMPDIR=\"$PWD/tmpg/gh-14/tmp\" cargo test --release -p popcircles-cli gisco_registered_country_accounting_audit -- --ignored --nocapture\n",
+    )
+    .expect("reproduction command writes");
+    eprintln!(
+        "GISCO country accounting audit wrote {} bytes to {}",
+        document.len(),
+        output_dir.join("audit.json").display()
+    );
+}
+
+fn count_unassigned(counts: &mut OwnershipCounts, values: &[f32]) {
+    counts.cells += values.len() as u64;
+    for &value in values {
+        let value = f64::from(value);
+        if value > 0.0 {
+            counts.positive_cells += 1;
+            counts.population += value;
+        }
+    }
+}
+
+fn category_audit(counts: &OwnershipCounts) -> OwnershipCategoryAudit {
+    OwnershipCategoryAudit {
+        cells: counts.cells,
+        positive_cells: counts.positive_cells,
+        positive_population: counts.population,
+    }
+}
 
 #[derive(Debug, Default, Serialize)]
 struct FeatureAudit {
