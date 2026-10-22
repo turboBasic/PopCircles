@@ -124,9 +124,9 @@ search() {
 }
 ```
 
-Circle searches also read the registered settlement places. Fetch it with `mise run data:get` before
-searching; if it is missing, circle commands stop with that command in the error. Distance, grid and
-table commands do not need the places file.
+Circle searches read the registered settlement places, population raster and GISCO country boundaries.
+Fetch them with `mise run data:get` before searching; if one is missing, the command stops with fetch
+guidance. Distance, grid and table commands do not need these circle inputs.
 
 **Every figure below is a decimated table's.** The 5 arcmin grid is a tenth of the raster's resolution in
 each direction, so a radius here is good to about the width of one of its cells — which for half the world

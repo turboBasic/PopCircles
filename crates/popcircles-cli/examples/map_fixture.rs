@@ -115,8 +115,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             .ok_or("provide the fixture directory")?,
     );
     std::fs::create_dir_all(root.join("data"))?;
+    std::fs::create_dir_all(root.join("data/boundaries"))?;
     std::fs::create_dir_all(root.join("data/settlements"))?;
     std::fs::write(root.join("data/tiny.tif"), raster()?)?;
+    std::fs::write(
+        root.join("data/boundaries/gisco-countries-2024-1m.geojson"),
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"XX","NAME_ENGL":"Fixture"},"geometry":{"type":"Polygon","coordinates":[[[0,0],[90,0],[90,90],[0,90],[0,0]]]}}]}"#,
+    )?;
     std::fs::write(
         root.join("data/settlements/populated-places-1to10m.geojson"),
         r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"NAME":"Fixture","ADM0NAME":"Fixture"},"geometry":{"type":"Point","coordinates":[0,0]}}]}"#,
@@ -151,6 +156,23 @@ source_url = "https://example.invalid/fixture"
 licence = "public domain"
 licence_url = "https://example.invalid/licence"
 attribution = ""
+
+[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+bytes = 1
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+source_url = "https://example.invalid/fixture"
+licence = "CC0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+attribution = "Fixture country boundary"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 1
+revision = "fixture"
+source_id_field = "CNTR_ID"
+identity_policy = "fixture"
 "#,
     )?;
     Ok(())

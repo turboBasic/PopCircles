@@ -1,6 +1,7 @@
 mod args;
 pub mod boundaries;
 mod commands;
+mod country_breakdown;
 mod failure;
 mod observe;
 mod registry;

@@ -28,6 +28,10 @@ qualifies exactly one feature. No match or multiple matches remain in an explici
 feature order never breaks ties. Classify at k=1 before coarser aggregation, and use the same ownership
 for country totals and circle queries ([ADR 0017](../decisions/0017-population-cells-belong-to-a-uniquely-intersected-country.md)).
 
+World-circle commands publish country composition from the registered population raster and GISCO
+boundaries. They prepare those inputs once, build one cropped country prefix at a time, and query only
+settled circles; a sweep reuses each country prefix across its answers.
+
 "On the globe" is the whole point. A circle drawn on an equirectangular image is not a circle on the
 Earth, and the well-known viral maps of the 50% circle got this wrong.
 

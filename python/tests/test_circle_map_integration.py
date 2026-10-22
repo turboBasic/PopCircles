@@ -88,22 +88,18 @@ def test_real_build_reuse_and_missing_raster(
     calls.clear()
     results.clear()
     options.output.unlink()
-    workflow(options, invoke)
-    assert len(calls) == 2  # noqa: PLR2004 — checked query and search, with no build
+    with pytest.raises(WorkflowError, match="search: Rust CLI exited 3"):
+        workflow(options, invoke)
+    assert len(calls) == 2  # noqa: PLR2004 — cached table query then raster-dependent circle
     assert calls[0][:2] == ["table", "query"]
     assert calls[1][0] == "smallest-for-share"
-    assert options.output.read_bytes().startswith(PNG_MAGIC)
     current = options.document.read_bytes()
-    assert (
-        json.loads(current)["provenance"]["digest"]
-        == json.loads(results[0].stdout)["result"]["digest"]
-    )
-    assert current == results[-1].stdout
+    assert "mise run data:get" in capsys.readouterr().err
 
     for cache_file in tmp_path.glob("table.*"):
         cache_file.unlink()
     calls.clear()
-    options.output.unlink()
+    options.output.unlink(missing_ok=True)
     with pytest.raises(WorkflowError, match="table build: Rust CLI exited 3"):
         workflow(options, invoke)
     assert "mise run data:get" in capsys.readouterr().err

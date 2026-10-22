@@ -5,6 +5,10 @@ import pytest
 from repo_tools import lint_docs
 
 
+def not_ignored(_path: str) -> bool:
+    return False
+
+
 def test_slugify_matches_github_anchor_style() -> None:
     assert lint_docs.slugify("Correctness invariants") == "correctness-invariants"
     assert lint_docs.slugify("Fetching") == "fetching"
@@ -58,7 +62,8 @@ def test_resolve_relative_returns_none_when_nothing_matches(tmp_path: Path) -> N
     assert lint_docs.resolve_relative(source, "does/not/exist.md") is None
 
 
-def test_check_links_flags_missing_target(tmp_path: Path) -> None:
+def test_check_links_flags_missing_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(lint_docs, "is_ignored", not_ignored)
     source = tmp_path / "source.md"
     findings = lint_docs.check_links(source, 1, "[missing](missing.md)")
     assert len(findings) == 1
@@ -172,6 +177,7 @@ def test_agent_files_are_in_scope_and_checked(
     lint_docs.top_level_roots.cache_clear()
     lint_docs.is_ignored.cache_clear()
     monkeypatch.setattr(lint_docs, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(lint_docs, "is_ignored", not_ignored)
     try:
         assert agent in lint_docs.scope_files()
         findings = lint_docs.check_pointers(agent)
@@ -179,4 +185,3 @@ def test_agent_files_are_in_scope_and_checked(
         assert "does not resolve" in findings[0].message
     finally:
         lint_docs.top_level_roots.cache_clear()
-        lint_docs.is_ignored.cache_clear()

@@ -110,6 +110,7 @@ pub(crate) struct BoundaryVector {
     pub(crate) revision: Option<String>,
     pub(crate) source_id_field: Option<String>,
     pub(crate) identity_policy: Option<String>,
+    pub(crate) attribution: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -225,6 +226,23 @@ impl Registry {
             epsg: row.epsg,
             nodata: row.nodata,
         })
+    }
+
+    pub(crate) fn default_raster(&self) -> Result<Dataset, RegistryError> {
+        if let Ok(dataset) = self.raster("population-count-2020-30arcsec") {
+            return Ok(dataset);
+        }
+        let Some((name, Row::PopulationRaster(_))) = self
+            .datasets
+            .iter()
+            .find(|(_, row)| matches!(row, Row::PopulationRaster(_)))
+        else {
+            return Err(RegistryError::Unknown {
+                name: "default population raster".to_owned(),
+                known: String::new(),
+            });
+        };
+        self.raster(name)
     }
 
     /// Resolves a settlement-vector path without requiring population-grid metadata.
