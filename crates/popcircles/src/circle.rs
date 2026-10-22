@@ -74,6 +74,7 @@ pub fn country_population(
         (0, crop_low_width, crop_high_width),
         (crop_start, crop_start + crop_high_width, 0),
     ];
+    let crop_range_start = usize::from(crop_low_width == 0);
     let crop_range_count = if crop_low_width > 0 { 2 } else { 1 };
     let cropped = table.table();
     let mut total = 0.0;
@@ -102,7 +103,9 @@ pub fn country_population(
         };
         let rows = RowBand::new(crop_row, crop_row);
         for &(query_start, query_end) in &query_ranges[..query_range_count] {
-            for &(crop_start, crop_end, crop_column) in &crop_ranges[..crop_range_count] {
+            for &(crop_start, crop_end, crop_column) in
+                &crop_ranges[crop_range_start..crop_range_start + crop_range_count]
+            {
                 let start = query_start.max(crop_start);
                 let end = query_end.min(crop_end);
                 if start < end {
@@ -323,6 +326,43 @@ mod tests {
             country_population(&country, &other_kernel, outside),
             Err(CountryPopulationError::GridMismatch)
         );
+    }
+
+    #[test]
+    fn non_wrapping_country_crop_queries_match_direct_masked_sums() {
+        let grid = grid();
+        let feature = FeatureId::new("ordinary-country").expect("fixture ID is valid");
+        let geometry = rectangle(-90.0, -80.0, 10.0, 80.0);
+        let (ownership, _) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("fixture ownership is valid");
+        let country = build_country(
+            Synthetic::new(grid, NODATA, cells()).expect("fixture raster has the grid's shape"),
+            &ownership,
+            &feature,
+            "fixture-gisco-v1",
+        )
+        .expect("the country owns fixture cells");
+        let centre = grid.col(18).expect("a column of the fixture");
+        let centre_row = grid.row(9).expect("a row of the fixture");
+        let kernel = Kernel::new(grid, centre_row, radius(20_016.0))
+            .expect("fixture columns close on themselves");
+        let centre_point = grid.centre_of(centre_row, centre);
+        let expected = grid
+            .rows()
+            .flat_map(|row| grid.cols().map(move |col| (row, col)))
+            .filter(|(row, col)| {
+                ownership
+                    .owner_at(&grid, row.get(), col.get())
+                    .is_ok_and(|owner| {
+                        owner == &crate::ownership::CellOwner::Feature(feature.clone())
+                    })
+                    && great_circle_km(centre_point, grid.centre_of(*row, *col)) <= 20_016.0
+            })
+            .map(|(row, col)| f64::from(cell(row.get(), col.get())))
+            .sum::<f64>();
+
+        assert_eq!(country_population(&country, &kernel, centre), Ok(expected));
     }
 
     #[test]
