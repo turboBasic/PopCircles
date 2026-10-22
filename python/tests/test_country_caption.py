@@ -75,7 +75,7 @@ def test_country_lines_keep_both_denominators_null_ratios_and_tiny_entries() -> 
         "Beta (B): 10 people; 50.0% of country population; 20.0% of circle population"
     )
     assert (
-        "Tiny (T): 0.000001 people; unavailable of country population; 0.0% of circle population"
+        "Tiny (T): 1e-06 people; unavailable of country population; 0.0% of circle population"
         in lines
     )
     assert any("including overlaps, remain here" in line for line in lines)
@@ -104,3 +104,22 @@ def test_large_country_populations_keep_grouped_fixed_point_formatting() -> None
     )
 
     assert lines[1].startswith("Alpha (A): 1,234,567.89 people;")
+
+
+def test_tiny_positive_country_populations_do_not_round_to_zero() -> None:
+    lines = lines_for(
+        answer_with(
+            [
+                {
+                    "id": "A",
+                    "name": "Alpha",
+                    "population_inside": 0.0000001,
+                    "country_total_population": 1,
+                    "fraction_of_country_population": 0.0000001,
+                    "fraction_of_circle_population": 0.0000001,
+                }
+            ]
+        )
+    )
+
+    assert lines[1].startswith("Alpha (A): 1e-07 people;")

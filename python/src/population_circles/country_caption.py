@@ -44,4 +44,6 @@ def _percent(fraction: float | None) -> str:
 
 
 def _population(value: float) -> str:
+    if value < 1:
+        return f"{value:.6g}"
     return f"{value:,.6f}".rstrip("0").rstrip(".")
