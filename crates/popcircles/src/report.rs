@@ -106,10 +106,18 @@
 //! [`SCHEMA_VERSION`] rises only for a change an existing consumer would misread — a renamed or removed
 //! field, or one whose meaning moved. A consumer should therefore ignore keys it does not know rather than
 //! refuse a document carrying them.
+//!
+//! A present `country_breakdown` lists intersecting domains by descending population contribution,
+//! then canonical identifier. Its ratios are unit fractions: inside / country total and inside / circle
+//! population. Reconciliation carries the circle-specific remainder and arithmetic bound; provenance
+//! carries boundary credit and membership, ownership and aggregation context. An empty `entries` list
+//! means accounting ran and found no intersecting domain.
+
 use std::path::Path;
 
 use serde::Serialize;
 
+use crate::country_breakdown::{CountryBreakdown, CountryBreakdownEntry};
 use crate::geodesy::{EARTH_RADIUS_KM, LatLon, RadiusKm, wrap_lon};
 use crate::grid::{Col, Grid, Row};
 use crate::raster::CellTallies;
@@ -483,6 +491,8 @@ pub struct CircleReport {
     share_of_total: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     nearest_settlement: Option<NearestSettlementReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    country_breakdown: Option<CountryBreakdownReport>,
 }
 
 impl Document for CircleReport {
@@ -510,6 +520,7 @@ impl CircleReport {
             total_population: total,
             share_of_total: share_of(population, total),
             nearest_settlement: None,
+            country_breakdown: None,
         }
     }
 
@@ -517,6 +528,12 @@ impl CircleReport {
     #[must_use]
     pub fn with_nearest_settlement(mut self, context: Option<&Context>) -> Self {
         self.nearest_settlement = context.map(Into::into);
+        self
+    }
+
+    #[must_use]
+    pub fn with_country_breakdown(mut self, breakdown: Option<&CountryBreakdown>) -> Self {
+        self.country_breakdown = breakdown.map(Into::into);
         self
     }
 }
@@ -537,6 +554,81 @@ impl From<&Context> for NearestSettlementReport {
             country: context.country().to_owned(),
             distance_km: context.distance_km(),
             short_form: context.short_form(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CountryBreakdownReport {
+    entries: Vec<CountryBreakdownEntryReport>,
+    reconciliation: CountryReconciliationReport,
+    provenance: CountryBreakdownProvenanceReport,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CountryBreakdownEntryReport {
+    id: String,
+    name: String,
+    population_inside: f64,
+    country_total_population: f64,
+    fraction_of_country_population: Option<f64>,
+    fraction_of_circle_population: Option<f64>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+struct CountryReconciliationReport {
+    unassigned_population: f64,
+    bound_persons: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CountryBreakdownProvenanceReport {
+    boundary_dataset: String,
+    boundary_revision: String,
+    boundary_digest: String,
+    attribution: String,
+    effective_grid: GridSummary,
+    decimation: u32,
+    accounting_route: String,
+    membership_rule_version: u32,
+    ownership_rule_version: u32,
+    aggregation_order_version: u32,
+}
+
+impl From<&CountryBreakdown> for CountryBreakdownReport {
+    fn from(value: &CountryBreakdown) -> Self {
+        let context = &value.provenance;
+        Self {
+            entries: value.entries.iter().map(Into::into).collect(),
+            reconciliation: CountryReconciliationReport {
+                unassigned_population: value.unassigned_population,
+                bound_persons: value.bound_persons,
+            },
+            provenance: CountryBreakdownProvenanceReport {
+                boundary_dataset: context.boundary_dataset.clone(),
+                boundary_revision: context.boundary_revision.clone(),
+                boundary_digest: context.boundary_digest.clone(),
+                attribution: context.attribution.clone(),
+                effective_grid: GridSummary::from(&context.effective_grid),
+                decimation: context.decimation,
+                accounting_route: context.accounting_route.clone(),
+                membership_rule_version: context.membership_rule_version(),
+                ownership_rule_version: context.ownership_rule_version(),
+                aggregation_order_version: context.aggregation_order_version(),
+            },
+        }
+    }
+}
+
+impl From<&CountryBreakdownEntry> for CountryBreakdownEntryReport {
+    fn from(value: &CountryBreakdownEntry) -> Self {
+        Self {
+            id: value.id.clone(),
+            name: value.name.clone(),
+            population_inside: value.population_inside,
+            country_total_population: value.country_total_population,
+            fraction_of_country_population: value.fraction_of_country_population,
+            fraction_of_circle_population: value.fraction_of_circle_population,
         }
     }
 }
@@ -581,6 +673,8 @@ pub struct MostPopulousReport {
     stats: SearchStatsReport,
     #[serde(skip_serializing_if = "Option::is_none")]
     nearest_settlement: Option<NearestSettlementReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    country_breakdown: Option<CountryBreakdownReport>,
 }
 
 impl Document for MostPopulousReport {
@@ -604,6 +698,7 @@ impl MostPopulousReport {
             tolerance_persons: found.tolerance_persons,
             stats: found.stats.into(),
             nearest_settlement: None,
+            country_breakdown: None,
         }
     }
 
@@ -611,6 +706,12 @@ impl MostPopulousReport {
     #[must_use]
     pub fn with_nearest_settlement(mut self, context: Option<&Context>) -> Self {
         self.nearest_settlement = context.map(Into::into);
+        self
+    }
+
+    #[must_use]
+    pub fn with_country_breakdown(mut self, breakdown: Option<&CountryBreakdown>) -> Self {
+        self.country_breakdown = breakdown.map(Into::into);
         self
     }
 }
@@ -719,6 +820,8 @@ pub struct SmallestReport {
     stats: SmallestStatsReport,
     #[serde(skip_serializing_if = "Option::is_none")]
     nearest_settlement: Option<NearestSettlementReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    country_breakdown: Option<CountryBreakdownReport>,
 }
 
 impl Document for SmallestReport {
@@ -749,6 +852,7 @@ impl SmallestReport {
             tolerance_persons: found.tolerance_persons,
             stats: found.stats.into(),
             nearest_settlement: None,
+            country_breakdown: None,
         }
     }
 
@@ -756,6 +860,12 @@ impl SmallestReport {
     #[must_use]
     pub fn with_nearest_settlement(mut self, context: Option<&Context>) -> Self {
         self.nearest_settlement = context.map(Into::into);
+        self
+    }
+
+    #[must_use]
+    pub fn with_country_breakdown(mut self, breakdown: Option<&CountryBreakdown>) -> Self {
+        self.country_breakdown = breakdown.map(Into::into);
         self
     }
 }
@@ -895,6 +1005,7 @@ mod tests {
 
     use super::*;
     use crate::circle;
+    use crate::country_breakdown::{CountryBreakdownEntry, CountryBreakdownProvenance};
     use crate::geodesy::great_circle_km;
     use crate::kernel::Kernel;
     use crate::raster::Synthetic;
@@ -1131,6 +1242,97 @@ mod tests {
 
     fn fixture_payload() -> Vec<f64> {
         payload_over(&fixture_grid(), fixture_cell)
+    }
+
+    fn country_breakdown(grid: Grid, entries: Vec<CountryBreakdownEntry>) -> CountryBreakdown {
+        CountryBreakdown {
+            entries,
+            unassigned_population: 10.0,
+            bound_persons: 0.001,
+            provenance: CountryBreakdownProvenance {
+                boundary_dataset: "gisco-countries-2024-1m".to_owned(),
+                boundary_revision: "2024".to_owned(),
+                boundary_digest: "sha256:fixture".to_owned(),
+                attribution: "GISCO, European Commission".to_owned(),
+                effective_grid: grid,
+                decimation: 1,
+                accounting_route: "sequential-cropped-prefix-v1".to_owned(),
+            },
+        }
+    }
+
+    #[test]
+    fn country_breakdown_is_additive_at_every_circle_payload_boundary() {
+        let grid = fixture_grid();
+        let payload = fixture_payload();
+        let table = Table::new(grid, &payload).expect("fixture table is valid");
+        let requested = LatLon {
+            lat: 45.0,
+            lon: 15.0,
+        };
+        let (cell, radius, population, total) = circle_at(&table, requested, 1200.0);
+        let most =
+            search::most_populous(&table, RadiusKm::from(3000u32), Some(spacing(4)), &mut ())
+                .expect("fixture grid can be searched");
+        let mut ledger = Recorded::default();
+        let found = smallest::smallest(&table, share(0.2), Some(spacing(4)), &mut ledger, &mut ())
+            .expect("fixture grid can be searched");
+        let breakdown = country_breakdown(
+            grid,
+            vec![
+                CountryBreakdownEntry {
+                    id: "A".to_owned(),
+                    name: "A".to_owned(),
+                    population_inside: 30.0,
+                    country_total_population: 100.0,
+                    fraction_of_country_population: Some(0.3),
+                    fraction_of_circle_population: Some(0.6),
+                },
+                CountryBreakdownEntry {
+                    id: "B".to_owned(),
+                    name: "B".to_owned(),
+                    population_inside: 10.0,
+                    country_total_population: 20.0,
+                    fraction_of_country_population: Some(0.5),
+                    fraction_of_circle_population: Some(0.2),
+                },
+                CountryBreakdownEntry {
+                    id: "Z".to_owned(),
+                    name: "Zero".to_owned(),
+                    population_inside: 0.0,
+                    country_total_population: 0.0,
+                    fraction_of_country_population: None,
+                    fraction_of_circle_population: Some(0.0),
+                },
+            ],
+        );
+        let empty = country_breakdown(grid, Vec::new());
+        let circle = CircleReport::new(requested, cell, &grid, radius, population, total)
+            .with_country_breakdown(Some(&breakdown));
+        let most_report =
+            MostPopulousReport::new(&most, &grid, total).with_country_breakdown(Some(&breakdown));
+        let smallest_report =
+            SmallestReport::new(&found, &grid).with_country_breakdown(Some(&breakdown));
+        let reports = serde_json::json!({
+            "circle": serde_json::to_value(Envelope::new(circle)).unwrap(),
+            "most_populous": serde_json::to_value(Envelope::new(most_report)).unwrap(),
+            "smallest_circle": serde_json::to_value(Envelope::new(smallest_report.clone())).unwrap(),
+            "smallest": serde_json::to_value(Envelope::new(SmallestDocument::new(
+                LedgerReport::new(ledger_path(), ledger.entries.len()), smallest_report.clone(),
+            ))).unwrap(),
+            "sweep": serde_json::to_value(Envelope::new(SweepDocument::new(
+                LedgerReport::new(ledger_path(), ledger.entries.len()),
+                SweepShares::new(20, 20, 10), vec![smallest_report],
+            ))).unwrap(),
+            "legacy_circle": serde_json::to_value(Envelope::new(
+                CircleReport::new(requested, cell, &grid, radius, population, total),
+            )).unwrap(),
+            "empty": serde_json::to_value(Envelope::new(
+                CircleReport::new(requested, cell, &grid, radius, population, total)
+                    .with_country_breakdown(Some(&empty)),
+            )).unwrap(),
+        });
+        insta::assert_json_snapshot!(reports);
     }
 
     /// The population inside a circle of `radius_km` about the cell holding `at`, with the cell.

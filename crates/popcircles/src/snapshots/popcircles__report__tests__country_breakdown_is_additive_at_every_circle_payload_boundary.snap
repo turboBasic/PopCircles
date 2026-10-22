@@ -1,0 +1,570 @@
+---
+source: crates/popcircles/src/report.rs
+expression: reports
+---
+{
+  "circle": {
+    "document": "circle",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "col": 19,
+      "country_breakdown": {
+        "entries": [
+          {
+            "country_total_population": 100.0,
+            "fraction_of_circle_population": 0.6,
+            "fraction_of_country_population": 0.3,
+            "id": "A",
+            "name": "A",
+            "population_inside": 30.0
+          },
+          {
+            "country_total_population": 20.0,
+            "fraction_of_circle_population": 0.2,
+            "fraction_of_country_population": 0.5,
+            "id": "B",
+            "name": "B",
+            "population_inside": 10.0
+          },
+          {
+            "country_total_population": 0.0,
+            "fraction_of_circle_population": 0.0,
+            "fraction_of_country_population": null,
+            "id": "Z",
+            "name": "Zero",
+            "population_inside": 0.0
+          }
+        ],
+        "provenance": {
+          "accounting_route": "sequential-cropped-prefix-v1",
+          "aggregation_order_version": 1,
+          "attribution": "GISCO, European Commission",
+          "boundary_dataset": "gisco-countries-2024-1m",
+          "boundary_digest": "sha256:fixture",
+          "boundary_revision": "2024",
+          "decimation": 1,
+          "effective_grid": {
+            "height": 18,
+            "lat_step": -10.0,
+            "lon_step": 10.0,
+            "middle_row_cell_area_km2": 1230166.8155696748,
+            "origin": {
+              "lat": 90.0,
+              "lon": -180.0
+            },
+            "spans_full_turn": true,
+            "width": 36
+          },
+          "membership_rule_version": 1,
+          "ownership_rule_version": 1
+        },
+        "reconciliation": {
+          "bound_persons": 0.001,
+          "unassigned_population": 10.0
+        }
+      },
+      "population": 820.0,
+      "radius_km": 1200.0,
+      "requested": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "row": 4,
+      "share_of_total": 0.0038996366679982498,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "empty": {
+    "document": "circle",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "col": 19,
+      "country_breakdown": {
+        "entries": [],
+        "provenance": {
+          "accounting_route": "sequential-cropped-prefix-v1",
+          "aggregation_order_version": 1,
+          "attribution": "GISCO, European Commission",
+          "boundary_dataset": "gisco-countries-2024-1m",
+          "boundary_digest": "sha256:fixture",
+          "boundary_revision": "2024",
+          "decimation": 1,
+          "effective_grid": {
+            "height": 18,
+            "lat_step": -10.0,
+            "lon_step": 10.0,
+            "middle_row_cell_area_km2": 1230166.8155696748,
+            "origin": {
+              "lat": 90.0,
+              "lon": -180.0
+            },
+            "spans_full_turn": true,
+            "width": 36
+          },
+          "membership_rule_version": 1,
+          "ownership_rule_version": 1
+        },
+        "reconciliation": {
+          "bound_persons": 0.001,
+          "unassigned_population": 10.0
+        }
+      },
+      "population": 820.0,
+      "radius_km": 1200.0,
+      "requested": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "row": 4,
+      "share_of_total": 0.0038996366679982498,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "legacy_circle": {
+    "document": "circle",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "col": 19,
+      "population": 820.0,
+      "radius_km": 1200.0,
+      "requested": {
+        "lat": 45.0,
+        "lon": 15.0
+      },
+      "row": 4,
+      "share_of_total": 0.0038996366679982498,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "most_populous": {
+    "document": "most-populous",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": -85.0,
+        "lon": 75.0
+      },
+      "col": 25,
+      "country_breakdown": {
+        "entries": [
+          {
+            "country_total_population": 100.0,
+            "fraction_of_circle_population": 0.6,
+            "fraction_of_country_population": 0.3,
+            "id": "A",
+            "name": "A",
+            "population_inside": 30.0
+          },
+          {
+            "country_total_population": 20.0,
+            "fraction_of_circle_population": 0.2,
+            "fraction_of_country_population": 0.5,
+            "id": "B",
+            "name": "B",
+            "population_inside": 10.0
+          },
+          {
+            "country_total_population": 0.0,
+            "fraction_of_circle_population": 0.0,
+            "fraction_of_country_population": null,
+            "id": "Z",
+            "name": "Zero",
+            "population_inside": 0.0
+          }
+        ],
+        "provenance": {
+          "accounting_route": "sequential-cropped-prefix-v1",
+          "aggregation_order_version": 1,
+          "attribution": "GISCO, European Commission",
+          "boundary_dataset": "gisco-countries-2024-1m",
+          "boundary_digest": "sha256:fixture",
+          "boundary_revision": "2024",
+          "decimation": 1,
+          "effective_grid": {
+            "height": 18,
+            "lat_step": -10.0,
+            "lon_step": 10.0,
+            "middle_row_cell_area_km2": 1230166.8155696748,
+            "origin": {
+              "lat": 90.0,
+              "lon": -180.0
+            },
+            "spans_full_turn": true,
+            "width": 36
+          },
+          "membership_rule_version": 1,
+          "ownership_rule_version": 1
+        },
+        "reconciliation": {
+          "bound_persons": 0.001,
+          "unassigned_population": 10.0
+        }
+      },
+      "population": 55986.0,
+      "radius_km": 3000.0,
+      "row": 17,
+      "share_of_total": 0.2662500713348171,
+      "stats": {
+        "blocks_examined": 369,
+        "blocks_pruned": 269,
+        "circles_evaluated": 100,
+        "kernels_built": 29,
+        "levels": 3
+      },
+      "tolerance_persons": 0.0,
+      "total_population": 210276.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "smallest": {
+    "document": "smallest",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "circle": {
+        "centre": {
+          "lat": -85.0,
+          "lon": 15.0
+        },
+        "col": 19,
+        "country_breakdown": {
+          "entries": [
+            {
+              "country_total_population": 100.0,
+              "fraction_of_circle_population": 0.6,
+              "fraction_of_country_population": 0.3,
+              "id": "A",
+              "name": "A",
+              "population_inside": 30.0
+            },
+            {
+              "country_total_population": 20.0,
+              "fraction_of_circle_population": 0.2,
+              "fraction_of_country_population": 0.5,
+              "id": "B",
+              "name": "B",
+              "population_inside": 10.0
+            },
+            {
+              "country_total_population": 0.0,
+              "fraction_of_circle_population": 0.0,
+              "fraction_of_country_population": null,
+              "id": "Z",
+              "name": "Zero",
+              "population_inside": 0.0
+            }
+          ],
+          "provenance": {
+            "accounting_route": "sequential-cropped-prefix-v1",
+            "aggregation_order_version": 1,
+            "attribution": "GISCO, European Commission",
+            "boundary_dataset": "gisco-countries-2024-1m",
+            "boundary_digest": "sha256:fixture",
+            "boundary_revision": "2024",
+            "decimation": 1,
+            "effective_grid": {
+              "height": 18,
+              "lat_step": -10.0,
+              "lon_step": 10.0,
+              "middle_row_cell_area_km2": 1230166.8155696748,
+              "origin": {
+                "lat": 90.0,
+                "lon": -180.0
+              },
+              "spans_full_turn": true,
+              "width": 36
+            },
+            "membership_rule_version": 1,
+            "ownership_rule_version": 1
+          },
+          "reconciliation": {
+            "bound_persons": 0.001,
+            "unassigned_population": 10.0
+          }
+        },
+        "covers_whole_grid": false,
+        "population": 42366.0,
+        "predicate_slack_persons": 0.0000000029359075170987126,
+        "radius_km": 2199,
+        "row": 17,
+        "share_achieved": 0.2014780574102608,
+        "short_below": {
+          "population": 41205.0,
+          "radius_km": 2198
+        },
+        "stats": {
+          "radii_evaluated": 24,
+          "radii_reused": 0,
+          "searched": {
+            "blocks_examined": 14200,
+            "blocks_pruned": 10454,
+            "circles_evaluated": 3746,
+            "kernels_built": 921,
+            "levels": 72
+          }
+        },
+        "target": {
+          "persons": 42055.200000000004,
+          "share": 0.2,
+          "total": 210276.0
+        },
+        "tolerance_persons": 0.0
+      },
+      "ledger": {
+        "path": "out/radii.json",
+        "radii": 24
+      }
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "smallest_circle": {
+    "document": "smallest-circle",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "centre": {
+        "lat": -85.0,
+        "lon": 15.0
+      },
+      "col": 19,
+      "country_breakdown": {
+        "entries": [
+          {
+            "country_total_population": 100.0,
+            "fraction_of_circle_population": 0.6,
+            "fraction_of_country_population": 0.3,
+            "id": "A",
+            "name": "A",
+            "population_inside": 30.0
+          },
+          {
+            "country_total_population": 20.0,
+            "fraction_of_circle_population": 0.2,
+            "fraction_of_country_population": 0.5,
+            "id": "B",
+            "name": "B",
+            "population_inside": 10.0
+          },
+          {
+            "country_total_population": 0.0,
+            "fraction_of_circle_population": 0.0,
+            "fraction_of_country_population": null,
+            "id": "Z",
+            "name": "Zero",
+            "population_inside": 0.0
+          }
+        ],
+        "provenance": {
+          "accounting_route": "sequential-cropped-prefix-v1",
+          "aggregation_order_version": 1,
+          "attribution": "GISCO, European Commission",
+          "boundary_dataset": "gisco-countries-2024-1m",
+          "boundary_digest": "sha256:fixture",
+          "boundary_revision": "2024",
+          "decimation": 1,
+          "effective_grid": {
+            "height": 18,
+            "lat_step": -10.0,
+            "lon_step": 10.0,
+            "middle_row_cell_area_km2": 1230166.8155696748,
+            "origin": {
+              "lat": 90.0,
+              "lon": -180.0
+            },
+            "spans_full_turn": true,
+            "width": 36
+          },
+          "membership_rule_version": 1,
+          "ownership_rule_version": 1
+        },
+        "reconciliation": {
+          "bound_persons": 0.001,
+          "unassigned_population": 10.0
+        }
+      },
+      "covers_whole_grid": false,
+      "population": 42366.0,
+      "predicate_slack_persons": 0.0000000029359075170987126,
+      "radius_km": 2199,
+      "row": 17,
+      "share_achieved": 0.2014780574102608,
+      "short_below": {
+        "population": 41205.0,
+        "radius_km": 2198
+      },
+      "stats": {
+        "radii_evaluated": 24,
+        "radii_reused": 0,
+        "searched": {
+          "blocks_examined": 14200,
+          "blocks_pruned": 10454,
+          "circles_evaluated": 3746,
+          "kernels_built": 921,
+          "levels": 72
+        }
+      },
+      "target": {
+        "persons": 42055.200000000004,
+        "share": 0.2,
+        "total": 210276.0
+      },
+      "tolerance_persons": 0.0
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  },
+  "sweep": {
+    "document": "sweep",
+    "earth_model": {
+      "model": "sphere",
+      "radius_km": 6371.0088
+    },
+    "result": {
+      "ledger": {
+        "path": "out/radii.json",
+        "radii": 24
+      },
+      "records": [
+        {
+          "centre": {
+            "lat": -85.0,
+            "lon": 15.0
+          },
+          "col": 19,
+          "country_breakdown": {
+            "entries": [
+              {
+                "country_total_population": 100.0,
+                "fraction_of_circle_population": 0.6,
+                "fraction_of_country_population": 0.3,
+                "id": "A",
+                "name": "A",
+                "population_inside": 30.0
+              },
+              {
+                "country_total_population": 20.0,
+                "fraction_of_circle_population": 0.2,
+                "fraction_of_country_population": 0.5,
+                "id": "B",
+                "name": "B",
+                "population_inside": 10.0
+              },
+              {
+                "country_total_population": 0.0,
+                "fraction_of_circle_population": 0.0,
+                "fraction_of_country_population": null,
+                "id": "Z",
+                "name": "Zero",
+                "population_inside": 0.0
+              }
+            ],
+            "provenance": {
+              "accounting_route": "sequential-cropped-prefix-v1",
+              "aggregation_order_version": 1,
+              "attribution": "GISCO, European Commission",
+              "boundary_dataset": "gisco-countries-2024-1m",
+              "boundary_digest": "sha256:fixture",
+              "boundary_revision": "2024",
+              "decimation": 1,
+              "effective_grid": {
+                "height": 18,
+                "lat_step": -10.0,
+                "lon_step": 10.0,
+                "middle_row_cell_area_km2": 1230166.8155696748,
+                "origin": {
+                  "lat": 90.0,
+                  "lon": -180.0
+                },
+                "spans_full_turn": true,
+                "width": 36
+              },
+              "membership_rule_version": 1,
+              "ownership_rule_version": 1
+            },
+            "reconciliation": {
+              "bound_persons": 0.001,
+              "unassigned_population": 10.0
+            }
+          },
+          "covers_whole_grid": false,
+          "population": 42366.0,
+          "predicate_slack_persons": 0.0000000029359075170987126,
+          "radius_km": 2199,
+          "row": 17,
+          "share_achieved": 0.2014780574102608,
+          "short_below": {
+            "population": 41205.0,
+            "radius_km": 2198
+          },
+          "stats": {
+            "radii_evaluated": 24,
+            "radii_reused": 0,
+            "searched": {
+              "blocks_examined": 14200,
+              "blocks_pruned": 10454,
+              "circles_evaluated": 3746,
+              "kernels_built": 921,
+              "levels": 72
+            }
+          },
+          "target": {
+            "persons": 42055.200000000004,
+            "share": 0.2,
+            "total": 210276.0
+          },
+          "tolerance_persons": 0.0
+        }
+      ],
+      "shares": {
+        "from_percent": 20,
+        "step_percent": 10,
+        "to_percent": 20
+      }
+    },
+    "schema_version": 1,
+    "tool": "popcircles",
+    "tool_version": "0.3.0"
+  }
+}
