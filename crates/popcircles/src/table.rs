@@ -5,8 +5,10 @@
 pub mod cache;
 
 use crate::bracket::Bracket;
+use crate::domain::FeatureId;
 use crate::geodesy::LatLon;
 use crate::grid::{BOUNDARY_TOLERANCE_DEG, Col, Grid, GridError, Row};
+use crate::ownership::{CellOwner, CellOwnership, OwnershipError};
 use crate::progress::Progress;
 use crate::raster::{CellTallies, RasterError, RasterSource};
 
@@ -331,6 +333,226 @@ pub struct BuiltTable {
     pub decimation: Decimation,
 }
 
+/// A prefix table containing only the cells uniquely owned by one feature.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CountryTable {
+    source_grid: Grid,
+    grid: Grid,
+    north_row: u32,
+    west_col: u32,
+    total: f64,
+    unassigned: f64,
+    cells: Vec<f64>,
+}
+
+impl CountryTable {
+    #[must_use]
+    pub const fn source_grid(&self) -> &Grid {
+        &self.source_grid
+    }
+
+    #[must_use]
+    pub const fn grid(&self) -> &Grid {
+        &self.grid
+    }
+
+    #[must_use]
+    pub const fn north_row(&self) -> u32 {
+        self.north_row
+    }
+
+    #[must_use]
+    pub const fn west_col(&self) -> u32 {
+        self.west_col
+    }
+
+    #[must_use]
+    pub const fn total(&self) -> f64 {
+        self.total
+    }
+
+    /// The positive population in cells with no unique owner, counted over the source grid.
+    #[must_use]
+    pub const fn unassigned(&self) -> f64 {
+        self.unassigned
+    }
+
+    #[must_use]
+    pub fn table(&self) -> Table<'_> {
+        Table {
+            grid: self.grid,
+            cells: &self.cells,
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CountryTableBuildError {
+    #[error("the raster could not be read")]
+    Raster(#[from] RasterError),
+    #[error(transparent)]
+    Ownership(#[from] OwnershipError),
+    #[error("ownership and raster use different effective grids")]
+    GridMismatch,
+    #[error("feature {0} owns no cells on this grid")]
+    NoOwnedCells(String),
+    #[error("the country crop is not a valid grid")]
+    CropGrid(#[source] GridError),
+}
+
+/// Builds one country's cropped prefix and the source-wide unassigned residual.
+///
+/// # Errors
+/// Returns an error when the raster and ownership grids differ, the source fails, or the feature
+/// owns no cells at this resolution.
+pub fn build_country<S: RasterSource>(
+    mut source: S,
+    ownership: &CellOwnership,
+    feature_id: &FeatureId,
+) -> Result<CountryTable, CountryTableBuildError> {
+    let source_grid = source.grid();
+    if ownership.grid() != &source_grid {
+        return Err(CountryTableBuildError::GridMismatch);
+    }
+    let Some((north_row, height, west_col, width)) = country_crop(ownership, feature_id) else {
+        return Err(CountryTableBuildError::NoOwnedCells(
+            feature_id.as_str().to_owned(),
+        ));
+    };
+    let origin = crate::geodesy::LatLon {
+        lat: source_grid.origin().lat + f64::from(north_row) * source_grid.lat_step(),
+        lon: source_grid.origin().lon + f64::from(west_col) * source_grid.lon_step(),
+    };
+    let grid = Grid::new(
+        width,
+        height,
+        origin,
+        source_grid.lon_step(),
+        source_grid.lat_step(),
+    )
+    .map_err(CountryTableBuildError::CropGrid)?;
+    let crop_width = width as usize;
+    let stride = crop_width + 1;
+    let mut cells = Vec::with_capacity(padded_len(&grid));
+    let mut acc = vec![0.0; stride];
+    let mut corr = vec![0.0; stride];
+    let mut residual = 0.0;
+    let mut residual_corr = 0.0;
+    cells.extend_from_slice(&acc);
+
+    while let Some(row) = source.next_row() {
+        let row = row?;
+        let intervals =
+            ownership
+                .row_intervals(row.row.get())
+                .ok_or(OwnershipError::CellOutsideGrid {
+                    row: row.row.get(),
+                    col: 0,
+                })?;
+        for interval in intervals {
+            if let CellOwner::Unassigned(_) = interval.owner() {
+                for value in &row.values[interval.start() as usize..interval.end() as usize] {
+                    let (sum, dropped) = two_sum(residual, f64::from(*value));
+                    (residual, residual_corr) = two_sum(sum, residual_corr + dropped);
+                }
+            }
+        }
+
+        if !(north_row..north_row + height).contains(&row.row.get()) {
+            continue;
+        }
+        let mut masked = vec![0.0; crop_width];
+        for interval in intervals {
+            if !matches!(interval.owner(), CellOwner::Feature(owner) if owner == feature_id) {
+                continue;
+            }
+            for column in interval.start()..interval.end() {
+                let crop_col = if column >= west_col {
+                    column - west_col
+                } else {
+                    source_grid.width() - west_col + column
+                };
+                if crop_col < width {
+                    masked[crop_col as usize] = f64::from(row.values[column as usize]);
+                }
+            }
+        }
+        let mut prefix = 0.0;
+        let mut prefix_corr = 0.0;
+        for (index, value) in masked.into_iter().enumerate() {
+            let (sum, dropped) = two_sum(prefix, value);
+            (prefix, prefix_corr) = two_sum(sum, prefix_corr + dropped);
+            let column = index + 1;
+            let (sum, dropped) = two_sum(acc[column], prefix);
+            (acc[column], corr[column]) = two_sum(sum, corr[column] + dropped);
+        }
+        cells.extend_from_slice(&acc);
+    }
+
+    Ok(CountryTable {
+        source_grid,
+        grid,
+        north_row,
+        west_col,
+        total: acc[crop_width],
+        unassigned: residual + residual_corr,
+        cells,
+    })
+}
+
+fn country_crop(ownership: &CellOwnership, feature_id: &FeatureId) -> Option<(u32, u32, u32, u32)> {
+    let grid = ownership.grid();
+    let mut north = grid.height();
+    let mut south = 0;
+    let mut columns = Vec::new();
+    for row in 0..grid.height() {
+        let intervals = ownership.row_intervals(row)?;
+        for interval in intervals {
+            if matches!(interval.owner(), CellOwner::Feature(owner) if owner == feature_id) {
+                north = north.min(row);
+                south = south.max(row);
+                columns.push((interval.start(), interval.end()));
+            }
+        }
+    }
+    if columns.is_empty() {
+        return None;
+    }
+    columns.sort_unstable();
+    let mut merged: Vec<(u32, u32)> = Vec::new();
+    for (start, end) in columns {
+        if let Some(previous) = merged.last_mut()
+            && start <= previous.1
+        {
+            previous.1 = previous.1.max(end);
+        } else {
+            merged.push((start, end));
+        }
+    }
+    let mut largest_gap = 0;
+    let mut west_col = 0;
+    for index in 0..merged.len() {
+        let current = merged[index];
+        let next = merged[(index + 1) % merged.len()];
+        let gap = if index + 1 == merged.len() {
+            next.0 + grid.width() - current.1
+        } else {
+            next.0 - current.1
+        };
+        let candidate_west = next.0 % grid.width();
+        if gap > largest_gap || (gap == largest_gap && candidate_west < west_col) {
+            largest_gap = gap;
+            west_col = candidate_west;
+        }
+    }
+    Some((
+        north,
+        south - north + 1,
+        west_col,
+        grid.width() - largest_gap,
+    ))
+}
+
 // The digest in full, because one whose word width or order is left to the
 // implementation is a number that happens to match today rather than an identity: FNV-1a, 64-bit,
 // standard offset basis and prime, over each sanitised cell's `f32` bits widened to `u64`, in
@@ -487,7 +709,9 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
+    use crate::domain::{Geometry, Polygon};
     use crate::geodesy::LatLon;
+    use crate::ownership::CellOwnership;
     use crate::raster::Synthetic;
 
     // The cells and the padded table over them are both written out, rather than one derived from the
@@ -520,6 +744,72 @@ mod tests {
             -60.0,
         )
         .expect("a 4 x 3 whole-globe grid is valid")
+    }
+
+    fn rectangle(west: f64, south: f64, east: f64, north: f64) -> Geometry {
+        Geometry::Polygon(Polygon {
+            rings: vec![vec![
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+            ]],
+        })
+    }
+
+    #[test]
+    fn a_country_prefix_and_the_unassigned_residual_reconcile_to_the_world() {
+        let grid = grid();
+        let a = FeatureId::new("A").expect("fixture ID is valid");
+        let b = FeatureId::new("B").expect("fixture ID is valid");
+        let features = vec![
+            (a.clone(), rectangle(-180.0, -30.0, 0.0, 30.0)),
+            (b.clone(), rectangle(0.0, -30.0, 180.0, 30.0)),
+        ];
+        let (ownership, _) =
+            CellOwnership::rasterize_features(&features, grid).expect("fixture ownership is valid");
+        let rows = vec![
+            vec![1.0, 2.0, 3.0, 4.0],
+            vec![5.0, 6.0, 7.0, 8.0],
+            vec![9.0, 10.0, 11.0, 12.0],
+        ];
+        let source = |rows: Vec<Vec<f32>>| {
+            Synthetic::new(grid, -9999.0, rows).expect("fixture raster has the grid's shape")
+        };
+
+        let table_a = build_country(source(rows.clone()), &ownership, &a)
+            .expect("A owns cells on the fixture grid");
+        let table_b =
+            build_country(source(rows), &ownership, &b).expect("B owns cells on the fixture grid");
+
+        assert_eq!((table_a.grid().width(), table_a.grid().height()), (2, 1));
+        assert_eq!(table_a.total(), 11.0);
+        assert_eq!(table_b.total(), 15.0);
+        assert_eq!(table_a.unassigned(), 52.0);
+        assert_eq!(table_b.unassigned(), 52.0);
+        let table = table_a.table();
+        let (rows, cols) = table.whole();
+        assert_eq!(table.population(rows, cols), 11.0);
+        assert_eq!(
+            table_a.total() + table_b.total() + table_a.unassigned(),
+            78.0
+        );
     }
 
     fn table() -> Table<'static> {
