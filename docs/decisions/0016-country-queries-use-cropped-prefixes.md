@@ -1,12 +1,15 @@
 ---
 id: 0016
-status: accepted
+status: superseded
+superseded_by: 0017
 date: 2026-10-22
 scope: architecture
 tags: [adr, popcircles]
 ---
 
 # ADR 0016 — Country population queries use cropped prefix tables
+
+> Superseded by [ADR 0017](0017-population-cells-belong-to-a-uniquely-intersected-country.md).
 
 ## Decision
 
