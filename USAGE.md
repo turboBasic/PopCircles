@@ -259,6 +259,11 @@ region it misses cut out.
 draws complete ones on every pull request. `--no-coastlines` draws the cap over a bare graticule, which is
 a choice about the figure rather than a way to avoid a download.
 
+When the published document includes a country breakdown, the caption lists each country with its
+population inside and percentages of both country and circle populations, followed by accounting
+details and boundary credit. The figure grows to fit those lines; older documents keep their existing
+caption and need no country boundary files to render.
+
 Circle documents carry their nearest settlement, so a figure title can name it without opening the
 fetched places file. Markdown centre fragments use the same decision and link the circle's centre to
 OpenStreetMap. After `mise run data:get` and a circle search, format a document with:
