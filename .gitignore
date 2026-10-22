@@ -41,8 +41,6 @@ perf.data.old
 .env
 .DS_Store
 tmp/
-# GISCO domain-mask caches and their reproducible audit are local evidence, never source artifacts.
-tmpg/gh-13/
 # Per-developer permission allowlist. Committed here rather than left to a contributor's global
 # excludes, so that `git check-ignore` gives the same answer in a clone as it does on the machine
 # that created the file — which is what the lint-docs entry point relies on to tell a per-developer file
