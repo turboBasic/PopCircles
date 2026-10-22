@@ -248,6 +248,7 @@ mod tests {
             Synthetic::new(grid, NODATA, cells()).expect("fixture raster has the grid's shape"),
             &ownership,
             &feature,
+            "fixture-gisco-v1",
         )
         .expect("the seam country owns fixture cells");
 

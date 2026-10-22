@@ -352,6 +352,7 @@ pub struct CountryTable {
 pub struct CountryTableIdentity {
     feature_id: FeatureId,
     source_digest: u64,
+    boundary_source_digest: String,
     ownership_digest: u64,
     source_grid: Grid,
     effective_grid: Grid,
@@ -454,9 +455,16 @@ pub fn build_country<S: RasterSource>(
     source: S,
     ownership: &CellOwnership,
     feature_id: &FeatureId,
+    boundary_source_digest: &str,
 ) -> Result<CountryTable, CountryTableBuildError> {
     let decimation = Decimation::none(source.grid());
-    build_country_decimated(source, ownership, feature_id, decimation)
+    build_country_decimated(
+        source,
+        ownership,
+        feature_id,
+        decimation,
+        boundary_source_digest,
+    )
 }
 
 /// Builds one country's cropped prefix after classifying ownership on the native source grid.
@@ -472,6 +480,7 @@ pub fn build_country_decimated<S: RasterSource>(
     ownership: &CellOwnership,
     feature_id: &FeatureId,
     decimation: Decimation,
+    boundary_source_digest: &str,
 ) -> Result<CountryTable, CountryTableBuildError> {
     let source_grid = source.grid();
     if ownership.grid() != &source_grid || decimation.source() != &source_grid {
@@ -560,6 +569,7 @@ pub fn build_country_decimated<S: RasterSource>(
         identity: CountryTableIdentity {
             feature_id: feature_id.clone(),
             source_digest: digest,
+            boundary_source_digest: boundary_source_digest.to_owned(),
             ownership_digest: country_ownership_digest(ownership),
             source_grid,
             effective_grid,
@@ -952,10 +962,10 @@ mod tests {
             Synthetic::new(grid, -9999.0, rows).expect("fixture raster has the grid's shape")
         };
 
-        let table_a = build_country(source(rows.clone()), &ownership, &a)
+        let table_a = build_country(source(rows.clone()), &ownership, &a, "fixture-gisco-v1")
             .expect("A owns cells on the fixture grid");
-        let table_b =
-            build_country(source(rows), &ownership, &b).expect("B owns cells on the fixture grid");
+        let table_b = build_country(source(rows), &ownership, &b, "fixture-gisco-v1")
+            .expect("B owns cells on the fixture grid");
 
         assert_eq!((table_a.grid().width(), table_a.grid().height()), (2, 1));
         assert_eq!(table_a.total(), 11.0);
@@ -1000,12 +1010,22 @@ mod tests {
         let source = |rows: Vec<Vec<f32>>| {
             Synthetic::new(grid, -9999.0, rows).expect("fixture raster has the grid's shape")
         };
-        let fine = build_country(source(rows.clone()), &ownership, &feature)
-            .expect("feature owns source cells");
+        let fine = build_country(
+            source(rows.clone()),
+            &ownership,
+            &feature,
+            "fixture-gisco-v1",
+        )
+        .expect("feature owns source cells");
         let decimation = Decimation::new(grid, 10).expect("ten divides the globe grid");
-        let coarse =
-            build_country_decimated(source(rows.clone()), &ownership, &feature, decimation)
-                .expect("native ownership can be aggregated");
+        let coarse = build_country_decimated(
+            source(rows.clone()),
+            &ownership,
+            &feature,
+            decimation,
+            "fixture-gisco-v1",
+        )
+        .expect("native ownership can be aggregated");
 
         let effective = *decimation.grid();
         let mut expected = vec![0.0; padded_len(coarse.grid())];
@@ -1048,12 +1068,57 @@ mod tests {
         assert_eq!(coarse.total(), fine.total());
         assert_eq!(coarse.total(), expected_total);
         assert_eq!(coarse.unassigned(), fine.unassigned());
+    }
+
+    #[test]
+    fn country_identity_rejects_changed_raster_boundary_ownership_grid_and_rule() {
+        let grid = Grid::new(
+            360,
+            180,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            1.0,
+            -1.0,
+        )
+        .expect("one-degree globe grid is valid");
+        let feature = FeatureId::new("A").expect("fixture ID is valid");
+        let (ownership, _) = CellOwnership::rasterize_features(
+            &[(feature.clone(), rectangle(-2.0, -2.0, 2.0, 2.0))],
+            grid,
+        )
+        .expect("fixture ownership is valid");
+        let rows: Vec<Vec<f32>> = (0..grid.height())
+            .map(|row| {
+                (0..grid.width())
+                    .map(|col| (row * grid.width() + col + 1) as f32)
+                    .collect()
+            })
+            .collect();
+        let source = |rows: Vec<Vec<f32>>| {
+            Synthetic::new(grid, -9999.0, rows).expect("fixture raster has the grid's shape")
+        };
+        let decimation = Decimation::new(grid, 10).expect("ten divides the globe grid");
+        let coarse = build_country_decimated(
+            source(rows.clone()),
+            &ownership,
+            &feature,
+            decimation,
+            "fixture-gisco-v1",
+        )
+        .expect("feature owns source cells");
 
         let mut changed_source = rows.clone();
         changed_source[0][0] += 1.0;
-        let changed =
-            build_country_decimated(source(changed_source), &ownership, &feature, decimation)
-                .expect("changed source still builds");
+        let changed = build_country_decimated(
+            source(changed_source),
+            &ownership,
+            &feature,
+            decimation,
+            "fixture-gisco-v1",
+        )
+        .expect("changed source still builds");
         assert!(coarse.require_identity(coarse.identity()).is_ok());
         assert!(coarse.require_identity(changed.identity()).is_err());
 
@@ -1067,9 +1132,14 @@ mod tests {
             &changed_ownership,
             &feature,
             decimation,
+            "fixture-gisco-v1",
         )
         .expect("changed ownership still builds");
         assert!(coarse.require_identity(changed.identity()).is_err());
+
+        let mut changed_boundary = coarse.identity().clone();
+        changed_boundary.boundary_source_digest = "fixture-gisco-v2".to_owned();
+        assert!(coarse.require_identity(&changed_boundary).is_err());
 
         let mut changed_grid = coarse.identity().clone();
         changed_grid.effective_grid = grid;
