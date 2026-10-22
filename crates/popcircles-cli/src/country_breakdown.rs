@@ -149,7 +149,14 @@ impl Prepared {
             })
             .collect::<Result<Vec<_>, _>>()?;
         let mut contributions = vec![Vec::with_capacity(self.features.len()); circles.len()];
-        for (feature, domain) in self.features.iter().zip(&self.domains) {
+        let feature_count = self.features.len();
+        for (index, (feature, domain)) in self.features.iter().zip(&self.domains).enumerate() {
+            log::info!(
+                "country accounting {}/{}: {}",
+                index + 1,
+                feature_count,
+                feature.id.as_str()
+            );
             let table = build_country_decimated(
                 Replay::new(self.source, &self.rows, self.tallies),
                 &self.ownership,

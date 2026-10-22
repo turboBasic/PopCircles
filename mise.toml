@@ -292,30 +292,30 @@ set -euo pipefail
 
 main() {
   local dataset=population-count-2020-30arcsec
-  reset_ledgers
-  build_coarse_results "$dataset"
-  build_full_result "$dataset"
-}
-
-reset_ledgers() {
-  rm -f out/corpus-5arcmin.json out/flagship-30arcsec.json
+  local scratch
+  mkdir -p tmp/gh-73
+  scratch=$(mktemp -d tmp/gh-73/results-build.XXXXXX)
+  build_coarse_results "$dataset" "$scratch"
+  build_full_result "$dataset" "$scratch"
 }
 
 build_coarse_results() {
   local dataset="$1"
-  local coarse_table=(--dataset "$dataset" --decimate 10 --cache out/gpw-5arcmin)
+  local scratch="$2"
+  local coarse_table=(--dataset "$dataset" --decimate 10 --cache "$scratch/gpw-5arcmin")
   mise run cli -- table build "${coarse_table[@]}" > /dev/null
   mise run cli -- sweep "${coarse_table[@]}" --from 10 --to 100 --step 10 --spacing 256 \
-    --ledger out/corpus-5arcmin.json > results/world-sweep-10-to-100-5arcmin.json
+    --ledger "$scratch/corpus-5arcmin.json" > results/world-sweep-10-to-100-5arcmin.json
   mise run cli -- most-populous "${coarse_table[@]}" --radius-km 1000 --spacing 256 \
     > results/world-most-populous-1000km-5arcmin.json
 }
 
 build_full_result() {
   local dataset="$1"
-  mise run cli -- table build --dataset "$dataset" --cache out/gpw-30arcsec > /dev/null
-  mise run cli -- smallest-for-share --dataset "$dataset" --cache out/gpw-30arcsec --share 50 \
-    --spacing 2700 --ledger out/flagship-30arcsec.json > results/world-half-30arcsec.json
+  local scratch="$2"
+  mise run cli -- table build --dataset "$dataset" --cache "$scratch/gpw-30arcsec" > /dev/null
+  mise run cli -- smallest-for-share --dataset "$dataset" --cache "$scratch/gpw-30arcsec" --share 50 \
+    --spacing 2700 --ledger "$scratch/flagship-30arcsec.json" > results/world-half-30arcsec.json
 }
 
 main "$@"

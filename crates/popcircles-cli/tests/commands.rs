@@ -1031,9 +1031,12 @@ fn narration_follows_the_level_and_stdout_does_not() {
     let narrated = fixture.run_at_level("info", "population-at", &circle);
     assert_eq!(narrated.status.code(), Some(0), "{narrated:?}");
     let narration = String::from_utf8_lossy(&narrated.stderr);
-    // Box 6's two ends and nothing between them: the table that answered, then the answer.
-    assert_eq!(narration.lines().count(), 2, "{narration}");
+    assert_eq!(narration.lines().count(), 3, "{narration}");
     assert!(narration.contains("opened from"), "{narration}");
+    assert!(
+        narration.contains("country accounting 1/1: XX"),
+        "{narration}"
+    );
     assert!(narration.contains("holds 820"), "{narration}");
 
     let silent = fixture.run_at_level("warn", "population-at", &circle);
