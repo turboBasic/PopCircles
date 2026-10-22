@@ -9,7 +9,7 @@ def lines_for(answer: Answer) -> list[str]:
     lines = ["Country population on the accounting grid (not land area):"]
     if breakdown.entries:
         lines.extend(
-            f"{entry.name} ({entry.id}): {entry.population_inside:,.6g} people; "
+            f"{entry.name} ({entry.id}): {_population(entry.population_inside)} people; "
             f"{_percent(entry.fraction_of_country_population)} of country population; "
             f"{_percent(entry.fraction_of_circle_population)} of circle population"
             for entry in breakdown.entries
@@ -41,3 +41,7 @@ def lines_for(answer: Answer) -> list[str]:
 
 def _percent(fraction: float | None) -> str:
     return "unavailable" if fraction is None else f"{fraction:.1%}"
+
+
+def _population(value: float) -> str:
+    return f"{value:,.6f}".rstrip("0").rstrip(".")
