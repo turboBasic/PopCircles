@@ -578,6 +578,54 @@ mod tests {
             Ok(&CellOwner::Unassigned(UnassignedReason::OutsideFeatures))
         );
 
+        let seam_hole_grid = Grid::new(
+            4,
+            1,
+            LatLon {
+                lat: 1.5,
+                lon: 178.5,
+            },
+            1.0,
+            -1.0,
+        )
+        .expect("fixture grid is valid");
+        let mut seam_hole = rectangle(179.5, 0.1, -177.5, 1.9);
+        seam_hole.rings.push(vec![
+            LatLon {
+                lat: 0.5,
+                lon: -179.5,
+            },
+            LatLon {
+                lat: 0.5,
+                lon: -178.5,
+            },
+            LatLon {
+                lat: 1.5,
+                lon: -178.5,
+            },
+            LatLon {
+                lat: 1.5,
+                lon: -179.5,
+            },
+            LatLon {
+                lat: 0.5,
+                lon: -179.5,
+            },
+        ]);
+        let (ownership, _) = CellOwnership::rasterize_features(
+            &[(feature("SH"), Geometry::Polygon(seam_hole))],
+            seam_hole_grid,
+        )
+        .expect("antimeridian polygon with a seam-crossing hole rasterizes");
+        assert_eq!(
+            ownership.owner_at(&seam_hole_grid, 0, 2),
+            Ok(&CellOwner::Unassigned(UnassignedReason::OutsideFeatures))
+        );
+        assert_eq!(
+            ownership.owner_at(&seam_hole_grid, 0, 1),
+            Ok(&CellOwner::Feature(feature("SH")))
+        );
+
         let grid = Grid::new(2, 2, LatLon { lat: 2.0, lon: 0.0 }, 1.0, -1.0)
             .expect("fixture grid is valid");
         let bow_tie = Polygon {

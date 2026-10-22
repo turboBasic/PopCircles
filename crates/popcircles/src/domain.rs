@@ -283,7 +283,13 @@ struct PreparedPolygon {
 
 impl PreparedPolygon {
     fn new(polygon: &Polygon) -> Self {
-        let rings: Vec<_> = polygon.rings.iter().map(|ring| unwrap_ring(ring)).collect();
+        let mut rings: Vec<_> = polygon.rings.iter().map(|ring| unwrap_ring(ring)).collect();
+        if let Some(exterior_longitude) = rings.first().and_then(|ring| ring.first()).map(|p| p.lon)
+        {
+            for hole in rings.iter_mut().skip(1) {
+                align_ring_longitude_frame(hole, exterior_longitude);
+            }
+        }
         let exterior = &rings[0];
         let south = exterior
             .iter()
@@ -698,6 +704,16 @@ fn unwrap_ring(ring: &[LatLon]) -> Vec<LatLon> {
         });
     }
     result
+}
+
+fn align_ring_longitude_frame(ring: &mut [LatLon], reference_longitude: f64) {
+    let Some(first) = ring.first() else {
+        return;
+    };
+    let offset = 360.0 * ((reference_longitude - first.lon) / 360.0).round();
+    for point in ring {
+        point.lon += offset;
+    }
 }
 
 #[cfg(test)]
