@@ -1,5 +1,7 @@
 //! Cell membership for a named region on one effective population grid.
 
+pub mod cache;
+
 use std::fmt;
 
 use crate::geodesy::LatLon;
