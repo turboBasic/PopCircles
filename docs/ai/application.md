@@ -233,8 +233,9 @@ error; smallest-target comparisons use the separate total error and predicate sl
 must follow the route's actual operations and magnitudes, not a measured maximum. The existing
 uncertainty reporting remains in force ([ADR 0007](../decisions/0007-a-result-states-what-it-could-not-separate.md)).
 
-The k=10 center-point masks in #72 were provisional, and their all-country totals missed 136.75M
-people versus the reconstructed world total. At k=1 the gap narrowed to 26.86M but remained material.
+The k=10 center-point masks in #72 were provisional, and their all-country totals did not reconcile
+with the reconstructed world total; the k=1 gap was smaller but remained material ([measurements and
+reconciliation](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761)).
 Issue #13 must make boundary membership deterministic and validate overlaps against #12; #14 must
 measure reconciliation under the chosen source-aggregation policy and explain unassigned population
 separately from arithmetic error. The route decision does not settle whether membership is applied
