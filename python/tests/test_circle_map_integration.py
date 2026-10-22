@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from population_circles import render_map
-from population_circles.circle_document import circle_of
+from population_circles.circle_document import SweepRecords, circle_of
 from population_circles.circle_map import REPO_ROOT, Options, WorkflowError, workflow
 from population_circles.dataset_registry import parse
 from test_render_map import PNG_MAGIC
@@ -170,6 +170,11 @@ def test_rust_circle_documents_cross_the_python_boundary_with_optional_settlemen
 
     for kind, document in documents.items():
         answer = circle_of(document)
+        assert answer.caption.country_breakdown is not None
+        assert (
+            answer.caption.country_breakdown.provenance.boundary_dataset
+            == "gisco-countries-2024-1m"
+        )
         assert answer.caption.settlement is not None
         assert answer.caption.settlement.name == (
             f"Place {answer.circle.centre.lat:g} {answer.circle.centre.lon:g}"
@@ -183,6 +188,7 @@ def test_rust_circle_documents_cross_the_python_boundary_with_optional_settlemen
         if kind == "smallest":
             circle_payload = circle_payload["circle"]
         del circle_payload["nearest_settlement"]
+        del circle_payload["country_breakdown"]
         legacy_answer = circle_of(legacy)
         assert legacy_answer.caption.settlement is None
         assert legacy_answer.circle == answer.circle
@@ -209,6 +215,9 @@ def test_rust_circle_documents_cross_the_python_boundary_with_optional_settlemen
             tmp_path,
         ).stdout
     )
+    sweep_records = SweepRecords.model_validate(sweep["result"]).records
+    assert len(sweep_records) == 2  # noqa: PLR2004 — 25% and 50% fixture sweep
+    assert all(record.country_breakdown is not None for record in sweep_records)
     assert all(
         record["nearest_settlement"]["distance_km"] == 0 for record in sweep["result"]["records"]
     )

@@ -9,6 +9,7 @@ from population_circles.circle_document import (
     Circle,
     MissingDatasetError,
     MissingTableError,
+    SweepRecords,
     UnsupportedDocumentError,
     circle_of,
 )
@@ -72,6 +73,50 @@ def searched() -> dict[str, Any]:
             "population": SEARCHED_POPULATION,
             "share_achieved": SEARCHED_SHARE,
             "covers_whole_grid": False,
+        },
+    }
+
+
+def breakdown() -> dict[str, Any]:
+    return {
+        "entries": [
+            {
+                "id": "A",
+                "name": "Alpha",
+                "population_inside": 30.0,
+                "country_total_population": 100.0,
+                "fraction_of_country_population": 0.3,
+                "fraction_of_circle_population": 0.6,
+            },
+            {
+                "id": "B",
+                "name": "Beta",
+                "population_inside": 10.0,
+                "country_total_population": 20.0,
+                "fraction_of_country_population": 0.5,
+                "fraction_of_circle_population": 0.2,
+            },
+        ],
+        "reconciliation": {"unassigned_population": 10.0, "bound_persons": 0.01},
+        "provenance": {
+            "boundary_dataset": "gisco-countries-2024-1m",
+            "boundary_revision": "Countries 2024 snapshot",
+            "boundary_digest": "a" * 64,
+            "attribution": "© EuroGeographics",
+            "effective_grid": {
+                "width": 36,
+                "height": 18,
+                "origin": {"lat": 90.0, "lon": -180.0},
+                "lon_step": 10.0,
+                "lat_step": -10.0,
+                "middle_row_cell_area_km2": 1.0,
+                "spans_full_turn": True,
+            },
+            "decimation": 1,
+            "accounting_route": "sequential cropped prefixes",
+            "membership_rule_version": 1,
+            "ownership_rule_version": 1,
+            "aggregation_order_version": 1,
         },
     }
 
@@ -141,6 +186,53 @@ def test_settlement_context_is_optional_and_validated_on_both_payload_shapes() -
     malformed["result"]["nearest_settlement"] = {**context, "distance_km": -1}
     with pytest.raises(ValidationError):
         circle_of(malformed)
+
+
+def test_country_breakdown_is_checked_and_stays_out_of_circle_geometry() -> None:
+    measured_document = envelope("circle", measured())
+    measured_document["result"]["country_breakdown"] = breakdown()
+    measured_answer = circle_of(measured_document)
+    assert measured_answer.caption.country_breakdown is not None
+    entries = measured_answer.caption.country_breakdown.entries
+    assert [(entry.id, entry.population_inside) for entry in entries] == [("A", 30), ("B", 10)]
+    assert entries[0].fraction_of_country_population == 0.3  # noqa: PLR2004 — 30 / 100 oracle
+    assert entries[0].fraction_of_circle_population == 0.6  # noqa: PLR2004 — 30 / 50 oracle
+    assert measured_answer.caption.country_breakdown.provenance.attribution == "© EuroGeographics"
+
+    smallest_document = envelope("smallest", searched())
+    smallest_document["result"]["circle"]["country_breakdown"] = breakdown()
+    smallest_answer = circle_of(smallest_document)
+    assert smallest_answer.caption.country_breakdown is not None
+    assert smallest_answer.caption.country_breakdown.reconciliation.unassigned_population == 10  # noqa: PLR2004 — oracle remainder
+    assert list(Circle.model_fields) == ["centre", "radius_km", "earth_radius_km"]
+
+    malformed = envelope("circle", measured())
+    malformed["result"]["country_breakdown"] = breakdown()
+    malformed["result"]["country_breakdown"]["entries"][0]["population_inside"] = float("nan")
+    with pytest.raises(ValidationError):
+        circle_of(malformed)
+
+    missing_context = envelope("circle", measured())
+    missing_context["result"]["country_breakdown"] = breakdown()
+    del missing_context["result"]["country_breakdown"]["provenance"]
+    with pytest.raises(ValidationError):
+        circle_of(missing_context)
+
+
+def test_present_empty_country_breakdowns_are_valid_and_sweep_stays_not_drawable() -> None:
+    empty = breakdown()
+    empty["entries"] = []
+    document = envelope("circle", measured())
+    document["result"]["country_breakdown"] = empty
+    answer = circle_of(document)
+    assert answer.caption.country_breakdown is not None
+    assert answer.caption.country_breakdown.entries == []
+
+    sweep = SweepRecords.model_validate(
+        {"records": [{**searched()["circle"], "country_breakdown": breakdown()}]}
+    )
+    assert sweep.records[0].country_breakdown is not None
+    assert "sweep" not in CIRCLE_KINDS
 
 
 def test_a_later_schema_version_is_refused_on_the_version_field() -> None:
