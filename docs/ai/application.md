@@ -236,6 +236,12 @@ error; smallest-target comparisons use the separate total error and predicate sl
 must follow the route's actual operations and magnitudes, not a measured maximum. The existing
 uncertainty reporting remains in force ([ADR 0007](../decisions/0007-a-result-states-what-it-could-not-separate.md)).
 
+A published world circle accounts for countries by querying each uniquely-owned country table at its
+settled centre and radius. The composition retains every positive contribution and every country whose
+effective-grid domain intersects the circle, orders by contribution then canonical identifier, and
+reconciles against the circle's world population. Its remainder is circle-specific; source-wide
+unassigned totals are not a substitute. The bound covers the country row queries and their reduction.
+
 The k=10 center-point masks in #72 were provisional, and their all-country totals did not reconcile
 with the reconstructed world total; the k=1 gap was smaller but remained material ([measurements and
 reconciliation](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761)).
