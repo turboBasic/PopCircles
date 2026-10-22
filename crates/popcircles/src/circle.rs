@@ -4,7 +4,17 @@
 
 use crate::grid::Col;
 use crate::kernel::Kernel;
-use crate::table::{RowBand, Table};
+use crate::table::{ColSpan, CountryTable, RowBand, Table};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum CountryPopulationError {
+    #[error("the country crop and kernel use different effective grids")]
+    GridMismatch,
+    #[error("centre column {col} is outside the effective grid")]
+    CentreOutsideGrid { col: u32 },
+    #[error("mapped crop column {col} is outside the crop grid")]
+    CropColumnOutsideGrid { col: u32 },
+}
 
 /// The population inside the circle `kernel` describes, centred on `centre` in the kernel's own row.
 ///
@@ -34,6 +44,84 @@ pub fn population(table: &Table<'_>, kernel: &Kernel, centre: Col) -> f64 {
         .sum()
 }
 
+/// The population in a circle, restricted to uniquely owned cells of one country.
+///
+/// Rows and query pieces are folded in kernel order. A circle centre may lie outside the crop.
+///
+/// # Errors
+/// Returns [`CountryPopulationError`] if the crop and kernel use different source grids, or the
+/// centre or a mapped crop column falls outside its grid.
+pub fn country_population(
+    table: &CountryTable,
+    kernel: &Kernel,
+    centre: Col,
+) -> Result<f64, CountryPopulationError> {
+    let effective_grid = table.effective_grid();
+    if effective_grid != kernel.grid() {
+        return Err(CountryPopulationError::GridMismatch);
+    }
+    if centre.get() >= effective_grid.width() {
+        return Err(CountryPopulationError::CentreOutsideGrid { col: centre.get() });
+    }
+
+    let crop_grid = table.grid();
+    let crop_start = table.west_col();
+    let crop_width = crop_grid.width();
+    let source_width = effective_grid.width();
+    let crop_high_width = crop_width.min(source_width - crop_start);
+    let crop_low_width = crop_width - crop_high_width;
+    let crop_ranges = [
+        (0, crop_low_width, crop_high_width),
+        (crop_start, crop_start + crop_high_width, 0),
+    ];
+    let crop_range_count = if crop_low_width > 0 { 2 } else { 1 };
+    let cropped = table.table();
+    let mut total = 0.0;
+    for (row, span) in kernel.place(centre) {
+        let Some(crop_row_index) = row.get().checked_sub(table.north_row()) else {
+            continue;
+        };
+        let Some(crop_row) = crop_grid.row(crop_row_index) else {
+            continue;
+        };
+        let mut query_ranges = [(0, 0); 2];
+        let query_range_count = match span {
+            ColSpan::FullTurn => {
+                query_ranges[0] = (0, source_width);
+                1
+            }
+            ColSpan::Through { west, east } if west.get() <= east.get() => {
+                query_ranges[0] = (west.get(), east.get() + 1);
+                1
+            }
+            ColSpan::Through { west, east } => {
+                query_ranges[0] = (west.get(), source_width);
+                query_ranges[1] = (0, east.get() + 1);
+                2
+            }
+        };
+        let rows = RowBand::new(crop_row, crop_row);
+        for &(query_start, query_end) in &query_ranges[..query_range_count] {
+            for &(crop_start, crop_end, crop_column) in &crop_ranges[..crop_range_count] {
+                let start = query_start.max(crop_start);
+                let end = query_end.min(crop_end);
+                if start < end {
+                    let west = crop_column + start - crop_start;
+                    let east = crop_column + end - crop_start - 1;
+                    let west = crop_grid
+                        .col(west)
+                        .ok_or(CountryPopulationError::CropColumnOutsideGrid { col: west })?;
+                    let east = crop_grid
+                        .col(east)
+                        .ok_or(CountryPopulationError::CropColumnOutsideGrid { col: east })?;
+                    total += cropped.population(rows, ColSpan::Through { west, east });
+                }
+            }
+        }
+    }
+    Ok(total)
+}
+
 // expect is warn at workspace level and lint:rust runs --all-targets, so tests need this narrow
 // exemption; docs/ai/code.md allows it in tests. float_cmp is the point rather than a concession: every
 // fixture cell is a small integer, so each side of an assertion below is an exact f64 and a tolerance
@@ -47,11 +135,13 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
+    use crate::domain::{FeatureId, Geometry, Polygon};
     use crate::geodesy::{LatLon, RadiusKm, great_circle_km};
     use crate::grid::{Grid, Row};
     use crate::kernel::Span;
+    use crate::ownership::CellOwnership;
     use crate::raster::Synthetic;
-    use crate::table::{ColSpan, Decimation, build};
+    use crate::table::{ColSpan, Decimation, build, build_country};
 
     const WIDTH: u32 = 36;
     const HEIGHT: u32 = 18;
@@ -91,6 +181,33 @@ mod tests {
             .collect()
     }
 
+    fn rectangle(west: f64, south: f64, east: f64, north: f64) -> Geometry {
+        Geometry::Polygon(Polygon {
+            rings: vec![vec![
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+            ]],
+        })
+    }
+
     /// The padded payload a real build emits over these rows, rather than one written out by hand: the
     /// fixture is then the path the search uses and not a second construction of it.
     fn payload_over(rows: Vec<Vec<f32>>) -> Vec<f64> {
@@ -117,6 +234,95 @@ mod tests {
             .filter(|(row, col)| great_circle_km(from, grid.centre_of(*row, *col)) <= radius_km)
             .map(|(row, col)| f64::from(cell(row.get(), col.get())))
             .sum()
+    }
+
+    #[test]
+    fn country_circle_queries_match_direct_masked_sums_on_every_centre() {
+        let grid = grid();
+        let feature = FeatureId::new("seam-country").expect("fixture ID is valid");
+        let geometry = rectangle(160.0, -80.0, -160.0, 80.0);
+        let (ownership, _) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("fixture ownership is valid");
+        let country = build_country(
+            Synthetic::new(grid, NODATA, cells()).expect("fixture raster has the grid's shape"),
+            &ownership,
+            &feature,
+            "fixture-gisco-v1",
+        )
+        .expect("the seam country owns fixture cells");
+
+        for radius_km in [0.0, 1500.0, 4000.0, 8000.0, 20_016.0] {
+            for centre_row in grid.rows() {
+                let kernel = Kernel::new(grid, centre_row, radius(radius_km))
+                    .expect("fixture columns close on themselves");
+                for centre_col in grid.cols() {
+                    let centre = grid.centre_of(centre_row, centre_col);
+                    let expected = grid
+                        .rows()
+                        .flat_map(|row| grid.cols().map(move |col| (row, col)))
+                        .filter(|(row, col)| {
+                            ownership
+                                .owner_at(&grid, row.get(), col.get())
+                                .is_ok_and(|owner| {
+                                    owner == &crate::ownership::CellOwner::Feature(feature.clone())
+                                })
+                                && great_circle_km(centre, grid.centre_of(*row, *col)) <= radius_km
+                        })
+                        .map(|(row, col)| f64::from(cell(row.get(), col.get())))
+                        .sum::<f64>();
+                    assert_eq!(
+                        country_population(&country, &kernel, centre_col),
+                        Ok(expected),
+                        "row {}, column {}, radius {radius_km} km",
+                        centre_row.get(),
+                        centre_col.get()
+                    );
+                }
+            }
+        }
+
+        let outside = grid.col(2).expect("a column of the fixture");
+        let centre_row = grid.row(9).expect("a row of the fixture");
+        let kernel = Kernel::new(grid, centre_row, radius(1500.0))
+            .expect("fixture columns close on themselves");
+        assert_eq!(
+            ownership.owner_at(&grid, centre_row.get(), outside.get()),
+            Ok(&crate::ownership::CellOwner::Unassigned(
+                crate::ownership::UnassignedReason::OutsideFeatures
+            ))
+        );
+        assert!(country_population(&country, &kernel, outside).expect("matching grids") > 0.0);
+
+        let polar = Kernel::new(
+            grid,
+            grid.row(0).expect("a row of the fixture"),
+            radius(4000.0),
+        )
+        .expect("fixture columns close on themselves");
+        assert!(polar.rows().any(|(_, span)| span == Span::FullTurn));
+
+        let other_grid = Grid::new(
+            WIDTH,
+            HEIGHT,
+            LatLon {
+                lat: 90.0,
+                lon: -170.0,
+            },
+            10.0,
+            -10.0,
+        )
+        .expect("a shifted whole-globe grid is valid");
+        let other_kernel = Kernel::new(
+            other_grid,
+            other_grid.row(0).expect("a row of the other grid"),
+            radius(1500.0),
+        )
+        .expect("the other grid closes on itself");
+        assert_eq!(
+            country_population(&country, &other_kernel, outside),
+            Err(CountryPopulationError::GridMismatch)
+        );
     }
 
     #[test]
