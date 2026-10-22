@@ -1,5 +1,6 @@
 pub mod bracket;
 pub mod circle;
+pub mod domain;
 pub mod geodesy;
 pub mod grid;
 pub mod kernel;

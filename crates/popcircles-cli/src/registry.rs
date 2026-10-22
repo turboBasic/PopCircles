@@ -58,6 +58,8 @@ pub(crate) enum RegistryError {
 #[derive(Debug)]
 pub(crate) struct Dataset {
     pub(crate) raster: PathBuf,
+    #[cfg(test)]
+    pub(crate) sha256: Option<String>,
     pub(crate) grid: GridValues,
     pub(crate) epsg: u16,
     pub(crate) nodata: f32,
@@ -82,6 +84,8 @@ enum Row {
 #[derive(Debug, Deserialize)]
 struct PopulationRaster {
     path: PathBuf,
+    #[cfg(test)]
+    sha256: Option<String>,
     width: u32,
     height: u32,
     origin_lat: f64,
@@ -98,6 +102,7 @@ struct PopulationRaster {
 #[derive(Debug, Deserialize)]
 pub(crate) struct BoundaryVector {
     pub(crate) path: PathBuf,
+    pub(crate) sha256: Option<String>,
     pub(crate) format: Option<String>,
     pub(crate) crs: Option<String>,
     pub(crate) axis_order: Option<String>,
@@ -155,10 +160,18 @@ impl Registry {
                     fields.iter().any(Option::is_some) || boundary.feature_count.is_some();
                 let complete = fields.iter().all(Option::is_some)
                     && boundary.feature_count.is_some_and(|count| count > 0);
+                let valid_digest = boundary.sha256.as_deref().is_some_and(|digest| {
+                    digest.len() == 64
+                        && digest.bytes().all(|byte| {
+                            byte.is_ascii_digit()
+                                || (b'a'..=b'f').contains(&byte)
+                                || (b'A'..=b'F').contains(&byte)
+                        })
+                });
                 let valid = boundary.format.as_deref() == Some("GeoJSON")
                     && boundary.crs.as_deref() == Some("EPSG:4326")
                     && boundary.axis_order.as_deref() == Some("longitude-latitude");
-                if any_metadata && (!complete || !valid) {
+                if !valid_digest || (any_metadata && (!complete || !valid)) {
                     return Err(RegistryError::InvalidBoundaryMetadata { name: name.clone() });
                 }
             }
@@ -199,6 +212,8 @@ impl Registry {
 
         Ok(Dataset {
             raster: row.path.clone(),
+            #[cfg(test)]
+            sha256: row.sha256.clone(),
             grid: GridValues {
                 width: row.width,
                 height: row.height,
@@ -357,6 +372,7 @@ path = "data/settlements/example-places.geojson"
 [datasets.countries-2024]
 kind = "boundary-vector"
 path = "data/boundaries/countries-2024.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 format = "GeoJSON"
 crs = "EPSG:4326"
 axis_order = "longitude-latitude"
@@ -387,6 +403,7 @@ identity_policy = "ADR 0015"
 [datasets.countries-2024]
 kind = "boundary-vector"
 path = "data/boundaries/countries-2024.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 format = "GeoJSON"
 crs = "EPSG:4326"
 axis_order = "longitude-latitude"

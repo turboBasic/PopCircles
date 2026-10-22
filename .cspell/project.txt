@@ -90,6 +90,7 @@ capsys
 cartopy
 colortype
 corasick
+nocapture
 darkred
 dimgrey
 edgecolor
@@ -125,6 +126,7 @@ skia
 socketpair
 splitmix
 thiserror
+tmpg
 verticalalignment
 weezl
 xlim
