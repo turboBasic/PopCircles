@@ -4,45 +4,7 @@
 
 use crate::grid::Col;
 use crate::kernel::Kernel;
-use crate::table::{ColSpan, RowBand, Table};
-
-/// Experimental seam for evaluating a spherical kernel against a population domain.
-///
-/// This is temporary plumbing for the country accounting cost spike; production country queries are
-/// owned by issue #14. The source supplies the total and its own comparison budget so a masked domain
-/// cannot accidentally inherit the world table's accounting.
-pub trait PopulationSource {
-    fn grid(&self) -> &crate::grid::Grid;
-    fn total(&self) -> f64;
-    fn rectangle_population(&self, row: crate::grid::Row, cols: ColSpan) -> f64;
-    /// Error added to candidate-centre population bounds for this source.
-    fn error_budget(&self) -> f64;
-    /// Error used when comparing a smallest-circle probe with its target.
-    fn predicate_slack(&self) -> f64;
-}
-
-impl PopulationSource for Table<'_> {
-    fn grid(&self) -> &crate::grid::Grid {
-        Table::grid(self)
-    }
-
-    fn total(&self) -> f64 {
-        let (rows, cols) = self.whole();
-        Table::population(self, rows, cols)
-    }
-
-    fn rectangle_population(&self, row: crate::grid::Row, cols: ColSpan) -> f64 {
-        Table::population(self, RowBand::new(row, row), cols)
-    }
-
-    fn error_budget(&self) -> f64 {
-        0.0
-    }
-
-    fn predicate_slack(&self) -> f64 {
-        crate::smallest::predicate_slack_persons(self.grid(), self.total())
-    }
-}
+use crate::table::{RowBand, Table};
 
 /// The population inside the circle `kernel` describes, centred on `centre` in the kernel's own row.
 ///
@@ -69,22 +31,6 @@ pub fn population(table: &Table<'_>, kernel: &Kernel, centre: Col) -> f64 {
     kernel
         .place(centre)
         .map(|(row, cols)| table.population(RowBand::new(row, row), cols))
-        .sum()
-}
-
-/// The same fixed-order row fold used by [`population`], delegated to an experimental source.
-///
-/// # Panics
-/// If the source and kernel use different grids, or `centre` is not a column of the source grid.
-pub fn from_source<S: PopulationSource + ?Sized>(source: &S, kernel: &Kernel, centre: Col) -> f64 {
-    assert_eq!(
-        *source.grid(),
-        *kernel.grid(),
-        "the kernel was built over a different grid than this population source"
-    );
-    kernel
-        .place(centre)
-        .map(|(row, cols)| source.rectangle_population(row, cols))
         .sum()
 }
 

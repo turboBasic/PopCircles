@@ -20,6 +20,11 @@ Restricting to a country adds boundary data and a mask over the grid; the search
 Country identity follows GISCO's published country features and territorial interpretation
 ([ADR 0015](../decisions/0015-country-identities-follow-gisco-country-features.md)).
 
+Country population queries use masked prefix tables cropped to the selected domain bounds, processed
+sequentially ([ADR 0016](../decisions/0016-country-queries-use-cropped-prefixes.md)). This route
+serves both repeated country searches and the fixed-circle all-country workload. It does not assign
+unclaimed cells or resolve overlapping features.
+
 "On the globe" is the whole point. A circle drawn on an equirectangular image is not a circle on the
 Earth, and the well-known viral maps of the 50% circle got this wrong.
 
@@ -213,6 +218,27 @@ holds how those tests are organised.
   a figure taken from elsewhere. `data/README.md` records the measured total as a sanity check, not as
   a value to embed, and anything published from the raster carries the attribution its registry entry
   states.
+
+### Country query handoff
+
+Issues #13 and #14 consume a domain membership rule and answer from that same domain: its total is the
+target for shares, and a circle query counts only member cells even when its centre lies outside the
+domain. A derived country table is identified by the decoded population values and grid, the resolution
+and order in which source cells are aggregated, the exact GISCO snapshot and feature identifier, and
+the membership rule that classified those cells. A change to any of them requires a new identity and
+a rebuild.
+
+The population source supplies route-specific arithmetic budgets. Candidate bounds include query
+error; smallest-target comparisons use the separate total error and predicate slack. Those limits
+must follow the route's actual operations and magnitudes, not a measured maximum. The existing
+uncertainty reporting remains in force ([ADR 0007](../decisions/0007-a-result-states-what-it-could-not-separate.md)).
+
+The k=10 center-point masks in #72 were provisional, and their all-country totals missed 136.75M
+people versus the reconstructed world total. At k=1 the gap narrowed to 26.86M but remained material.
+Issue #13 must make boundary membership deterministic and validate overlaps against #12; #14 must
+measure reconciliation under the chosen source-aggregation policy and explain unassigned population
+separately from arithmetic error. The route decision does not settle whether membership is applied
+before or after decimation.
 
 ## Language split
 

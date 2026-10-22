@@ -92,8 +92,8 @@ Identifiers are flat, sequential and never reused.
 ### FU-17 - The full-resolution search is page faults, not arithmetic
 
 - **Status** — `dormant` (2026-10-22): #18 still asks for a named handful of full-resolution
-  certifications, explicitly not a sweep. The #72 full-resolution run was one fixed-radius,
-  all-country composition pass through the raster, not a command needing many full-resolution radii.
+  certifications, explicitly not a sweep. The #72 full-resolution #73 measurements were one
+  fixed-radius, all-country composition pass per route, not a command needing many radii.
   Neither meets the condition. The measured route costs and reconciliation are recorded in [#72's
   execution evidence](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761).
   The earlier #10 figure remains the full-resolution search baseline: one radius at 30 arcsec is
