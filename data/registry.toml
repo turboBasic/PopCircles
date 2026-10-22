@@ -62,6 +62,29 @@ licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
 # every dataset and an empty string means "nothing is owed" rather than "not recorded".
 attribution = ""
 
+[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+bytes = 58878461
+sha256 = "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+# The upstream URL is mutable and its release notes record geometry corrections. Fetch the pinned
+# bytes from this project's data-only release; checksum verification still rejects a bad asset.
+fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson"
+source_url = "https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html"
+
+licence = "GISCO non-commercial terms"
+licence_url = "https://ec.europa.eu/eurostat/web/gisco/geodata/administrative-units"
+attribution = "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 263
+# The 2024 product has later corrections; the checksum pins this exact downloaded snapshot.
+revision = "Countries 2024 snapshot downloaded 2026-10-22"
+source_id_field = "CNTR_ID"
+identity_policy = "ADR 0015"
+
 [datasets.populated-places-1to10m]
 kind = "settlement-vector"
 path = "data/settlements/populated-places-1to10m.geojson"

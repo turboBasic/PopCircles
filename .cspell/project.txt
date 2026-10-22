@@ -155,6 +155,9 @@ widenings
 
 # --- Data sources ---
 CIESIN
+EuroGeographics
+GISCO
+GADM
 Chamdo
 Dibrugarh
 Earthdata
@@ -173,6 +176,7 @@ WPP
 
 # --- Config keys and CLI ---
 addopts
+CNTR
 codegen
 gpgsign
 keygen

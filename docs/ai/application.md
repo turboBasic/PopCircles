@@ -17,6 +17,8 @@ containing a share of that country's population, with 100% meaning everyone in i
 centre may lie outside the country. This is not the smallest circle enclosing a country's landmass —
 that is a geometric problem this program does not solve, and conflating the two is a spec error.
 Restricting to a country adds boundary data and a mask over the grid; the search itself is the same.
+Country identity follows GISCO's published country features and territorial interpretation
+([ADR 0015](../decisions/0015-country-identities-follow-gisco-country-features.md)).
 
 "On the globe" is the whole point. A circle drawn on an equirectangular image is not a circle on the
 Earth, and the well-known viral maps of the 50% circle got this wrong.

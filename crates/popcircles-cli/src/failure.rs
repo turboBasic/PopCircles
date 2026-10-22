@@ -230,7 +230,9 @@ fn exit_code_for_registry_error(error: &RegistryError) -> u8 {
     match error {
         RegistryError::Unknown { .. } | RegistryError::UnknownSettlement { .. } => EXIT_BAD_INPUT,
         RegistryError::Read { .. } => EXIT_MISSING_DATA,
-        RegistryError::Syntax { .. } | RegistryError::KeyIsNotTheStem { .. } => EXIT_FAILURE,
+        RegistryError::Syntax { .. }
+        | RegistryError::KeyIsNotTheStem { .. }
+        | RegistryError::InvalidBoundaryMetadata { .. } => EXIT_FAILURE,
     }
 }
 

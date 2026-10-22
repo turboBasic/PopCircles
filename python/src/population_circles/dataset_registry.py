@@ -56,6 +56,33 @@ class PopulationRaster(_Dataset):
 class BoundaryVector(_Dataset):
     kind: Literal["boundary-vector"]
 
+    # Optional for existing basemap vectors; country inputs carry the complete description together.
+    format: Literal["GeoJSON"] | None = None
+    crs: Literal["EPSG:4326"] | None = None
+    axis_order: Literal["longitude-latitude"] | None = None
+    feature_count: int | None = Field(default=None, gt=0)
+    revision: str | None = None
+    source_id_field: str | None = None
+    identity_policy: str | None = None
+
+    @model_validator(mode="after")
+    def _country_metadata_is_complete(self) -> Self:
+        metadata = (
+            self.format,
+            self.crs,
+            self.axis_order,
+            self.feature_count,
+            self.revision,
+            self.source_id_field,
+            self.identity_policy,
+        )
+        if any(value is not None for value in metadata) and any(
+            value is None for value in metadata
+        ):
+            message = "country boundary metadata must be complete"
+            raise ValueError(message)
+        return self
+
 
 class SettlementVector(_Dataset):
     kind: Literal["settlement-vector"]
