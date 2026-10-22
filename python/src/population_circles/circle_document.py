@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # The highest `report::SCHEMA_VERSION` this reader was written against. A document above it may have
 # renamed or removed a field, which is the only thing that constant rises for, so it is refused
@@ -96,8 +96,8 @@ class CountryBreakdownEntry(BaseModel):
     name: Annotated[str, Field(min_length=1, pattern=r"\S")]
     population_inside: Annotated[float, Field(ge=0, allow_inf_nan=False)]
     country_total_population: Annotated[float, Field(ge=0, allow_inf_nan=False)]
-    fraction_of_country_population: Annotated[float, Field(ge=0, allow_inf_nan=False)] | None
-    fraction_of_circle_population: Annotated[float, Field(ge=0, allow_inf_nan=False)] | None
+    fraction_of_country_population: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None
+    fraction_of_circle_population: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None
 
 
 class _CountryOrigin(BaseModel):
@@ -147,6 +147,14 @@ class CountryBreakdown(BaseModel):
     entries: list[CountryBreakdownEntry]
     reconciliation: CountryReconciliation
     provenance: CountryBreakdownProvenance
+
+    @model_validator(mode="after")
+    def _entry_ids_are_unique(self) -> Self:
+        ids = [entry.id for entry in self.entries]
+        if len(ids) != len(set(ids)):
+            message = "country breakdown identifiers must be unique"
+            raise ValueError(message)
+        return self
 
 
 class Caption(BaseModel):

@@ -235,6 +235,22 @@ def test_present_empty_country_breakdowns_are_valid_and_sweep_stays_not_drawable
     assert "sweep" not in CIRCLE_KINDS
 
 
+def test_country_breakdown_rejects_duplicate_ids_and_ratios_above_one() -> None:
+    duplicate = envelope("circle", measured())
+    duplicate["result"]["country_breakdown"] = breakdown()
+    duplicate["result"]["country_breakdown"]["entries"][1]["id"] = "A"
+    with pytest.raises(ValidationError, match="identifiers must be unique"):
+        circle_of(duplicate)
+
+    invalid_ratio = envelope("circle", measured())
+    invalid_ratio["result"]["country_breakdown"] = breakdown()
+    invalid_ratio["result"]["country_breakdown"]["entries"][0]["fraction_of_country_population"] = (
+        1.5
+    )
+    with pytest.raises(ValidationError):
+        circle_of(invalid_ratio)
+
+
 def test_a_later_schema_version_is_refused_on_the_version_field() -> None:
     document = envelope("circle", measured())
     document["schema_version"] = SCHEMA_VERSION + 1
