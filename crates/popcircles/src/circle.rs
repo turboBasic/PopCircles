@@ -56,18 +56,18 @@ pub fn country_population(
     kernel: &Kernel,
     centre: Col,
 ) -> Result<f64, CountryPopulationError> {
-    let source_grid = table.source_grid();
-    if source_grid != kernel.grid() {
+    let effective_grid = table.effective_grid();
+    if effective_grid != kernel.grid() {
         return Err(CountryPopulationError::GridMismatch);
     }
-    if centre.get() >= source_grid.width() {
+    if centre.get() >= effective_grid.width() {
         return Err(CountryPopulationError::CentreOutsideGrid { col: centre.get() });
     }
 
     let crop_grid = table.grid();
     let crop_start = table.west_col();
     let crop_width = crop_grid.width();
-    let source_width = source_grid.width();
+    let source_width = effective_grid.width();
     let crop_high_width = crop_width.min(source_width - crop_start);
     let crop_low_width = crop_width - crop_high_width;
     let crop_ranges = [
