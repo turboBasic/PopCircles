@@ -249,6 +249,14 @@ run = "cargo bench --bench kernel"
 description = "Measure circle evaluation, resident and through a mapped full-resolution table"
 run = "cargo bench --bench circle"
 
+[tasks."spike:country-cost"]
+description = "Run the isolated country accounting cost experiment"
+run = "cargo run --release --manifest-path tmp/gh-72/spike/Cargo.toml"
+
+[tasks."spike:test-country-cost"]
+description = "Run synthetic oracles for the isolated country accounting cost experiment"
+run = "cargo test --release --manifest-path tmp/gh-72/spike/Cargo.toml"
+
 # `run` steps, not `depends`: parallel resolution would contend for cores and page cache — measured,
 # the kernel numbers moved by more than a factor of two between a solo run and a concurrent one.
 # `bench:table` stays out: it writes a 7.5 GB payload, and a task that runs everything should not

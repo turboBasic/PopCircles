@@ -9,7 +9,7 @@
 use std::num::NonZeroU32;
 
 use crate::bracket::Bracket;
-use crate::circle;
+use crate::circle::{self, PopulationSource};
 use crate::geodesy::{RadiusKm, arc_km};
 use crate::grid::{Col, Grid, Row};
 use crate::kernel::{Kernel, KernelError};
@@ -429,7 +429,23 @@ pub fn most_populous<P: Progress>(
     spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
-    let grid = *table.grid();
+    most_populous_from(table, radius, spacing, progress)
+}
+
+/// Experimental generic implementation for the country accounting cost spike.
+///
+/// # Errors
+/// [`SearchError::Kernel`] when the source grid does not close in longitude.
+///
+/// # Panics
+/// If the source grid cannot yield a candidate despite having at least one cell.
+pub fn most_populous_from<S: PopulationSource, P: Progress>(
+    source: &S,
+    radius: RadiusKm,
+    spacing: Option<NonZeroU32>,
+    progress: &mut P,
+) -> Result<MostPopulous, SearchError> {
+    let grid = *source.grid();
     let mut level = Block::tile(
         &grid,
         spacing.unwrap_or_else(|| initial_spacing(&grid, radius)),
@@ -471,7 +487,8 @@ pub fn most_populous<P: Progress>(
         for block in &level {
             let (probe_row, probe_col) = block.probe(&grid);
             let widened = radius.widened_by(slack_km(&grid, *block));
-            let ceiling = circle::population(table, widest.get(probe_row, widened)?, probe_col);
+            let ceiling = circle::from_source(source, widest.get(probe_row, widened)?, probe_col)
+                + source.error_budget();
             stats.blocks_examined += 1;
 
             // Strictly under, never equal. A block whose bound merely ties the incumbent may hold a
@@ -482,7 +499,7 @@ pub fn most_populous<P: Progress>(
                 stats.blocks_pruned += 1;
             } else {
                 let population =
-                    circle::population(table, exact.get(probe_row, radius)?, probe_col);
+                    circle::from_source(source, exact.get(probe_row, radius)?, probe_col);
                 let candidate = Candidate {
                     row: probe_row,
                     col: probe_col,
@@ -513,7 +530,7 @@ pub fn most_populous<P: Progress>(
         Some(centre) => Ok(MostPopulous {
             centre,
             radius,
-            tolerance_persons: 0.0,
+            tolerance_persons: source.error_budget(),
             stats,
         }),
         None => panic!(

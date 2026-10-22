@@ -8,6 +8,7 @@ pub mod cache;
 use std::num::NonZeroU32;
 
 use crate::bracket::Bracket;
+use crate::circle::PopulationSource;
 use crate::geodesy::RadiusKm;
 use crate::grid::{Col, Grid, Row};
 use crate::kernel::Kernel;
@@ -386,8 +387,8 @@ fn warn_unseparated(span: Option<Ambiguity>, answer_km: u32, slack: f64) {
 /// The ledger is read before the search and never after it, which is the whole of what one buys, and
 /// [`SmallestStats`] is what says so from outside: a reused radius adds nothing to any of the search
 /// counters, because no search ran.
-fn probe<L: RadiusLedger>(
-    table: &Table<'_>,
+fn probe<S: PopulationSource, L: RadiusLedger>(
+    source: &S,
     km: u32,
     spacing: Option<NonZeroU32>,
     ledger: &mut L,
@@ -408,7 +409,7 @@ fn probe<L: RadiusLedger>(
     }
     // The inner search reports per level of its own refinement; two meters through one sink interleave
     // into noise, so this one is silent and the caller's sink hears about radii.
-    let searched = search::most_populous(table, RadiusKm::from(km), spacing, &mut ())?;
+    let searched = search::most_populous_from(source, RadiusKm::from(km), spacing, &mut ())?;
     ledger
         .put(km, searched.centre)
         .map_err(SmallestError::Ledger)?;
@@ -457,9 +458,23 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
     ledger: &mut L,
     progress: &mut P,
 ) -> Result<Smallest, SmallestError<L::Error>> {
-    let grid = *table.grid();
-    let (whole_rows, whole_cols) = table.whole();
-    let total = table.population(whole_rows, whole_cols);
+    smallest_from(table, share, spacing, ledger, progress)
+}
+
+/// Experimental generic implementation for the country accounting cost spike.
+///
+/// # Errors
+/// [`SmallestError::Search`] when the source grid has no kernels, and
+/// [`SmallestError::Ledger`] when the ledger cannot record a probe.
+pub fn smallest_from<S: PopulationSource, L: RadiusLedger, P: Progress>(
+    source: &S,
+    share: Share,
+    spacing: Option<NonZeroU32>,
+    ledger: &mut L,
+    progress: &mut P,
+) -> Result<Smallest, SmallestError<L::Error>> {
+    let grid = *source.grid();
+    let total = source.total();
     let target = Target::of(share, total);
 
     log::info!(
@@ -468,7 +483,7 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
     );
 
     let mut stats = SmallestStats::default();
-    let slack = predicate_slack_persons(&grid, total);
+    let slack = source.predicate_slack();
     // The climb. `CEILING_KM - 1` is the cap because the ceiling itself is not a radius this searches.
     let cap = CEILING_KM - 1;
     let mut km = 1u32;
@@ -483,7 +498,7 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
     loop {
         let settled = stats.radii_settled();
         progress.advance(settled, settled + u64::from(climb_probes_remaining(km)));
-        let found = probe(table, km, spacing, ledger, &mut stats)?;
+        let found = probe(source, km, spacing, ledger, &mut stats)?;
         ambiguity = widen(ambiguity, km, found.population - target.persons, slack);
 
         if found.population >= target.persons {
@@ -536,7 +551,7 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
         // and then pass it.
         progress.advance(settled, settled + u64::from(halvings(high - low + 1)));
         let mid = low + (high - low) / 2;
-        let found = probe(table, mid, spacing, ledger, &mut stats)?;
+        let found = probe(source, mid, spacing, ledger, &mut stats)?;
         ambiguity = widen(ambiguity, mid, found.population - target.persons, slack);
 
         if found.population >= target.persons {
