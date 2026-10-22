@@ -236,10 +236,14 @@ uncertainty reporting remains in force ([ADR 0007](../decisions/0007-a-result-st
 The k=10 center-point masks in #72 were provisional, and their all-country totals did not reconcile
 with the reconstructed world total; the k=1 gap was smaller but remained material ([measurements and
 reconciliation](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761)).
-Issue #13 must make boundary membership deterministic and validate overlaps against #12; #14 must
-measure reconciliation under the chosen source-aggregation policy and explain unassigned population
-separately from arithmetic error. The route decision does not settle whether membership is applied
-before or after decimation.
+GISCO membership is now classified from each effective-grid cell center, independently at k=1 and
+k=10. A center on a boundary belongs to every matching feature; holes are subtracted, multipart
+components are combined, antimeridian crossings are handled, and self-intersecting rings use even-odd
+membership on unchanged coordinates. Structurally degenerate components contribute no cells and emit
+a feature-specific diagnostic; source feature identities and geometric overlaps remain represented.
+The source is not treated as a disjoint partition. Issue #14 still owns the source-aggregation order,
+positive-population reconciliation, and the distinction between unassigned population and arithmetic
+error.
 
 ## Language split
 

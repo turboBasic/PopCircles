@@ -1158,6 +1158,7 @@ nodata = -3.402823e38
 [datasets.vector]
 kind = "boundary-vector"
 path = "data/vector.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 [datasets.populated-places-1to10m]
 kind = "settlement-vector"

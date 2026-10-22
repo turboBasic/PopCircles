@@ -179,21 +179,9 @@ impl Domain {
                 if latitude < polygon.south || latitude > polygon.north {
                     continue;
                 }
-                for (start, end) in candidate_columns(polygon, latitude, &grid) {
-                    for col_index in start..end {
-                        let Some(col) = grid.col(col_index) else {
-                            continue;
-                        };
-                        let longitude = grid.centre_of(row, col).lon;
-                        if polygon.contains(latitude, longitude) {
-                            selected.push(col_index);
-                        }
-                    }
-                }
+                selected.extend(polygon.row_intervals(latitude, &grid));
             }
-            selected.sort_unstable();
-            selected.dedup();
-            rows.push(columns_to_intervals(selected));
+            rows.push(merge_intervals(selected));
         }
         let domain = Self::from_intervals(feature_id, grid, rows)?;
         Ok((domain, diagnostics))
@@ -240,8 +228,6 @@ struct PreparedPolygon {
     rings: Vec<Vec<LatLon>>,
     south: f64,
     north: f64,
-    west: f64,
-    east: f64,
 }
 
 impl PreparedPolygon {
@@ -256,23 +242,14 @@ impl PreparedPolygon {
             .iter()
             .map(|point| point.lat)
             .fold(f64::NEG_INFINITY, f64::max);
-        let west = exterior
-            .iter()
-            .map(|point| point.lon)
-            .fold(f64::INFINITY, f64::min);
-        let east = exterior
-            .iter()
-            .map(|point| point.lon)
-            .fold(f64::NEG_INFINITY, f64::max);
         Self {
             rings,
             south,
             north,
-            west,
-            east,
         }
     }
 
+    #[cfg(test)]
     fn contains(&self, latitude: f64, longitude: f64) -> bool {
         let Some(exterior) = self.rings.first() else {
             return false;
@@ -286,6 +263,132 @@ impl PreparedPolygon {
             .skip(1)
             .any(|hole| ring_contains(hole, latitude, longitude))
     }
+
+    fn row_intervals(&self, latitude: f64, grid: &Grid) -> Vec<ColumnInterval> {
+        let Some(exterior) = self.rings.first() else {
+            return Vec::new();
+        };
+        let mut intervals = ring_row_intervals(exterior, latitude, grid);
+        for hole in self.rings.iter().skip(1) {
+            intervals = subtract_intervals(intervals, &ring_row_intervals(hole, latitude, grid));
+        }
+        intervals
+    }
+}
+
+#[allow(clippy::float_cmp)] // Exact horizontal edges and vertices define boundary-cell membership.
+fn ring_row_intervals(ring: &[LatLon], latitude: f64, grid: &Grid) -> Vec<ColumnInterval> {
+    if ring.len() < 3 {
+        return Vec::new();
+    }
+    let mut crossings = Vec::new();
+    let mut boundary = Vec::new();
+    let mut previous = ring[ring.len() - 1];
+    for &current in ring {
+        if (previous.lat > latitude) != (current.lat > latitude) {
+            let longitude = previous.lon
+                + (latitude - previous.lat) * (current.lon - previous.lon)
+                    / (current.lat - previous.lat);
+            crossings.push(longitude);
+        }
+        if previous.lat == current.lat && previous.lat == latitude {
+            append_longitude_span(
+                previous.lon.min(current.lon),
+                previous.lon.max(current.lon),
+                grid,
+                &mut boundary,
+            );
+        } else if previous.lat != current.lat
+            && (previous.lat.min(current.lat)..=previous.lat.max(current.lat)).contains(&latitude)
+        {
+            let longitude = previous.lon
+                + (latitude - previous.lat) * (current.lon - previous.lon)
+                    / (current.lat - previous.lat);
+            append_longitude_span(longitude, longitude, grid, &mut boundary);
+        }
+        previous = current;
+    }
+    crossings.sort_by(f64::total_cmp);
+    let mut intervals = boundary;
+    let (pairs, _) = crossings.as_chunks::<2>();
+    for pair in pairs {
+        append_longitude_span(pair[0], pair[1], grid, &mut intervals);
+    }
+    merge_intervals(intervals)
+}
+
+fn append_longitude_span(west: f64, east: f64, grid: &Grid, intervals: &mut Vec<ColumnInterval>) {
+    let origin = grid.origin().lon;
+    let step = grid.lon_step();
+    for turn in -4..=4 {
+        let shift = f64::from(turn) * 360.0;
+        let first = ((west + shift - origin) / step - 0.5)
+            .min((east + shift - origin) / step - 0.5)
+            .ceil();
+        let last = ((west + shift - origin) / step - 0.5)
+            .max((east + shift - origin) / step - 0.5)
+            .floor();
+        if last < 0.0 || first >= f64::from(grid.width()) {
+            continue;
+        }
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let start = first.max(0.0) as u32;
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let end = (last.min(f64::from(grid.width() - 1)) as u32) + 1;
+        if start < end {
+            intervals.push(ColumnInterval { start, end });
+        }
+    }
+}
+
+fn merge_intervals(mut intervals: Vec<ColumnInterval>) -> Vec<ColumnInterval> {
+    intervals.sort_unstable_by_key(|interval| (interval.start, interval.end));
+    let mut merged: Vec<ColumnInterval> = Vec::with_capacity(intervals.len());
+    for interval in intervals {
+        if let Some(previous) = merged.last_mut()
+            && interval.start <= previous.end
+        {
+            previous.end = previous.end.max(interval.end);
+            continue;
+        }
+        merged.push(interval);
+    }
+    merged
+}
+
+fn subtract_intervals(
+    source: Vec<ColumnInterval>,
+    removed: &[ColumnInterval],
+) -> Vec<ColumnInterval> {
+    let mut result = Vec::new();
+    let mut removed_index = 0;
+    for interval in source {
+        let mut start = interval.start;
+        while removed_index < removed.len() && removed[removed_index].end <= start {
+            removed_index += 1;
+        }
+        let mut index = removed_index;
+        while index < removed.len() && removed[index].start < interval.end {
+            if removed[index].start > start {
+                result.push(ColumnInterval {
+                    start,
+                    end: removed[index].start,
+                });
+            }
+            start = start.max(removed[index].end);
+            if start >= interval.end {
+                break;
+            }
+            index += 1;
+        }
+        if start < interval.end {
+            result.push(ColumnInterval {
+                start,
+                end: interval.end,
+            });
+        }
+    }
+    result
 }
 
 fn unwrap_ring(ring: &[LatLon]) -> Vec<LatLon> {
@@ -311,6 +414,7 @@ fn unwrap_ring(ring: &[LatLon]) -> Vec<LatLon> {
     result
 }
 
+#[cfg(test)]
 fn ring_contains(ring: &[LatLon], latitude: f64, longitude: f64) -> bool {
     if ring.len() < 3 {
         return false;
@@ -340,6 +444,7 @@ fn ring_contains(ring: &[LatLon], latitude: f64, longitude: f64) -> bool {
     inside
 }
 
+#[cfg(test)]
 fn point_on_segment(point: LatLon, start: LatLon, end: LatLon) -> bool {
     let dx = end.lon - start.lon;
     let dy = end.lat - start.lat;
@@ -370,68 +475,6 @@ fn degenerate_reason(ring: &[LatLon]) -> Option<DegenerateReason> {
         cross != 0.0
     });
     (!has_area).then_some(DegenerateReason::CollinearVertices)
-}
-
-fn candidate_columns(polygon: &PreparedPolygon, latitude: f64, grid: &Grid) -> Vec<(u32, u32)> {
-    if latitude < polygon.south || latitude > polygon.north {
-        return Vec::new();
-    }
-    let origin = grid.origin().lon;
-    let step = grid.lon_step();
-    let mut ranges = Vec::new();
-    // Geographic coordinates and a grid spanning at most one turn keep ordinary rings in range,
-    // including rings that unwrap across the antimeridian.
-    for turn in -4..=4 {
-        let shift = f64::from(turn) * 360.0;
-        let first = ((polygon.west + shift - origin) / step - 0.5)
-            .min((polygon.east + shift - origin) / step - 0.5)
-            .ceil();
-        let last = ((polygon.west + shift - origin) / step - 0.5)
-            .max((polygon.east + shift - origin) / step - 0.5)
-            .floor();
-        if last < 0.0 || first >= f64::from(grid.width()) {
-            continue;
-        }
-        // `first` is integral after ceil, clamped into [0, width), and width is u32.
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let start = first.max(0.0) as u32;
-        // `last` is integral after floor, clamped into [0, width - 1].
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let end = (last.min(f64::from(grid.width() - 1)) as u32) + 1;
-        if start < end {
-            ranges.push((start, end));
-        }
-    }
-    ranges.sort_unstable();
-    ranges.dedup();
-    ranges
-}
-
-fn columns_to_intervals(columns: Vec<u32>) -> Vec<ColumnInterval> {
-    let mut intervals = Vec::new();
-    let mut start = None;
-    let mut previous = 0;
-    for column in columns {
-        match start {
-            None => start = Some(column),
-            Some(run_start) if column != previous + 1 => {
-                intervals.push(ColumnInterval {
-                    start: run_start,
-                    end: previous + 1,
-                });
-                start = Some(column);
-            }
-            Some(_) => {}
-        }
-        previous = column;
-    }
-    if let Some(start) = start {
-        intervals.push(ColumnInterval {
-            start,
-            end: previous + 1,
-        });
-    }
-    intervals
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -496,7 +539,7 @@ mod tests {
 
     // Fixture construction must fail at its source so tests cannot silently use invalid identities.
     #[allow(clippy::expect_used)]
-    fn id(value: &str) -> FeatureId {
+    fn id(value: impl Into<String>) -> FeatureId {
         FeatureId::new(value).expect("test identifier is nonempty")
     }
 
@@ -677,6 +720,99 @@ mod tests {
             first.0.row_intervals(grid.row(1).expect("row exists")),
             Some([ColumnInterval { start: 0, end: 4 }].as_slice())
         );
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)] // The slow point classifier is the reference for row intervals.
+    fn row_intervals_match_point_classification_for_supported_rings() {
+        let grid = Grid::new(16, 8, point(-180.0, 90.0), 22.5, -22.5)
+            .expect("global fixture grid is valid");
+        let mut holed = rectangle(-90.0, -45.0, 90.0, 45.0);
+        holed.rings.push(vec![
+            point(-22.5, -22.5),
+            point(22.5, -22.5),
+            point(22.5, 22.5),
+            point(-22.5, 22.5),
+            point(-22.5, -22.5),
+        ]);
+        let geometries = [
+            Geometry::Polygon(holed),
+            Geometry::Polygon(rectangle(157.5, -45.0, -157.5, 45.0)),
+            Geometry::Polygon(Polygon {
+                rings: vec![vec![
+                    point(-90.0, -45.0),
+                    point(90.0, 45.0),
+                    point(-90.0, 45.0),
+                    point(90.0, -45.0),
+                    point(-90.0, -45.0),
+                ]],
+            }),
+        ];
+
+        for (index, geometry) in geometries.iter().enumerate() {
+            let (domain, _) = Domain::rasterize(id(format!("row-mask-{index}")), geometry, grid)
+                .expect("reference geometry rasterizes");
+            let polygons = match geometry {
+                Geometry::Polygon(polygon) => std::slice::from_ref(polygon),
+                Geometry::MultiPolygon(polygons) => polygons,
+            };
+            let prepared: Vec<_> = polygons.iter().map(PreparedPolygon::new).collect();
+            for row in grid.rows() {
+                for col in grid.cols() {
+                    let latitude = grid.centre_lat(row);
+                    let longitude = grid.centre_of(row, col).lon;
+                    let expected = prepared
+                        .iter()
+                        .any(|polygon| polygon.contains(latitude, longitude));
+                    assert_eq!(
+                        domain
+                            .contains(&grid, row, col)
+                            .expect("matching grid indices"),
+                        expected,
+                        "geometry {index}, row {}, column {}",
+                        row.get(),
+                        col.get()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)] // A vertex-centered cell must match explicit boundary inclusion.
+    fn row_mask_keeps_a_cell_center_on_an_isolated_ring_vertex() {
+        let grid = make_grid(5, 2);
+        let polygon = Polygon {
+            rings: vec![vec![
+                point(0.0, 0.0),
+                point(5.0, 0.0),
+                point(2.5, 1.5),
+                point(0.0, 0.0),
+            ]],
+        };
+        let geometry = Geometry::Polygon(polygon.clone());
+        let (domain, _) =
+            Domain::rasterize(id("vertex"), &geometry, grid).expect("triangle rasterizes");
+        let row = grid.row(0).expect("center row exists");
+        let vertex_col = grid.col(2).expect("vertex center column exists");
+        assert!(
+            domain
+                .contains(&grid, row, vertex_col)
+                .expect("matching grid index")
+        );
+        let prepared = PreparedPolygon::new(&polygon);
+        for row in grid.rows() {
+            for col in grid.cols() {
+                let latitude = grid.centre_lat(row);
+                let longitude = grid.centre_of(row, col).lon;
+                assert_eq!(
+                    domain
+                        .contains(&grid, row, col)
+                        .expect("matching grid indices"),
+                    prepared.contains(latitude, longitude)
+                );
+            }
+        }
     }
 
     #[test]
