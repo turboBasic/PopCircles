@@ -22,7 +22,7 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.10
+    rev: v0.17.1
     hooks:
       - id: ruff
         args: [--fix]
@@ -34,7 +34,7 @@ repos:
       - id: actionlint-system
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.19.1
+    rev: v4.19.2
     hooks:
       - id: commitizen
         stages: [commit-msg]
