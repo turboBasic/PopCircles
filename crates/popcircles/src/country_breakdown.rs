@@ -171,10 +171,18 @@ fn query_error(scale: f64) -> f64 {
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used, clippy::float_cmp)]
+#[allow(clippy::cast_precision_loss, clippy::expect_used, clippy::float_cmp)]
 mod tests {
+    use std::convert::Infallible;
+
     use super::*;
-    use crate::geodesy::LatLon;
+    use crate::circle::{country_population, population};
+    use crate::domain::{Domain, Geometry, Polygon};
+    use crate::geodesy::{LatLon, RadiusKm, great_circle_km};
+    use crate::kernel::Kernel;
+    use crate::ownership::{CellOwner, CellOwnership};
+    use crate::raster::Synthetic;
+    use crate::table::{Decimation, build, build_country_decimated};
 
     fn grid() -> Grid {
         Grid::new(
@@ -210,6 +218,85 @@ mod tests {
             decimation: 1,
             accounting_route: "cropped-prefix-v1".to_owned(),
         }
+    }
+
+    fn rectangle(west: f64, east: f64) -> Geometry {
+        Geometry::Polygon(Polygon {
+            rings: vec![vec![
+                LatLon {
+                    lat: -80.0,
+                    lon: west,
+                },
+                LatLon {
+                    lat: -80.0,
+                    lon: east,
+                },
+                LatLon {
+                    lat: 80.0,
+                    lon: east,
+                },
+                LatLon {
+                    lat: 80.0,
+                    lon: west,
+                },
+                LatLon {
+                    lat: -80.0,
+                    lon: west,
+                },
+            ]],
+        })
+    }
+
+    fn synthetic(grid: Grid) -> Synthetic {
+        let rows = (0..grid.height())
+            .map(|row| {
+                (0..grid.width())
+                    .map(|col| (row * grid.width() + col + 1) as f32)
+                    .collect()
+            })
+            .collect();
+        Synthetic::new(grid, -3.402_823e38, rows).expect("fixture rows match the grid")
+    }
+
+    fn cell_value(grid: &Grid, row: u32, col: u32) -> f64 {
+        f64::from(row * grid.width() + col + 1)
+    }
+
+    fn native_circle_sums(
+        source_grid: Grid,
+        ownership: &CellOwnership,
+        centre: LatLon,
+        radius: RadiusKm,
+        factor: u32,
+        a: &FeatureId,
+        b: &FeatureId,
+    ) -> (f64, f64, f64) {
+        let grid = *Decimation::new(source_grid, factor)
+            .expect("factor divides grid")
+            .grid();
+        let mut sums = [0.0; 3];
+        for row in 0..source_grid.height() {
+            for col in 0..source_grid.width() {
+                let effective_cell = grid.centre_of(
+                    grid.row(row / factor).expect("effective row exists"),
+                    grid.col(col / factor).expect("effective column exists"),
+                );
+                if great_circle_km(centre, effective_cell) > radius.km() {
+                    continue;
+                }
+                let value = cell_value(&source_grid, row, col);
+                let slot = match ownership
+                    .owner_at(&source_grid, row, col)
+                    .expect("native source cell is valid")
+                {
+                    CellOwner::Feature(owner) if owner == a => 0,
+                    CellOwner::Feature(owner) if owner == b => 1,
+                    CellOwner::Feature(_) | CellOwner::Unassigned(_) => 2,
+                };
+                sums[slot] += value;
+            }
+        }
+        (sums[0], sums[1], sums[2])
     }
 
     #[test]
@@ -288,5 +375,107 @@ mod tests {
             f64::from(grid.height()) * (4.0 * (1.0f64.next_up() - 1.0) + f64::EPSILON);
         assert!(result.bound_persons > circle_scaled);
         assert_eq!(result.unassigned_population, 0.0);
+    }
+
+    #[test]
+    fn overlapping_and_decimated_queries_match_native_cell_sums() {
+        let source_grid = Grid::new(
+            36,
+            18,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            10.0,
+            -10.0,
+        )
+        .expect("whole-globe source grid is valid");
+        let a = FeatureId::new("A").expect("fixture ID is valid");
+        let b = FeatureId::new("B").expect("fixture ID is valid");
+        let features = vec![
+            (a.clone(), rectangle(-90.0, 10.0)),
+            (b.clone(), rectangle(-10.0, 90.0)),
+        ];
+        let (ownership, _) = CellOwnership::rasterize_features(&features, source_grid)
+            .expect("overlapping features produce explicit residual cells");
+        let requested = LatLon {
+            lat: -5.0,
+            lon: 35.0,
+        };
+        let radius = RadiusKm::from(20_016u32);
+
+        for factor in [1, 2] {
+            let decimation = Decimation::new(source_grid, factor).expect("factor divides grid");
+            let grid = *decimation.grid();
+            let domains = features
+                .iter()
+                .map(|(id, geometry)| Domain::rasterize(id.clone(), geometry, grid))
+                .collect::<Result<Vec<_>, _>>()
+                .expect("effective masks rasterize");
+            let cell = grid.cell_containing(requested).expect("centre is on grid");
+            let centre = grid.centre_of(cell.0, cell.1);
+            let kernel = Kernel::new(grid, cell.0, radius).expect("grid closes in longitude");
+            let mut world_payload = Vec::new();
+            build(synthetic(source_grid), decimation, &mut (), |row| {
+                world_payload.extend_from_slice(row);
+                Ok::<(), Infallible>(())
+            })
+            .expect("synthetic source and sink cannot fail");
+            let world_table = crate::table::Table::new(grid, &world_payload)
+                .expect("build emitted a padded table");
+            let circle_total = population(&world_table, &kernel, cell.1);
+            let (whole_rows, whole_cols) = world_table.whole();
+            let world_total = world_table.population(whole_rows, whole_cols);
+            let mut contributions = Vec::new();
+            for ((id, _), (domain, _)) in features.iter().zip(domains) {
+                let table = build_country_decimated(
+                    synthetic(source_grid),
+                    &ownership,
+                    id,
+                    decimation,
+                    "fixture-boundary-digest",
+                )
+                .expect("each fixture country owns source cells");
+                let inside = country_population(&table, &kernel, cell.1)
+                    .expect("crop and circle use the same effective grid");
+                let intersects = grid.rows().any(|row| {
+                    grid.cols().any(|col| {
+                        great_circle_km(centre, grid.centre_of(row, col)) <= radius.km()
+                            && domain
+                                .contains(&grid, row, col)
+                                .expect("domain uses the effective grid")
+                    })
+                });
+                contributions.push(CountryContribution {
+                    id: id.clone(),
+                    name: id.as_str().to_owned(),
+                    inside,
+                    total: table.total(),
+                    intersects,
+                });
+            }
+            let result = CountryBreakdown::compose(
+                circle_total,
+                world_total,
+                &grid,
+                contributions,
+                provenance(),
+            )
+            .expect("circle contributions reconcile within their operation bound");
+
+            let (direct_a, direct_b, direct_unassigned) =
+                native_circle_sums(source_grid, &ownership, centre, radius, factor, &a, &b);
+            let allowance = result.bound_persons;
+            let measured = |id: &str| {
+                result
+                    .entries
+                    .iter()
+                    .find(|entry| entry.id == id)
+                    .map_or(0.0, |entry| entry.population_inside)
+            };
+            assert!((measured("A") - direct_a).abs() <= allowance);
+            assert!((measured("B") - direct_b).abs() <= allowance);
+            assert!((result.unassigned_population - direct_unassigned).abs() <= allowance);
+        }
     }
 }
