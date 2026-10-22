@@ -240,7 +240,8 @@ A published world circle accounts for countries by querying each uniquely-owned 
 settled centre and radius. The composition retains every positive contribution and every country whose
 effective-grid domain intersects the circle, orders by contribution then canonical identifier, and
 reconciles against the circle's world population. Its remainder is circle-specific; source-wide
-unassigned totals are not a substitute. The bound covers the country row queries and their reduction.
+unassigned totals are not a substitute. Its bound uses the world table total and each country table total
+for the row queries, then covers the reduction of country results.
 
 The k=10 center-point masks in #72 were provisional, and their all-country totals did not reconcile
 with the reconstructed world total; the k=1 gap was smaller but remained material ([measurements and
