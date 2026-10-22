@@ -6,6 +6,7 @@ from typing import Any, NoReturn
 
 import pytest
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 from population_circles.circle_document import Answer, circle_of
@@ -55,6 +56,46 @@ def document() -> dict[str, Any]:
             "share_of_total": 0.1616868627727305,
         },
     }
+
+
+def country_document(count: int = 1) -> dict[str, Any]:
+    result = document()
+    result["result"]["country_breakdown"] = {
+        "entries": [
+            {
+                "id": f"C{index:02}",
+                "name": "$ literal \\ alpha " + "a very long country name " * 3 + str(index),
+                "population_inside": 10,
+                "country_total_population": 100,
+                "fraction_of_country_population": 0.1,
+                "fraction_of_circle_population": 0.01,
+            }
+            for index in range(count)
+        ],
+        "reconciliation": {"unassigned_population": 20, "bound_persons": 0.01},
+        "provenance": {
+            "boundary_dataset": "gisco-countries-2024-1m",
+            "boundary_revision": "Countries 2024 snapshot",
+            "boundary_digest": "a" * 64,
+            "attribution": "© EuroGeographics for the administrative boundaries; "
+            "acknowledge EuroGeographics and UN-FAO.",
+            "effective_grid": {
+                "width": 36,
+                "height": 18,
+                "origin": {"lat": 90, "lon": -180},
+                "lon_step": 10,
+                "lat_step": -10,
+                "middle_row_cell_area_km2": 1,
+                "spans_full_turn": True,
+            },
+            "decimation": 1,
+            "accounting_route": "sequential cropped prefixes",
+            "membership_rule_version": 1,
+            "ownership_rule_version": 1,
+            "aggregation_order_version": 1,
+        },
+    }
+    return result
 
 
 def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
@@ -164,6 +205,34 @@ def test_the_footer_artist_carries_the_citation() -> None:
     assert MARKER in drawn_text
 
 
+@pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
+def test_long_country_captions_grow_the_figure_and_keep_every_line_inside(
+    projection: str,
+    tmp_path: Path,
+) -> None:
+    answer = circle_of(country_document(18))
+    figure = render(answer, projection, MARKER, coastline=None)
+    try:
+        output = tmp_path / f"countries-{projection}.png"
+        figure.savefig(output, dpi=120)  # pyright: ignore[reportUnknownMemberType] — matplotlib kwargs
+        canvas = FigureCanvasAgg(figure)
+        canvas.draw()
+        footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
+        axes = figure.axes[0].get_window_extent()
+        rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
+        assert figure.get_size_inches()[1] > 6.0  # noqa: PLR2004 — initial figure height
+        assert footer.x0 >= 0
+        assert footer.x1 <= figure.bbox.x1
+        assert footer.y0 >= 0
+        assert footer.y1 <= axes.y0
+        assert "$ literal \\ alpha" in rendered_text
+        assert "C17" in rendered_text
+        assert "Boundary credit: © EuroGeographics" in rendered_text
+        assert output.read_bytes().startswith(PNG_MAGIC)
+    finally:
+        plt.close(figure)
+
+
 def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> None:
     answer = circle_of(document())
     figure = render(answer, ORTHOGRAPHIC, MARKER, coastline=None)
@@ -232,7 +301,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
         monkeypatch.setattr(socket, name, refuse)
 
     source = tmp_path / "circle.json"
-    payload = document()
+    payload = country_document()
     payload["result"]["nearest_settlement"] = {
         "name": "An exceptionally long settlement name that should wrap rather than clip",
         "country": "A country with a long descriptive name",
@@ -241,7 +310,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     }
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / f"map-{projection}.png"
-    assert not (tmp_path / "data/settlements/populated-places-1to10m.geojson").exists()
+    assert not (tmp_path / "data/boundaries/gisco-countries-2024-1m.geojson").exists()
     monkeypatch.chdir(tmp_path)
 
     assert main(["--input", str(source), "--output", str(output), "--projection", projection]) == 0

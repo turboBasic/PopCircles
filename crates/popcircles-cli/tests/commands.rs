@@ -95,11 +95,11 @@ impl Fixture {
             directory,
             digest: 0,
         };
-        fixture.register_settlements();
         let grid = Self::grid();
         let rows: Vec<Vec<f32>> = (0..HEIGHT)
             .map(|row| (0..WIDTH).map(|col| cell(row, col)).collect())
             .collect();
+        fixture.register_settlements(&rows);
         let source = Synthetic::new(grid, NODATA, rows).expect("the rows are the grid's shape");
 
         let cache = Cache::new(fixture.directory.path().join("table"));
@@ -171,12 +171,48 @@ impl Fixture {
         .unwrap();
     }
 
-    fn register_settlements(&self) {
+    fn register_settlements(&self, rows: &[Vec<f32>]) {
         let data = self.directory.path().join("data");
         std::fs::create_dir_all(&data).unwrap();
+        std::fs::create_dir_all(data.join("population")).unwrap();
+        std::fs::write(
+            data.join("population/population-count-2020-30arcsec.tif"),
+            synthetic_tiff_with(|row, col| rows[row as usize][col as usize]),
+        )
+        .unwrap();
+        std::fs::create_dir_all(data.join("boundaries")).unwrap();
+        std::fs::write(
+            data.join("boundaries/gisco-countries-2024-1m.geojson"),
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"XX","NAME_ENGL":"Fixture"},"geometry":{"type":"Polygon","coordinates":[[[-50,-50],[50,-50],[50,70],[-50,70],[-50,-50]]]}}]}"#,
+        ).unwrap();
         std::fs::write(
             data.join("registry.toml"),
             r#"
+[datasets.population-count-2020-30arcsec]
+kind = "population-raster"
+path = "data/population/population-count-2020-30arcsec.tif"
+width = 36
+height = 18
+origin_lat = 90.0
+origin_lon = -180.0
+lon_step = 10.0
+lat_step = -10.0
+epsg = 4326
+nodata = -3.402823e38
+
+[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 1
+revision = "fixture"
+source_id_field = "CNTR_ID"
+identity_policy = "fixture"
+attribution = "Fixture boundary credit"
+
 [datasets.populated-places-1to10m]
 kind = "settlement-vector"
 path = "data/settlements/populated-places-1to10m.geojson"
@@ -324,6 +360,159 @@ fn population_at_answers_from_the_cache() {
         "Resolved centre"
     );
     assert_eq!(document["result"]["nearest_settlement"]["distance_km"], 0.0);
+}
+
+#[test]
+fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
+    let fixture = Fixture::build();
+    let population_at = successful_document(&fixture.run_ok(
+        "population-at",
+        &["--lat", "45", "--lon", "15", "--radius-km", "0"],
+    ));
+    assert_eq!(
+        population_at["result"]["country_breakdown"]["entries"][0]["id"],
+        "XX"
+    );
+
+    let most_populous =
+        successful_document(&fixture.run_ok("most-populous", &["--radius-km", "0"]));
+    assert!(most_populous["result"]["country_breakdown"].is_object());
+
+    let smallest_args = ["--share", "10", "--ledger", "smallest.json"];
+    let smallest = successful_document(&fixture.run_ok("smallest-for-share", &smallest_args));
+    assert!(smallest["result"]["circle"]["country_breakdown"].is_object());
+    let warm = successful_document(&fixture.run_ok("smallest-for-share", &smallest_args));
+    for field in ["radius_km", "centre", "population", "country_breakdown"] {
+        assert_eq!(
+            smallest["result"]["circle"][field],
+            warm["result"]["circle"][field]
+        );
+    }
+
+    let sweep = successful_document(&fixture.run_ok(
+        "sweep",
+        &[
+            "--from",
+            "10",
+            "--to",
+            "20",
+            "--step",
+            "10",
+            "--ledger",
+            "sweep.json",
+        ],
+    ));
+    assert!(
+        sweep["result"]["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|record| record["country_breakdown"].is_object())
+    );
+}
+
+#[test]
+fn all_four_commands_match_the_country_breakdown_oracle() {
+    let fixture = Fixture::over(
+        |row, col| match (row, col) {
+            (4, 19) => 30.0,
+            (4, 18 | 20 | 10) => 10.0,
+            (4, 25 | 30) => 35.0,
+            _ => NODATA,
+        },
+        None,
+    );
+    let boundary = fixture
+        .directory
+        .path()
+        .join("data/boundaries/gisco-countries-2024-1m.geojson");
+    std::fs::write(
+        &boundary,
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"A","NAME_ENGL":"Alpha"},"geometry":{"type":"MultiPolygon","coordinates":[[[[10,40],[20,40],[20,50],[10,50],[10,40]]],[[[70,40],[80,40],[80,50],[70,50],[70,40]]],[[[120,40],[130,40],[130,50],[120,50],[120,40]]]]}},{"type":"Feature","properties":{"CNTR_ID":"B","NAME_ENGL":"Beta"},"geometry":{"type":"MultiPolygon","coordinates":[[[[0,40],[10,40],[10,50],[0,50],[0,40]]],[[[-80,40],[-70,40],[-70,50],[-80,50],[-80,40]]]]}}]}"#,
+    )
+    .unwrap();
+    let registry = fixture.directory.path().join("data/registry.toml");
+    let text = std::fs::read_to_string(&registry).unwrap();
+    std::fs::write(
+        &registry,
+        text.replace("feature_count = 1", "feature_count = 2"),
+    )
+    .unwrap();
+
+    let population_at = successful_document(&fixture.run_ok(
+        "population-at",
+        &["--lat", "45", "--lon", "15", "--radius-km", "800"],
+    ));
+    assert_oracle(&population_at["result"]["country_breakdown"]);
+
+    let most_populous =
+        successful_document(&fixture.run_ok("most-populous", &["--radius-km", "800"]));
+    assert_oracle(&most_populous["result"]["country_breakdown"]);
+
+    let smallest = successful_document(&fixture.run_ok(
+        "smallest-for-share",
+        &["--share", "38", "--ledger", "oracle-smallest.json"],
+    ));
+    assert_oracle(&smallest["result"]["circle"]["country_breakdown"]);
+
+    let sweep = successful_document(&fixture.run_ok(
+        "sweep",
+        &[
+            "--from",
+            "38",
+            "--to",
+            "38",
+            "--step",
+            "1",
+            "--ledger",
+            "oracle-sweep.json",
+        ],
+    ));
+    assert_oracle(&sweep["result"]["records"][0]["country_breakdown"]);
+}
+
+fn assert_oracle(breakdown: &serde_json::Value) {
+    let entries = breakdown["entries"].as_array().unwrap();
+    assert_eq!(entries.len(), 2, "{breakdown}");
+    assert_eq!(entries[0]["id"], "A");
+    assert_eq!(entries[0]["population_inside"], 30.0);
+    assert_eq!(entries[0]["country_total_population"], 100.0);
+    assert_eq!(entries[0]["fraction_of_country_population"], 0.3);
+    assert_eq!(entries[0]["fraction_of_circle_population"], 0.6);
+    assert_eq!(entries[1]["id"], "B");
+    assert_eq!(entries[1]["population_inside"], 10.0);
+    assert_eq!(entries[1]["country_total_population"], 20.0);
+    assert_eq!(entries[1]["fraction_of_country_population"], 0.5);
+    assert_eq!(entries[1]["fraction_of_circle_population"], 0.2);
+    assert_eq!(breakdown["reconciliation"]["unassigned_population"], 10.0);
+}
+
+#[test]
+fn country_input_errors_are_clear_and_non_circle_commands_do_not_read_them() {
+    let fixture = Fixture::build();
+    let boundary = fixture
+        .directory
+        .path()
+        .join("data/boundaries/gisco-countries-2024-1m.geojson");
+    std::fs::remove_file(&boundary).unwrap();
+    let missing = fixture.run_ok(
+        "population-at",
+        &["--lat", "45", "--lon", "15", "--radius-km", "0"],
+    );
+    assert_eq!(missing.status.code(), Some(3), "{missing:?}");
+    assert_eq!(missing.stdout, [] as [u8; 0]);
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("mise run data:get"));
+
+    std::fs::write(&boundary, "not GeoJSON").unwrap();
+    let malformed = fixture.run_ok(
+        "population-at",
+        &["--lat", "45", "--lon", "15", "--radius-km", "0"],
+    );
+    assert_eq!(malformed.status.code(), Some(2), "{malformed:?}");
+    assert_eq!(malformed.stdout, [] as [u8; 0]);
+
+    let table = fixture.run_ok("table query", &[]);
+    assert!(table.status.success(), "{table:?}");
 }
 
 #[test]
@@ -842,9 +1031,12 @@ fn narration_follows_the_level_and_stdout_does_not() {
     let narrated = fixture.run_at_level("info", "population-at", &circle);
     assert_eq!(narrated.status.code(), Some(0), "{narrated:?}");
     let narration = String::from_utf8_lossy(&narrated.stderr);
-    // Box 6's two ends and nothing between them: the table that answered, then the answer.
-    assert_eq!(narration.lines().count(), 2, "{narration}");
+    assert_eq!(narration.lines().count(), 3, "{narration}");
     assert!(narration.contains("opened from"), "{narration}");
+    assert!(
+        narration.contains("country accounting 1/1: XX"),
+        "{narration}"
+    );
     assert!(narration.contains("holds 820"), "{narration}");
 
     let silent = fixture.run_at_level("warn", "population-at", &circle);
@@ -1105,10 +1297,14 @@ fn assemble_tiff(mut tags: Vec<TiffTag>, pixels: &[u8]) -> Vec<u8> {
 }
 
 fn synthetic_tiff() -> Vec<u8> {
+    synthetic_tiff_with(dense)
+}
+
+fn synthetic_tiff_with(cell: impl Fn(u32, u32) -> f32) -> Vec<u8> {
     let mut pixels = Vec::new();
     for row in 0..HEIGHT {
         for col in 0..WIDTH {
-            pixels.extend_from_slice(&dense(row, col).to_le_bytes());
+            pixels.extend_from_slice(&cell(row, col).to_le_bytes());
         }
     }
     let mut nodata = b"-3.40282306073709653e+38".to_vec();
@@ -1141,6 +1337,11 @@ fn synthetic_tiff() -> Vec<u8> {
 
 fn register_fixture(fixture: &Fixture) {
     std::fs::create_dir_all(fixture.directory.path().join("data")).unwrap();
+    std::fs::create_dir_all(fixture.directory.path().join("data/boundaries")).unwrap();
+    std::fs::write(
+        fixture.directory.path().join("data/boundaries/gisco-countries-2024-1m.geojson"),
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"XX","NAME_ENGL":"Fixture"},"geometry":{"type":"Polygon","coordinates":[[[-50,-50],[50,-50],[50,70],[-50,70],[-50,-50]]]}}]}"#,
+    ).unwrap();
     std::fs::write(
         fixture.directory.path().join("data/registry.toml"),
         r#"
@@ -1155,10 +1356,18 @@ lon_step = 10.0
 lat_step = -10.0
 epsg = 4326
 nodata = -3.402823e38
-[datasets.vector]
+[datasets.gisco-countries-2024-1m]
 kind = "boundary-vector"
-path = "data/vector.geojson"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
 sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 1
+revision = "fixture"
+source_id_field = "CNTR_ID"
+identity_policy = "fixture"
+attribution = "Fixture boundary credit"
 
 [datasets.populated-places-1to10m]
 kind = "settlement-vector"
@@ -1180,10 +1389,21 @@ fn named_command(fixture: &Fixture, command: &str, rest: &[&str]) -> Output {
 }
 
 #[test]
-fn all_grid_commands_resolve_dataset_defaults_without_a_raster_and_apply_overrides() {
+fn circle_commands_use_registered_country_inputs_alongside_dataset_grid_defaults() {
     let fixture = Fixture::build();
     register_fixture(&fixture);
-    assert!(!fixture.directory.path().join("data/tiny.tif").exists());
+    std::fs::write(
+        fixture.directory.path().join("data/tiny.tif"),
+        synthetic_tiff(),
+    )
+    .unwrap();
+    assert!(
+        fixture
+            .directory
+            .path()
+            .join("data/population/population-count-2020-30arcsec.tif")
+            .exists()
+    );
     let cache = fixture.cache_base();
     let cache = cache.to_str().unwrap();
     let described = named_command(&fixture, "grid describe", &[]);
@@ -1453,6 +1673,7 @@ fn table_build_uses_registered_defaults_and_explicit_raster_overrides() {
         report["result"]["digest"],
         format!("{:#018x}", fixture.digest)
     );
+    std::fs::write(&registry, &matching).unwrap();
     let query = Command::new(env!("CARGO_BIN_EXE_popcircles"))
         .current_dir(fixture.directory.path())
         .args([

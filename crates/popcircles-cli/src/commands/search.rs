@@ -21,6 +21,7 @@ use popcircles::table::cache::Identity;
 
 use crate::args::{CachedTableArgs, LedgerArgs, SearchArgs, SweepArgs};
 use crate::commands::{CachedTable, make_room_for, serialised};
+use crate::country_breakdown::Prepared;
 use crate::failure::Failure;
 use crate::observe::StderrProgress;
 use crate::registry::{REGISTRY_PATH, Registry};
@@ -60,13 +61,20 @@ pub(crate) fn centre_cell(grid: &Grid, at: LatLon) -> Result<(Row, Col), Failure
 }
 
 pub(crate) fn population_at(
-    cached: &CachedTableArgs,
+    args: &CachedTableArgs,
     lat: f64,
     lon: f64,
     radius: RadiusKm,
 ) -> Result<String, Failure> {
-    let cached = CachedTable::open(cached)?;
+    let cached = CachedTable::open(args)?;
     let view = cached.table()?;
+    let source_grid = args.grid.grid()?;
+    let country = Prepared::load(
+        args.grid.dataset.as_deref(),
+        source_grid,
+        cached.grid,
+        args.table.decimate,
+    )?;
     let requested = LatLon { lat, lon };
     let cell = centre_cell(&cached.grid, requested)?;
     let places = settlement_places()?;
@@ -87,20 +95,27 @@ pub(crate) fn population_at(
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
         CircleReport::new(requested, cell, &cached.grid, radius, population, total)
-            .with_nearest_settlement(context.as_ref()),
+            .with_nearest_settlement(context.as_ref())
+            .with_country_breakdown(Some(&country.for_circle(cell, radius, population, total)?)),
         cached.provenance(),
     )))
 }
 
 pub(crate) fn most_populous(
-    cached: &CachedTableArgs,
+    args: &CachedTableArgs,
     radius: RadiusKm,
     search: SearchArgs,
 ) -> Result<String, Failure> {
-    let cached = CachedTable::open(cached)?;
+    let cached = CachedTable::open(args)?;
     let view = cached.table()?;
     let (rows, cols) = view.whole();
     let total = view.population(rows, cols);
+    let country = Prepared::load(
+        args.grid.dataset.as_deref(),
+        args.grid.grid()?,
+        cached.grid,
+        args.table.decimate,
+    )?;
     let places = settlement_places()?;
 
     let mut progress = StderrProgress::new();
@@ -120,7 +135,13 @@ pub(crate) fn most_populous(
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
         MostPopulousReport::new(&found, &cached.grid, total)
-            .with_nearest_settlement(context.as_ref()),
+            .with_nearest_settlement(context.as_ref())
+            .with_country_breakdown(Some(&country.for_circle(
+                (found.centre.row, found.centre.col),
+                radius,
+                found.centre.population,
+                total,
+            )?)),
         cached.provenance(),
     )))
 }
@@ -168,19 +189,27 @@ pub(crate) fn shares(from: u32, to: u32, step: u32) -> Result<Vec<Share>, Failur
 }
 
 pub(crate) fn sweep(
-    cached: &CachedTableArgs,
+    args: &CachedTableArgs,
     range: SweepArgs,
     search: SearchArgs,
     ledger: &LedgerArgs,
 ) -> Result<String, Failure> {
-    let cached = CachedTable::open(cached)?;
+    let cached = CachedTable::open(args)?;
     let view = cached.table()?;
+    let (rows, cols) = view.whole();
+    let total = view.population(rows, cols);
+    let country = Prepared::load(
+        args.grid.dataset.as_deref(),
+        args.grid.grid()?,
+        cached.grid,
+        args.table.decimate,
+    )?;
     let walk = shares(range.from, range.to, range.step)?;
     let places = settlement_places()?;
     let mut ledger = open_ledger(&ledger.ledger, &cached.identity)?;
 
     let mut progress = StderrProgress::new();
-    let mut records = Vec::with_capacity(walk.len());
+    let mut answers = Vec::with_capacity(walk.len());
     for share in walk {
         let found = smallest::smallest(&view, share, search.spacing, &mut ledger, &mut progress)
             .map_err(|error| Failure::smallest(&error))?;
@@ -191,13 +220,31 @@ pub(crate) fn sweep(
             share.get() * 100.0,
             found.radius_km
         );
+        answers.push(found);
+    }
+    progress.finish();
+
+    let circles: Vec<_> = answers
+        .iter()
+        .map(|found| {
+            (
+                (found.centre.row, found.centre.col),
+                found.radius,
+                found.centre.population,
+            )
+        })
+        .collect();
+    let breakdowns = country.for_circles(&circles, total)?;
+    let mut records = Vec::with_capacity(answers.len());
+    for (found, breakdown) in answers.iter().zip(&breakdowns) {
         let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
         let context = settlement_context(centre, &places)?;
         records.push(
-            SmallestReport::new(&found, &cached.grid).with_nearest_settlement(context.as_ref()),
+            SmallestReport::new(found, &cached.grid)
+                .with_nearest_settlement(context.as_ref())
+                .with_country_breakdown(Some(breakdown)),
         );
     }
-    progress.finish();
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
         SweepDocument::new(
@@ -210,13 +257,19 @@ pub(crate) fn sweep(
 }
 
 pub(crate) fn smallest_for_share(
-    cached: &CachedTableArgs,
+    args: &CachedTableArgs,
     share: Share,
     search: SearchArgs,
     ledger: &LedgerArgs,
 ) -> Result<String, Failure> {
-    let cached = CachedTable::open(cached)?;
+    let cached = CachedTable::open(args)?;
     let view = cached.table()?;
+    let country = Prepared::load(
+        args.grid.dataset.as_deref(),
+        args.grid.grid()?,
+        cached.grid,
+        args.table.decimate,
+    )?;
 
     // Against the same identity the table was opened with, so a ledger of some other table is refused
     // rather than resumed from — which is what makes an opt-out unnecessary.
@@ -240,7 +293,14 @@ pub(crate) fn smallest_for_share(
     serialised(serde_json::to_string(&Envelope::with_provenance(
         SmallestDocument::new(
             LedgerReport::new(ledger.path(), ledger.len()),
-            SmallestReport::new(&found, &cached.grid).with_nearest_settlement(context.as_ref()),
+            SmallestReport::new(&found, &cached.grid)
+                .with_nearest_settlement(context.as_ref())
+                .with_country_breakdown(Some(&country.for_circle(
+                    (found.centre.row, found.centre.col),
+                    found.radius,
+                    found.centre.population,
+                    found.target.total,
+                )?)),
         ),
         cached.provenance(),
     )))

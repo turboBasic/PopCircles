@@ -28,6 +28,7 @@ pub enum BoundaryError {
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoundaryFeature {
     pub id: FeatureId,
+    pub name: String,
     pub geometry: Geometry,
 }
 
@@ -88,6 +89,13 @@ pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>,
             if !ids.insert(id.as_str().to_owned()) {
                 return Err(feature_error(id.as_str(), "duplicate source identifier"));
             }
+            let name = properties
+                .get("NAME_ENGL")
+                .or_else(|| properties.get("CNTR_NAME"))
+                .and_then(Value::as_str)
+                .filter(|name| !name.trim().is_empty())
+                .unwrap_or(id.as_str())
+                .to_owned();
             let geometry_value = object
                 .get("geometry")
                 .and_then(Value::as_object)
@@ -118,7 +126,7 @@ pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>,
                     ));
                 }
             };
-            Ok(BoundaryFeature { id, geometry })
+            Ok(BoundaryFeature { id, name, geometry })
         })
         .collect()
 }

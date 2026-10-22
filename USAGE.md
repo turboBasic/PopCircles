@@ -124,9 +124,9 @@ search() {
 }
 ```
 
-Circle searches also read the registered settlement places. Fetch it with `mise run data:get` before
-searching; if it is missing, circle commands stop with that command in the error. Distance, grid and
-table commands do not need the places file.
+Circle searches read the registered settlement places, population raster and GISCO country boundaries.
+Fetch them with `mise run data:get` before searching; if one is missing, the command stops with fetch
+guidance. Distance, grid and table commands do not need these circle inputs.
 
 **Every figure below is a decimated table's.** The 5 arcmin grid is a tenth of the raster's resolution in
 each direction, so a radius here is good to about the width of one of its cells — which for half the world
@@ -258,6 +258,11 @@ region it misses cut out.
 [`data/boundaries/`](data/README.md), so a figure is the same on a fresh clone as on a warm one and CI
 draws complete ones on every pull request. `--no-coastlines` draws the cap over a bare graticule, which is
 a choice about the figure rather than a way to avoid a download.
+
+When the published document includes a country breakdown, the caption lists each country with its
+population inside and percentages of both country and circle populations, followed by accounting
+details and boundary credit. The figure grows to fit those lines; older documents keep their existing
+caption and need no country boundary files to render.
 
 Circle documents carry their nearest settlement, so a figure title can name it without opening the
 fetched places file. Markdown centre fragments use the same decision and link the circle's centre to

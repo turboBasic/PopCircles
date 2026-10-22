@@ -28,6 +28,10 @@ qualifies exactly one feature. No match or multiple matches remain in an explici
 feature order never breaks ties. Classify at k=1 before coarser aggregation, and use the same ownership
 for country totals and circle queries ([ADR 0017](../decisions/0017-population-cells-belong-to-a-uniquely-intersected-country.md)).
 
+World-circle commands publish country composition from the registered population raster and GISCO
+boundaries. They prepare those inputs once, build one cropped country prefix at a time, and query only
+settled circles; a sweep reuses each country prefix across its answers.
+
 "On the globe" is the whole point. A circle drawn on an equirectangular image is not a circle on the
 Earth, and the well-known viral maps of the 50% circle got this wrong.
 
@@ -133,8 +137,10 @@ names what is inside it.
    graticule; `centre_caption` formats the answer's centre for Markdown and figure titles;
    `render_map` is the figure, the only one here that writes anything, and the only one that
    resolves a dataset — by the key the answer carries, never by one of its own. It takes the answer for
-   its title and passes only its circle to the geometry it draws; `render` is handed the attribution
-   rather than reaching for it. A
+   its title and caption, including any published country lines and their accounting credit, and passes
+   only its circle to the geometry it draws; `render` is handed the population attribution rather than
+   reaching for it. Country captions are measured before the footer area is allocated, so a complete
+   list does not overlap the map. A
    circle is **an azimuthal-equidistant buffer handed to PROJ's polygon transform**, never a ring of
    latitudes and longitudes — the ring fills the complement at the antimeridian and the wrong hemisphere
    over a pole, measurably, which is why the buffer's own vertices and the polygon PROJ returns are two
@@ -235,6 +241,13 @@ The population source supplies route-specific arithmetic budgets. Candidate boun
 error; smallest-target comparisons use the separate total error and predicate slack. Those limits
 must follow the route's actual operations and magnitudes, not a measured maximum. The existing
 uncertainty reporting remains in force ([ADR 0007](../decisions/0007-a-result-states-what-it-could-not-separate.md)).
+
+A published world circle accounts for countries by querying each uniquely-owned country table at its
+settled centre and radius. The composition retains every positive contribution and every country whose
+effective-grid domain intersects the circle, orders by contribution then canonical identifier, and
+reconciles against the circle's world population. Its remainder is circle-specific; source-wide
+unassigned totals are not a substitute. Its bound uses the world table total and each country table total
+for the row queries, then covers the reduction of country results.
 
 The k=10 center-point masks in #72 were provisional, and their all-country totals did not reconcile
 with the reconstructed world total; the k=1 gap was smaller but remained material ([measurements and

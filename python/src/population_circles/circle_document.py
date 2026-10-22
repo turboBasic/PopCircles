@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # The highest `report::SCHEMA_VERSION` this reader was written against. A document above it may have
 # renamed or removed a field, which is the only thing that constant rises for, so it is refused
@@ -89,12 +89,81 @@ class Settlement(BaseModel):
     short_form: bool
 
 
+class CountryBreakdownEntry(BaseModel):
+    model_config = _CONFIG
+
+    id: Annotated[str, Field(min_length=1, pattern=r"\S")]
+    name: Annotated[str, Field(min_length=1, pattern=r"\S")]
+    population_inside: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    country_total_population: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    fraction_of_country_population: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None
+    fraction_of_circle_population: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None
+
+
+class _CountryOrigin(BaseModel):
+    model_config = _CONFIG
+
+    lat: Annotated[float, Field(allow_inf_nan=False)]
+    lon: Annotated[float, Field(allow_inf_nan=False)]
+
+
+class _CountryGrid(BaseModel):
+    model_config = _CONFIG
+
+    width: Annotated[int, Field(gt=0)]
+    height: Annotated[int, Field(gt=0)]
+    origin: _CountryOrigin
+    lon_step: Annotated[float, Field(gt=0, allow_inf_nan=False)]
+    lat_step: Annotated[float, Field(lt=0, allow_inf_nan=False)]
+    middle_row_cell_area_km2: Annotated[float, Field(gt=0, allow_inf_nan=False)]
+    spans_full_turn: bool
+
+
+class CountryBreakdownProvenance(BaseModel):
+    model_config = _CONFIG
+
+    boundary_dataset: Annotated[str, Field(min_length=1)]
+    boundary_revision: Annotated[str, Field(min_length=1)]
+    boundary_digest: Annotated[str, Field(pattern=r"^[0-9a-fA-F]{64}$")]
+    attribution: Annotated[str, Field(min_length=1)]
+    effective_grid: _CountryGrid
+    decimation: Annotated[int, Field(gt=0)]
+    accounting_route: Annotated[str, Field(min_length=1)]
+    membership_rule_version: Annotated[int, Field(gt=0)]
+    ownership_rule_version: Annotated[int, Field(gt=0)]
+    aggregation_order_version: Annotated[int, Field(gt=0)]
+
+
+class CountryReconciliation(BaseModel):
+    model_config = _CONFIG
+
+    unassigned_population: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    bound_persons: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+
+
+class CountryBreakdown(BaseModel):
+    model_config = _CONFIG
+
+    entries: list[CountryBreakdownEntry]
+    reconciliation: CountryReconciliation
+    provenance: CountryBreakdownProvenance
+
+    @model_validator(mode="after")
+    def _entry_ids_are_unique(self) -> Self:
+        ids = [entry.id for entry in self.entries]
+        if len(ids) != len(set(ids)):
+            message = "country breakdown identifiers must be unique"
+            raise ValueError(message)
+        return self
+
+
 class Caption(BaseModel):
     model_config = _CONFIG
 
     population: float
     share: float
     settlement: Settlement | None = None
+    country_breakdown: CountryBreakdown | None = None
 
 
 class Answer(BaseModel):
@@ -142,6 +211,7 @@ class _Measured(_Payload):
     population: float
     share_of_total: float
     nearest_settlement: Settlement | None = None
+    country_breakdown: CountryBreakdown | None = None
 
     def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
         return Answer(
@@ -154,6 +224,7 @@ class _Measured(_Payload):
                 population=self.population,
                 share=self.share_of_total,
                 settlement=self.nearest_settlement,
+                country_breakdown=self.country_breakdown,
             ),
             provenance=provenance,
         )
@@ -167,6 +238,7 @@ class _Smallest(BaseModel):
     population: float
     share_achieved: float
     nearest_settlement: Settlement | None = None
+    country_breakdown: CountryBreakdown | None = None
 
 
 class _Searched(_Payload):
@@ -183,6 +255,7 @@ class _Searched(_Payload):
                 population=self.circle.population,
                 share=self.circle.share_achieved,
                 settlement=self.circle.nearest_settlement,
+                country_breakdown=self.circle.country_breakdown,
             ),
             provenance=provenance,
         )
@@ -196,6 +269,17 @@ _PAYLOADS: Mapping[str, type[_Payload]] = {
     "most-populous": _Measured,
     "smallest": _Searched,
 }
+
+
+class _SweepRecord(_Smallest):
+    model_config = _CONFIG
+
+
+class SweepRecords(BaseModel):
+    model_config = _CONFIG
+
+    records: list[_SweepRecord]
+
 
 CIRCLE_KINDS = frozenset(_PAYLOADS)
 

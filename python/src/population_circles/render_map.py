@@ -3,10 +3,12 @@ import json
 import textwrap
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import cast
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
 from matplotlib.patches import PathPatch
@@ -19,6 +21,7 @@ from shapely.ops import unary_union
 from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
+from population_circles.country_caption import lines_for
 from population_circles.dataset_registry import Registry, load
 from population_circles.map_frame import PLATE_CARREE, PROJECTIONS, Frame, frame, graticule, project
 
@@ -125,7 +128,13 @@ def title_of(answer: Answer) -> str:
     )
 
 
-def annotate(figure: Figure, y: float, text: str, size: float, alignment: str = "baseline") -> None:
+def annotate(
+    figure: Figure,
+    y: float,
+    text: str,
+    size: float,
+    alignment: str = "baseline",
+) -> None:
     # matplotlib types Figure.text's keyword arguments as Unknown, so the ignore lives here once
     # rather than at each of the two callers.
     figure.text(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
@@ -135,6 +144,7 @@ def annotate(figure: Figure, y: float, text: str, size: float, alignment: str = 
         horizontalalignment="center",
         verticalalignment=alignment,
         fontsize=size,
+        parse_math=False,
     )
 
 
@@ -165,6 +175,13 @@ def render(
     )
     try:
         title = title_of(answer)
+        country_lines = lines_for(answer)
+        footer_parts = (
+            [*country_lines, f"Population credit: {attribution}"]
+            if country_lines
+            else [attribution]
+        )
+        footer = "\n".join(textwrap.fill(part, width=118) for part in footer_parts)
         # Room for the title above and the wrapped citation below, since both are placed at figure
         # coordinates rather than left to a layout engine.
         title_lines = title.count("\n") + 1
@@ -196,7 +213,21 @@ def render(
         annotate(figure, 0.985, title, 12.0, "top")
         # Wrapped: at this width a one-line citation runs off both edges of the figure,
         # which is an attribution nobody can read and so not an attribution.
-        annotate(figure, 0.055, textwrap.fill(attribution, width=118), 6.5)
+        annotate(figure, 0.04 / 6.0 if country_lines else 0.055, footer, 6.5, "bottom")
+        if country_lines:
+            canvas = cast(FigureCanvasAgg, figure.canvas)
+            canvas.draw()
+            footer_height = figure.texts[-1].get_window_extent(canvas.get_renderer()).height
+            footer_height /= figure.dpi
+            height = 6.0 + max(0.0, footer_height + 0.12 - 0.96)
+            figure.set_size_inches(11.0, height)
+            figure.texts[-1].set_position((0.5, 0.04 / height))
+            figure.subplots_adjust(
+                left=0.03,
+                right=0.97,
+                top=top,
+                bottom=(footer_height + 0.12) / height,
+            )
     except BaseException:
         plt.close(figure)
         raise
