@@ -618,7 +618,7 @@ mod tests {
     use crate::grid::{Col, Grid, Row};
     use crate::kernel::{Kernel, Span};
     use crate::raster::Synthetic;
-    use crate::table::{Decimation, Table, build};
+    use crate::table::{Decimation, RowBand, Table, build};
 
     /// The boundary of [`within_slack`], as two literals at a time.
     ///
@@ -821,6 +821,49 @@ mod tests {
     fn found(table: &Table<'_>, value: f64, cells: u32) -> Smallest {
         smallest(table, share(value), Some(spacing(cells)), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail")
+    }
+
+    struct SeparateBudgets<'a> {
+        table: &'a Table<'a>,
+    }
+
+    impl PopulationSource for SeparateBudgets<'_> {
+        fn grid(&self) -> &Grid {
+            self.table.grid()
+        }
+
+        fn total(&self) -> f64 {
+            let (rows, cols) = self.table.whole();
+            self.table.population(rows, cols)
+        }
+
+        fn rectangle_population(&self, row: Row, cols: crate::table::ColSpan) -> f64 {
+            self.table.population(RowBand::new(row, row), cols)
+        }
+
+        fn error_budget(&self) -> f64 {
+            0.25
+        }
+
+        fn predicate_slack(&self) -> f64 {
+            2.5
+        }
+    }
+
+    #[test]
+    fn source_bound_inflation_and_target_slack_are_independent() {
+        let grid = grid();
+        let payload = payload_over(&grid, |_, _| 1.0);
+        let table = Table::new(grid, &payload).expect("the fixture payload matches its grid");
+        let source = SeparateBudgets { table: &table };
+        let fixed =
+            search::most_populous_from(&source, RadiusKm::from(0), Some(spacing(4)), &mut ())
+                .expect("the fixture grid closes");
+        let smallest = smallest_from(&source, share(0.5), Some(spacing(4)), &mut (), &mut ())
+            .expect("the fixture grid closes");
+
+        assert_eq!(fixed.tolerance_persons, 0.25);
+        assert_eq!(smallest.predicate_slack_persons, 2.5);
     }
 
     #[test]
