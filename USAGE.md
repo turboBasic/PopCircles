@@ -240,6 +240,9 @@ directory. Repeating a run resumes that country's saved radii. Progress and diag
 stdout contains one JSON document. Sweep at an affordable decimation such as `--decimate 10`; use
 `country smallest` at full resolution for a selected answer when needed.
 
+A sweep skips features with no uniquely owned population cells at that resolution, reports each ID and
+reason on stderr, and measures the elapsed time and cropped grid for every completed feature.
+
 ## Maps
 
 From the checkout root, one command searches a named dataset and saves its map:

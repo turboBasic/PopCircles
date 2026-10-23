@@ -241,6 +241,28 @@ path = "data/settlements/populated-places-1to10m.geojson"
         .unwrap();
     }
 
+    fn register_empty_country(&self) {
+        let path = self
+            .directory
+            .path()
+            .join("data/boundaries/gisco-countries-2024-1m.geojson");
+        let mut boundary: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        boundary["features"].as_array_mut().unwrap().push(serde_json::json!({
+            "type": "Feature",
+            "properties": {"CNTR_ID": "EMPTY", "NAME_ENGL": "No unique cells"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-180,-90],[-170,-90],[-170,90],[-180,90],[-180,-90]]]}
+        }));
+        std::fs::write(&path, serde_json::to_vec(&boundary).unwrap()).unwrap();
+        let registry = self.directory.path().join("data/registry.toml");
+        let contents = std::fs::read_to_string(&registry).unwrap();
+        std::fs::write(
+            registry,
+            contents.replace("feature_count = 2", "feature_count = 3"),
+        )
+        .unwrap();
+    }
+
     fn register_path_like_country(&self) {
         let feature = serde_json::json!({
             "type": "Feature",
@@ -695,6 +717,7 @@ fn country_smallest_leaves_world_command_bytes_unchanged() {
 fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
     let fixture = Fixture::build();
     fixture.register_two_countries();
+    fixture.register_empty_country();
     let invoke = |countries: &[&str], ledger_dir: &str| {
         let flags = vec!["--log-level".to_owned(), "info".to_owned()];
         let mut rest: Vec<&str> = countries
@@ -720,9 +743,22 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
         run_with(fixture.directory.path(), &flags, "country sweep", &rest)
     };
 
-    let cold = invoke(&["AA", "BB"], "out/cold-ledgers");
+    let cold = invoke(&["AA", "EMPTY", "BB"], "out/cold-ledgers");
     assert_eq!(cold.status.code(), Some(0), "{cold:?}");
     let mut cold_doc: serde_json::Value = serde_json::from_slice(&cold.stdout).unwrap();
+    let cold_countries = cold_doc["result"]["countries"].as_array().unwrap();
+    assert_eq!(cold_countries.len(), 2);
+    assert_eq!(cold_countries[0]["country"]["id"], "AA");
+    assert_eq!(cold_countries[1]["country"]["id"], "BB");
+    let stderr = String::from_utf8_lossy(&cold.stderr);
+    assert!(
+        stderr.contains("EMPTY: no owned population cells"),
+        "{stderr}"
+    );
+    for id in ["AA", "BB"] {
+        assert!(stderr.contains(&format!("{id}: completed in ")), "{stderr}");
+        assert!(stderr.contains("(crop "), "{stderr}");
+    }
 
     let partial = invoke(&["AA"], "out/country-ledgers");
     assert_eq!(partial.status.code(), Some(0), "{partial:?}");
