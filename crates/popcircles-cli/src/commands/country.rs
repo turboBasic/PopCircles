@@ -2,14 +2,16 @@ use std::fmt::Write as _;
 use std::path::Path;
 
 use popcircles::report::{
-    CountryListDocument, CountrySmallestDocument, Envelope, LedgerReport, SmallestReport,
+    CountryListDocument, CountrySmallestDocument, CountrySweepCountry, CountrySweepDocument,
+    CountrySweepRecord, Envelope, LedgerReport, SmallestReport, SweepShares,
 };
 use popcircles::smallest::cache::CountryLedger;
 use popcircles::smallest::{self, Share};
 use popcircles::table::Decimation;
 
-use crate::args::{CountryTableArgs, SearchArgs};
+use crate::args::{CountryTableArgs, SearchArgs, SweepArgs};
 use crate::boundaries;
+use crate::commands::search::shares;
 use crate::commands::{make_room_for, serialised};
 use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
@@ -106,6 +108,92 @@ pub(crate) fn smallest(
             boundary_digest,
             LedgerReport::new(&path, ledger.len()),
             circle,
+        ),
+    )))
+}
+
+pub(crate) fn sweep(
+    selectors: &[String],
+    range: SweepArgs,
+    args: &CountryTableArgs,
+    search: SearchArgs,
+    ledger_dir: &Path,
+) -> Result<String, Failure> {
+    let source = args.grid.grid()?;
+    let decimation =
+        Decimation::new(source, args.decimate).map_err(|error| Failure::table(&error))?;
+    let prepared = Prepared::load(
+        args.grid.dataset.as_deref(),
+        source,
+        *decimation.grid(),
+        args.decimate,
+    )?;
+    let walk = shares(range.from, range.to, range.step)?;
+    let mut features = selectors
+        .iter()
+        .map(|selector| prepared.feature(selector))
+        .collect::<Result<Vec<_>, _>>()?;
+    features.sort_by(|left, right| left.id.as_str().cmp(right.id.as_str()));
+    features.dedup_by(|left, right| left.id == right.id);
+
+    let (boundary_dataset, boundary_revision, boundary_digest) = prepared.boundary_identity();
+    let mut countries = Vec::with_capacity(features.len());
+    for feature in features {
+        let table = prepared.country_table(feature)?.ok_or_else(|| {
+            Failure::bad_input(format!(
+                "country {} owns no population cells at this resolution",
+                feature.id.as_str()
+            ))
+        })?;
+        let mut file = String::new();
+        for byte in feature.id.as_str().bytes() {
+            let _ = write!(file, "{byte:02x}");
+        }
+        let path = ledger_dir.join(format!("{file}.json"));
+        make_room_for(&path)?;
+        let mut ledger = CountryLedger::open_or_empty(&path, table.identity())
+            .map_err(|error| crate::failure::Failure::ledger(&error))?;
+        let mut progress = StderrProgress::new();
+        let mut records = Vec::with_capacity(walk.len());
+        for (index, share) in walk.iter().copied().enumerate() {
+            let found = smallest::smallest_country(
+                &table,
+                share,
+                search.spacing,
+                &mut ledger,
+                &mut progress,
+            )
+            .map_err(|error| Failure::smallest(&error))?;
+            log::info!(
+                "{}: {:.0}% reached at {} km ({}/{})",
+                feature.id.as_str(),
+                share.get() * 100.0,
+                found.radius_km,
+                index + 1,
+                walk.len()
+            );
+            records.push(CountrySweepRecord::new(
+                share.get(),
+                SmallestReport::new(&found, table.effective_grid())
+                    .map_err(|error| Failure::grid_index(&error))?,
+            ));
+        }
+        progress.finish();
+        countries.push(CountrySweepCountry::new(
+            &feature.id,
+            &feature.name,
+            boundary_dataset,
+            boundary_revision,
+            boundary_digest,
+            LedgerReport::new(&path, ledger.len()),
+            records,
+        ));
+    }
+
+    serialised(serde_json::to_string(&Envelope::new(
+        CountrySweepDocument::new(
+            SweepShares::new(range.from, range.to, range.step),
+            countries,
         ),
     )))
 }

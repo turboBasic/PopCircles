@@ -1000,6 +1000,73 @@ impl CountrySmallestDocument {
     }
 }
 
+/// One requested share and the country-restricted circle that reached it.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySweepRecord {
+    share: f64,
+    circle: SmallestReport,
+}
+
+impl CountrySweepRecord {
+    #[must_use]
+    pub const fn new(share: f64, circle: SmallestReport) -> Self {
+        Self { share, circle }
+    }
+}
+
+/// One country's identity, resumable ledger and answers in a country sweep.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySweepCountry {
+    country: CountryIdentityReport,
+    ledger: LedgerReport,
+    records: Vec<CountrySweepRecord>,
+}
+
+impl CountrySweepCountry {
+    #[must_use]
+    pub fn new(
+        id: &FeatureId,
+        name: &str,
+        boundary_dataset: &str,
+        boundary_revision: &str,
+        boundary_digest: &str,
+        ledger: LedgerReport,
+        mut records: Vec<CountrySweepRecord>,
+    ) -> Self {
+        records.sort_by(|left, right| left.share.total_cmp(&right.share));
+        Self {
+            country: CountryIdentityReport {
+                id: id.as_str().to_owned(),
+                name: name.to_owned(),
+                boundary_dataset: boundary_dataset.to_owned(),
+                boundary_revision: boundary_revision.to_owned(),
+                boundary_digest: boundary_digest.to_owned(),
+            },
+            ledger,
+            records,
+        }
+    }
+}
+
+/// Results for requested countries and shares, with one ledger per country.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySweepDocument {
+    shares: SweepShares,
+    countries: Vec<CountrySweepCountry>,
+}
+
+impl Document for CountrySweepDocument {
+    const KIND: &'static str = "country-sweep";
+}
+
+impl CountrySweepDocument {
+    #[must_use]
+    pub fn new(shares: SweepShares, mut countries: Vec<CountrySweepCountry>) -> Self {
+        countries.sort_by(|left, right| left.country.id.cmp(&right.country.id));
+        Self { shares, countries }
+    }
+}
+
 /// The shares a sweep walked, in whole percent, which is the unit the flags take.
 ///
 /// Whole percent rather than the fractions the records carry: a step of a tenth accumulated in f64 makes
@@ -1123,8 +1190,9 @@ mod tests {
             SweepDocument::KIND,
             CountryListDocument::KIND,
             CountrySmallestDocument::KIND,
+            CountrySweepDocument::KIND,
         ]);
-        assert_eq!(kinds.len(), 11, "{kinds:?}");
+        assert_eq!(kinds.len(), 12, "{kinds:?}");
     }
 
     #[test]
@@ -1825,5 +1893,47 @@ mod tests {
         ]);
 
         insta::assert_json_snapshot!(Envelope::new(countries));
+    }
+
+    #[test]
+    fn the_country_sweep_document_sorts_countries_and_shares() {
+        let grid = fixture_grid();
+        let payload = fixture_payload();
+        let table = Table::new(grid, &payload).expect("the fixture table is valid");
+        let mut ledger = Recorded::default();
+        let records: Vec<CountrySweepRecord> = [0.3, 0.1, 0.2]
+            .into_iter()
+            .map(|share| {
+                let found = smallest::smallest(
+                    &table,
+                    Share::new(share).expect("fixture share is valid"),
+                    Some(spacing(4)),
+                    &mut ledger,
+                    &mut (),
+                )
+                .expect("the fixture table can be searched");
+                CountrySweepRecord::new(
+                    share,
+                    SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
+                )
+            })
+            .collect();
+        let country = |id: &str, name: &str| {
+            CountrySweepCountry::new(
+                &FeatureId::new(id).expect("fixture country ID"),
+                name,
+                "gisco-countries-2024-1m",
+                "2024",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                LedgerReport::new(ledger_path(), ledger.entries.len()),
+                records.clone(),
+            )
+        };
+
+        let document = Envelope::new(CountrySweepDocument::new(
+            SweepShares::new(10, 30, 10),
+            vec![country("BB", "Beta"), country("AA", "Alpha")],
+        ));
+        insta::assert_json_snapshot!(document);
     }
 }

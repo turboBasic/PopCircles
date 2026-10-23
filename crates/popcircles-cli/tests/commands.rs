@@ -687,6 +687,87 @@ fn country_smallest_leaves_world_command_bytes_unchanged() {
 }
 
 #[test]
+fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    let invoke = |countries: &[&str], ledger_dir: &str| {
+        let flags = vec!["--log-level".to_owned(), "info".to_owned()];
+        let mut rest: Vec<&str> = countries
+            .iter()
+            .flat_map(|country| ["--country", *country])
+            .collect();
+        rest.extend([
+            "--from",
+            "10",
+            "--to",
+            "20",
+            "--step",
+            "10",
+            "--dataset",
+            "population-count-2020-30arcsec",
+            "--spacing",
+            "4",
+            "--ledger-dir",
+            ledger_dir,
+        ]);
+        run_with(fixture.directory.path(), &flags, "country sweep", &rest)
+    };
+
+    let cold = invoke(&["AA", "BB"], "out/cold-ledgers");
+    assert_eq!(cold.status.code(), Some(0), "{cold:?}");
+    let mut cold_doc: serde_json::Value = serde_json::from_slice(&cold.stdout).unwrap();
+
+    let partial = invoke(&["AA"], "out/country-ledgers");
+    assert_eq!(partial.status.code(), Some(0), "{partial:?}");
+    let partial_doc: serde_json::Value = serde_json::from_slice(&partial.stdout).unwrap();
+    assert_eq!(partial_doc["document"], "country-sweep");
+    assert!(String::from_utf8_lossy(&partial.stderr).contains("AA"));
+
+    let resumed = invoke(&["BB", "AA"], "out/country-ledgers");
+    assert_eq!(resumed.status.code(), Some(0), "{resumed:?}");
+    let mut resumed_doc: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
+    let countries = resumed_doc["result"]["countries"].as_array().unwrap();
+    assert_eq!(countries.len(), 2);
+    assert_eq!(countries[0]["country"]["id"], "AA");
+    assert_eq!(countries[1]["country"]["id"], "BB");
+    for country in countries {
+        let records = country["records"].as_array().unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0]["share"], 0.1);
+        assert_eq!(records[1]["share"], 0.2);
+    }
+    let aa_ledger = countries[0]["ledger"]["path"].as_str().unwrap();
+    let bb_ledger = countries[1]["ledger"]["path"].as_str().unwrap();
+    assert_ne!(aa_ledger, bb_ledger);
+    assert!(fixture.directory.path().join(aa_ledger).is_file());
+    assert!(fixture.directory.path().join(bb_ledger).is_file());
+    let aa_state: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(fixture.directory.path().join(aa_ledger)).unwrap())
+            .unwrap();
+    let bb_state: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(fixture.directory.path().join(bb_ledger)).unwrap())
+            .unwrap();
+    assert_eq!(aa_state["identity"]["value"]["feature_id"], "AA");
+    assert_eq!(bb_state["identity"]["value"]["feature_id"], "BB");
+    let stderr = String::from_utf8_lossy(&resumed.stderr);
+    assert!(stderr.contains("AA") && stderr.contains("BB"), "{stderr}");
+
+    let warm = invoke(&["AA", "BB"], "out/country-ledgers");
+    assert_eq!(warm.status.code(), Some(0), "{warm:?}");
+    let mut warm_doc: serde_json::Value = serde_json::from_slice(&warm.stdout).unwrap();
+    for document in [&mut cold_doc, &mut resumed_doc, &mut warm_doc] {
+        for country in document["result"]["countries"].as_array_mut().unwrap() {
+            country["ledger"].as_object_mut().unwrap().remove("path");
+            for record in country["records"].as_array_mut().unwrap() {
+                record["circle"].as_object_mut().unwrap().remove("stats");
+            }
+        }
+    }
+    assert_eq!(cold_doc, resumed_doc);
+    assert_eq!(warm_doc, resumed_doc);
+}
+
+#[test]
 fn country_input_errors_are_clear_and_non_circle_commands_do_not_read_them() {
     let fixture = Fixture::build();
     let boundary = fixture

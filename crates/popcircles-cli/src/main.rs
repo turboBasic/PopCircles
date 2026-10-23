@@ -148,6 +148,21 @@ enum CountryCommand {
         #[arg(long)]
         ledger: Option<PathBuf>,
     },
+    /// Sweep requested shares over selected countries, resuming one ledger per country.
+    Sweep {
+        /// Exact country feature identifier or unique English name; may be repeated.
+        #[arg(long = "country", required = true)]
+        countries: Vec<String>,
+        #[command(flatten)]
+        shares: SweepArgs,
+        #[command(flatten)]
+        table: CountryTableArgs,
+        #[command(flatten)]
+        search: SearchArgs,
+        /// Directory for country-specific resume ledgers.
+        #[arg(long, default_value = "out/countries")]
+        ledger_dir: PathBuf,
+    },
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -223,6 +238,16 @@ fn run(command: Command) -> Result<String, Failure> {
                     ledger,
                 },
         } => commands::country::smallest(&country, share, &table, search, ledger.as_deref()),
+        Command::Country {
+            command:
+                CountryCommand::Sweep {
+                    countries,
+                    shares,
+                    table,
+                    search,
+                    ledger_dir,
+                },
+        } => commands::country::sweep(&countries, shares, &table, search, &ledger_dir),
         Command::Table {
             command:
                 TableCommand::Build {

@@ -23,6 +23,7 @@ DocumentKind = Literal[
     "sweep",
     "country-list",
     "country-smallest",
+    "country-sweep",
 ]
 
 # frozen because nothing downstream of the boundary may edit what the document said, and
