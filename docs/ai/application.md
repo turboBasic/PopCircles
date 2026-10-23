@@ -63,7 +63,8 @@ section sets out, not a quiet workaround.
 
 Steps 1 to 4 and the ground they stand on are one
 library crate, `crates/popcircles/`, with `geodesy` holding the earth model, longitude wrapping,
-great-circle distance, the angle an arc subtends and the checked radius a circle is asked for,
+great-circle distance, the angle an arc subtends, the checked radius a circle is asked for, `LatBand`,
+and the spherical zone formula,
 `grid` holding the raster's geometry — the checked
 `Grid`, pixel centres and their inverse, a row's own latitude, cell edges, cell area, and a column
 stepped along the seam — `raster` holding the boundary a raster crosses: the
@@ -170,9 +171,9 @@ Combined execution is coordinated above this boundary
 
 - **Model the domain in types, not primitives.** A latitude, a longitude, a pixel index, a radius in
   km and a population count are five different things, and a bare `f64` or `usize` standing in for
-  one is where a wrong-units bug lives undetected. `Grid` is the existing example: the constructor
-  rejects the invalid shape, so no later stage revalidates and no caller can build the impossible
-  value. Prefer a type whose invalid states do not construct over a check repeated at every use.
+  one is where a wrong-units bug lives undetected. `Row` and `Col` make the index axes distinct, and
+  grid operations check them against the receiving grid; an in-range index carries no grid identity.
+  Prefer a type whose invalid states do not construct over a check repeated at every use.
 - **The domain computes and returns; it does not read, write, print, or format.** A diagnostic emitted
   through the `log` facade is not an exception to that — the record is a value handed to whatever the
   binary installed, and choosing a stream, a level and a format stays the CLI's. geodesy, grid,
