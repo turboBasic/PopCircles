@@ -16,6 +16,7 @@ from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
 from population_circles.render_map import (
     COASTLINE,
+    MissingCountryOutlineError,
     UnregisteredDatasetError,
     basemap,
     citation,
@@ -189,6 +190,15 @@ def test_country_outline_uses_the_registered_id_when_names_are_duplicated(
         path.write_text(json.dumps({"type": "FeatureCollection", "features": bad_features}))
         with pytest.raises(ValueError, match=message):
             load_outline(answer, country_boundary_registry(), tmp_path)
+
+
+def test_a_country_result_is_not_rendered_without_its_outline() -> None:
+    before = plt.get_fignums()
+    with pytest.raises(
+        MissingCountryOutlineError, match="requires its registered boundary outline"
+    ):
+        render(circle_of(country_circle_document()), PLATE_CARREE, MARKER, coastline=None)
+    assert plt.get_fignums() == before
 
 
 def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> None:

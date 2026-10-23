@@ -42,6 +42,11 @@ class UnregisteredDatasetError(ValueError):
         self.key = key
 
 
+class MissingCountryOutlineError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("country result rendering requires its registered boundary outline")
+
+
 def citation(registry: Registry, key: str) -> str:
     # Keyed by the document rather than by this file: `data/registry.toml` owns the wording a
     # licence requires, and which row is owed it is the answer's own property. The registry arrives
@@ -165,6 +170,8 @@ def render(
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
 ) -> Figure:
+    if answer.country is not None:
+        raise MissingCountryOutlineError
     circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
     view = frame(projection, built)
