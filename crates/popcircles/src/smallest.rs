@@ -1068,6 +1068,9 @@ mod tests {
                 "share {requested}"
             );
             assert_eq!(actual.target.total, table.total());
+            if requested == 1.0 {
+                assert_eq!(actual.centre.population, table.total());
+            }
             if actual.radius_km > 0 {
                 assert!(
                     actual
