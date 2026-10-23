@@ -1,0 +1,26 @@
+---
+source: crates/popcircles/src/report.rs
+expression: "Envelope::new(countries)"
+---
+{
+  "schema_version": 1,
+  "document": "country-list",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "countries": [
+      {
+        "id": "AA",
+        "name": "Alpha"
+      },
+      {
+        "id": "BB",
+        "name": "Beta"
+      }
+    ]
+  }
+}

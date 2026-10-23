@@ -9,6 +9,7 @@ Usage: popcircles [OPTIONS] <COMMAND>
 Commands:
   distance            Great-circle distance between two coordinates, in kilometres
   grid                Raster grid geometry
+  country             List the registered country identifiers and names
   table               The summation table and its on-disk cache
   population-at       The population inside a circle of a given ground radius about a coordinate
   most-populous       The most populous circle of a fixed ground radius, over every cell centre of the grid

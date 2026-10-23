@@ -50,6 +50,7 @@
 //! | [`SmallestReport`] | `smallest-circle` | one smallest circle, with no ledger around it |
 //! | [`SmallestDocument`] | `smallest` | the smallest circle reaching one share |
 //! | [`SweepDocument`] | `sweep` | the smallest circle for each of a range of shares |
+//! | [`CountryListDocument`] | `country-list` | the available country identifiers and names |
 //!
 //! The last two are documents rather than bare payloads because a ledger belongs to the run and not to any
 //! one circle, and because a payload meaning either "a circle" or "some circles" would leave a consumer
@@ -118,6 +119,7 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::country_breakdown::{CountryBreakdown, CountryBreakdownEntry};
+use crate::domain::FeatureId;
 use crate::geodesy::{EARTH_RADIUS_KM, LatLon, RadiusKm, wrap_lon};
 use crate::grid::{Col, Grid, GridIndexError, Row};
 use crate::raster::CellTallies;
@@ -136,11 +138,42 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// An associated constant rather than an argument to [`Envelope::new`], so a kind is a property of the
 /// payload type and no call site can wrap one payload under another's name. What the trait cannot do is
 /// make the kinds distinct — nothing checks two implementations for a constant they share — which is why
-/// `nine_payload_types_carry_nine_distinct_kinds` collects them into a set and counts it, and why a tenth
+/// `ten_payload_types_carry_ten_distinct_kinds` collects them into a set and counts it, and why another
 /// payload type owes that test a line as well as the table above.
 pub trait Document {
     /// What a consumer branches on before it reads anything under `result`.
     const KIND: &'static str;
+}
+
+/// The registered country features available to country commands.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountryListDocument {
+    countries: Vec<CountryListEntry>,
+}
+
+impl Document for CountryListDocument {
+    const KIND: &'static str = "country-list";
+}
+
+impl CountryListDocument {
+    #[must_use]
+    pub fn new(countries: Vec<(FeatureId, String)>) -> Self {
+        Self {
+            countries: countries
+                .into_iter()
+                .map(|(id, name)| CountryListEntry {
+                    id: id.as_str().to_owned(),
+                    name,
+                })
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CountryListEntry {
+    id: String,
+    name: String,
 }
 
 /// The earth model every distance in a document was measured on.
@@ -1025,7 +1058,7 @@ mod tests {
     }
 
     #[test]
-    fn nine_payload_types_carry_nine_distinct_kinds() {
+    fn ten_payload_types_carry_ten_distinct_kinds() {
         // The trait cannot check this: two implementations sharing a constant compile. So the set is
         // built and counted, which turns a copied `impl` block into a failure here rather than into two
         // documents a consumer cannot tell apart. `()`'s kind is deliberately absent — it is a fixture,
@@ -1040,8 +1073,9 @@ mod tests {
             SmallestReport::KIND,
             SmallestDocument::KIND,
             SweepDocument::KIND,
+            CountryListDocument::KIND,
         ]);
-        assert_eq!(kinds.len(), 9, "{kinds:?}");
+        assert_eq!(kinds.len(), 10, "{kinds:?}");
     }
 
     #[test]
@@ -1716,5 +1750,21 @@ mod tests {
         )
         .expect("a 1 degree whole-globe grid is valid");
         insta::assert_json_snapshot!(Envelope::new(GridSummary::from(&grid)));
+    }
+
+    #[test]
+    fn the_country_list_document_holds_its_shape() {
+        let countries = CountryListDocument::new(vec![
+            (
+                FeatureId::new("AA").expect("valid country ID"),
+                "Alpha".to_owned(),
+            ),
+            (
+                FeatureId::new("BB").expect("valid country ID"),
+                "Beta".to_owned(),
+            ),
+        ]);
+
+        insta::assert_json_snapshot!(Envelope::new(countries));
     }
 }

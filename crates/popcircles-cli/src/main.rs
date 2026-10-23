@@ -15,6 +15,7 @@ use args::{
     WindowArgs, parse_radius, parse_share,
 };
 use clap::{Parser, Subcommand};
+use commands::country::list as list_countries;
 use commands::distance::distance_json;
 use commands::grid::describe_grid;
 use commands::search::{most_populous, population_at, smallest_for_share, sweep};
@@ -57,6 +58,11 @@ enum Command {
     Grid {
         #[command(subcommand)]
         command: GridCommand,
+    },
+    /// List the registered country identifiers and names.
+    Country {
+        #[command(subcommand)]
+        command: CountryCommand,
     },
     /// The summation table and its on-disk cache.
     Table {
@@ -122,6 +128,12 @@ enum GridCommand {
 }
 
 #[derive(Subcommand, Debug, Clone)]
+enum CountryCommand {
+    /// List available countries from the registered boundary dataset.
+    List,
+}
+
+#[derive(Subcommand, Debug, Clone)]
 enum TableCommand {
     /// Build a summation table from a registered dataset and publish it to the cache.
     Build {
@@ -181,6 +193,9 @@ fn run(command: Command) -> Result<String, Failure> {
         Command::Grid {
             command: GridCommand::Describe { grid },
         } => describe_grid(&grid),
+        Command::Country {
+            command: CountryCommand::List,
+        } => list_countries(),
         Command::Table {
             command:
                 TableCommand::Build {

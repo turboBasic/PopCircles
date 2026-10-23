@@ -15,9 +15,7 @@ use popcircles::table::{ColSpan, CountryTableBuildError, Decimation, build_count
 
 use crate::boundaries::{self, BoundaryFeature};
 use crate::failure::{EXIT_MISSING_DATA, Failure};
-use crate::registry::{REGISTRY_PATH, Registry};
-
-const BOUNDARY_DATASET: &str = "gisco-countries-2024-1m";
+use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
 
 pub(crate) struct Prepared {
     source: Grid,
@@ -47,15 +45,15 @@ impl Prepared {
             None => registry.default_raster(),
         }
         .map_err(|error| Failure::registry(&error))?;
-        let boundary = registry.boundary(BOUNDARY_DATASET).ok_or_else(|| {
+        let boundary = registry.boundary(COUNTRY_BOUNDARY_DATASET).ok_or_else(|| {
             Failure::bad_input(format!(
-                "country boundary `{BOUNDARY_DATASET}` is not registered"
+                "country boundary `{COUNTRY_BOUNDARY_DATASET}` is not registered"
             ))
         })?;
         let path = &boundary.path;
         let source_id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
             Failure::bad_input(format!(
-                "country boundary `{BOUNDARY_DATASET}` has no source identifier field"
+                "country boundary `{COUNTRY_BOUNDARY_DATASET}` has no source identifier field"
             ))
         })?;
         let features = boundaries::load(path, source_id_field).map_err(|error| {
@@ -108,7 +106,7 @@ impl Prepared {
         let tallies = raster.finish();
         let boundary_digest = boundary.sha256.clone().ok_or_else(|| {
             Failure::bad_input(format!(
-                "country boundary `{BOUNDARY_DATASET}` has no registered digest"
+                "country boundary `{COUNTRY_BOUNDARY_DATASET}` has no registered digest"
             ))
         })?;
         Ok(Self {
@@ -212,7 +210,7 @@ impl Prepared {
             }
         }
         let provenance = CountryBreakdownProvenance {
-            boundary_dataset: BOUNDARY_DATASET.to_owned(),
+            boundary_dataset: COUNTRY_BOUNDARY_DATASET.to_owned(),
             boundary_revision: self.boundary_revision.clone(),
             boundary_digest: self.boundary_digest.clone(),
             attribution: self.attribution.clone(),

@@ -488,6 +488,54 @@ fn assert_oracle(breakdown: &serde_json::Value) {
 }
 
 #[test]
+fn country_list_reads_only_registered_boundaries_and_sorts_the_json_result() {
+    let directory = TempDir::new().unwrap();
+    let boundaries = directory.path().join("data/boundaries");
+    std::fs::create_dir_all(&boundaries).unwrap();
+    std::fs::write(
+        boundaries.join("gisco-countries-2024-1m.geojson"),
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"BB","NAME_ENGL":"Beta"},"geometry":{"type":"Polygon","coordinates":[]}},{"type":"Feature","properties":{"CNTR_ID":"AA","NAME_ENGL":"Alpha"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        directory.path().join("data/registry.toml"),
+        r#"
+[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 2
+revision = "fixture"
+source_id_field = "CNTR_ID"
+identity_policy = "fixture"
+attribution = "Fixture boundary credit"
+"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(directory.path())
+        .args(["country", "list"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert!(
+        output.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["document"], "country-list");
+    assert_eq!(document["result"]["countries"][0]["id"], "AA");
+    assert_eq!(document["result"]["countries"][1]["id"], "BB");
+    insta::assert_json_snapshot!("country-list-command", document);
+}
+
+#[test]
 fn country_input_errors_are_clear_and_non_circle_commands_do_not_read_them() {
     let fixture = Fixture::build();
     let boundary = fixture

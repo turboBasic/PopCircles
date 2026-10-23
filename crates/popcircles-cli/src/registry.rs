@@ -16,6 +16,7 @@ use crate::args::GridValues;
 /// Relative to the working directory, which is where `out/table` and `out/radii.json` already resolve
 /// from.
 pub(crate) const REGISTRY_PATH: &str = "data/registry.toml";
+pub(crate) const COUNTRY_BOUNDARY_DATASET: &str = "gisco-countries-2024-1m";
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum RegistryError {
