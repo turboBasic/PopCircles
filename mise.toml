@@ -230,12 +230,14 @@ run = "cargo test --release --all-features --test decimated_search -- --ignored"
 description = "Measure the circle fold's error at magnitude against the predicate slack it is bounded by"
 run = "cargo test --release --all-features --test fold_at_magnitude -- --ignored"
 
-# Not in `test`: reads the registry raster, absent on a CI checkout. The end-to-end one — table,
-# search, checked against published prior art — and it skips with a message rather than failing when
-# the raster is absent, harmless on a fresh clone.
+# Not in `test`: reads the registered raster and boundaries, absent on a CI checkout. Both end-to-end
+# checks skip with a message rather than failing when inputs are absent, harmless on a fresh clone.
 [tasks."test:validate"]
-description = "Search the real raster for half the world and check it against the published result"
-run = "cargo test --release --all-features --test registry_validation -- --ignored"
+description = "Validate world and country searches against the registered real inputs"
+run = [
+  "cargo test --release --all-features -p popcircles --test registry_validation -- --ignored",
+  "cargo test --release --all-features -p popcircles-cli --test country_validation -- --ignored",
+]
 
 # None of the four are in `ci`: a benchmark measures and asserts nothing, and a figure from a shared
 # runner would be noise quoted to three digits. Each is `harness = false` with `std::time::Instant`.
