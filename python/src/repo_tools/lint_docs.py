@@ -1,3 +1,4 @@
+import ast
 import functools
 import re
 import subprocess
@@ -94,6 +95,12 @@ _PATH_CANDIDATE_RE = re.compile(r"[\w.\-]+(?:/[\w.\-]+)*/?")
 _SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.\-]*:")
 _HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
 _QUOTE_ADJACENT_RE = re.compile(r'^[ \t]?"([^"]+)"')
+_RUST_SCHEMA_RE = re.compile(r"^pub const SCHEMA_VERSION: u32 = (\d+);", re.MULTILINE)
+_RUST_KIND_RE = re.compile(
+    r"impl\s+Document\s+for\s+[A-Za-z_]\w*\s*\{\s*"
+    r"const\s+KIND\s*:\s*&'static\s+str\s*=\s*\"([^\"]+)\"",
+    re.DOTALL,
+)
 
 
 def display_path(path: Path) -> str:
@@ -338,12 +345,67 @@ def check_structure_tree() -> list[Finding]:
     return findings
 
 
+def python_document_contract(source: str) -> tuple[int | None, set[str]]:
+    tree = ast.parse(source)
+    python_version: int | None = None
+    python_kinds: set[str] = set()
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if not isinstance(target, ast.Name):
+            continue
+        if target.id == "SCHEMA_VERSION":
+            value = ast.literal_eval(node.value)
+            python_version = value if isinstance(value, int) else None
+        elif target.id == "DocumentKind" and isinstance(node.value, ast.Subscript):
+            python_kinds = {
+                item.value
+                for item in ast.walk(node.value.slice)
+                if isinstance(item, ast.Constant) and isinstance(item.value, str)
+            }
+    return python_version, python_kinds
+
+
+def document_contract_findings(rust_source: str, python_source: str) -> list[str]:
+    rust_version_match = _RUST_SCHEMA_RE.search(rust_source)
+    rust_kinds = set(_RUST_KIND_RE.findall(rust_source))
+    python_version, python_kinds = python_document_contract(python_source)
+
+    findings: list[str] = []
+    rust_version = int(rust_version_match.group(1)) if rust_version_match else None
+    if rust_version != python_version:
+        findings.append(f"schema versions differ: Rust {rust_version}, Python {python_version}")
+    missing = sorted(rust_kinds - python_kinds)
+    extra = sorted(python_kinds - rust_kinds)
+    if missing:
+        findings.append(f"Rust document kinds missing from Python: {', '.join(missing)}")
+    if extra:
+        findings.append(f"Python document kinds missing from Rust: {', '.join(extra)}")
+    if rust_version is None:
+        findings.append("Rust SCHEMA_VERSION was not found")
+    if python_version is None:
+        findings.append("Python SCHEMA_VERSION was not found or is not an integer")
+    return findings
+
+
+def check_document_contract() -> list[Finding]:
+    report = REPO_ROOT / "crates" / "popcircles" / "src" / "report.rs"
+    reader = REPO_ROOT / "python" / "src" / "population_circles" / "circle_document.py"
+    findings = document_contract_findings(
+        report.read_text(encoding="utf-8"),
+        reader.read_text(encoding="utf-8"),
+    )
+    return [Finding(report, 1, message) for message in findings]
+
+
 def main() -> int:
     findings: list[Finding] = []
     for path in scope_files():
         findings.extend(check_pointers(path))
     findings.extend(check_claude_imports())
     findings.extend(check_structure_tree())
+    findings.extend(check_document_contract())
 
     for finding in findings:
         print(finding)

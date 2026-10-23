@@ -281,6 +281,10 @@ def test_a_recognised_kind_carrying_no_circle_names_the_kind() -> None:
     assert caught.value.kind == "distance"
     assert "distance" in str(caught.value)
 
+    with pytest.raises(UnsupportedDocumentError) as country:
+        circle_of(envelope("country-smallest", {}))
+    assert country.value.kind == "country-smallest"
+
 
 def test_the_three_circle_bearing_kinds_are_the_ones_documented() -> None:
     assert sorted(CIRCLE_KINDS) == ["circle", "most-populous", "smallest"]

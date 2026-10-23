@@ -53,11 +53,11 @@
 //! | [`CountryListDocument`] | `country-list` | the available country identifiers and names |
 //! | [`CountrySmallestDocument`] | `country-smallest` | one country's smallest circle and its source identity |
 //!
-//! The last two are documents rather than bare payloads because a ledger belongs to the run and not to any
-//! one circle, and because a payload meaning either "a circle" or "some circles" would leave a consumer
-//! branching on which it got. `smallest-circle` is the circle inside the second of them, published on its
-//! own by a snapshot rather than by a command, and it carries a kind because a payload type that can be
-//! wrapped is one a consumer can be handed.
+//! `SmallestDocument` and `SweepDocument` wrap their circles because a ledger belongs to the run, not to
+//! one circle. `CountrySmallestDocument` also carries the feature identity that produced its answer.
+//! `smallest-circle` is the circle inside these documents, published on its own by a snapshot rather than
+//! by a command, and it carries a kind because a payload type that can be wrapped is one a consumer can be
+//! handed.
 //!
 //! **A [`SweepDocument`]'s `records` ascend by `target.share`.** That is part of the contract and held by
 //! construction, so a renderer plotting share against radius may read them in the order it gets them.
