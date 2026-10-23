@@ -518,8 +518,8 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "real-data release benchmark; see tmp/gh-191/baseline/benchmark.md"]
-    fn full_resolution_country_accounting_sequential_reference() {
+    #[ignore = "real-data release benchmark; see tmp/gh-191/measurements/benchmark.md"]
+    fn full_resolution_country_accounting_benchmark() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .canonicalize()
@@ -540,6 +540,13 @@ mod tests {
         let radius = RadiusKm::new(500.0).unwrap();
         let kernel = Kernel::new(grid, centre.0, radius).unwrap();
         let selected_ids = ["DE", "FR"];
+        let mode = std::env::var("POPCIRCLES_ACCOUNTING_MODE")
+            .expect("set POPCIRCLES_ACCOUNTING_MODE to sequential or parallel");
+        let build_table = match mode.as_str() {
+            "sequential" => Prepared::country_table,
+            "parallel" => Prepared::country_table_parallel,
+            _ => panic!("unknown country accounting mode: {mode}"),
+        };
         let mut results = Vec::with_capacity(selected_ids.len());
         let mut timings = Vec::with_capacity(selected_ids.len());
 
@@ -551,8 +558,7 @@ mod tests {
                 .position(|candidate| candidate.id == feature.id)
                 .unwrap()];
             let started = Instant::now();
-            let table = prepared
-                .country_table(feature)
+            let table = build_table(&prepared, feature)
                 .unwrap()
                 .expect("selected benchmark countries have owned population cells");
             let total = table.total();
@@ -575,8 +581,10 @@ mod tests {
             }));
         }
 
-        let output_dir = root.join("tmp/gh-191/baseline");
-        fs::create_dir_all(&output_dir).unwrap();
+        let output_dir = std::env::var("POPCIRCLES_ACCOUNTING_OUTPUT")
+            .expect("set POPCIRCLES_ACCOUNTING_OUTPUT to an output directory");
+        let output_dir = Path::new(&output_dir);
+        fs::create_dir_all(output_dir).unwrap();
         fs::write(
             output_dir.join("country-accounting-reference.json"),
             serde_json::to_vec_pretty(&serde_json::json!({
