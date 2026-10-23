@@ -18,9 +18,8 @@ use crate::table::{CountryTable, RowBand, Table};
 
 /// Why a search could not run.
 ///
-/// One variant, and no arm for the widened radius: [`RadiusKm::widened_by`] is total, because the slack a
-/// block can carry is bounded by the sphere and cannot push a finite radius out of range. An error arm for
-/// it would be one every caller has to handle and no input can produce.
+/// Widening a radius cannot fail: [`RadiusKm::widened_by`] is total because the slack a block can carry is
+/// bounded by the sphere and cannot push a finite radius out of range.
 #[derive(Debug, Clone, Copy, PartialEq, thiserror::Error)]
 pub enum SearchError {
     #[error("the search could not build a kernel")]

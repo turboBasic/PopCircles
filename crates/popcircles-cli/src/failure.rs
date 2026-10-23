@@ -63,7 +63,6 @@ impl Failure {
         Self::new(exit_code_for_kernel_error(error), &error)
     }
 
-    /// By value for [`Self::kernel`]'s reason: a `SearchError` wraps one and is no wider.
     pub(crate) fn search(error: SearchError) -> Self {
         Self::new(exit_code_for_search_error(error), &error)
     }
@@ -199,7 +198,8 @@ const fn exit_code_for_kernel_error(error: KernelError) -> u8 {
     }
 }
 
-/// One variant, and it is the kernel's, so a search inherits that classification rather than restating it.
+/// Kernel errors keep their classification; bad grid indices are input errors, while other country-query
+/// errors indicate a failed search.
 const fn exit_code_for_search_error(error: SearchError) -> u8 {
     match error {
         SearchError::Kernel(error) => exit_code_for_kernel_error(error),
