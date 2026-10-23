@@ -17,7 +17,7 @@ Options:
       --origin-lon <ORIGIN_LON>  
       --lon-step <LON_STEP>      
       --lat-step <LAT_STEP>      
-      --decimate <DECIMATE>      Fold every k by k native-cell block before searching [default: 1]
+      --decimate <DECIMATE>      Fold every k by k native-cell block; defaults to 1 for smallest and 10 for sweep
       --spacing <SPACING>        Override the initial block side in cells, derived from each radius and the grid when omitted. Changes runtime only; the answer is the same at every spacing
       --ledger <LEDGER>          Country-specific resume ledger. Defaults to `out/countries/<ID>.json`
   -h, --help                     Print help

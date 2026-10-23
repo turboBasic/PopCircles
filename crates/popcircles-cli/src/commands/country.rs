@@ -62,13 +62,13 @@ pub(crate) fn smallest(
     ledger_path: Option<&Path>,
 ) -> Result<String, Failure> {
     let source = args.grid.grid()?;
-    let decimation =
-        Decimation::new(source, args.decimate).map_err(|error| Failure::table(&error))?;
+    let factor = args.decimation(1);
+    let decimation = Decimation::new(source, factor).map_err(|error| Failure::table(&error))?;
     let prepared = Prepared::load(
         args.grid.dataset.as_deref(),
         source,
         *decimation.grid(),
-        args.decimate,
+        factor,
     )?;
     let feature = prepared.feature(selector)?;
     let table = prepared.country_table(feature)?.ok_or_else(|| {
@@ -120,13 +120,13 @@ pub(crate) fn sweep(
     ledger_dir: &Path,
 ) -> Result<String, Failure> {
     let source = args.grid.grid()?;
-    let decimation =
-        Decimation::new(source, args.decimate).map_err(|error| Failure::table(&error))?;
+    let factor = args.decimation(10);
+    let decimation = Decimation::new(source, factor).map_err(|error| Failure::table(&error))?;
     let prepared = Prepared::load(
         args.grid.dataset.as_deref(),
         source,
         *decimation.grid(),
-        args.decimate,
+        factor,
     )?;
     let walk = shares(range.from, range.to, range.step)?;
     let mut features = selectors

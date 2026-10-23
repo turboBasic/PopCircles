@@ -705,6 +705,8 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
             "10",
             "--dataset",
             "population-count-2020-30arcsec",
+            "--decimate",
+            "1",
             "--spacing",
             "4",
             "--ledger-dir",

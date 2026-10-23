@@ -11,8 +11,9 @@ on-disk cache, the circular kernels a circle is measured through, the population
 circle, the most populous circle of a fixed radius, and the smallest circle holding a given share of a
 population — resumable across runs — are implemented and tested, with a command line over that search
 and maps rendered from what it publishes. The answer for half the world has been run against the real
-raster at full resolution and checked against the published prior art ([Validation](#validation)). What
-is left is the same question restricted to a single country.
+raster at full resolution and checked against the published prior art ([Validation](#validation)).
+Per-country listing, searches and resumable sweeps are available; per-country maps and broader validation
+remain.
 
 ## Getting started
 
