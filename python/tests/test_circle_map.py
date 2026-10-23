@@ -292,9 +292,16 @@ def test_success_uses_the_documents_credit_and_earth_model(
         attribution: str,
         *,
         coastline: BaseGeometry | None,
+        country_outline: BaseGeometry | None = None,
     ) -> Figure:
         seen.append((answer.circle.earth_radius_km, attribution))
-        return original(answer, projection, attribution, coastline=coastline)
+        return original(
+            answer,
+            projection,
+            attribution,
+            coastline=coastline,
+            country_outline=country_outline,
+        )
 
     monkeypatch.setattr(render_map, "render", capture)
     payload = document()

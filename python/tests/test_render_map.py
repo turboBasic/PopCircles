@@ -11,10 +11,10 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 from population_circles.circle_document import Answer, circle_of
-from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
+from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT, cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import Registry, load, parse
-from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
+from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
 from population_circles.render_map import (
     COASTLINE,
     MissingCountryOutlineError,
@@ -35,6 +35,7 @@ CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+MAX_LOCAL_EXTENT_METRES = 5_000_000
 NO_NETWORK = "a figure is drawn from the committed basemap and reaches no network"
 # Handed to `render` in place of a citation, so the footer assertion is about what the caller passed
 # rather than about a value the test could also have read.
@@ -163,6 +164,7 @@ def boundary_feature(identifier: str, name: str, west: float) -> dict[str, Any]:
 def country_fixture(
     tmp_path: Path,
     features: list[dict[str, Any]],
+    centre: tuple[float, float] = (51.0, 10.0),
 ) -> tuple[Answer, Registry, Path]:
     content = json.dumps({"type": "FeatureCollection", "features": features})
     registry_digest = hashlib.sha256(content.encode()).hexdigest()
@@ -170,7 +172,17 @@ def country_fixture(
     path = registry.datasets["gisco-countries-2024-1m"].file(tmp_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
-    return circle_of(country_circle_document(registry_digest)), registry, path
+    document = country_circle_document(registry_digest)
+    document["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
+    return circle_of(document), registry, path
+
+
+def polygon_feature(identifier: str, coordinates: list[list[list[float]]]) -> dict[str, Any]:
+    return {
+        "type": "Feature",
+        "properties": {"CNTR_ID": identifier, "NAME_ENGL": identifier},
+        "geometry": {"type": "Polygon", "coordinates": coordinates},
+    }
 
 
 def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
@@ -221,6 +233,70 @@ def test_a_country_result_is_not_rendered_without_its_outline() -> None:
     ):
         render(circle_of(country_circle_document()), PLATE_CARREE, MARKER, coastline=None)
     assert plt.get_fignums() == before
+
+
+@pytest.mark.parametrize(
+    ("name", "centre", "coordinates"),
+    [
+        (
+            "antimeridian",
+            (10.0, 179.0),
+            [[[170, 8], [-170, 8], [-170, 12], [170, 12], [170, 8]]],
+        ),
+        (
+            "polar",
+            (82.0, 20.0),
+            [[[10, 78], [30, 78], [30, 86], [10, 86], [10, 78]]],
+        ),
+    ],
+    ids=["antimeridian", "polar"],
+)
+def test_country_figure_draws_the_outline_and_circle_without_clipping(
+    name: str,
+    centre: tuple[float, float],
+    coordinates: list[list[list[float]]],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def refuse(*_args: object, **_kwargs: object) -> NoReturn:
+        raise AssertionError(NO_NETWORK)
+
+    for socket_name in ("socket", "create_connection", "socketpair"):
+        monkeypatch.setattr(socket, socket_name, refuse)
+
+    answer, registry, _ = country_fixture(
+        tmp_path,
+        [polygon_feature("DE", coordinates)],
+        centre,
+    )
+    country = load_outline(answer, registry, tmp_path)
+    circle = answer.circle
+    view = country_frame(
+        cap(circle.centre, circle.radius_km, circle.earth_radius_km),
+        country,
+    )
+    figure = render(
+        answer,
+        ORTHOGRAPHIC,
+        MARKER,
+        coastline=None,
+        country_outline=country,
+    )
+    try:
+        output = tmp_path / f"country-{name}.png"
+        figure.savefig(output, dpi=120)  # pyright: ignore[reportUnknownMemberType] — matplotlib kwargs
+        axes = figure.axes[0]
+        west, south, east, north = view.horizon.bounds
+        assert output.read_bytes().startswith(PNG_MAGIC)
+        assert axes.get_xlim() == pytest.approx((west, east))
+        assert axes.get_ylim() == pytest.approx((south, north))
+        assert view.country_outline is not None
+        assert east - west < MAX_LOCAL_EXTENT_METRES
+        assert north - south < MAX_LOCAL_EXTENT_METRES
+        assert view.horizon.covers(view.country_outline)
+        assert view.horizon.covers(view.circle)
+    finally:
+        plt.close(figure)
 
 
 def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> None:

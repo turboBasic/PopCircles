@@ -22,8 +22,17 @@ from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
+from population_circles.country_outline import load_outline
 from population_circles.dataset_registry import Registry, load
-from population_circles.map_frame import PLATE_CARREE, PROJECTIONS, Frame, frame, graticule, project
+from population_circles.map_frame import (
+    PLATE_CARREE,
+    PROJECTIONS,
+    Frame,
+    country_frame,
+    frame,
+    graticule,
+    project,
+)
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
 # for one is what fails on a machine with no display, rather than falling back.
@@ -63,6 +72,7 @@ def citation(registry: Registry, key: str) -> str:
 GRATICULE_LAYER = 1
 COASTLINE_LAYER = 2
 CIRCLE_LAYER = 3
+COUNTRY_LAYER = 2.5
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
 
@@ -97,7 +107,7 @@ def fill_circle(axes: Axes, geometry: BaseGeometry) -> None:
         )
 
 
-def outline(axes: Axes, geometry: BaseGeometry) -> None:
+def outline(axes: Axes, geometry: BaseGeometry, layer: float = HORIZON_LAYER) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
             PathPatch(
@@ -105,7 +115,7 @@ def outline(axes: Axes, geometry: BaseGeometry) -> None:
                 facecolor="none",
                 edgecolor="0.4",
                 linewidth=0.6,
-                zorder=HORIZON_LAYER,
+                zorder=layer,
             ),
         )
 
@@ -157,6 +167,8 @@ def draw(axes: Axes, view: Frame, coastline: BaseGeometry | None) -> None:
     stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
     if coastline is not None:
         stroke(axes, project(view, coastline), "dimgrey", 0.5, COASTLINE_LAYER)
+    if view.country_outline is not None:
+        outline(axes, view.country_outline, COUNTRY_LAYER)
     fill_circle(axes, view.circle)
     outline(axes, view.horizon)
 
@@ -169,12 +181,17 @@ def render(
     # The basemap arrives drawn rather than named, so nothing under here reads a file and a caller
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
+    country_outline: BaseGeometry | None = None,
 ) -> Figure:
-    if answer.country is not None:
+    if answer.country is not None and country_outline is None:
         raise MissingCountryOutlineError
     circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
-    view = frame(projection, built)
+    view = (
+        country_frame(built, country_outline)
+        if country_outline is not None
+        else frame(projection, built)
+    )
     centre = view.to_frame.transform(circle.centre.lon, circle.centre.lat)
 
     figure = plt.figure(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
@@ -259,11 +276,13 @@ def render_file(
 ) -> None:
     document = json.loads(input_path.read_text(encoding="utf-8"))
     answer = circle_of(document)
+    registry = load()
     figure = render(
         answer,
         projection,
-        citation(load(), answer.provenance.dataset),
+        citation(registry, answer.provenance.dataset),
         coastline=None if no_coastlines else basemap(COASTLINE),
+        country_outline=load_outline(answer, registry) if answer.country is not None else None,
     )
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
