@@ -40,6 +40,9 @@ NO_NETWORK = "a figure is drawn from the committed basemap and reaches no networ
 # Handed to `render` in place of a citation, so the footer assertion is about what the caller passed
 # rather than about a value the test could also have read.
 MARKER = "attribution handed to render by its caller"
+BOUNDARY_CREDIT = (
+    "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+)
 
 
 def document() -> dict[str, Any]:
@@ -138,7 +141,7 @@ sha256 = "{digest}"
 source_url = "https://example.invalid/source"
 licence = "fixture"
 licence_url = "https://example.invalid/licence"
-attribution = "fixture"
+attribution = "{BOUNDARY_CREDIT}"
 format = "GeoJSON"
 crs = "EPSG:4326"
 axis_order = "longitude-latitude"
@@ -269,6 +272,7 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
         [polygon_feature("DE", coordinates)],
         centre,
     )
+    assert answer.country is not None
     country = load_outline(answer, registry, tmp_path)
     circle = answer.circle
     view = country_frame(
@@ -280,7 +284,7 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
         ORTHOGRAPHIC,
         MARKER,
         coastline=None,
-        country_outline=country,
+        outline_and_credit=(country, citation(registry, answer.country.boundary_dataset)),
     )
     try:
         output = tmp_path / f"country-{name}.png"
@@ -295,6 +299,51 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
         assert north - south < MAX_LOCAL_EXTENT_METRES
         assert view.horizon.covers(view.country_outline)
         assert view.horizon.covers(view.circle)
+    finally:
+        plt.close(figure)
+
+
+def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
+    tmp_path: Path,
+) -> None:
+    answer, registry, _ = country_fixture(
+        tmp_path,
+        [boundary_feature("DE", "Germany", 9)],
+    )
+    assert answer.country is not None
+    answer = answer.model_copy(
+        update={
+            "country": answer.country.model_copy(
+                update={"name": "A country with an exceptionally long published name"},
+            ),
+        },
+    )
+    assert answer.country is not None
+    boundary = load_outline(answer, registry, tmp_path)
+    population_credit = citation(REGISTRY, DATASET)
+    boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
+    figure = render(
+        answer,
+        ORTHOGRAPHIC,
+        population_credit,
+        coastline=None,
+        outline_and_credit=(boundary, boundary_credit),
+    )
+    try:
+        canvas = FigureCanvasAgg(figure)
+        canvas.draw()
+        footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
+        axes = figure.axes[0].get_window_extent()
+        rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
+        assert "A country with an exceptionally long published name (DE)" in rendered_text
+        assert normalised(boundary_credit) in normalised(rendered_text)
+        assert normalised(population_credit) in normalised(rendered_text)
+        assert citation(REGISTRY, "coastline-1to110m") == ""
+        assert "Basemap credit:" not in rendered_text
+        assert footer.x0 >= 0
+        assert footer.x1 <= figure.bbox.x1
+        assert footer.y0 >= 0
+        assert footer.y1 <= axes.y0
     finally:
         plt.close(figure)
 

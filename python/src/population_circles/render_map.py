@@ -181,10 +181,11 @@ def render(
     # The basemap arrives drawn rather than named, so nothing under here reads a file and a caller
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
-    country_outline: BaseGeometry | None = None,
+    outline_and_credit: tuple[BaseGeometry, str] | None = None,
 ) -> Figure:
-    if answer.country is not None and country_outline is None:
+    if answer.country is not None and outline_and_credit is None:
         raise MissingCountryOutlineError
+    country_outline, boundary_attribution = outline_and_credit or (None, None)
     circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
     view = (
@@ -200,12 +201,18 @@ def render(
     try:
         title = title_of(answer)
         country_lines = lines_for(answer)
-        footer_parts = (
-            [*country_lines, f"Population credit: {attribution}"]
-            if country_lines
-            else [attribution]
-        )
+        if answer.country is not None:
+            footer_parts = [
+                f"Country: {answer.country.name} ({answer.country.id})",
+                f"Boundary credit: {boundary_attribution}",
+                f"Population credit: {attribution}",
+            ]
+        elif country_lines:
+            footer_parts = [*country_lines, f"Population credit: {attribution}"]
+        else:
+            footer_parts = [attribution]
         footer = "\n".join(textwrap.fill(part, width=118) for part in footer_parts)
+        has_country_footer = answer.country is not None or bool(country_lines)
         # Room for the title above and the wrapped citation below, since both are placed at figure
         # coordinates rather than left to a layout engine.
         title_lines = title.count("\n") + 1
@@ -237,8 +244,8 @@ def render(
         annotate(figure, 0.985, title, 12.0, "top")
         # Wrapped: at this width a one-line citation runs off both edges of the figure,
         # which is an attribution nobody can read and so not an attribution.
-        annotate(figure, 0.04 / 6.0 if country_lines else 0.055, footer, 6.5, "bottom")
-        if country_lines:
+        annotate(figure, 0.04 / 6.0 if has_country_footer else 0.055, footer, 6.5, "bottom")
+        if has_country_footer:
             canvas = cast(FigureCanvasAgg, figure.canvas)
             canvas.draw()
             footer_height = figure.texts[-1].get_window_extent(canvas.get_renderer()).height
@@ -282,7 +289,14 @@ def render_file(
         projection,
         citation(registry, answer.provenance.dataset),
         coastline=None if no_coastlines else basemap(COASTLINE),
-        country_outline=load_outline(answer, registry) if answer.country is not None else None,
+        outline_and_credit=(
+            (
+                load_outline(answer, registry),
+                citation(registry, answer.country.boundary_dataset),
+            )
+            if answer.country is not None
+            else None
+        ),
     )
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
