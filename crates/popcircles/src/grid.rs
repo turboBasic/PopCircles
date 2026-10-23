@@ -331,7 +331,7 @@ impl Grid {
     /// The column `cells` along from `col`, counting round the seam: through rising indices when
     /// `cells` is positive, falling when it is negative.
     ///
-    /// Total rather than fallible, because the offset is reduced modulo the width and so always names a
+    /// For an in-range starting column, the offset is reduced modulo the width and always names a
     /// column this grid has. Whether that column also sits `cells` steps *east on the ground* turns on
     /// [`Grid::spans_full_turn`] and on `lon_step`'s sign, and this asks neither: the caller for which
     /// the ground matters is [`crate::kernel::Kernel`], which settles both before it places a span.
