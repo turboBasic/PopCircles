@@ -204,27 +204,7 @@ impl Prepared {
                     .transpose()
                     .map_err(|error| Failure::bad_input(error.to_string()))?
                     .unwrap_or(0.0);
-                let mut intersects = false;
-                for placed in kernel
-                    .place(*centre)
-                    .map_err(|error| Failure::grid_index(&error))?
-                {
-                    let (row, span) = placed.map_err(|error| Failure::grid_index(&error))?;
-                    if domain.row_intervals(row).is_some_and(|intervals| {
-                        intervals.iter().any(|interval| match span {
-                            ColSpan::FullTurn => true,
-                            ColSpan::Through { west, east } if west.get() <= east.get() => {
-                                interval.start() <= east.get() && interval.end() > west.get()
-                            }
-                            ColSpan::Through { west, east } => {
-                                interval.start() <= east.get() || interval.end() > west.get()
-                            }
-                        })
-                    }) {
-                        intersects = true;
-                        break;
-                    }
-                }
+                let intersects = circle_intersects_domain(domain, kernel, *centre)?;
                 contributions[index].push(CountryContribution {
                     id: feature.id.clone(),
                     name: feature.name.clone(),
@@ -259,6 +239,33 @@ impl Prepared {
             })
             .collect()
     }
+}
+
+fn circle_intersects_domain(
+    domain: &Domain,
+    kernel: &Kernel,
+    centre: Col,
+) -> Result<bool, Failure> {
+    for placed in kernel
+        .place(centre)
+        .map_err(|error| Failure::grid_index(&error))?
+    {
+        let (row, span) = placed.map_err(|error| Failure::grid_index(&error))?;
+        if domain.row_intervals(row).is_some_and(|intervals| {
+            intervals.iter().any(|interval| match span {
+                ColSpan::FullTurn => true,
+                ColSpan::Through { west, east } if west.get() <= east.get() => {
+                    interval.start() <= east.get() && interval.end() > west.get()
+                }
+                ColSpan::Through { west, east } => {
+                    interval.start() <= east.get() || interval.end() > west.get()
+                }
+            })
+        }) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 struct Replay<'a> {
@@ -299,6 +306,9 @@ impl RasterSource for Replay<'_> {
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used, clippy::float_cmp)]
 mod tests {
+    use std::fs;
+    use std::time::Instant;
+
     use popcircles::circle;
     use popcircles::domain::{Domain, FeatureId, Geometry, Polygon};
     use popcircles::geodesy::{LatLon, RadiusKm};
@@ -398,5 +408,91 @@ mod tests {
             circle::country_population(&table, &south, grid.col(2).unwrap()).unwrap(),
             0.0
         );
+    }
+
+    #[test]
+    #[ignore = "real-data release benchmark; see tmp/gh-191/baseline/benchmark.md"]
+    fn full_resolution_country_accounting_sequential_reference() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .canonicalize()
+            .unwrap();
+        std::env::set_current_dir(&root).unwrap();
+        let registry = Registry::load(Path::new(REGISTRY_PATH)).unwrap();
+        let dataset = registry.raster("population-count-2020-30arcsec").unwrap();
+        let grid = dataset.grid.grid().unwrap();
+        let prepared =
+            Prepared::load(Some("population-count-2020-30arcsec"), grid, grid, 1).unwrap();
+        let (boundary_dataset, boundary_revision, boundary_digest) = prepared.boundary_identity();
+        let centre = grid
+            .cell_containing(LatLon {
+                lat: 49.0,
+                lon: 7.5,
+            })
+            .unwrap();
+        let radius = RadiusKm::new(500.0).unwrap();
+        let kernel = Kernel::new(grid, centre.0, radius).unwrap();
+        let selected_ids = ["DE", "FR"];
+        let mut results = Vec::with_capacity(selected_ids.len());
+        let mut timings = Vec::with_capacity(selected_ids.len());
+
+        for id in selected_ids {
+            let feature = prepared.feature(id).unwrap();
+            let domain = &prepared.domains[prepared
+                .features
+                .iter()
+                .position(|candidate| candidate.id == feature.id)
+                .unwrap()];
+            let started = Instant::now();
+            let table = prepared.country_table(feature).unwrap();
+            let total = table.as_ref().map_or(0.0, CountryTable::total);
+            let inside = table.as_ref().map_or(0.0, |table| {
+                circle::country_population(table, &kernel, centre.1).unwrap()
+            });
+            let intersects = circle_intersects_domain(domain, &kernel, centre.1).unwrap();
+            timings.push(serde_json::json!({
+                "country_id": id,
+                "wall_seconds": started.elapsed().as_secs_f64(),
+            }));
+            results.push(serde_json::json!({
+                "country_id": id,
+                "country_name": feature.name,
+                "total": total,
+                "circle_population": inside,
+                "intersects": intersects,
+                "crop": table.as_ref().map(|table| {
+                    serde_json::json!({
+                        "width": table.grid().width(),
+                        "height": table.grid().height(),
+                    })
+                }),
+            }));
+        }
+
+        let output_dir = root.join("tmp/gh-191/baseline");
+        fs::create_dir_all(&output_dir).unwrap();
+        fs::write(
+            output_dir.join("country-accounting-reference.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "population_dataset": "population-count-2020-30arcsec",
+                "population_sha256": dataset.sha256,
+                "boundary_dataset": boundary_dataset,
+                "boundary_revision": boundary_revision,
+                "boundary_sha256": boundary_digest,
+                "decimation": 1,
+                "circle": {
+                    "centre": { "latitude": 49.0, "longitude": 7.5 },
+                    "radius_km": radius.km(),
+                },
+                "countries": results,
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        fs::write(
+            output_dir.join("country-accounting-times.json"),
+            serde_json::to_vec_pretty(&timings).unwrap(),
+        )
+        .unwrap();
     }
 }
