@@ -5,6 +5,7 @@ rust = { version = "1.99.1", components = ["clippy", "rustfmt", "rust-src"] }
 python = "3.14"
 uv = "latest"
 prek = "latest"
+"pipx:lizard" = "1.24.2"
 actionlint = "latest"
 shellcheck = "latest"
 taplo = "latest"
