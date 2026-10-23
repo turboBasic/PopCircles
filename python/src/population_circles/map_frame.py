@@ -98,6 +98,14 @@ def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
     outline = transform(to_face.transform, transform(unwrap, country_outline))
     circle_to_face = Transformer.from_crs(built.source, face, always_xy=True)
     circle = transform(circle_to_face.transform, built.polygon)
+    if any(
+        not math.isfinite(value)
+        for geometry in (outline, circle)
+        for point in get_coordinates(geometry)
+        for value in point
+    ):
+        message = "country circle or outline extends beyond the orthographic horizon"
+        raise ValueError(message)
     west = min(outline.bounds[0], circle.bounds[0])
     south = min(outline.bounds[1], circle.bounds[1])
     east = max(outline.bounds[2], circle.bounds[2])

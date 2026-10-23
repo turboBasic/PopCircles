@@ -162,3 +162,10 @@ def test_country_frame_contains_its_projected_outline_and_circle(
             math.isfinite(value) for coordinate in get_coordinates(geometry) for value in coordinate
         )
         assert view.horizon.covers(geometry)
+
+
+def test_country_frame_refuses_a_large_circle_beyond_the_horizon() -> None:
+    built = cap(Coordinate(lat=51.0, lon=10.0), 15_000.0, EARTH_RADIUS_KM)
+
+    with pytest.raises(ValueError, match="extends beyond the orthographic horizon"):
+        country_frame(built, box(9, 50, 11, 52))
