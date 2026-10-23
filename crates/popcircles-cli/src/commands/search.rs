@@ -78,11 +78,15 @@ pub(crate) fn population_at(
     let requested = LatLon { lat, lon };
     let cell = centre_cell(&cached.grid, requested)?;
     let places = settlement_places()?;
-    let centre = cached.grid.centre_of(cell.0, cell.1);
+    let centre = cached
+        .grid
+        .centre_of(cell.0, cell.1)
+        .map_err(|error| Failure::grid_index(&error))?;
     let context = settlement_context(centre, &places)?;
 
     let kernel = Kernel::new(cached.grid, cell.0, radius).map_err(Failure::kernel)?;
-    let population = circle::population(&view, &kernel, cell.1);
+    let population =
+        circle::population(&view, &kernel, cell.1).map_err(|error| Failure::grid_index(&error))?;
     let (rows, cols) = view.whole();
     let total = view.population(rows, cols);
 
@@ -95,6 +99,7 @@ pub(crate) fn population_at(
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
         CircleReport::new(requested, cell, &cached.grid, radius, population, total)
+            .map_err(|error| Failure::grid_index(&error))?
             .with_nearest_settlement(context.as_ref())
             .with_country_breakdown(Some(&country.for_circle(cell, radius, population, total)?)),
         cached.provenance(),
@@ -123,7 +128,10 @@ pub(crate) fn most_populous(
         .map_err(Failure::search)?;
     progress.finish();
 
-    let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
+    let centre = cached
+        .grid
+        .centre_of(found.centre.row, found.centre.col)
+        .map_err(|error| Failure::grid_index(&error))?;
     let context = settlement_context(centre, &places)?;
     log::info!(
         "the most populous {} km circle is centred (lat {:.4}, lon {:.4}) and holds {} of {total}",
@@ -135,6 +143,7 @@ pub(crate) fn most_populous(
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
         MostPopulousReport::new(&found, &cached.grid, total)
+            .map_err(|error| Failure::grid_index(&error))?
             .with_nearest_settlement(context.as_ref())
             .with_country_breakdown(Some(&country.for_circle(
                 (found.centre.row, found.centre.col),
@@ -237,10 +246,14 @@ pub(crate) fn sweep(
     let breakdowns = country.for_circles(&circles, total)?;
     let mut records = Vec::with_capacity(answers.len());
     for (found, breakdown) in answers.iter().zip(&breakdowns) {
-        let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
+        let centre = cached
+            .grid
+            .centre_of(found.centre.row, found.centre.col)
+            .map_err(|error| Failure::grid_index(&error))?;
         let context = settlement_context(centre, &places)?;
         records.push(
             SmallestReport::new(found, &cached.grid)
+                .map_err(|error| Failure::grid_index(&error))?
                 .with_nearest_settlement(context.as_ref())
                 .with_country_breakdown(Some(breakdown)),
         );
@@ -287,13 +300,17 @@ pub(crate) fn smallest_for_share(
         found.radius_km
     );
 
-    let centre = cached.grid.centre_of(found.centre.row, found.centre.col);
+    let centre = cached
+        .grid
+        .centre_of(found.centre.row, found.centre.col)
+        .map_err(|error| Failure::grid_index(&error))?;
     let context = settlement_context(centre, &places)?;
 
     serialised(serde_json::to_string(&Envelope::with_provenance(
         SmallestDocument::new(
             LedgerReport::new(ledger.path(), ledger.len()),
             SmallestReport::new(&found, &cached.grid)
+                .map_err(|error| Failure::grid_index(&error))?
                 .with_nearest_settlement(context.as_ref())
                 .with_country_breakdown(Some(&country.for_circle(
                     (found.centre.row, found.centre.col),

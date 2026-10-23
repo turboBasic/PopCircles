@@ -99,7 +99,8 @@ fn evaluate(table: &Table<'_>, radius: RadiusKm, centres: u32) -> (f64, u64, u64
         let spanned = u64::try_from(kernel.rows().count()).unwrap_or(u64::MAX);
         for col_index in (0..grid.width()).step_by(col_stride) {
             let col = grid.col(col_index).expect("an index below the width");
-            black_box(circle::population(table, &kernel, col));
+            let population = circle::population(table, &kernel, col);
+            let _ = black_box(population);
             queries += spanned;
             circles += 1;
         }

@@ -102,7 +102,7 @@ fn best_near_the_cluster(table: &Table<'_>, grid: &Grid) -> Candidate {
             let candidate = Candidate {
                 row,
                 col,
-                population: circle::population(table, &kernel, col),
+                population: circle::population(table, &kernel, col).expect("valid grid indices"),
             };
             best = Some(match best {
                 Some(held) => held.better(candidate),

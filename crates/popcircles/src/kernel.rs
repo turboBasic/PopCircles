@@ -9,7 +9,7 @@
 // test reproduces — application.md "Correctness invariants".
 
 use crate::geodesy::{LatLon, RadiusKm, angular_distance_rad, central_angle_rad};
-use crate::grid::{Col, Grid, Row};
+use crate::grid::{Col, Grid, GridIndexError, Row};
 use crate::table::ColSpan;
 
 #[derive(Debug, Clone, Copy, PartialEq, thiserror::Error)]
@@ -18,6 +18,8 @@ pub enum KernelError {
         "a kernel is longitude-invariant only where the columns close; these span {lon_span} degrees"
     )]
     ColumnsDoNotClose { lon_span: f64 },
+    #[error("the kernel index is outside its grid")]
+    GridIndex(#[from] GridIndexError),
 }
 
 /// The columns one row of a kernel covers, as an offset from the centre column.
@@ -162,18 +164,16 @@ impl Kernel {
     /// # Errors
     /// [`KernelError::ColumnsDoNotClose`] when the grid's columns do not close on themselves, which is
     /// the whole of what a caller holding a [`RadiusKm`] can be wrong about here. Zero is a radius: the
-    /// cap is the centre cell alone.
-    ///
-    /// # Panics
-    /// If `centre` was minted by a larger grid; [`crate::grid::Row`] says why that is a stop.
+    /// cap is the centre cell alone. Returns [`KernelError::GridIndex`] if `centre` is outside the grid.
     pub fn new(grid: Grid, centre: Row, radius: RadiusKm) -> Result<Self, KernelError> {
+        let centre_lat = grid.centre_lat(centre)?;
         if !grid.spans_full_turn() {
             return Err(KernelError::ColumnsDoNotClose {
                 lon_span: f64::from(grid.width()) * grid.lon_step().abs(),
             });
         }
 
-        let cap = Cap::over(&grid, grid.centre_lat(centre), radius.km());
+        let cap = Cap::over(&grid, centre_lat, radius.km());
 
         // North then south from the centre row, each stopping at the first row the cap does not reach:
         // the rows it reaches are contiguous, so a first miss is the end of the band and not a gap in
@@ -181,14 +181,14 @@ impl Kernel {
         // the edge of a grid covering a band of latitude only — is clipped rather than refused.
         let mut north = centre;
         while let Some(previous) = north.get().checked_sub(1).and_then(|index| grid.row(index)) {
-            if !cap.reaches(grid.centre_lat(previous)) {
+            if !cap.reaches(grid.centre_lat(previous)?) {
                 break;
             }
             north = previous;
         }
         let mut south = centre;
         while let Some(next) = south.get().checked_add(1).and_then(|index| grid.row(index)) {
-            if !cap.reaches(grid.centre_lat(next)) {
+            if !cap.reaches(grid.centre_lat(next)?) {
                 break;
             }
             south = next;
@@ -198,8 +198,8 @@ impl Kernel {
             .rows()
             .skip(north.get() as usize)
             .take_while(|row| *row <= south)
-            .map(|row| cap.span(grid.centre_lat(row)))
-            .collect();
+            .map(|row| grid.centre_lat(row).map(|latitude| cap.span(latitude)))
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Self {
             grid,
@@ -249,28 +249,27 @@ impl Kernel {
     /// lower index lands in follows `lon_step`'s sign. The set of columns does not, and neither does its
     /// population.
     ///
-    /// # Panics
-    /// If `centre` was minted by a larger grid; [`crate::grid::Row`] says why that is a stop.
-    pub fn place(&self, centre: Col) -> impl Iterator<Item = (Row, ColSpan)> + '_ {
-        assert!(
-            centre.get() < self.grid.width(),
-            "column {} is not a column of a {}-column grid",
-            centre.get(),
-            self.grid.width()
-        );
-        self.rows().map(move |(row, span)| {
+    /// # Errors
+    /// Returns [`GridIndexError`] if `centre` is outside the grid or a yielded placement is invalid.
+    pub fn place(
+        &self,
+        centre: Col,
+    ) -> Result<impl Iterator<Item = Result<(Row, ColSpan), GridIndexError>> + '_, GridIndexError>
+    {
+        self.grid.col_along(centre, 0)?;
+        Ok(self.rows().map(move |(row, span)| {
             let cols = match span {
                 Span::FullTurn => ColSpan::FullTurn,
                 Span::Around { half_width } => {
                     let offset = i64::from(half_width);
                     ColSpan::Through {
-                        west: self.grid.col_along(centre, -offset),
-                        east: self.grid.col_along(centre, offset),
+                        west: self.grid.col_along(centre, -offset)?,
+                        east: self.grid.col_along(centre, offset)?,
                     }
                 }
             };
-            (row, cols)
-        })
+            Ok((row, cols))
+        }))
     }
 }
 
@@ -364,7 +363,9 @@ mod tests {
             for radius_km in [250.0, 1000.0, 3000.0, 8000.0] {
                 let cap = Cap::over(&grid, centre_lat, radius_km);
                 for row in grid.rows() {
-                    let lat = grid.centre_lat(row);
+                    let lat = grid
+                        .centre_lat(row)
+                        .expect("indices belong to the fixture grid");
                     if !cap.reaches(lat) {
                         continue;
                     }
@@ -423,9 +424,16 @@ mod tests {
             .expect("a whole-globe grid of any width is valid");
 
             for radius_km in [100.0, 1000.0, 6000.0, 12_000.0, 20_016.0] {
-                let cap = Cap::over(&grid, grid.centre_lat(grid.middle_row()), radius_km);
+                let cap = Cap::over(
+                    &grid,
+                    grid.centre_lat(grid.middle_row())
+                        .expect("middle row belongs to the grid"),
+                    radius_km,
+                );
                 for row in grid.rows() {
-                    let lat = grid.centre_lat(row);
+                    let lat = grid
+                        .centre_lat(row)
+                        .expect("indices belong to the fixture grid");
                     if !cap.reaches(lat) {
                         continue;
                     }
@@ -557,10 +565,15 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "is not a row of a 180-row grid")]
     fn a_finer_grids_row_is_no_centre_here() {
         let centre = row(&globe(4), 719);
-        let _ = Kernel::new(globe(1), centre, radius(500.0));
+        assert!(matches!(
+            Kernel::new(globe(1), centre, radius(500.0)),
+            Err(KernelError::GridIndex(GridIndexError::RowOutOfBounds {
+                row: 719,
+                height: 180,
+            }))
+        ));
     }
 
     /// An east-to-west whole globe, where a placed span's `west` field holds the eastern column: the set
@@ -600,6 +613,8 @@ mod tests {
     fn placed(grid: &Grid, kernel: &Kernel, centre: Col) -> BTreeSet<(u32, u32)> {
         kernel
             .place(centre)
+            .expect("fixture centre belongs to the kernel grid")
+            .map(|placed| placed.expect("placement indices belong to the grid"))
             .flat_map(|(row, cols)| {
                 columns(grid, cols)
                     .into_iter()
@@ -612,10 +627,18 @@ mod tests {
     /// nothing else. The scan covers the grid rather than the kernel's band, which is the only way it can
     /// catch a cell the kernel left out.
     fn by_distance(grid: &Grid, centre: (Row, Col), radius_km: f64) -> BTreeSet<(u32, u32)> {
-        let from = grid.centre_of(centre.0, centre.1);
+        let from = grid
+            .centre_of(centre.0, centre.1)
+            .expect("indices belong to the fixture grid");
         grid.rows()
             .flat_map(|row| grid.cols().map(move |col| (row, col)))
-            .filter(|(row, col)| great_circle_km(from, grid.centre_of(*row, *col)) <= radius_km)
+            .filter(|(row, col)| {
+                great_circle_km(
+                    from,
+                    grid.centre_of(*row, *col)
+                        .expect("indices belong to the fixture grid"),
+                ) <= radius_km
+            })
             .map(|(row, col)| (row.get(), col.get()))
             .collect()
     }
@@ -684,6 +707,8 @@ mod tests {
         assert!(
             closed
                 .place(col(&grid, 17))
+                .expect("fixture centre belongs to the kernel grid")
+                .map(|placed| placed.expect("placement indices belong to the grid"))
                 .all(|(_, cols)| cols == ColSpan::FullTurn)
         );
 
@@ -692,6 +717,8 @@ mod tests {
         let small = kernel(grid, 90, 500.0);
         let (_, cols) = small
             .place(col(&grid, 0))
+            .expect("fixture centre belongs to the kernel grid")
+            .map(|placed| placed.expect("placement indices belong to the grid"))
             .find(|(row, _)| *row == small.centre())
             .expect("the centre row is in the band");
         match cols {
@@ -704,10 +731,15 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "is not a column of a 360-column grid")]
     fn a_finer_grids_column_is_no_centre_here() {
         let centre = col(&globe(4), 1439);
-        let _ = kernel(globe(1), 90, 500.0).place(centre);
+        assert!(matches!(
+            kernel(globe(1), 90, 500.0).place(centre),
+            Err(GridIndexError::ColumnOutOfBounds {
+                column: 1439,
+                width: 360,
+            })
+        ));
     }
 
     /// The ground the kernel covers: each row's cell count times that row's cell area. It reads the area
@@ -720,7 +752,10 @@ mod tests {
                     Span::FullTurn => grid.width(),
                     Span::Around { half_width } => 2 * half_width + 1,
                 };
-                f64::from(cells) * grid.cell_area_km2(row)
+                f64::from(cells)
+                    * grid
+                        .cell_area_km2(row)
+                        .expect("indices belong to the fixture grid")
             })
             .sum()
     }

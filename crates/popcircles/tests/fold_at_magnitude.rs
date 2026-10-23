@@ -107,7 +107,7 @@ fn the_folds_error_at_magnitude_stays_inside_the_predicate_slack() {
         let kernel = Kernel::new(grid, centre, ceiling_radius()).expect("a grid that closes");
         for col_index in [0, WIDTH / 2, WIDTH - 1] {
             let col = grid.col(col_index).expect("a column of the grid");
-            let folded = circle::population(&table, &kernel, col);
+            let folded = circle::population(&table, &kernel, col).expect("valid grid indices");
             worst = worst.max((folded - total).abs());
         }
     }

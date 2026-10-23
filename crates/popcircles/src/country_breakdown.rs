@@ -176,6 +176,25 @@ mod tests {
     use std::convert::Infallible;
 
     use super::*;
+
+    fn assert_native_sums(
+        result: &CountryBreakdown,
+        direct_a: f64,
+        direct_b: f64,
+        direct_unassigned: f64,
+    ) {
+        let measured = |id: &str| {
+            result
+                .entries
+                .iter()
+                .find(|entry| entry.id == id)
+                .map_or(0.0, |entry| entry.population_inside)
+        };
+        let allowance = result.bound_persons;
+        assert!((measured("A") - direct_a).abs() <= allowance);
+        assert!((measured("B") - direct_b).abs() <= allowance);
+        assert!((result.unassigned_population - direct_unassigned).abs() <= allowance);
+    }
     use crate::circle::{country_population, population};
     use crate::domain::{Domain, Geometry, Polygon};
     use crate::geodesy::{LatLon, RadiusKm, great_circle_km};
@@ -277,10 +296,12 @@ mod tests {
         let mut sums = [0.0; 3];
         for row in 0..source_grid.height() {
             for col in 0..source_grid.width() {
-                let effective_cell = grid.centre_of(
-                    grid.row(row / factor).expect("effective row exists"),
-                    grid.col(col / factor).expect("effective column exists"),
-                );
+                let effective_cell = grid
+                    .centre_of(
+                        grid.row(row / factor).expect("effective row exists"),
+                        grid.col(col / factor).expect("effective column exists"),
+                    )
+                    .expect("effective cell belongs to the grid");
                 if great_circle_km(centre, effective_cell) > radius.km() {
                     continue;
                 }
@@ -413,7 +434,9 @@ mod tests {
                 .collect::<Result<Vec<_>, _>>()
                 .expect("effective masks rasterize");
             let cell = grid.cell_containing(requested).expect("centre is on grid");
-            let centre = grid.centre_of(cell.0, cell.1);
+            let centre = grid
+                .centre_of(cell.0, cell.1)
+                .expect("centre belongs to the grid");
             let kernel = Kernel::new(grid, cell.0, radius).expect("grid closes in longitude");
             let mut world_payload = Vec::new();
             build(synthetic(source_grid), decimation, &mut (), |row| {
@@ -423,7 +446,8 @@ mod tests {
             .expect("synthetic source and sink cannot fail");
             let world_table = crate::table::Table::new(grid, &world_payload)
                 .expect("build emitted a padded table");
-            let circle_total = population(&world_table, &kernel, cell.1);
+            let circle_total = population(&world_table, &kernel, cell.1)
+                .expect("centre belongs to the kernel grid");
             let (whole_rows, whole_cols) = world_table.whole();
             let world_total = world_table.population(whole_rows, whole_cols);
             let mut contributions = Vec::new();
@@ -440,7 +464,10 @@ mod tests {
                     .expect("crop and circle use the same effective grid");
                 let intersects = grid.rows().any(|row| {
                     grid.cols().any(|col| {
-                        great_circle_km(centre, grid.centre_of(row, col)) <= radius.km()
+                        great_circle_km(
+                            centre,
+                            grid.centre_of(row, col).expect("cell belongs to the grid"),
+                        ) <= radius.km()
                             && domain
                                 .contains(&grid, row, col)
                                 .expect("domain uses the effective grid")
@@ -465,17 +492,7 @@ mod tests {
 
             let (direct_a, direct_b, direct_unassigned) =
                 native_circle_sums(source_grid, &ownership, centre, radius, factor, &a, &b);
-            let allowance = result.bound_persons;
-            let measured = |id: &str| {
-                result
-                    .entries
-                    .iter()
-                    .find(|entry| entry.id == id)
-                    .map_or(0.0, |entry| entry.population_inside)
-            };
-            assert!((measured("A") - direct_a).abs() <= allowance);
-            assert!((measured("B") - direct_b).abs() <= allowance);
-            assert!((result.unassigned_population - direct_unassigned).abs() <= allowance);
+            assert_native_sums(&result, direct_a, direct_b, direct_unassigned);
         }
     }
 }

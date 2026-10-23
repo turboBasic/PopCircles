@@ -181,8 +181,13 @@ impl Prepared {
                     .transpose()
                     .map_err(|error| Failure::bad_input(error.to_string()))?
                     .unwrap_or(0.0);
-                let intersects = kernel.place(*centre).any(|(row, span)| {
-                    domain.row_intervals(row).is_some_and(|intervals| {
+                let mut intersects = false;
+                for placed in kernel
+                    .place(*centre)
+                    .map_err(|error| Failure::grid_index(&error))?
+                {
+                    let (row, span) = placed.map_err(|error| Failure::grid_index(&error))?;
+                    if domain.row_intervals(row).is_some_and(|intervals| {
                         intervals.iter().any(|interval| match span {
                             ColSpan::FullTurn => true,
                             ColSpan::Through { west, east } if west.get() <= east.get() => {
@@ -192,8 +197,11 @@ impl Prepared {
                                 interval.start() <= east.get() || interval.end() > west.get()
                             }
                         })
-                    })
-                });
+                    }) {
+                        intersects = true;
+                        break;
+                    }
+                }
                 contributions[index].push(CountryContribution {
                     id: feature.id.clone(),
                     name: feature.name.clone(),

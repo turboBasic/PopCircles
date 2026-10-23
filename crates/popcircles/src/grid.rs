@@ -66,22 +66,31 @@ impl fmt::Display for GridError {
 
 impl Error for GridError {}
 
+/// An index does not fit the grid receiving it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum GridIndexError {
+    #[error("row {row} is outside this {height}-row grid")]
+    RowOutOfBounds { row: u32, height: u32 },
+    #[error("column {column} is outside this {width}-column grid")]
+    ColumnOutOfBounds { column: u32, width: u32 },
+    #[error("cell ({row}, {column}) is outside this {width} x {height} grid")]
+    CellOutOfBounds {
+        row: u32,
+        column: u32,
+        width: u32,
+        height: u32,
+    },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LonSpan {
     pub west: f64,
     pub east: f64,
 }
 
-/// A row index some grid contains, and a column index likewise. Only [`Grid::row`], [`Grid::col`]
-/// and the two iterators mint them, so a raw integer and a row standing in for a column are both
-/// unwritable, and a traversal needs no index it has to check.
-///
-/// The proof is scoped to the grid that minted it, and one grid's index used on a smaller grid is the
-/// case the types miss. Each accessor asserts rather than trusting them there, in release as well as
-/// under test: the check is an integer comparison against work measured in geodesic distances, and
-/// what it buys is a stop instead of the failure this crate treats as worst — a plausible coordinate.
-/// Branding each index with its grid's lifetime would move that stop to compile time, at the cost of
-/// a lifetime parameter on everything downstream that stores one.
+/// An index minted by one grid can be passed to another because the type carries no grid identity.
+/// Index-consuming methods check it against the receiving grid and return [`GridIndexError`] when it
+/// does not fit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Row(u32);
 
@@ -245,23 +254,22 @@ impl Grid {
     /// east of east in a [`LonSpan`]. Distance does not care, since it works on a difference;
     /// anything presenting a coordinate reduces with [`crate::geodesy::wrap_lon`].
     ///
-    /// # Panics
-    /// If either index was minted by a larger grid; [`Row`] says why that is a stop.
-    #[must_use]
-    pub fn centre_of(&self, row: Row, col: Col) -> LatLon {
-        assert!(
-            row.0 < self.height && col.0 < self.width,
-            "({}, {}) is not a cell of a {} x {} grid",
-            row.0,
-            col.0,
-            self.width,
-            self.height
-        );
-        // u32 -> f64 is exact below 2^53, so this carries no rounding of its own.
-        LatLon {
-            lat: self.centre_lat(row),
-            lon: self.origin.lon + (f64::from(col.0) + 0.5) * self.lon_step,
+    /// # Errors
+    /// Returns [`GridIndexError::CellOutOfBounds`] if either index is outside this grid.
+    pub fn centre_of(&self, row: Row, col: Col) -> Result<LatLon, GridIndexError> {
+        if row.0 >= self.height || col.0 >= self.width {
+            return Err(GridIndexError::CellOutOfBounds {
+                row: row.0,
+                column: col.0,
+                width: self.width,
+                height: self.height,
+            });
         }
+        // u32 -> f64 is exact below 2^53, so this carries no rounding of its own.
+        Ok(LatLon {
+            lat: self.origin.lat + (f64::from(row.0) + 0.5) * self.lat_step,
+            lon: self.origin.lon + (f64::from(col.0) + 0.5) * self.lon_step,
+        })
     }
 
     /// The latitude every cell centre in a row shares.
@@ -272,51 +280,52 @@ impl Grid {
     /// [`Grid::centre_of`] reads it rather than recomputing it, so a row has one latitude and not two
     /// that agree.
     ///
-    /// # Panics
-    /// If `row` was minted by a larger grid; [`Row`] says why that is a stop.
-    #[must_use]
-    pub fn centre_lat(&self, row: Row) -> f64 {
-        assert!(
-            row.0 < self.height,
-            "row {} is not a row of a {}-row grid",
-            row.0,
-            self.height
-        );
-        self.origin.lat + (f64::from(row.0) + 0.5) * self.lat_step
+    /// # Errors
+    /// Returns [`GridIndexError::RowOutOfBounds`] if `row` is outside this grid.
+    pub fn centre_lat(&self, row: Row) -> Result<f64, GridIndexError> {
+        if row.0 >= self.height {
+            return Err(GridIndexError::RowOutOfBounds {
+                row: row.0,
+                height: self.height,
+            });
+        }
+        Ok(self.origin.lat + (f64::from(row.0) + 0.5) * self.lat_step)
     }
 
-    /// # Panics
-    /// If `row` was minted by a larger grid; [`Row`] says why that is a stop.
-    #[must_use]
-    pub fn lat_bounds(&self, row: Row) -> LatBand {
-        assert!(
-            row.0 < self.height,
-            "row {} is not a row of a {}-row grid",
-            row.0,
-            self.height
-        );
+    /// # Errors
+    /// Returns [`GridIndexError::RowOutOfBounds`] if `row` is outside this grid.
+    pub fn lat_bounds(&self, row: Row) -> Result<LatBand, GridIndexError> {
+        if row.0 >= self.height {
+            return Err(GridIndexError::RowOutOfBounds {
+                row: row.0,
+                height: self.height,
+            });
+        }
+        Ok(self.lat_band_unchecked(row))
+    }
+
+    fn lat_band_unchecked(&self, row: Row) -> LatBand {
         let north = self.origin.lat + f64::from(row.0) * self.lat_step;
         // lat_step is negative by construction, so north is the larger of the two.
         LatBand::new(north, north + self.lat_step)
     }
 
-    /// # Panics
-    /// If `col` was minted by a larger grid; [`Col`] says why that is a stop.
-    #[must_use]
-    pub fn lon_bounds(&self, col: Col) -> LonSpan {
-        assert!(
-            col.0 < self.width,
-            "column {} is not a column of a {}-column grid",
-            col.0,
-            self.width
-        );
+    /// # Errors
+    /// Returns [`GridIndexError::ColumnOutOfBounds`] if `col` is outside this grid.
+    pub fn lon_bounds(&self, col: Col) -> Result<LonSpan, GridIndexError> {
+        if col.0 >= self.width {
+            return Err(GridIndexError::ColumnOutOfBounds {
+                column: col.0,
+                width: self.width,
+            });
+        }
         let a = self.origin.lon + f64::from(col.0) * self.lon_step;
         let b = a + self.lon_step;
         // lon_step's sign is not constrained, so order by value rather than by index.
-        LonSpan {
+        Ok(LonSpan {
             west: a.min(b),
             east: a.max(b),
-        }
+        })
     }
 
     /// The column `cells` along from `col`, counting round the seam: through rising indices when
@@ -327,16 +336,15 @@ impl Grid {
     /// [`Grid::spans_full_turn`] and on `lon_step`'s sign, and this asks neither: the caller for which
     /// the ground matters is [`crate::kernel::Kernel`], which settles both before it places a span.
     ///
-    /// # Panics
-    /// If `col` was minted by a larger grid; [`Row`] says why that is a stop.
-    #[must_use]
-    pub fn col_along(&self, col: Col, cells: i64) -> Col {
-        assert!(
-            col.0 < self.width,
-            "column {} is not a column of a {}-column grid",
-            col.0,
-            self.width
-        );
+    /// # Errors
+    /// Returns [`GridIndexError::ColumnOutOfBounds`] if `col` is outside this grid.
+    pub fn col_along(&self, col: Col, cells: i64) -> Result<Col, GridIndexError> {
+        if col.0 >= self.width {
+            return Err(GridIndexError::ColumnOutOfBounds {
+                column: col.0,
+                width: self.width,
+            });
+        }
         let width = i64::from(self.width);
         // The offset is reduced before it is added rather than after, so both terms stay below 2^32 and
         // no offset a caller can pass overflows the sum.
@@ -344,7 +352,7 @@ impl Grid {
         // rem_euclid by a positive modulus lands in [0, width), and the width came from a u32, so this
         // conversion is exact. std offers no fallible i64 -> u32, which is why it is a cast.
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        Col(index as u32)
+        Ok(Col(index as u32))
     }
 
     /// The cell containing a coordinate, or `None` when it falls outside the grid.
@@ -386,11 +394,17 @@ impl Grid {
     /// It reads the row's edges through [`Grid::lat_bounds`] rather than recomputing them, which is
     /// what stops the area and the coordinate of a row from ever disagreeing about where the row is.
     ///
-    /// # Panics
-    /// Through [`Grid::lat_bounds`], if `row` was minted by a larger grid.
-    #[must_use]
-    pub fn cell_area_km2(&self, row: Row) -> f64 {
-        zone_area_km2(self.lat_bounds(row), self.lon_step.abs())
+    /// # Errors
+    /// Returns [`GridIndexError::RowOutOfBounds`] if `row` is outside this grid.
+    pub fn cell_area_km2(&self, row: Row) -> Result<f64, GridIndexError> {
+        Ok(zone_area_km2(self.lat_bounds(row)?, self.lon_step.abs()))
+    }
+
+    pub(crate) fn middle_row_cell_area_km2(&self) -> f64 {
+        zone_area_km2(
+            self.lat_band_unchecked(self.middle_row()),
+            self.lon_step.abs(),
+        )
     }
 
     /// Whether the columns close on themselves, as a whole-globe raster's do.
@@ -681,28 +695,44 @@ mod tests {
         }
     }
 
-    // The three faces of the case Row and Col cannot type away: an index minted by the fine grid is
-    // in range there and off the end of the decimated one. The assertions are unconditional, so these
-    // hold in a release build too, which is the only build the search actually runs in.
+    // Row and column types carry no grid identity, so each mismatch reports the receiving grid's error.
     #[test]
-    #[should_panic(expected = "is not a row of a 180-row grid")]
-    fn a_finer_grids_row_does_not_pass_for_one_here() {
+    fn a_finer_grids_row_returns_row_errors_for_row_operations() {
         let (row, _) = cell(&gpw(), 21599, 0);
-        let _ = decimated().lat_bounds(row);
+        let grid = decimated();
+        let error = GridIndexError::RowOutOfBounds {
+            row: 21599,
+            height: 180,
+        };
+        assert_eq!(grid.centre_lat(row), Err(error));
+        assert_eq!(grid.lat_bounds(row), Err(error));
+        assert_eq!(grid.cell_area_km2(row), Err(error));
     }
 
     #[test]
-    #[should_panic(expected = "is not a column of a 360-column grid")]
-    fn a_finer_grids_column_does_not_pass_for_one_here() {
+    fn a_finer_grids_column_returns_column_errors_for_column_operations() {
         let (_, col) = cell(&gpw(), 0, 43199);
-        let _ = decimated().lon_bounds(col);
+        let grid = decimated();
+        let error = GridIndexError::ColumnOutOfBounds {
+            column: 43199,
+            width: 360,
+        };
+        assert_eq!(grid.lon_bounds(col), Err(error));
+        assert_eq!(grid.col_along(col, 1), Err(error));
     }
 
     #[test]
-    #[should_panic(expected = "is not a cell of a 360 x 180 grid")]
-    fn a_finer_grids_cell_does_not_pass_for_one_here() {
+    fn a_finer_grids_cell_returns_cell_error() {
         let (row, col) = cell(&gpw(), 21599, 43199);
-        let _ = decimated().centre_of(row, col);
+        assert_eq!(
+            decimated().centre_of(row, col),
+            Err(GridIndexError::CellOutOfBounds {
+                row: 21599,
+                column: 43199,
+                width: 360,
+                height: 180,
+            })
+        );
     }
 
     #[test]
@@ -713,36 +743,61 @@ mod tests {
 
         // No step is no move, and whole turns are the same: an offset is a position on a ring.
         for col in grid.cols() {
-            assert_eq!(grid.col_along(col, 0), col);
+            assert_eq!(
+                grid.col_along(col, 0).expect("indices belong to the grid"),
+                col
+            );
             for turns in [-2i64, -1, 1, 2] {
-                assert_eq!(grid.col_along(col, turns * i64::from(grid.width())), col);
+                assert_eq!(
+                    grid.col_along(col, turns * i64::from(grid.width()))
+                        .expect("indices belong to the grid"),
+                    col
+                );
             }
         }
 
         // The seam in both directions, which is the case an index clamped instead of wrapped would get
         // wrong: there is no column before the first or after the last, only the other end.
-        assert_eq!(grid.col_along(first, -1), last);
-        assert_eq!(grid.col_along(last, 1), first);
-        assert_eq!(grid.col_along(first, -359), grid.col(1).expect("a column"));
+        assert_eq!(
+            grid.col_along(first, -1)
+                .expect("indices belong to the grid"),
+            last
+        );
+        assert_eq!(
+            grid.col_along(last, 1).expect("indices belong to the grid"),
+            first
+        );
+        assert_eq!(
+            grid.col_along(first, -359)
+                .expect("indices belong to the grid"),
+            grid.col(1).expect("a column")
+        );
 
         // An offset far past a turn is still a column, so a caller needs no reduction of its own.
         assert_eq!(
-            grid.col_along(first, 3 * 360 + 5),
+            grid.col_along(first, 3 * 360 + 5)
+                .expect("indices belong to the grid"),
             grid.col(5).expect("a column")
         );
         // The extreme the reduction order exists for: reducing after the addition would overflow here,
         // and i64::MIN is 352 columns along a 360-column ring.
         assert_eq!(
-            grid.col_along(first, i64::MIN),
+            grid.col_along(first, i64::MIN)
+                .expect("indices belong to the grid"),
             grid.col(352).expect("a column")
         );
     }
 
     #[test]
-    #[should_panic(expected = "is not a column of a 360-column grid")]
     fn a_finer_grids_column_cannot_be_stepped_along_this_one() {
         let (_, col) = cell(&gpw(), 0, 43199);
-        let _ = decimated().col_along(col, 1);
+        assert_eq!(
+            decimated().col_along(col, 1),
+            Err(GridIndexError::ColumnOutOfBounds {
+                column: 43199,
+                width: 360,
+            })
+        );
     }
 
     #[test]
@@ -784,19 +839,27 @@ mod tests {
         let half = GPW_STEP / 2.0;
 
         let (row, col) = cell(&grid, 0, 0);
-        let nw = grid.centre_of(row, col);
+        let nw = grid
+            .centre_of(row, col)
+            .expect("indices belong to the grid");
         assert!(close(nw.lat, 90.0 - half) && close(nw.lon, -180.0 + half));
 
         let (row, col) = cell(&grid, 0, 43199);
-        let ne = grid.centre_of(row, col);
+        let ne = grid
+            .centre_of(row, col)
+            .expect("indices belong to the grid");
         assert!(close(ne.lat, 90.0 - half) && close(ne.lon, 180.0 - half));
 
         let (row, col) = cell(&grid, 21599, 0);
-        let sw = grid.centre_of(row, col);
+        let sw = grid
+            .centre_of(row, col)
+            .expect("indices belong to the grid");
         assert!(close(sw.lat, -90.0 + half) && close(sw.lon, -180.0 + half));
 
         let (row, col) = cell(&grid, 21599, 43199);
-        let se = grid.centre_of(row, col);
+        let se = grid
+            .centre_of(row, col)
+            .expect("indices belong to the grid");
         assert!(close(se.lat, -90.0 + half) && close(se.lon, 180.0 - half));
     }
 
@@ -807,9 +870,16 @@ mod tests {
         // centre_of reads centre_lat instead of repeating the expression.
         let grid = decimated();
         for row in grid.rows() {
-            let lat = grid.centre_lat(row);
+            let lat = grid.centre_lat(row).expect("indices belong to the grid");
             for col in grid.cols() {
-                assert_eq!(grid.centre_of(row, col).lat, lat, "row {}", row.get());
+                assert_eq!(
+                    grid.centre_of(row, col)
+                        .expect("indices belong to the grid")
+                        .lat,
+                    lat,
+                    "row {}",
+                    row.get()
+                );
             }
         }
     }
@@ -819,7 +889,9 @@ mod tests {
         let grid = gpw();
         for index in [0, grid.height() - 1] {
             let (row, col) = cell(&grid, index, 0);
-            let centre = grid.centre_of(row, col);
+            let centre = grid
+                .centre_of(row, col)
+                .expect("indices belong to the grid");
             assert!(centre.lat.abs() < 90.0, "row {index} centre left the globe");
             assert_eq!(grid.cell_containing(centre), Some((row, col)));
         }
@@ -834,11 +906,17 @@ mod tests {
         // The two columns either side of the seam are the first and the last, and a longitude in
         // each lands in it — the seam is where the index wraps, not where the grid stops.
         assert_eq!(
-            grid.cell_containing(grid.centre_of(east.0, east.1)),
+            grid.cell_containing(
+                grid.centre_of(east.0, east.1)
+                    .expect("indices belong to the grid")
+            ),
             Some(east)
         );
         assert_eq!(
-            grid.cell_containing(grid.centre_of(west.0, west.1)),
+            grid.cell_containing(
+                grid.centre_of(west.0, west.1)
+                    .expect("indices belong to the grid")
+            ),
             Some(west)
         );
 
@@ -867,9 +945,11 @@ mod tests {
         for (row, col) in
             [(0u32, 0u32), (10800, 21600), (21599, 43199)].map(|(row, col)| cell(&grid, row, col))
         {
-            let centre = grid.centre_of(row, col);
-            let band = grid.lat_bounds(row);
-            let span = grid.lon_bounds(col);
+            let centre = grid
+                .centre_of(row, col)
+                .expect("indices belong to the grid");
+            let band = grid.lat_bounds(row).expect("indices belong to the grid");
+            let span = grid.lon_bounds(col).expect("indices belong to the grid");
             assert!(band.north() > centre.lat && centre.lat > band.south());
             assert!(span.west < centre.lon && centre.lon < span.east);
             assert!(close(band.north() - band.south(), GPW_STEP));
@@ -884,20 +964,34 @@ mod tests {
         let grid = decimated();
         for (row, next) in grid.rows().zip(grid.rows().skip(1)) {
             assert!(close(
-                grid.lat_bounds(row).south(),
-                grid.lat_bounds(next).north()
+                grid.lat_bounds(row)
+                    .expect("indices belong to the grid")
+                    .south(),
+                grid.lat_bounds(next)
+                    .expect("indices belong to the grid")
+                    .north()
             ));
         }
         let (first, _) = cell(&grid, 0, 0);
-        assert!(close(grid.lat_bounds(first).north(), 90.0));
-        assert!(close(grid.lat_bounds(last_row(&grid)).south(), -90.0));
+        assert!(close(
+            grid.lat_bounds(first)
+                .expect("indices belong to the grid")
+                .north(),
+            90.0
+        ));
+        assert!(close(
+            grid.lat_bounds(last_row(&grid))
+                .expect("the last row belongs to the grid")
+                .south(),
+            -90.0
+        ));
     }
 
     #[test]
     fn every_grid_row_has_an_ordered_band_with_positive_area() {
         let grid = decimated();
         for row in grid.rows() {
-            let band = grid.lat_bounds(row);
+            let band = grid.lat_bounds(row).expect("indices belong to the grid");
             assert!(band.north() > band.south());
             assert!(zone_area_km2(band, grid.lon_step().abs()) > 0.0);
         }
@@ -958,8 +1052,12 @@ mod tests {
             for (row, col) in [(0u32, 0u32), (10800, 21600), (21599, 43199)]
                 .map(|(row, col)| cell(&shifted, row, col))
             {
-                let here = shifted.centre_of(row, col);
-                let there = base.centre_of(row, col);
+                let here = shifted
+                    .centre_of(row, col)
+                    .expect("indices belong to the grid");
+                let there = base
+                    .centre_of(row, col)
+                    .expect("indices belong to the grid");
                 assert!(
                     here == there,
                     "k={k} ({}, {}): {here:?} against {there:?}",
@@ -994,7 +1092,10 @@ mod tests {
         for index in [0, 1, 180, 359] {
             let (row, col) = cell(&grid, 0, index);
             assert_eq!(
-                grid.cell_containing(grid.centre_of(row, col)),
+                grid.cell_containing(
+                    grid.centre_of(row, col)
+                        .expect("indices belong to the grid")
+                ),
                 Some((row, col))
             );
         }
@@ -1006,10 +1107,18 @@ mod tests {
         let (row, first) = cell(&grid, 0, 0);
         let (_, second) = cell(&grid, 0, 1);
         // Column 0 sits east of column 1, which is the whole of what the sign changes.
-        assert!(grid.centre_of(row, first).lon > grid.centre_of(row, second).lon);
+        assert!(
+            grid.centre_of(row, first)
+                .expect("indices belong to the grid")
+                .lon
+                > grid
+                    .centre_of(row, second)
+                    .expect("indices belong to the grid")
+                    .lon
+        );
         // Ordered by value regardless, so a span is never inverted.
         for col in grid.cols() {
-            let span = grid.lon_bounds(col);
+            let span = grid.lon_bounds(col).expect("indices belong to the grid");
             assert!(span.west < span.east);
             assert!(close(span.east - span.west, 1.0));
         }
@@ -1021,8 +1130,12 @@ mod tests {
         let eastward = decimated();
         for (west, east) in westward.rows().zip(eastward.rows()) {
             assert!(close(
-                westward.cell_area_km2(west),
-                eastward.cell_area_km2(east)
+                westward
+                    .cell_area_km2(west)
+                    .expect("indices belong to the grid"),
+                eastward
+                    .cell_area_km2(east)
+                    .expect("indices belong to the grid")
             ));
         }
     }
@@ -1070,7 +1183,10 @@ mod tests {
         for grid in [gpw(), decimated()] {
             let total: f64 = grid
                 .rows()
-                .map(|row| f64::from(grid.width()) * grid.cell_area_km2(row))
+                .map(|row| {
+                    f64::from(grid.width())
+                        * grid.cell_area_km2(row).expect("indices belong to the grid")
+                })
                 .sum();
             let relative = (total - exact).abs() / exact;
             assert!(
@@ -1087,10 +1203,12 @@ mod tests {
         let grid = decimated();
         let last = grid.height() - 1;
         for row in grid.rows() {
-            let area = grid.cell_area_km2(row);
+            let area = grid.cell_area_km2(row).expect("indices belong to the grid");
             assert!(area > 0.0, "row {} has area {area}", row.get());
             let (mirror, _) = cell(&grid, last - row.get(), 0);
-            let mirrored = grid.cell_area_km2(mirror);
+            let mirrored = grid
+                .cell_area_km2(mirror)
+                .expect("indices belong to the grid");
             assert!(
                 (area - mirrored).abs() / area < 1e-12,
                 "row {} and its mirror disagree: {area} against {mirrored}",
@@ -1108,8 +1226,10 @@ mod tests {
             for index in 1..middle {
                 let (row, _) = cell(&grid, index, 0);
                 let (previous_row, _) = cell(&grid, index - 1, 0);
-                let previous = grid.cell_area_km2(previous_row);
-                let current = grid.cell_area_km2(row);
+                let previous = grid
+                    .cell_area_km2(previous_row)
+                    .expect("indices belong to the grid");
+                let current = grid.cell_area_km2(row).expect("indices belong to the grid");
                 assert!(
                     current > previous,
                     "row {index} ({current}) is not larger than row {} ({previous})",
@@ -1118,10 +1238,18 @@ mod tests {
             }
             let largest = grid
                 .rows()
-                .map(|row| grid.cell_area_km2(row))
+                .map(|row| grid.cell_area_km2(row).expect("indices belong to the grid"))
                 .fold(f64::NEG_INFINITY, f64::max);
             let (middle_row, _) = cell(&grid, middle, 0);
-            assert!((grid.cell_area_km2(middle_row) - largest).abs() / largest < 1e-12);
+            assert!(
+                (grid
+                    .cell_area_km2(middle_row)
+                    .expect("indices belong to the grid")
+                    - largest)
+                    .abs()
+                    / largest
+                    < 1e-12
+            );
         }
     }
 
@@ -1130,14 +1258,14 @@ mod tests {
         fn centre_round_trips_on_the_full_grid(row in 0u32..21600, col in 0u32..43200) {
             let grid = gpw();
             let at = cell(&grid, row, col);
-            prop_assert_eq!(grid.cell_containing(grid.centre_of(at.0, at.1)), Some(at));
+            prop_assert_eq!(grid.cell_containing(grid.centre_of(at.0, at.1).expect("indices belong to the grid")), Some(at));
         }
 
         #[test]
         fn centre_round_trips_on_the_decimated_grid(row in 0u32..180, col in 0u32..360) {
             let grid = decimated();
             let at = cell(&grid, row, col);
-            prop_assert_eq!(grid.cell_containing(grid.centre_of(at.0, at.1)), Some(at));
+            prop_assert_eq!(grid.cell_containing(grid.centre_of(at.0, at.1).expect("indices belong to the grid")), Some(at));
         }
 
         #[test]
@@ -1148,7 +1276,7 @@ mod tests {
         ) {
             let grid = gpw();
             let at = cell(&grid, row, col);
-            let centre = grid.centre_of(at.0, at.1);
+            let centre = grid.centre_of(at.0, at.1).expect("indices belong to the grid");
             let shifted = LatLon { lat: centre.lat, lon: centre.lon + 360.0 * f64::from(k) };
             prop_assert_eq!(grid.cell_containing(shifted), Some(at));
         }
