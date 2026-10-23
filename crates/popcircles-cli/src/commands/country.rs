@@ -171,7 +171,6 @@ pub(crate) fn sweep(
                 walk.len()
             );
             records.push(CountrySweepRecord::new(
-                share.get(),
                 SmallestReport::new(&found, table.effective_grid())
                     .map_err(|error| Failure::grid_index(&error))?,
             ));

@@ -1009,8 +1009,11 @@ pub struct CountrySweepRecord {
 
 impl CountrySweepRecord {
     #[must_use]
-    pub const fn new(share: f64, circle: SmallestReport) -> Self {
-        Self { share, circle }
+    pub const fn new(circle: SmallestReport) -> Self {
+        Self {
+            share: circle.target.share,
+            circle,
+        }
     }
 }
 
@@ -1913,11 +1916,15 @@ mod tests {
                 )
                 .expect("the fixture table can be searched");
                 CountrySweepRecord::new(
-                    share,
                     SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
                 )
             })
             .collect();
+        assert!(
+            records
+                .iter()
+                .all(|record| record.share == record.circle.target.share)
+        );
         let country = |id: &str, name: &str| {
             CountrySweepCountry::new(
                 &FeatureId::new(id).expect("fixture country ID"),
