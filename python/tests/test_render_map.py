@@ -11,7 +11,8 @@ from matplotlib.figure import Figure
 
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
-from population_circles.dataset_registry import load, parse
+from population_circles.country_outline import BoundaryIdentityError, load_outline
+from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
 from population_circles.render_map import (
     COASTLINE,
@@ -98,11 +99,112 @@ def country_document(count: int = 1) -> dict[str, Any]:
     return result
 
 
+def country_circle_document() -> dict[str, Any]:
+    result = document()
+    result["document"] = "country-smallest"
+    result["result"] = {
+        "country": {
+            "id": "DE",
+            "name": "Germany",
+            "boundary_dataset": "gisco-countries-2024-1m",
+            "boundary_revision": "Countries 2024 snapshot",
+            "boundary_digest": "a" * 64,
+        },
+        "ledger": {"path": "out/country.json", "radii": 4},
+        "circle": {
+            "centre": {"lat": 51.0, "lon": 10.0},
+            "radius_km": 200.0,
+            "population": 40.0,
+            "share_achieved": 0.5,
+        },
+    }
+    return result
+
+
+def country_boundary_registry(
+    revision: str = "Countries 2024 snapshot",
+    digest: str = "a" * 64,
+) -> Registry:
+    return parse(
+        f"""[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+bytes = 1
+sha256 = "{digest}"
+source_url = "https://example.invalid/source"
+licence = "fixture"
+licence_url = "https://example.invalid/licence"
+attribution = "fixture"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 2
+revision = "{revision}"
+source_id_field = "CNTR_ID"
+identity_policy = "ADR 0015"
+""",
+    )
+
+
+def boundary_feature(identifier: str, name: str, west: float) -> dict[str, Any]:
+    return {
+        "type": "Feature",
+        "properties": {"CNTR_ID": identifier, "NAME_ENGL": name},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[west, 0], [west + 1, 0], [west + 1, 1], [west, 1], [west, 0]]],
+        },
+    }
+
+
 def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
     before = plt.get_fignums()
     with pytest.raises(ValueError, match="unsupported projection 'unknown'"):
         render(circle_of(document()), "unknown", MARKER, coastline=None)
     assert plt.get_fignums() == before
+
+
+def test_country_outline_uses_the_registered_id_when_names_are_duplicated(
+    tmp_path: Path,
+) -> None:
+    answer = circle_of(country_circle_document())
+    dataset = country_boundary_registry().datasets["gisco-countries-2024-1m"]
+    path = dataset.file(tmp_path)
+    path.parent.mkdir(parents=True)
+    features = [
+        boundary_feature("DE", "Same name", 0),
+        boundary_feature("FR", "Same name", 10),
+    ]
+    path.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
+
+    assert load_outline(answer, country_boundary_registry(), tmp_path).bounds == (0, 0, 1, 1)
+
+    for bad_features, message in (
+        ([boundary_feature("FR", "Same name", 10)], "no feature with CNTR_ID='DE'"),
+        (
+            [boundary_feature("DE", "Germany", 0), boundary_feature("DE", "Germany", 10)],
+            "duplicate CNTR_ID 'DE'",
+        ),
+    ):
+        path.write_text(json.dumps({"type": "FeatureCollection", "features": bad_features}))
+        with pytest.raises(ValueError, match=message):
+            load_outline(answer, country_boundary_registry(), tmp_path)
+
+
+def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> None:
+    answer = circle_of(country_circle_document())
+    for registry in (
+        country_boundary_registry(revision="a different snapshot"),
+        country_boundary_registry(digest="b" * 64),
+    ):
+        with pytest.raises(BoundaryIdentityError, match="does not match the registry"):
+            load_outline(answer, registry, tmp_path)
+
+
+def test_country_outline_names_the_fetch_task_when_its_file_is_missing(tmp_path: Path) -> None:
+    answer = circle_of(country_circle_document())
+    with pytest.raises(FileNotFoundError, match="mise run data:get"):
+        load_outline(answer, country_boundary_registry(), tmp_path)
 
 
 def test_an_unknown_terminal_projection_exits_two() -> None:
