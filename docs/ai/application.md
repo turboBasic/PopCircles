@@ -124,6 +124,11 @@ names what is inside it.
    probed radii it cannot separate rather than asserting a minimality it has not proved — a floor on that
    span, since the climb doubles and the radii between two probes were never measured
    ([ADR 0007](../decisions/0007-a-result-states-what-it-could-not-separate.md)).
+   The same radius search runs against a `CountryTable`: its total is the share denominator, each probe
+   counts only cells owned by that country, and candidate centres stay on its effective grid. A 100% country
+   answer may be below the globe-covering ceiling when it already holds the full country total; the ceiling
+   supplies that total directly only when no lower probe reaches it. Its radius ledger carries the complete
+   country identity so a resumed search cannot reuse another country's probes.
 5. **Rendering.** Python, from the published document and nothing else, kept out of the Rust search
    path entirely — the document is where a *result* comes from, alongside two committed inputs it reads
    for itself, the basemap and the dataset registry. Six modules in the `population_circles` package:
