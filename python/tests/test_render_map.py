@@ -534,6 +534,15 @@ def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
     )
 
 
+def test_country_title_names_the_population_dataset_and_decimation() -> None:
+    answer = circle_of(country_circle_document())
+    assert title_of(answer) == (
+        "200 km circle holding 50.00% of the population\n"
+        "40 people, centred 51.0000, 10.0000\n"
+        f"answered from population dataset {DATASET} at decimation k=10"
+    )
+
+
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
 def test_a_complete_figure_is_written_where_it_is_told(projection: str, tmp_path: Path) -> None:
     # The figure a test writes goes to tmp_path: no rendered map enters the repository, which is the

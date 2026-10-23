@@ -183,7 +183,8 @@ def test_a_country_smallest_document_retains_its_boundary_identity() -> None:
     assert answer.country.boundary_revision == "Countries 2024 snapshot"
     assert answer.country.boundary_digest == "a" * 64
     assert answer.provenance.dataset == DATASET
-    assert answer.provenance.table == "country table at decimation 10"
+    assert answer.provenance.table is None
+    assert answer.provenance.decimation == 10  # noqa: PLR2004 — fixture decimation
 
     missing_identity = country_searched()
     del missing_identity["country"]

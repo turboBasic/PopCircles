@@ -80,7 +80,8 @@ class Provenance(BaseModel):
     model_config = _CONFIG
 
     dataset: str
-    table: str
+    table: str | None
+    decimation: int | None = None
 
 
 class CountryIdentity(BaseModel):
@@ -326,7 +327,8 @@ def circle_of(document: Mapping[str, object]) -> Answer:
             envelope.earth_model.radius_km,
             Provenance(
                 dataset=country_result.population_dataset,
-                table=f"country table at decimation {country_result.decimation}",
+                table=None,
+                decimation=country_result.decimation,
             ),
         )
     provenance = envelope.provenance

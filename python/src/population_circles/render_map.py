@@ -135,11 +135,17 @@ def title_of(answer: Answer) -> str:
     # The table is in the caption because a reader cannot otherwise tell a 30 arc-second answer
     # from a decimated one, and the two differ by more than rounding.
     circle = answer.circle
+    source = (
+        f"population dataset {answer.provenance.dataset} "
+        f"at decimation k={answer.provenance.decimation}"
+        if answer.country is not None
+        else f"table {answer.provenance.table}"
+    )
     return (
         f"{circle.radius_km:,.0f} km circle holding {answer.caption.share:.2%} of the population\n"
         f"{answer.caption.population:,.0f} people, "
         f"centred {textwrap.fill(plain_centre(answer), width=44, subsequent_indent='         ')}\n"
-        f"answered from table {answer.provenance.table}"
+        f"answered from {source}"
     )
 
 
