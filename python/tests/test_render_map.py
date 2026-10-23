@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import socket
@@ -100,7 +101,7 @@ def country_document(count: int = 1) -> dict[str, Any]:
     return result
 
 
-def country_circle_document() -> dict[str, Any]:
+def country_circle_document(digest: str = "a" * 64) -> dict[str, Any]:
     result = document()
     result["document"] = "country-smallest"
     result["result"] = {
@@ -109,7 +110,7 @@ def country_circle_document() -> dict[str, Any]:
             "name": "Germany",
             "boundary_dataset": "gisco-countries-2024-1m",
             "boundary_revision": "Countries 2024 snapshot",
-            "boundary_digest": "a" * 64,
+            "boundary_digest": digest,
         },
         "ledger": {"path": "out/country.json", "radii": 4},
         "circle": {
@@ -125,12 +126,13 @@ def country_circle_document() -> dict[str, Any]:
 def country_boundary_registry(
     revision: str = "Countries 2024 snapshot",
     digest: str = "a" * 64,
+    size: int = 1,
 ) -> Registry:
     return parse(
         f"""[datasets.gisco-countries-2024-1m]
 kind = "boundary-vector"
 path = "data/boundaries/gisco-countries-2024-1m.geojson"
-bytes = 1
+bytes = {size}
 sha256 = "{digest}"
 source_url = "https://example.invalid/source"
 licence = "fixture"
@@ -158,6 +160,19 @@ def boundary_feature(identifier: str, name: str, west: float) -> dict[str, Any]:
     }
 
 
+def country_fixture(
+    tmp_path: Path,
+    features: list[dict[str, Any]],
+) -> tuple[Answer, Registry, Path]:
+    content = json.dumps({"type": "FeatureCollection", "features": features})
+    registry_digest = hashlib.sha256(content.encode()).hexdigest()
+    registry = country_boundary_registry(digest=registry_digest, size=len(content.encode()))
+    path = registry.datasets["gisco-countries-2024-1m"].file(tmp_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    return circle_of(country_circle_document(registry_digest)), registry, path
+
+
 def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
     before = plt.get_fignums()
     with pytest.raises(ValueError, match="unsupported projection 'unknown'"):
@@ -168,17 +183,12 @@ def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
 def test_country_outline_uses_the_registered_id_when_names_are_duplicated(
     tmp_path: Path,
 ) -> None:
-    answer = circle_of(country_circle_document())
-    dataset = country_boundary_registry().datasets["gisco-countries-2024-1m"]
-    path = dataset.file(tmp_path)
-    path.parent.mkdir(parents=True)
     features = [
         boundary_feature("DE", "Same name", 0),
         boundary_feature("FR", "Same name", 10),
     ]
-    path.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
-
-    assert load_outline(answer, country_boundary_registry(), tmp_path).bounds == (0, 0, 1, 1)
+    answer, registry, _ = country_fixture(tmp_path, features)
+    assert load_outline(answer, registry, tmp_path).bounds == (0, 0, 1, 1)
 
     for bad_features, message in (
         ([boundary_feature("FR", "Same name", 10)], "no feature with CNTR_ID='DE'"),
@@ -187,9 +197,21 @@ def test_country_outline_uses_the_registered_id_when_names_are_duplicated(
             "duplicate CNTR_ID 'DE'",
         ),
     ):
-        path.write_text(json.dumps({"type": "FeatureCollection", "features": bad_features}))
+        answer, registry, _ = country_fixture(tmp_path, bad_features)
         with pytest.raises(ValueError, match=message):
-            load_outline(answer, country_boundary_registry(), tmp_path)
+            load_outline(answer, registry, tmp_path)
+
+
+def test_country_outline_rejects_bytes_that_do_not_match_the_registered_digest(
+    tmp_path: Path,
+) -> None:
+    features = [boundary_feature("DE", "Germany", 0)]
+    answer, registry, path = country_fixture(tmp_path, features)
+    original = path.read_text()
+    path.write_text(original.replace("[0, 0]", "[2, 0]", 1))
+
+    with pytest.raises(BoundaryIdentityError, match="does not match the registry"):
+        load_outline(answer, registry, tmp_path)
 
 
 def test_a_country_result_is_not_rendered_without_its_outline() -> None:

@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, NoReturn, cast
@@ -97,5 +98,17 @@ def load_outline(answer: Answer, registry: Registry, root: Path = REPO_ROOT) -> 
         refuse(
             f"country boundary file is missing at {path}; run mise run data:get",
             FileNotFoundError,
+        )
+    if path.stat().st_size != dataset.bytes:
+        refuse(
+            f"country boundary file {path} does not match the registry; run mise run data:get",
+            BoundaryIdentityError,
+        )
+    with path.open("rb") as source:
+        digest = hashlib.file_digest(source, "sha256").hexdigest()
+    if digest != dataset.sha256:
+        refuse(
+            f"country boundary file {path} does not match the registry; run mise run data:get",
+            BoundaryIdentityError,
         )
     return _feature_geometry(path, source_id_field, country.id)
