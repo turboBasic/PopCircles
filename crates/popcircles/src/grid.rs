@@ -659,15 +659,27 @@ mod tests {
     }
 
     #[test]
-    fn an_origin_off_the_seam_is_reduced_at_construction() {
+    fn origin_is_reduced_at_the_seam_and_canonical_windows_are_preserved() {
         for lon in [180.0, 540.0, -540.0] {
             let grid = Grid::new(360, 180, LatLon { lat: 90.0, lon }, 1.0, -1.0)
                 .expect("a whole-globe grid is valid at any origin longitude");
             assert_eq!(grid.origin().lon, -180.0, "origin lon {lon}");
         }
-        // A window keeps the longitude it was given when that is already canonical, so reducing the
-        // origin does not move a mask off the region it covers.
-        let window = Grid::new(
+        // A window at 180° is normalized to the congruent -180°; an already canonical 170° is kept.
+        let seam_window = Grid::new(
+            600,
+            600,
+            LatLon {
+                lat: 60.0,
+                lon: 180.0,
+            },
+            GPW_STEP,
+            -GPW_STEP,
+        )
+        .expect("a window grid is valid");
+        assert_eq!(seam_window.origin().lon, -180.0);
+
+        let canonical_window = Grid::new(
             600,
             600,
             LatLon {
@@ -678,7 +690,7 @@ mod tests {
             -GPW_STEP,
         )
         .expect("a window grid is valid");
-        assert_eq!(window.origin().lon, 170.0);
+        assert_eq!(canonical_window.origin().lon, 170.0);
     }
 
     #[test]
