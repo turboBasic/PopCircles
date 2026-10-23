@@ -1,11 +1,12 @@
 import math
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from typing import cast
 
 from pyproj import CRS, Transformer
-from shapely import get_coordinates
+from shapely import get_coordinates, transform
 from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import transform
 
 from population_circles.circle_geometry import (
     HALF_TURN_DEG,
@@ -19,6 +20,9 @@ from population_circles.circle_geometry import (
     hemisphere_km,
     projected_crs,
 )
+
+# Shapely's stubs omit the documented interleaved=False callback and include_z=None options.
+_transform = cast(Callable[..., BaseGeometry], transform)
 
 PLATE_CARREE = "plate-carree"
 ORTHOGRAPHIC = "orthographic"
@@ -75,8 +79,13 @@ def orthographic(built: Cap) -> Frame:
         crs=face,
         to_frame=Transformer.from_crs(built.geodetic, face, always_xy=True),
         visible=geographic(cap(built.centre, limb_km, built.earth_radius_km)),
-        circle=transform(to_face.transform, built.polygon.intersection(disc)),
-        horizon=transform(to_face.transform, disc),
+        circle=_transform(
+            built.polygon.intersection(disc),
+            to_face.transform,
+            include_z=None,
+            interleaved=False,
+        ),
+        horizon=_transform(disc, to_face.transform, include_z=None, interleaved=False),
     )
 
 
@@ -91,13 +100,40 @@ def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
     face = projected_crs("ortho", centre, built.earth_radius_km)
     to_face = Transformer.from_crs(built.geodetic, face, always_xy=True)
 
-    def unwrap(x: float, y: float, z: float | None = None) -> tuple[float, ...]:
-        lon = centre_lon + (x - centre_lon + HALF_TURN_DEG) % (2 * HALF_TURN_DEG) - HALF_TURN_DEG
-        return (lon, y) if z is None else (lon, y, z)
+    def unwrap_lon(lon: float) -> float:
+        return centre_lon + (lon - centre_lon + HALF_TURN_DEG) % (2 * HALF_TURN_DEG) - HALF_TURN_DEG
 
-    outline = transform(to_face.transform, transform(unwrap, country_outline))
+    def unwrap(
+        x: Iterable[float],
+        y: Iterable[float],
+        z: Iterable[float] | None = None,
+    ) -> tuple[list[float], ...]:
+        if z is None:
+            coordinates = list(zip(x, y, strict=True))
+            return (
+                [unwrap_lon(lon) for lon, _ in coordinates],
+                [lat for _, lat in coordinates],
+            )
+        coordinates = list(zip(x, y, z, strict=True))
+        return (
+            [unwrap_lon(lon) for lon, _, _ in coordinates],
+            [lat for _, lat, _ in coordinates],
+            [altitude for _, _, altitude in coordinates],
+        )
+
+    outline = _transform(
+        _transform(country_outline, unwrap, include_z=None, interleaved=False),
+        to_face.transform,
+        include_z=None,
+        interleaved=False,
+    )
     circle_to_face = Transformer.from_crs(built.source, face, always_xy=True)
-    circle = transform(circle_to_face.transform, built.polygon)
+    circle = _transform(
+        built.polygon,
+        circle_to_face.transform,
+        include_z=None,
+        interleaved=False,
+    )
     if any(
         not math.isfinite(value)
         for geometry in (outline, circle)
@@ -130,7 +166,12 @@ def frame(projection: str, built: Cap) -> Frame:
 
 
 def project(view: Frame, geometry: BaseGeometry) -> BaseGeometry:
-    return transform(view.to_frame.transform, geometry.intersection(view.visible))
+    return _transform(
+        geometry.intersection(view.visible),
+        view.to_frame.transform,
+        include_z=None,
+        interleaved=False,
+    )
 
 
 def trace(start: int, stop: int) -> list[int]:
