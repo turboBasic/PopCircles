@@ -361,6 +361,44 @@ pub struct CountryTableIdentity {
     aggregation_order_version: u32,
 }
 
+impl CountryTableIdentity {
+    pub(crate) const fn feature_id(&self) -> &FeatureId {
+        &self.feature_id
+    }
+
+    pub(crate) const fn source_digest(&self) -> u64 {
+        self.source_digest
+    }
+
+    pub(crate) fn boundary_source_digest(&self) -> &str {
+        &self.boundary_source_digest
+    }
+
+    pub(crate) const fn ownership_digest(&self) -> u64 {
+        self.ownership_digest
+    }
+
+    pub(crate) const fn source_grid(&self) -> &Grid {
+        &self.source_grid
+    }
+
+    pub(crate) const fn effective_grid(&self) -> &Grid {
+        &self.effective_grid
+    }
+
+    pub(crate) const fn decimation(&self) -> u32 {
+        self.decimation
+    }
+
+    pub(crate) const fn ownership_rule_version(&self) -> u32 {
+        self.ownership_rule_version
+    }
+
+    pub(crate) const fn aggregation_order_version(&self) -> u32 {
+        self.aggregation_order_version
+    }
+}
+
 /// The row-major source-cell order used to accumulate each effective cell.
 pub const COUNTRY_AGGREGATION_ORDER_VERSION: u32 = 1;
 

@@ -15,9 +15,10 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::RadiusLedger;
+use super::{CountryRadiusLedger, RadiusLedger};
 use crate::grid::Grid;
 use crate::search::Candidate;
+use crate::table::CountryTableIdentity;
 use crate::table::cache::{Attestation, Identity, Mismatch};
 
 /// Bumped when a change to the document's fields is one an older reader would misread rather than refuse.
@@ -29,7 +30,7 @@ use crate::table::cache::{Attestation, Identity, Mismatch};
 /// Its own constant and not the table's: the two documents share an attestation
 /// and are separately versioned, which is what the `version-bumps` hook asks for both of when the shared
 /// shape moves.
-pub const FORMAT_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 3;
 
 /// One suffix, so an interrupted publication leaves one name and no more. Created exclusively, which
 /// makes it this ledger's lock as well — [`Ledger::publish`].
@@ -83,6 +84,15 @@ pub enum LedgerError {
     #[error("the ledger does not describe the table wanted: {0}")]
     NotThisTable(Mismatch),
 
+    #[error("the ledger does not describe the country wanted: {0}")]
+    NotThisCountry(CountryMismatch),
+
+    #[error("the ledger describes a {found} search, but a {wanted} search was requested")]
+    IdentityKind {
+        wanted: &'static str,
+        found: &'static str,
+    },
+
     #[error(
         "the ledger records a maximum at ({row}, {col}), which is not a cell of a {width} x {height} grid"
     )]
@@ -120,31 +130,138 @@ struct DocumentVersion {
     format_version: u32,
 }
 
-/// The document.
-///
-/// `format_version` is declared first because serde emits struct fields in declaration order, so the field
-/// a reader needs before it can trust any other is the first one it meets — the table's header and the
-/// report envelope both lead with theirs for the same reason. The table's identity is the flattened
-/// [`Attestation`], the header's own, so the two documents cannot key on different numbers again and the
-/// file stays flat enough to `cat`.
-///
-/// **The share is not here, and neither is the spacing.** What a row records is the maximum over the
-/// table's cell centres at a radius, which is a property of the table alone: keying on the spacing would
-/// evict a ledger a different spacing filled, and keying on the share would stop a rerun at 25% reusing
-/// what a 50% run paid for.
+/// The identity a ledger records, either for a world table or a country prefix.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+enum LedgerIdentity {
+    Table(Attestation),
+    Country(CountryAttestation),
+}
+
+impl LedgerIdentity {
+    const fn kind(&self) -> &'static str {
+        match self {
+            Self::Table(_) => "world-table",
+            Self::Country(_) => "country",
+        }
+    }
+}
+
+/// The grid fields that `CountryTableIdentity` compares as part of its complete computation identity.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct GridIdentity {
+    width: u32,
+    height: u32,
+    origin_lat: f64,
+    origin_lon: f64,
+    lon_step: f64,
+    lat_step: f64,
+}
+
+impl From<&crate::grid::Grid> for GridIdentity {
+    fn from(grid: &crate::grid::Grid) -> Self {
+        let origin = grid.origin();
+        Self {
+            width: grid.width(),
+            height: grid.height(),
+            origin_lat: origin.lat,
+            origin_lon: origin.lon,
+            lon_step: grid.lon_step(),
+            lat_step: grid.lat_step(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct CountryAttestation {
+    feature_id: String,
+    source_digest: u64,
+    boundary_source_digest: String,
+    ownership_digest: u64,
+    source_grid: GridIdentity,
+    effective_grid: GridIdentity,
+    decimation: u32,
+    ownership_rule_version: u32,
+    aggregation_order_version: u32,
+}
+
+impl CountryAttestation {
+    fn new(identity: &CountryTableIdentity) -> Self {
+        Self {
+            feature_id: identity.feature_id().as_str().to_owned(),
+            source_digest: identity.source_digest(),
+            boundary_source_digest: identity.boundary_source_digest().to_owned(),
+            ownership_digest: identity.ownership_digest(),
+            source_grid: identity.source_grid().into(),
+            effective_grid: identity.effective_grid().into(),
+            decimation: identity.decimation(),
+            ownership_rule_version: identity.ownership_rule_version(),
+            aggregation_order_version: identity.aggregation_order_version(),
+        }
+    }
+
+    fn check(&self, wanted: &Self) -> Result<(), CountryMismatch> {
+        let mismatch = if self.feature_id != wanted.feature_id {
+            Some(CountryMismatch::FeatureId)
+        } else if self.source_digest != wanted.source_digest {
+            Some(CountryMismatch::SourceDigest)
+        } else if self.boundary_source_digest != wanted.boundary_source_digest {
+            Some(CountryMismatch::BoundarySourceDigest)
+        } else if self.ownership_digest != wanted.ownership_digest {
+            Some(CountryMismatch::OwnershipDigest)
+        } else if self.source_grid != wanted.source_grid {
+            Some(CountryMismatch::SourceGrid)
+        } else if self.effective_grid != wanted.effective_grid {
+            Some(CountryMismatch::EffectiveGrid)
+        } else if self.decimation != wanted.decimation {
+            Some(CountryMismatch::Decimation)
+        } else if self.ownership_rule_version != wanted.ownership_rule_version {
+            Some(CountryMismatch::OwnershipRuleVersion)
+        } else if self.aggregation_order_version != wanted.aggregation_order_version {
+            Some(CountryMismatch::AggregationOrderVersion)
+        } else {
+            None
+        };
+        mismatch.map_or(Ok(()), Err)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum CountryMismatch {
+    #[error("the feature identifier differs")]
+    FeatureId,
+    #[error("the decoded population digest differs")]
+    SourceDigest,
+    #[error("the boundary source digest differs")]
+    BoundarySourceDigest,
+    #[error("the cell ownership digest differs")]
+    OwnershipDigest,
+    #[error("the source grid differs")]
+    SourceGrid,
+    #[error("the effective grid differs")]
+    EffectiveGrid,
+    #[error("the decimation factor differs")]
+    Decimation,
+    #[error("the ownership rule version differs")]
+    OwnershipRuleVersion,
+    #[error("the aggregation order version differs")]
+    AggregationOrderVersion,
+}
+
+/// The document. Its explicit identity kind prevents a world maximum from being resumed for a country.
+/// The share and spacing are omitted because each radius records the maximum for the identity alone.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Document {
     format_version: u32,
-    #[serde(flatten)]
-    attestation: Attestation,
+    identity: LedgerIdentity,
     radii: Vec<Probe>,
 }
 
 impl Document {
-    fn new(identity: &Identity) -> Self {
+    fn new(identity: LedgerIdentity) -> Self {
         Self {
             format_version: FORMAT_VERSION,
-            attestation: Attestation::new(identity),
+            identity,
             radii: Vec::new(),
         }
     }
@@ -152,10 +269,19 @@ impl Document {
     /// The attestation's comparison and nothing else. The version is not here — [`Ledger::open_or_empty`]
     /// reads it out of the document before this struct is parsed, because a document of another version
     /// need not parse into this shape at all.
-    fn check(&self, wanted: &Identity) -> Result<(), LedgerError> {
-        self.attestation
-            .check(wanted)
-            .map_err(LedgerError::NotThisTable)
+    fn check(&self, wanted: &LedgerIdentity) -> Result<(), LedgerError> {
+        match (&self.identity, wanted) {
+            (LedgerIdentity::Table(found), LedgerIdentity::Table(wanted)) => found
+                .check_attestation(wanted)
+                .map_err(LedgerError::NotThisTable),
+            (LedgerIdentity::Country(found), LedgerIdentity::Country(wanted)) => {
+                found.check(wanted).map_err(LedgerError::NotThisCountry)
+            }
+            (found, wanted) => Err(LedgerError::IdentityKind {
+                wanted: wanted.kind(),
+                found: found.kind(),
+            }),
+        }
     }
 }
 
@@ -168,7 +294,7 @@ impl Document {
 pub struct Ledger {
     path: PathBuf,
     temporary: PathBuf,
-    identity: Identity,
+    identity: LedgerIdentity,
     grid: Grid,
     entries: BTreeMap<u32, Candidate>,
 }
@@ -184,15 +310,26 @@ impl Ledger {
     /// [`LedgerError::Read`] when the file is there and cannot be read, [`LedgerError::Syntax`] when it is
     /// not this document, and one variant per ground when it describes another table.
     pub fn open_or_empty(path: impl AsRef<Path>, wanted: &Identity) -> Result<Self, LedgerError> {
+        Self::open(
+            path,
+            LedgerIdentity::Table(Attestation::new(wanted)),
+            *wanted.decimation.grid(),
+        )
+    }
+
+    fn open(
+        path: impl AsRef<Path>,
+        identity: LedgerIdentity,
+        grid: Grid,
+    ) -> Result<Self, LedgerError> {
         let path = path.as_ref().to_path_buf();
         let mut temporary = path.clone().into_os_string();
         temporary.push(TEMPORARY_SUFFIX);
-        let grid = *wanted.decimation.grid();
 
         let mut ledger = Self {
             temporary: PathBuf::from(temporary),
             path,
-            identity: *wanted,
+            identity,
             grid,
             entries: BTreeMap::new(),
         };
@@ -228,7 +365,7 @@ impl Ledger {
                 path: ledger.path.clone(),
                 source,
             })?;
-        document.check(wanted)?;
+        document.check(&ledger.identity)?;
 
         for probe in document.radii {
             let cell = ledger.grid.row(probe.row).zip(ledger.grid.col(probe.col));
@@ -281,7 +418,7 @@ impl Ledger {
     /// and resumes from radii neither of them measured. What that costs is an interrupted run's leftover
     /// refusing the next `put` — [`LedgerError::TemporaryHeld`].
     fn publish(&self) -> Result<(), LedgerError> {
-        let mut document = Document::new(&self.identity);
+        let mut document = Document::new(self.identity.clone());
         document.radii = self
             .entries
             .iter()
@@ -318,6 +455,60 @@ impl Ledger {
     }
 }
 
+/// A resumable ledger whose entries are valid only for one complete country table identity.
+#[derive(Debug)]
+pub struct CountryLedger {
+    inner: Ledger,
+}
+
+impl CountryLedger {
+    /// The ledger at `path` for this country computation, or an empty ledger when the path is absent.
+    ///
+    /// # Errors
+    /// Returns the same read, format, syntax and identity errors as [`Ledger::open_or_empty`].
+    pub fn open_or_empty(
+        path: impl AsRef<Path>,
+        wanted: &CountryTableIdentity,
+    ) -> Result<Self, LedgerError> {
+        Ok(Self {
+            inner: Ledger::open(
+                path,
+                LedgerIdentity::Country(CountryAttestation::new(wanted)),
+                *wanted.effective_grid(),
+            )?,
+        })
+    }
+
+    #[must_use]
+    pub fn path(&self) -> &Path {
+        self.inner.path()
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+}
+
+impl RadiusLedger for CountryLedger {
+    type Error = LedgerError;
+
+    fn get(&self, km: u32) -> Option<Candidate> {
+        self.inner.get(km)
+    }
+
+    fn put(&mut self, km: u32, found: Candidate) -> Result<(), Self::Error> {
+        self.inner.put(km, found)
+    }
+}
+
+impl CountryRadiusLedger for CountryLedger {}
+
 impl RadiusLedger for Ledger {
     type Error = LedgerError;
 
@@ -347,9 +538,11 @@ mod tests {
 
     use super::super::{Share, smallest};
     use super::*;
+    use crate::domain::{FeatureId, Geometry, Polygon};
     use crate::geodesy::LatLon;
+    use crate::ownership::CellOwnership;
     use crate::raster::Synthetic;
-    use crate::table::{Decimation, Table, build};
+    use crate::table::{CountryTable, Decimation, Table, build, build_country};
 
     fn grid(width: u32, height: u32) -> Grid {
         Grid::new(
@@ -371,6 +564,60 @@ mod tests {
         Identity {
             digest: DIGEST,
             decimation: Decimation::none(grid(width, height)),
+        }
+    }
+
+    fn country_table(feature_name: &str, boundary_digest: &str) -> CountryTable {
+        let grid = grid(8, 4);
+        let feature = FeatureId::new(feature_name).expect("fixture feature ID is valid");
+        let geometry = Geometry::Polygon(Polygon {
+            rings: vec![vec![
+                LatLon {
+                    lat: 45.0,
+                    lon: -179.0,
+                },
+                LatLon {
+                    lat: 45.0,
+                    lon: -136.0,
+                },
+                LatLon {
+                    lat: 89.0,
+                    lon: -136.0,
+                },
+                LatLon {
+                    lat: 89.0,
+                    lon: -179.0,
+                },
+                LatLon {
+                    lat: 45.0,
+                    lon: -179.0,
+                },
+            ]],
+        });
+        let (ownership, diagnostics) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("fixture country geometry is valid");
+        assert_eq!(diagnostics, []);
+        build_country(
+            Synthetic::new(grid, -9999.0, vec![vec![1.0; 8]; 4])
+                .expect("synthetic rows match the grid"),
+            &ownership,
+            &feature,
+            boundary_digest,
+        )
+        .expect("fixture contains at least one owned cell")
+    }
+
+    fn country_ledger_in(directory: &TempDir, identity: &CountryTableIdentity) -> CountryLedger {
+        CountryLedger::open_or_empty(directory.path().join("radii.json"), identity).unwrap()
+    }
+
+    fn country_candidate(identity: &CountryTableIdentity, population: f64) -> Candidate {
+        let grid = identity.effective_grid();
+        Candidate {
+            row: grid.row(0).expect("the country grid has a row"),
+            col: grid.col(0).expect("the country grid has a column"),
+            population,
         }
     }
 
@@ -428,7 +675,7 @@ mod tests {
 
         let document = fs::read_to_string(ledger.path()).unwrap();
         assert!(
-            document.starts_with(r#"{"format_version":2,"#),
+            document.starts_with(r#"{"format_version":3,"#),
             "{document}"
         );
     }
@@ -461,9 +708,16 @@ mod tests {
     }
 
     fn document_of(identity: &Identity, radii: Vec<Probe>) -> Document {
-        let mut document = Document::new(identity);
+        let mut document = Document::new(LedgerIdentity::Table(Attestation::new(identity)));
         document.radii = radii;
         document
+    }
+
+    fn table_attestation_mut(document: &mut Document) -> &mut Attestation {
+        match &mut document.identity {
+            LedgerIdentity::Table(attestation) => attestation,
+            LedgerIdentity::Country(_) => panic!("test document has a world-table identity"),
+        }
     }
 
     fn reopen(ledger: &Ledger, identity: &Identity) -> Result<Ledger, LedgerError> {
@@ -480,13 +734,117 @@ mod tests {
         document.format_version = FORMAT_VERSION + 1;
         // The digest goes too, and the refusal still names the version: a document of another version is
         // not one whose other fields this build knows how to compare.
-        document.attestation.digest ^= 1;
+        table_attestation_mut(&mut document).digest ^= 1;
         write_document(&ledger, &document);
 
         assert!(matches!(
             reopen(&ledger, &identity),
             Err(LedgerError::FormatVersion { expected, found })
                 if expected == FORMAT_VERSION && found == FORMAT_VERSION + 1
+        ));
+    }
+
+    #[test]
+    fn the_previous_world_document_shape_is_refused_after_the_identity_change() {
+        let directory = TempDir::new().unwrap();
+        let identity = identity(4, 3);
+        let ledger = ledger_in(&directory, &identity);
+        fs::write(
+            ledger.path(),
+            format!(
+                r#"{{"format_version":2,"digest":{DIGEST},"width":4,"height":3,"decimation":1,"origin_lat":90.0,"origin_lon":-180.0,"lon_step":90.0,"lat_step":-60.0,"radii":[]}}"#
+            ),
+        )
+        .unwrap();
+
+        assert!(matches!(
+            reopen(&ledger, &identity),
+            Err(LedgerError::FormatVersion {
+                expected: 3,
+                found: 2
+            })
+        ));
+    }
+
+    #[test]
+    fn every_country_identity_dimension_refuses_a_resumed_ledger() {
+        for (field, expected) in [
+            ("feature_id", CountryMismatch::FeatureId),
+            ("source_digest", CountryMismatch::SourceDigest),
+            (
+                "boundary_source_digest",
+                CountryMismatch::BoundarySourceDigest,
+            ),
+            ("ownership_digest", CountryMismatch::OwnershipDigest),
+            ("source_grid", CountryMismatch::SourceGrid),
+            ("effective_grid", CountryMismatch::EffectiveGrid),
+            ("decimation", CountryMismatch::Decimation),
+            (
+                "ownership_rule_version",
+                CountryMismatch::OwnershipRuleVersion,
+            ),
+            (
+                "aggregation_order_version",
+                CountryMismatch::AggregationOrderVersion,
+            ),
+        ] {
+            let table = country_table("country", "boundary-v1");
+            let identity = table.identity();
+            let directory = TempDir::new().unwrap();
+            let mut ledger = country_ledger_in(&directory, identity);
+            ledger.put(500, country_candidate(identity, 42.0)).unwrap();
+
+            let mut document: serde_json::Value =
+                serde_json::from_slice(&fs::read(ledger.path()).unwrap()).unwrap();
+            let country = &mut document["identity"]["value"];
+            match field {
+                "feature_id" => country[field] = serde_json::json!("another-country"),
+                "source_digest" | "ownership_digest" => {
+                    let value = country[field].as_u64().unwrap();
+                    country[field] = serde_json::json!(value.wrapping_add(1));
+                }
+                "boundary_source_digest" => {
+                    country[field] = serde_json::json!("boundary-v2");
+                }
+                "source_grid" | "effective_grid" => {
+                    let grid = &mut country[field];
+                    let width = grid["width"].as_u64().unwrap();
+                    grid["width"] = serde_json::json!(width + 1);
+                }
+                "decimation" | "ownership_rule_version" | "aggregation_order_version" => {
+                    let value = country[field].as_u64().unwrap();
+                    country[field] = serde_json::json!(value + 1);
+                }
+                _ => unreachable!("every identity field is listed above"),
+            }
+            fs::write(ledger.path(), serde_json::to_vec(&document).unwrap()).unwrap();
+
+            assert!(
+                matches!(
+                    CountryLedger::open_or_empty(ledger.path(), identity),
+                    Err(LedgerError::NotThisCountry(found)) if found == expected
+                ),
+                "changed field {field} was accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn a_world_ledger_cannot_be_opened_as_a_country_ledger() {
+        let table = country_table("country", "boundary-v1");
+        let directory = TempDir::new().unwrap();
+        let world_identity = identity(8, 4);
+        let mut world = ledger_in(&directory, &world_identity);
+        world
+            .put(500, candidate(&world_identity, 0, 0, 1.0))
+            .unwrap();
+
+        assert!(matches!(
+            CountryLedger::open_or_empty(world.path(), table.identity()),
+            Err(LedgerError::IdentityKind {
+                wanted: "country",
+                found: "world-table"
+            })
         ));
     }
 
@@ -499,7 +857,7 @@ mod tests {
         let ledger = ledger_in(&directory, &identity);
 
         let mut document = document_of(&identity, Vec::new());
-        document.attestation.digest ^= 1;
+        table_attestation_mut(&mut document).digest ^= 1;
         write_document(&ledger, &document);
 
         assert!(matches!(
@@ -516,7 +874,7 @@ mod tests {
         let ledger = ledger_in(&directory, &identity);
 
         let mut document = document_of(&identity, Vec::new());
-        document.attestation.width += 1;
+        table_attestation_mut(&mut document).width += 1;
         write_document(&ledger, &document);
 
         assert!(matches!(
@@ -535,7 +893,7 @@ mod tests {
         let ledger = ledger_in(&directory, &identity);
 
         let mut document = document_of(&identity, Vec::new());
-        document.attestation.height += 1;
+        table_attestation_mut(&mut document).height += 1;
         write_document(&ledger, &document);
 
         assert!(matches!(
@@ -556,7 +914,7 @@ mod tests {
         let ledger = ledger_in(&directory, &identity);
 
         let mut document = document_of(&identity, Vec::new());
-        document.attestation.decimation = 2;
+        table_attestation_mut(&mut document).decimation = 2;
         write_document(&ledger, &document);
 
         assert!(matches!(
@@ -607,9 +965,7 @@ mod tests {
 
     #[test]
     fn a_v1_document_is_refused_for_its_version_and_not_for_its_syntax() {
-        // The document verbatim, because no struct in this build spells the shape that is on disk from
-        // before the geometry joined the key. Parsed into the widened `Document` it fails with `missing field origin_lat`,
-        // which is `Syntax` and never reaches a version comparison.
+        // A direct parse would report `Syntax`; the version probe should report `FormatVersion` first.
         let directory = TempDir::new().unwrap();
         let identity = identity(4, 3);
         let ledger = ledger_in(&directory, &identity);
@@ -622,7 +978,7 @@ mod tests {
         assert!(matches!(
             reopen(&ledger, &identity),
             Err(LedgerError::FormatVersion {
-                expected: 2,
+                expected: 3,
                 found: 1
             })
         ));
@@ -641,7 +997,7 @@ mod tests {
         let bytes = fs::read(ledger.path()).unwrap();
         let probed: DocumentVersion = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(probed.format_version, FORMAT_VERSION);
-        assert!(bytes.len() > br#"{"format_version":2}"#.len());
+        assert!(bytes.len() > br#"{"format_version":3}"#.len());
     }
 
     #[test]

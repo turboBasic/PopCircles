@@ -12,8 +12,8 @@ use crate::geodesy::RadiusKm;
 use crate::grid::{Col, Grid, Row};
 use crate::kernel::Kernel;
 use crate::progress::Progress;
-use crate::search::{self, Candidate, SearchError, SearchStats};
-use crate::table::Table;
+use crate::search::{self, Candidate, MostPopulous, SearchError, SearchStats};
+use crate::table::{CountryTable, Table};
 
 #[derive(Debug, Clone, Copy, PartialEq, thiserror::Error)]
 pub enum ShareError {
@@ -144,6 +144,11 @@ pub trait RadiusLedger {
     /// silently stopped recording.
     fn put(&mut self, km: u32, found: Candidate) -> Result<(), Self::Error>;
 }
+
+/// A radius ledger whose records are bound to a country identity.
+pub trait CountryRadiusLedger: RadiusLedger {}
+
+impl CountryRadiusLedger for () {}
 
 /// The ledger for a caller that wants no resumption, so the search takes `()` instead of growing a second
 /// signature without the parameter — [`crate::progress::Progress`]'s reason, and the same shape.
@@ -386,13 +391,16 @@ fn warn_unseparated(span: Option<Ambiguity>, answer_km: u32, slack: f64) {
 /// The ledger is read before the search and never after it, which is the whole of what one buys, and
 /// [`SmallestStats`] is what says so from outside: a reused radius adds nothing to any of the search
 /// counters, because no search ran.
-fn probe<L: RadiusLedger>(
-    table: &Table<'_>,
+fn probe<L: RadiusLedger, F>(
     km: u32,
     spacing: Option<NonZeroU32>,
     ledger: &mut L,
     stats: &mut SmallestStats,
-) -> Result<Candidate, SmallestError<L::Error>> {
+    search_at_radius: &mut F,
+) -> Result<Candidate, SmallestError<L::Error>>
+where
+    F: FnMut(RadiusKm, Option<NonZeroU32>) -> Result<MostPopulous, SearchError>,
+{
     // Box 7's third granularity, opened before the ledger is asked so a radius it answers is bracketed like
     // any other: the pair's near-zero duration is what says a rerun did no work, where emitting nothing
     // would leave a reader unable to tell that from a radius never tried.
@@ -408,7 +416,7 @@ fn probe<L: RadiusLedger>(
     }
     // The inner search reports per level of its own refinement; two meters through one sink interleave
     // into noise, so this one is silent and the caller's sink hears about radii.
-    let searched = search::most_populous(table, RadiusKm::from(km), spacing, &mut ())?;
+    let searched = search_at_radius(RadiusKm::from(km), spacing)?;
     ledger
         .put(km, searched.centre)
         .map_err(SmallestError::Ledger)?;
@@ -457,9 +465,61 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
     ledger: &mut L,
     progress: &mut P,
 ) -> Result<Smallest, SmallestError<L::Error>> {
-    let grid = *table.grid();
-    let (whole_rows, whole_cols) = table.whole();
-    let total = table.population(whole_rows, whole_cols);
+    smallest_by(
+        *table.grid(),
+        {
+            let (whole_rows, whole_cols) = table.whole();
+            table.population(whole_rows, whole_cols)
+        },
+        share,
+        spacing,
+        ledger,
+        progress,
+        |radius, spacing| search::most_populous(table, radius, spacing, &mut ()),
+    )
+}
+
+/// The smallest circle whose population reaches `share` of this country's total.
+///
+/// Candidate centres cover the full effective global grid. Queries and the target use only cells owned by
+/// this country. At the globe-covering ceiling, the country total answers directly without searching the
+/// whole-grid plateau.
+///
+/// # Errors
+/// Returns [`SmallestError::Search`] when a country query cannot be searched, or
+/// [`SmallestError::Ledger`] when the ledger cannot record a probe.
+pub fn smallest_country<L: CountryRadiusLedger, P: Progress>(
+    table: &CountryTable,
+    share: Share,
+    spacing: Option<NonZeroU32>,
+    ledger: &mut L,
+    progress: &mut P,
+) -> Result<Smallest, SmallestError<L::Error>> {
+    smallest_by(
+        *table.effective_grid(),
+        table.total(),
+        share,
+        spacing,
+        ledger,
+        progress,
+        |radius, spacing| search::country_most_populous(table, radius, spacing, &mut ()),
+    )
+}
+
+fn smallest_by<L, P, F>(
+    grid: Grid,
+    total: f64,
+    share: Share,
+    spacing: Option<NonZeroU32>,
+    ledger: &mut L,
+    progress: &mut P,
+    mut search_at_radius: F,
+) -> Result<Smallest, SmallestError<L::Error>>
+where
+    L: RadiusLedger,
+    P: Progress,
+    F: FnMut(RadiusKm, Option<NonZeroU32>) -> Result<MostPopulous, SearchError>,
+{
     let target = Target::of(share, total);
 
     log::info!(
@@ -483,7 +543,7 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
     loop {
         let settled = stats.radii_settled();
         progress.advance(settled, settled + u64::from(climb_probes_remaining(km)));
-        let found = probe(table, km, spacing, ledger, &mut stats)?;
+        let found = probe(km, spacing, ledger, &mut stats, &mut search_at_radius)?;
         ambiguity = widen(ambiguity, km, found.population - target.persons, slack);
 
         if found.population >= target.persons {
@@ -536,7 +596,7 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
         // and then pass it.
         progress.advance(settled, settled + u64::from(halvings(high - low + 1)));
         let mid = low + (high - low) / 2;
-        let found = probe(table, mid, spacing, ledger, &mut stats)?;
+        let found = probe(mid, spacing, ledger, &mut stats, &mut search_at_radius)?;
         ambiguity = widen(ambiguity, mid, found.population - target.persons, slack);
 
         if found.population >= target.persons {
@@ -594,16 +654,19 @@ pub(crate) fn share_of(population: f64, total: f64) -> f64 {
 mod tests {
     use std::collections::BTreeMap;
     use std::convert::Infallible;
+    use std::time::Instant;
 
     use proptest::prelude::*;
 
     use super::*;
     use crate::circle;
-    use crate::geodesy::LatLon;
+    use crate::domain::{FeatureId, Geometry, Polygon};
+    use crate::geodesy::{LatLon, great_circle_km};
     use crate::grid::{Col, Grid, Row};
     use crate::kernel::{Kernel, Span};
+    use crate::ownership::{CellOwner, CellOwnership};
     use crate::raster::Synthetic;
-    use crate::table::{Decimation, Table, build};
+    use crate::table::{CountryTable, Decimation, Table, build, build_country};
 
     /// The boundary of [`within_slack`], as two literals at a time.
     ///
@@ -715,6 +778,211 @@ mod tests {
             -10.0,
         )
         .expect("a 36 x 18 whole-globe grid is valid")
+    }
+
+    fn rectangle(west: f64, south: f64, east: f64, north: f64) -> Polygon {
+        Polygon {
+            rings: vec![vec![
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+            ]],
+        }
+    }
+
+    fn country_fixture() -> (Grid, CountryTable, CellOwnership, FeatureId, Vec<Vec<f32>>) {
+        let grid = grid();
+        let feature = FeatureId::new("fixture-country").expect("fixture ID is valid");
+        let geometry = Geometry::MultiPolygon(vec![
+            rectangle(-180.0, 80.0, -170.0, 90.0),
+            rectangle(0.0, -90.0, 10.0, -80.0),
+            rectangle(170.0, -10.0, -170.0, 10.0),
+            rectangle(-30.0, 0.0, -20.0, 10.0),
+            rectangle(10.0, 0.0, 20.0, 10.0),
+        ]);
+        let (ownership, diagnostics) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("synthetic country geometry is valid");
+        assert_eq!(diagnostics, []);
+
+        let mut cells = vec![vec![0.0_f32; grid.width() as usize]; grid.height() as usize];
+        cells[0][0] = 120.0;
+        cells[17][18] = 120.0;
+        cells[8][0] = 100.0;
+        cells[8][35] = 80.0;
+        cells[8][15] = 99.0;
+        cells[8][19] = 99.0;
+        let country = build_country(
+            Synthetic::new(grid, NODATA, cells.clone()).expect("synthetic cells match the grid"),
+            &ownership,
+            &feature,
+            "fixture-boundary-v1",
+        )
+        .expect("all synthetic land shapes are owned by the feature");
+        (grid, country, ownership, feature, cells)
+    }
+
+    fn country_shape_fixture(
+        scattered: bool,
+    ) -> (Grid, CountryTable, CellOwnership, FeatureId, Vec<Vec<f32>>) {
+        let grid = grid();
+        let feature = FeatureId::new(if scattered { "scattered" } else { "thin" })
+            .expect("fixture ID is valid");
+        let sites = if scattered {
+            vec![(1, 1), (5, 9), (8, 18), (12, 27), (16, 34)]
+        } else {
+            vec![(8, 1), (8, 8), (8, 17), (8, 26), (8, 34)]
+        };
+        let geometry = if scattered {
+            Geometry::MultiPolygon(
+                sites
+                    .iter()
+                    .map(|&(row, col)| {
+                        let centre = grid
+                            .centre_of(row_of(&grid, row), col_of(&grid, col))
+                            .expect("site is on the grid");
+                        rectangle(
+                            centre.lon - 2.0,
+                            centre.lat - 2.0,
+                            centre.lon + 2.0,
+                            centre.lat + 2.0,
+                        )
+                    })
+                    .collect(),
+            )
+        } else {
+            Geometry::Polygon(Polygon {
+                rings: vec![vec![
+                    LatLon {
+                        lat: -10.0,
+                        lon: -170.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: -60.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: 60.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: 170.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: 170.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: 60.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: -60.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: -170.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: -170.0,
+                    },
+                ]],
+            })
+        };
+        let (ownership, diagnostics) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("synthetic country geometry is valid");
+        assert_eq!(diagnostics, []);
+        let mut cells = vec![vec![0.0_f32; grid.width() as usize]; grid.height() as usize];
+        for &(row, col) in &sites {
+            cells[row as usize][col as usize] = 100.0;
+        }
+        let country = build_country(
+            Synthetic::new(grid, NODATA, cells.clone()).expect("synthetic cells match the grid"),
+            &ownership,
+            &feature,
+            "fixture-boundary-v1",
+        )
+        .expect("all planted cells belong to the country");
+        assert!(
+            country.total() > 0.0,
+            "fixture must contain planted population"
+        );
+        (grid, country, ownership, feature, cells)
+    }
+
+    fn exhaustive_country_smallest(
+        grid: &Grid,
+        ownership: &CellOwnership,
+        feature: &FeatureId,
+        cells: &[Vec<f32>],
+        target: f64,
+    ) -> (u32, Candidate) {
+        let owner = CellOwner::Feature(feature.clone());
+        let populated: Vec<_> = grid
+            .rows()
+            .flat_map(|row| grid.cols().map(move |col| (row, col)))
+            .filter_map(|(row, col)| {
+                let owns = ownership
+                    .owner_at(grid, row.get(), col.get())
+                    .expect("source cell belongs to the ownership grid")
+                    == &owner;
+                let population = f64::from(cells[row.get() as usize][col.get() as usize]);
+                (owns && population > 0.0).then(|| {
+                    (
+                        grid.centre_of(row, col)
+                            .expect("source cell belongs to the whole grid"),
+                        population,
+                    )
+                })
+            })
+            .collect();
+        for km in 0..=CEILING_KM {
+            let mut best = None;
+            for row in grid.rows() {
+                for col in grid.cols() {
+                    let centre = grid
+                        .centre_of(row, col)
+                        .expect("candidate belongs to the whole grid");
+                    let population = populated
+                        .iter()
+                        .filter(|(source, _)| great_circle_km(centre, *source) <= f64::from(km))
+                        .map(|(_, population)| population)
+                        .sum();
+                    let candidate = Candidate {
+                        row,
+                        col,
+                        population,
+                    };
+                    best = Some(best.map_or(candidate, |held: Candidate| held.better(candidate)));
+                }
+            }
+            let best = best.expect("the effective grid has cell centres");
+            if best.population >= target {
+                return (km, best);
+            }
+        }
+        panic!("the globe-covering ceiling reaches every country target");
     }
 
     /// `search.rs`'s band shape: closing in longitude, thirty degrees of latitude, so a cap is clipped at
@@ -875,6 +1143,89 @@ mod tests {
     }
 
     #[test]
+    fn smallest_country_matches_exhaustive_radii_for_seam_pole_and_islands() {
+        let (grid, table, ownership, feature, cells) = country_fixture();
+
+        for requested in [0.25, 0.5, 0.75, 1.0] {
+            let share = share(requested);
+            let target = share.get() * table.total();
+            let (expected_radius, expected_centre) =
+                exhaustive_country_smallest(&grid, &ownership, &feature, &cells, target);
+            let actual = smallest_country(&table, share, Some(spacing(6)), &mut (), &mut ())
+                .expect("the country fixture and no-op ledger cannot fail");
+            assert_eq!(actual.radius_km, expected_radius, "share {requested}");
+            assert_eq!(actual.centre.row, expected_centre.row, "share {requested}");
+            assert_eq!(actual.centre.col, expected_centre.col, "share {requested}");
+            assert_eq!(
+                actual.centre.population, expected_centre.population,
+                "share {requested}"
+            );
+            assert_eq!(actual.target.total, table.total());
+            if requested == 1.0 {
+                assert_eq!(actual.centre.population, table.total());
+            }
+            if actual.radius_km > 0 {
+                assert!(
+                    actual
+                        .short_below
+                        .expect("the previous radius was probed")
+                        .1
+                        < target
+                );
+            }
+        }
+
+        let ceiling =
+            search::country_most_populous(&table, ceiling_radius(), Some(spacing(6)), &mut ())
+                .expect("the globe-covering country search succeeds");
+        assert_eq!(ceiling.centre.population, table.total());
+    }
+
+    #[test]
+    #[ignore = "deterministic cost evidence; run explicitly with --ignored --nocapture"]
+    fn country_search_shape_cost() {
+        for (name, scattered, requested) in [("long-thin", false, 0.6), ("islands", true, 0.8)] {
+            let (grid, table, ownership, feature, cells) = country_shape_fixture(scattered);
+            let target = requested * table.total();
+            let expected = exhaustive_country_smallest(&grid, &ownership, &feature, &cells, target);
+            let started = Instant::now();
+            let actual =
+                smallest_country(&table, share(requested), Some(spacing(6)), &mut (), &mut ())
+                    .expect("synthetic shape search succeeds");
+            let elapsed = started.elapsed();
+            let repeated =
+                smallest_country(&table, share(requested), Some(spacing(6)), &mut (), &mut ())
+                    .expect("repeated synthetic shape search succeeds");
+
+            assert_eq!(actual.radius_km, expected.0, "{name} radius");
+            assert_eq!(actual.centre.row, expected.1.row, "{name} row");
+            assert_eq!(actual.centre.col, expected.1.col, "{name} column");
+            assert_eq!(
+                actual.centre.population, expected.1.population,
+                "{name} population"
+            );
+            assert_eq!(repeated.radius_km, actual.radius_km, "{name} repeat radius");
+            assert_eq!(repeated.centre, actual.centre, "{name} repeat centre");
+            assert_eq!(repeated.stats, actual.stats, "{name} deterministic work");
+
+            eprintln!(
+                "shape={name} grid={}x{} share={requested:.2} spacing=6 radius_km={} centre=({}, {}) population={} radii_settled={} blocks_examined={} blocks_pruned={} circles_evaluated={} elapsed_ms={:.3}",
+                grid.width(),
+                grid.height(),
+                actual.radius_km,
+                actual.centre.row.get(),
+                actual.centre.col.get(),
+                actual.centre.population,
+                actual.stats.radii_settled(),
+                actual.stats.searched.blocks_examined,
+                actual.stats.searched.blocks_pruned,
+                actual.stats.searched.circles_evaluated,
+                elapsed.as_secs_f64() * 1_000.0,
+            );
+        }
+    }
+
+    #[test]
     fn a_ledger_gives_back_the_maximum_it_was_given_and_nothing_for_a_radius_it_has_not_seen() {
         let grid = grid();
         let mut ledger = Recorded::default();
@@ -1029,6 +1380,38 @@ mod tests {
                 expected.target.total.to_bits()
             ]
         );
+    }
+
+    #[test]
+    fn a_country_ledger_resumes_the_same_smallest_circle() {
+        let (_grid, table, _ownership, _feature, _cells) = country_fixture();
+        let directory = tempfile::TempDir::new().unwrap();
+        let path = directory.path().join("country-radii.json");
+        let mut cold_ledger = cache::CountryLedger::open_or_empty(&path, table.identity()).unwrap();
+        let cold = smallest_country(
+            &table,
+            share(0.5),
+            Some(spacing(6)),
+            &mut cold_ledger,
+            &mut (),
+        )
+        .unwrap();
+        assert!(cold.stats.radii_evaluated > 0);
+        drop(cold_ledger);
+
+        let mut warm_ledger = cache::CountryLedger::open_or_empty(&path, table.identity()).unwrap();
+        let warm = smallest_country(
+            &table,
+            share(0.5),
+            Some(spacing(6)),
+            &mut warm_ledger,
+            &mut (),
+        )
+        .unwrap();
+        assert_same_answer(warm, cold);
+        assert_eq!(warm.stats.radii_evaluated, 0);
+        assert_eq!(warm.stats.radii_reused, cold.stats.radii_settled());
+        assert_eq!(warm.stats.searched, SearchStats::default());
     }
 
     #[test]
