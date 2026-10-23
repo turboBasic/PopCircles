@@ -12,7 +12,10 @@ use popcircles::ownership::CellOwnership;
 use popcircles::raster::geotiff::GeoTiffSource;
 use popcircles::raster::{CellTallies, RasterError, RasterRow, RasterSource};
 use popcircles::table::CountryTable;
-use popcircles::table::{ColSpan, CountryTableBuildError, Decimation, build_country_decimated};
+use popcircles::table::{
+    ColSpan, CountryTableBuildError, Decimation, build_country_decimated,
+    build_country_decimated_parallel,
+};
 
 use crate::boundaries::{self, BoundaryFeature};
 use crate::failure::{EXIT_MISSING_DATA, Failure};
@@ -144,17 +147,27 @@ impl Prepared {
         &self,
         feature: &BoundaryFeature,
     ) -> Result<Option<CountryTable>, Failure> {
-        match build_country_decimated(
+        country_table_result(build_country_decimated(
             Replay::new(self.source, &self.rows, self.tallies),
             &self.ownership,
             &feature.id,
             self.decimation,
             &self.boundary_digest,
-        ) {
-            Ok(table) => Ok(Some(table)),
-            Err(CountryTableBuildError::NoOwnedCells(_)) => Ok(None),
-            Err(error) => Err(Failure::bad_input(error.to_string())),
-        }
+        ))
+    }
+
+    fn country_table_parallel(
+        &self,
+        feature: &BoundaryFeature,
+    ) -> Result<Option<CountryTable>, Failure> {
+        country_table_result(build_country_decimated_parallel(
+            self.source,
+            &self.rows,
+            &self.ownership,
+            &feature.id,
+            self.decimation,
+            &self.boundary_digest,
+        ))
     }
 
     pub(crate) fn feature(&self, selector: &str) -> Result<&BoundaryFeature, Failure> {
@@ -178,6 +191,15 @@ impl Prepared {
         circles: &[((Row, Col), RadiusKm, f64)],
         world_population: f64,
     ) -> Result<Vec<CountryBreakdown>, Failure> {
+        self.for_circles_with(circles, world_population, Self::country_table_parallel)
+    }
+
+    fn for_circles_with(
+        &self,
+        circles: &[((Row, Col), RadiusKm, f64)],
+        world_population: f64,
+        build_table: impl Fn(&Self, &BoundaryFeature) -> Result<Option<CountryTable>, Failure>,
+    ) -> Result<Vec<CountryBreakdown>, Failure> {
         let kernels = circles
             .iter()
             .map(|((row, _), radius, _)| {
@@ -186,14 +208,16 @@ impl Prepared {
             .collect::<Result<Vec<_>, _>>()?;
         let mut contributions = vec![Vec::with_capacity(self.features.len()); circles.len()];
         let feature_count = self.features.len();
-        for (index, (feature, domain)) in self.features.iter().zip(&self.domains).enumerate() {
+        for (feature_index, (feature, domain)) in
+            self.features.iter().zip(&self.domains).enumerate()
+        {
             log::info!(
                 "country accounting {}/{}: {}",
-                index + 1,
+                feature_index + 1,
                 feature_count,
                 feature.id.as_str()
             );
-            let table = self.country_table(feature)?;
+            let table = build_table(self, feature)?;
             let total = table.as_ref().map_or(0.0, CountryTable::total);
             for (index, (((_, centre), _radius, _), kernel)) in
                 circles.iter().zip(&kernels).enumerate()
@@ -204,27 +228,7 @@ impl Prepared {
                     .transpose()
                     .map_err(|error| Failure::bad_input(error.to_string()))?
                     .unwrap_or(0.0);
-                let mut intersects = false;
-                for placed in kernel
-                    .place(*centre)
-                    .map_err(|error| Failure::grid_index(&error))?
-                {
-                    let (row, span) = placed.map_err(|error| Failure::grid_index(&error))?;
-                    if domain.row_intervals(row).is_some_and(|intervals| {
-                        intervals.iter().any(|interval| match span {
-                            ColSpan::FullTurn => true,
-                            ColSpan::Through { west, east } if west.get() <= east.get() => {
-                                interval.start() <= east.get() && interval.end() > west.get()
-                            }
-                            ColSpan::Through { west, east } => {
-                                interval.start() <= east.get() || interval.end() > west.get()
-                            }
-                        })
-                    }) {
-                        intersects = true;
-                        break;
-                    }
-                }
+                let intersects = circle_intersects_domain(domain, kernel, *centre)?;
                 contributions[index].push(CountryContribution {
                     id: feature.id.clone(),
                     name: feature.name.clone(),
@@ -241,8 +245,9 @@ impl Prepared {
             attribution: self.attribution.clone(),
             effective_grid: self.effective,
             decimation: self.decimation.factor(),
-            accounting_route: "unique-native-cell ownership; sequential cropped prefixes"
-                .to_owned(),
+            accounting_route:
+                "unique-native-cell ownership; one cropped prefix at a time; parallel prefix build and source scan"
+                    .to_owned(),
         };
         circles
             .iter()
@@ -259,6 +264,43 @@ impl Prepared {
             })
             .collect()
     }
+}
+
+fn country_table_result(
+    result: Result<CountryTable, CountryTableBuildError>,
+) -> Result<Option<CountryTable>, Failure> {
+    match result {
+        Ok(table) => Ok(Some(table)),
+        Err(CountryTableBuildError::NoOwnedCells(_)) => Ok(None),
+        Err(error) => Err(Failure::bad_input(error.to_string())),
+    }
+}
+
+fn circle_intersects_domain(
+    domain: &Domain,
+    kernel: &Kernel,
+    centre: Col,
+) -> Result<bool, Failure> {
+    for placed in kernel
+        .place(centre)
+        .map_err(|error| Failure::grid_index(&error))?
+    {
+        let (row, span) = placed.map_err(|error| Failure::grid_index(&error))?;
+        if domain.row_intervals(row).is_some_and(|intervals| {
+            intervals.iter().any(|interval| match span {
+                ColSpan::FullTurn => true,
+                ColSpan::Through { west, east } if west.get() <= east.get() => {
+                    interval.start() <= east.get() && interval.end() > west.get()
+                }
+                ColSpan::Through { west, east } => {
+                    interval.start() <= east.get() || interval.end() > west.get()
+                }
+            })
+        }) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 struct Replay<'a> {
@@ -299,11 +341,15 @@ impl RasterSource for Replay<'_> {
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used, clippy::float_cmp)]
 mod tests {
+    use std::fs;
+    use std::time::Instant;
+
     use popcircles::circle;
     use popcircles::domain::{Domain, FeatureId, Geometry, Polygon};
     use popcircles::geodesy::{LatLon, RadiusKm};
     use popcircles::grid::Grid;
     use popcircles::kernel::Kernel;
+    use popcircles::report::CountryBreakdownReport;
 
     use super::*;
 
@@ -398,5 +444,169 @@ mod tests {
             circle::country_population(&table, &south, grid.col(2).unwrap()).unwrap(),
             0.0
         );
+    }
+
+    #[test]
+    fn parallel_country_accounting_matches_sequential_serialization() {
+        let grid = Grid::new(
+            36,
+            18,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            10.0,
+            -10.0,
+        )
+        .unwrap();
+        let features = vec![country("AA", -180.0, 0.0), country("BB", 0.0, 180.0)];
+        let geometries = features
+            .iter()
+            .map(|feature| (feature.id.clone(), feature.geometry.clone()))
+            .collect::<Vec<_>>();
+        let (ownership, _) = CellOwnership::rasterize_features(&geometries, grid).unwrap();
+        let domains = features
+            .iter()
+            .map(|feature| {
+                Domain::rasterize(feature.id.clone(), &feature.geometry, grid)
+                    .unwrap()
+                    .0
+            })
+            .collect();
+        let prepared = Prepared {
+            source: grid,
+            effective: grid,
+            decimation: Decimation::none(grid),
+            population_dataset: "fixture".to_owned(),
+            rows: vec![vec![1.0; grid.width() as usize]; grid.height() as usize],
+            tallies: CellTallies::default(),
+            ownership,
+            domains,
+            features,
+            boundary_digest: "fixture".to_owned(),
+            boundary_revision: "fixture".to_owned(),
+            attribution: "fixture".to_owned(),
+        };
+        let circles = [(
+            (grid.row(4).unwrap(), grid.col(2).unwrap()),
+            RadiusKm::new(500.0).unwrap(),
+            1.0,
+        )];
+        let sequential = prepared
+            .for_circles_with(&circles, 648.0, Prepared::country_table)
+            .unwrap();
+        let repeated_sequential = prepared
+            .for_circles_with(&circles, 648.0, Prepared::country_table)
+            .unwrap();
+        let parallel = prepared.for_circles(&circles, 648.0).unwrap();
+        let repeated_parallel = prepared.for_circles(&circles, 648.0).unwrap();
+        let encode = |breakdowns: &[CountryBreakdown]| {
+            serde_json::to_vec(
+                &breakdowns
+                    .iter()
+                    .map(CountryBreakdownReport::from)
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+
+        assert_eq!(parallel, sequential);
+        assert_eq!(repeated_sequential, sequential);
+        assert_eq!(repeated_parallel, parallel);
+        assert_eq!(encode(&parallel), encode(&sequential));
+        assert_eq!(encode(&repeated_parallel), encode(&parallel));
+    }
+
+    #[test]
+    #[ignore = "real-data release benchmark; see tmp/gh-191/measurements/benchmark.md"]
+    fn full_resolution_country_accounting_benchmark() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .canonicalize()
+            .unwrap();
+        std::env::set_current_dir(&root).unwrap();
+        let registry = Registry::load(Path::new(REGISTRY_PATH)).unwrap();
+        let dataset = registry.raster("population-count-2020-30arcsec").unwrap();
+        let grid = dataset.grid.grid().unwrap();
+        let prepared =
+            Prepared::load(Some("population-count-2020-30arcsec"), grid, grid, 1).unwrap();
+        let (boundary_dataset, boundary_revision, boundary_digest) = prepared.boundary_identity();
+        let centre = grid
+            .cell_containing(LatLon {
+                lat: 49.0,
+                lon: 7.5,
+            })
+            .unwrap();
+        let radius = RadiusKm::new(500.0).unwrap();
+        let kernel = Kernel::new(grid, centre.0, radius).unwrap();
+        let selected_ids = ["DE", "FR"];
+        let mode = std::env::var("POPCIRCLES_ACCOUNTING_MODE")
+            .expect("set POPCIRCLES_ACCOUNTING_MODE to sequential or parallel");
+        let build_table = match mode.as_str() {
+            "sequential" => Prepared::country_table,
+            "parallel" => Prepared::country_table_parallel,
+            _ => panic!("unknown country accounting mode: {mode}"),
+        };
+        let mut results = Vec::with_capacity(selected_ids.len());
+        let mut timings = Vec::with_capacity(selected_ids.len());
+
+        for id in selected_ids {
+            let feature = prepared.feature(id).unwrap();
+            let domain = &prepared.domains[prepared
+                .features
+                .iter()
+                .position(|candidate| candidate.id == feature.id)
+                .unwrap()];
+            let started = Instant::now();
+            let table = build_table(&prepared, feature)
+                .unwrap()
+                .expect("selected benchmark countries have owned population cells");
+            let total = table.total();
+            let inside = circle::country_population(&table, &kernel, centre.1).unwrap();
+            let intersects = circle_intersects_domain(domain, &kernel, centre.1).unwrap();
+            timings.push(serde_json::json!({
+                "country_id": id,
+                "wall_seconds": started.elapsed().as_secs_f64(),
+            }));
+            results.push(serde_json::json!({
+                "country_id": id,
+                "country_name": feature.name,
+                "total": total,
+                "circle_population": inside,
+                "intersects": intersects,
+                "crop": {
+                    "width": table.grid().width(),
+                    "height": table.grid().height(),
+                },
+            }));
+        }
+
+        let output_dir = std::env::var("POPCIRCLES_ACCOUNTING_OUTPUT")
+            .expect("set POPCIRCLES_ACCOUNTING_OUTPUT to an output directory");
+        let output_dir = Path::new(&output_dir);
+        fs::create_dir_all(output_dir).unwrap();
+        fs::write(
+            output_dir.join("country-accounting-reference.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "population_dataset": "population-count-2020-30arcsec",
+                "population_sha256": dataset.sha256,
+                "boundary_dataset": boundary_dataset,
+                "boundary_revision": boundary_revision,
+                "boundary_sha256": boundary_digest,
+                "decimation": 1,
+                "circle": {
+                    "centre": { "latitude": 49.0, "longitude": 7.5 },
+                    "radius_km": radius.km(),
+                },
+                "countries": results,
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        fs::write(
+            output_dir.join("country-accounting-times.json"),
+            serde_json::to_vec_pretty(&timings).unwrap(),
+        )
+        .unwrap();
     }
 }
