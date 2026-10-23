@@ -654,6 +654,7 @@ pub(crate) fn share_of(population: f64, total: f64) -> f64 {
 mod tests {
     use std::collections::BTreeMap;
     use std::convert::Infallible;
+    use std::time::Instant;
 
     use proptest::prelude::*;
 
@@ -835,6 +836,98 @@ mod tests {
             "fixture-boundary-v1",
         )
         .expect("all synthetic land shapes are owned by the feature");
+        (grid, country, ownership, feature, cells)
+    }
+
+    fn country_shape_fixture(
+        scattered: bool,
+    ) -> (Grid, CountryTable, CellOwnership, FeatureId, Vec<Vec<f32>>) {
+        let grid = grid();
+        let feature = FeatureId::new(if scattered { "scattered" } else { "thin" })
+            .expect("fixture ID is valid");
+        let sites = if scattered {
+            vec![(1, 1), (5, 9), (8, 18), (12, 27), (16, 34)]
+        } else {
+            vec![(8, 1), (8, 8), (8, 17), (8, 26), (8, 34)]
+        };
+        let geometry = if scattered {
+            Geometry::MultiPolygon(
+                sites
+                    .iter()
+                    .map(|&(row, col)| {
+                        let centre = grid
+                            .centre_of(row_of(&grid, row), col_of(&grid, col))
+                            .expect("site is on the grid");
+                        rectangle(
+                            centre.lon - 2.0,
+                            centre.lat - 2.0,
+                            centre.lon + 2.0,
+                            centre.lat + 2.0,
+                        )
+                    })
+                    .collect(),
+            )
+        } else {
+            Geometry::Polygon(Polygon {
+                rings: vec![vec![
+                    LatLon {
+                        lat: -10.0,
+                        lon: -170.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: -60.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: 60.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: 170.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: 170.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: 60.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: -60.0,
+                    },
+                    LatLon {
+                        lat: 10.0,
+                        lon: -170.0,
+                    },
+                    LatLon {
+                        lat: -10.0,
+                        lon: -170.0,
+                    },
+                ]],
+            })
+        };
+        let (ownership, diagnostics) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("synthetic country geometry is valid");
+        assert_eq!(diagnostics, []);
+        let mut cells = vec![vec![0.0_f32; grid.width() as usize]; grid.height() as usize];
+        for &(row, col) in &sites {
+            cells[row as usize][col as usize] = 100.0;
+        }
+        let country = build_country(
+            Synthetic::new(grid, NODATA, cells.clone()).expect("synthetic cells match the grid"),
+            &ownership,
+            &feature,
+            "fixture-boundary-v1",
+        )
+        .expect("all planted cells belong to the country");
+        assert!(
+            country.total() > 0.0,
+            "fixture must contain planted population"
+        );
         (grid, country, ownership, feature, cells)
     }
 
@@ -1086,6 +1179,50 @@ mod tests {
             search::country_most_populous(&table, ceiling_radius(), Some(spacing(6)), &mut ())
                 .expect("the globe-covering country search succeeds");
         assert_eq!(ceiling.centre.population, table.total());
+    }
+
+    #[test]
+    #[ignore = "deterministic cost evidence; run explicitly with --ignored --nocapture"]
+    fn country_search_shape_cost() {
+        for (name, scattered, requested) in [("long-thin", false, 0.6), ("islands", true, 0.8)] {
+            let (grid, table, ownership, feature, cells) = country_shape_fixture(scattered);
+            let target = requested * table.total();
+            let expected = exhaustive_country_smallest(&grid, &ownership, &feature, &cells, target);
+            let started = Instant::now();
+            let actual =
+                smallest_country(&table, share(requested), Some(spacing(6)), &mut (), &mut ())
+                    .expect("synthetic shape search succeeds");
+            let elapsed = started.elapsed();
+            let repeated =
+                smallest_country(&table, share(requested), Some(spacing(6)), &mut (), &mut ())
+                    .expect("repeated synthetic shape search succeeds");
+
+            assert_eq!(actual.radius_km, expected.0, "{name} radius");
+            assert_eq!(actual.centre.row, expected.1.row, "{name} row");
+            assert_eq!(actual.centre.col, expected.1.col, "{name} column");
+            assert_eq!(
+                actual.centre.population, expected.1.population,
+                "{name} population"
+            );
+            assert_eq!(repeated.radius_km, actual.radius_km, "{name} repeat radius");
+            assert_eq!(repeated.centre, actual.centre, "{name} repeat centre");
+            assert_eq!(repeated.stats, actual.stats, "{name} deterministic work");
+
+            eprintln!(
+                "shape={name} grid={}x{} share={requested:.2} spacing=6 radius_km={} centre=({}, {}) population={} radii_settled={} blocks_examined={} blocks_pruned={} circles_evaluated={} elapsed_ms={:.3}",
+                grid.width(),
+                grid.height(),
+                actual.radius_km,
+                actual.centre.row.get(),
+                actual.centre.col.get(),
+                actual.centre.population,
+                actual.stats.radii_settled(),
+                actual.stats.searched.blocks_examined,
+                actual.stats.searched.blocks_pruned,
+                actual.stats.searched.circles_evaluated,
+                elapsed.as_secs_f64() * 1_000.0,
+            );
+        }
     }
 
     #[test]
