@@ -145,6 +145,11 @@ pub trait RadiusLedger {
     fn put(&mut self, km: u32, found: Candidate) -> Result<(), Self::Error>;
 }
 
+/// A radius ledger whose records are bound to a country identity.
+pub trait CountryRadiusLedger: RadiusLedger {}
+
+impl CountryRadiusLedger for () {}
+
 /// The ledger for a caller that wants no resumption, so the search takes `()` instead of growing a second
 /// signature without the parameter — [`crate::progress::Progress`]'s reason, and the same shape.
 impl RadiusLedger for () {
@@ -483,7 +488,7 @@ pub fn smallest<L: RadiusLedger, P: Progress>(
 /// # Errors
 /// Returns [`SmallestError::Search`] when a country query cannot be searched, or
 /// [`SmallestError::Ledger`] when the ledger cannot record a probe.
-pub fn smallest_country<L: RadiusLedger, P: Progress>(
+pub fn smallest_country<L: CountryRadiusLedger, P: Progress>(
     table: &CountryTable,
     share: Share,
     spacing: Option<NonZeroU32>,
@@ -1235,6 +1240,38 @@ mod tests {
                 expected.target.total.to_bits()
             ]
         );
+    }
+
+    #[test]
+    fn a_country_ledger_resumes_the_same_smallest_circle() {
+        let (_grid, table, _ownership, _feature, _cells) = country_fixture();
+        let directory = tempfile::TempDir::new().unwrap();
+        let path = directory.path().join("country-radii.json");
+        let mut cold_ledger = cache::CountryLedger::open_or_empty(&path, table.identity()).unwrap();
+        let cold = smallest_country(
+            &table,
+            share(0.5),
+            Some(spacing(6)),
+            &mut cold_ledger,
+            &mut (),
+        )
+        .unwrap();
+        assert!(cold.stats.radii_evaluated > 0);
+        drop(cold_ledger);
+
+        let mut warm_ledger = cache::CountryLedger::open_or_empty(&path, table.identity()).unwrap();
+        let warm = smallest_country(
+            &table,
+            share(0.5),
+            Some(spacing(6)),
+            &mut warm_ledger,
+            &mut (),
+        )
+        .unwrap();
+        assert_same_answer(warm, cold);
+        assert_eq!(warm.stats.radii_evaluated, 0);
+        assert_eq!(warm.stats.radii_reused, cold.stats.radii_settled());
+        assert_eq!(warm.stats.searched, SearchStats::default());
     }
 
     #[test]

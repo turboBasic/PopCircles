@@ -240,6 +240,14 @@ impl Attestation {
     /// # Errors
     /// [`Mismatch`], whose variants are the grounds, naming the first field that differs.
     pub fn check(&self, wanted: &Identity) -> Result<(), Mismatch> {
+        self.check_attestation(&Self::new(wanted))
+    }
+
+    /// Checks another attestation using the same geometry tolerance as [`Self::check`].
+    ///
+    /// # Errors
+    /// Returns [`Mismatch`] for the first field that differs.
+    pub fn check_attestation(&self, wanted: &Self) -> Result<(), Mismatch> {
         if self.digest != wanted.digest {
             return Err(Mismatch::Digest {
                 wanted: wanted.digest,
@@ -247,50 +255,48 @@ impl Attestation {
             });
         }
 
-        let grid = wanted.decimation.grid();
-        if self.width != grid.width() {
+        if self.width != wanted.width {
             return Err(Mismatch::Width {
-                wanted: grid.width(),
+                wanted: wanted.width,
                 found: self.width,
             });
         }
-        if self.height != grid.height() {
+        if self.height != wanted.height {
             return Err(Mismatch::Height {
-                wanted: grid.height(),
+                wanted: wanted.height,
                 found: self.height,
             });
         }
-        if self.decimation != wanted.decimation.factor() {
+        if self.decimation != wanted.decimation {
             return Err(Mismatch::DecimationFactor {
-                wanted: wanted.decimation.factor(),
+                wanted: wanted.decimation,
                 found: self.decimation,
             });
         }
 
-        let origin = grid.origin();
-        if (self.origin_lat - origin.lat).abs() > BOUNDARY_TOLERANCE_DEG {
+        if (self.origin_lat - wanted.origin_lat).abs() > BOUNDARY_TOLERANCE_DEG {
             return Err(Mismatch::OriginLat {
-                wanted: origin.lat,
+                wanted: wanted.origin_lat,
                 found: self.origin_lat,
             });
         }
         // Through the seam, for the reader's reason: -180 and 180 are one meridian, and a document
         // spelling the origin either way describes the same columns.
-        if wrap_lon(self.origin_lon - origin.lon).abs() > BOUNDARY_TOLERANCE_DEG {
+        if wrap_lon(self.origin_lon - wanted.origin_lon).abs() > BOUNDARY_TOLERANCE_DEG {
             return Err(Mismatch::OriginLon {
-                wanted: origin.lon,
+                wanted: wanted.origin_lon,
                 found: self.origin_lon,
             });
         }
-        if (self.lon_step - grid.lon_step()).abs() > BOUNDARY_TOLERANCE_DEG {
+        if (self.lon_step - wanted.lon_step).abs() > BOUNDARY_TOLERANCE_DEG {
             return Err(Mismatch::LonStep {
-                wanted: grid.lon_step(),
+                wanted: wanted.lon_step,
                 found: self.lon_step,
             });
         }
-        if (self.lat_step - grid.lat_step()).abs() > BOUNDARY_TOLERANCE_DEG {
+        if (self.lat_step - wanted.lat_step).abs() > BOUNDARY_TOLERANCE_DEG {
             return Err(Mismatch::LatStep {
-                wanted: grid.lat_step(),
+                wanted: wanted.lat_step,
                 found: self.lat_step,
             });
         }

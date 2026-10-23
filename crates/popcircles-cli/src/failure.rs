@@ -219,7 +219,10 @@ const fn exit_code_for_search_error(error: SearchError) -> u8 {
 /// [`popcircles::smallest::cache::Ledger`] answers a first run with an empty one.
 fn exit_code_for_ledger_error(error: &LedgerError) -> u8 {
     match error {
-        LedgerError::FormatVersion { .. } | LedgerError::NotThisTable(_) => EXIT_MISSING_DATA,
+        LedgerError::FormatVersion { .. }
+        | LedgerError::NotThisTable(_)
+        | LedgerError::NotThisCountry(_)
+        | LedgerError::IdentityKind { .. } => EXIT_MISSING_DATA,
 
         LedgerError::Read { .. }
         | LedgerError::Write { .. }
