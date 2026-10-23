@@ -297,10 +297,7 @@ impl Grid {
         );
         let north = self.origin.lat + f64::from(row.0) * self.lat_step;
         // lat_step is negative by construction, so north is the larger of the two.
-        LatBand {
-            north,
-            south: north + self.lat_step,
-        }
+        LatBand::new(north, north + self.lat_step)
     }
 
     /// # Panics
@@ -873,9 +870,9 @@ mod tests {
             let centre = grid.centre_of(row, col);
             let band = grid.lat_bounds(row);
             let span = grid.lon_bounds(col);
-            assert!(band.north > centre.lat && centre.lat > band.south);
+            assert!(band.north() > centre.lat && centre.lat > band.south());
             assert!(span.west < centre.lon && centre.lon < span.east);
-            assert!(close(band.north - band.south, GPW_STEP));
+            assert!(close(band.north() - band.south(), GPW_STEP));
             assert!(close(span.east - span.west, GPW_STEP));
         }
     }
@@ -887,13 +884,23 @@ mod tests {
         let grid = decimated();
         for (row, next) in grid.rows().zip(grid.rows().skip(1)) {
             assert!(close(
-                grid.lat_bounds(row).south,
-                grid.lat_bounds(next).north
+                grid.lat_bounds(row).south(),
+                grid.lat_bounds(next).north()
             ));
         }
         let (first, _) = cell(&grid, 0, 0);
-        assert!(close(grid.lat_bounds(first).north, 90.0));
-        assert!(close(grid.lat_bounds(last_row(&grid)).south, -90.0));
+        assert!(close(grid.lat_bounds(first).north(), 90.0));
+        assert!(close(grid.lat_bounds(last_row(&grid)).south(), -90.0));
+    }
+
+    #[test]
+    fn every_grid_row_has_an_ordered_band_with_positive_area() {
+        let grid = decimated();
+        for row in grid.rows() {
+            let band = grid.lat_bounds(row);
+            assert!(band.north() > band.south());
+            assert!(zone_area_km2(band, grid.lon_step().abs()) > 0.0);
+        }
     }
 
     #[test]

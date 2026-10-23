@@ -143,10 +143,35 @@ impl From<u32> for RadiusKm {
 ///
 /// Named fields rather than a tuple because [`zone_area_km2`] subtracts these two in one direction
 /// only, and a silent swap there flips a sign rather than failing.
+///
+/// Only [`crate::grid::Grid::lat_bounds`] can construct a band, so callers cannot pass an inverted
+/// band to [`zone_area_km2`].
+///
+/// ```compile_fail
+/// use popcircles::geodesy::LatBand;
+///
+/// let _ = LatBand { north: -90.0, south: 90.0 };
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LatBand {
-    pub north: f64,
-    pub south: f64,
+    north: f64,
+    south: f64,
+}
+
+impl LatBand {
+    pub(crate) const fn new(north: f64, south: f64) -> Self {
+        Self { north, south }
+    }
+
+    #[must_use]
+    pub const fn north(self) -> f64 {
+        self.north
+    }
+
+    #[must_use]
+    pub const fn south(self) -> f64 {
+        self.south
+    }
 }
 
 /// The area a band cuts from the sphere across `delta_lon_deg` of longitude, by the spherical zone
@@ -385,17 +410,6 @@ mod tests {
             whole / 2.0,
             "half the turn",
         );
-    }
-
-    #[test]
-    fn a_band_given_upside_down_reports_a_negative_area() {
-        // Not a supported call, pinned because it is the failure the named fields exist to make
-        // visible: a swap does not fail, it changes sign.
-        let band = LatBand {
-            north: -90.0,
-            south: 90.0,
-        };
-        assert!(zone_area_km2(band, 360.0) < 0.0);
     }
 
     #[test]
