@@ -9,12 +9,12 @@
 use std::num::NonZeroU32;
 
 use crate::bracket::Bracket;
-use crate::circle;
+use crate::circle::{self, CountryPopulationError};
 use crate::geodesy::{RadiusKm, arc_km};
 use crate::grid::{Col, Grid, GridIndexError, Row};
 use crate::kernel::{Kernel, KernelError};
 use crate::progress::Progress;
-use crate::table::{RowBand, Table};
+use crate::table::{CountryTable, RowBand, Table};
 
 /// Why a search could not run.
 ///
@@ -27,6 +27,8 @@ pub enum SearchError {
     Kernel(#[from] KernelError),
     #[error(transparent)]
     GridIndex(#[from] GridIndexError),
+    #[error(transparent)]
+    CountryPopulation(#[from] CountryPopulationError),
 }
 
 /// The relative amount [`slack_km`] inflates its answer by, so that the figure it returns dominates the
@@ -417,8 +419,8 @@ impl HeldKernel {
 /// search runs, so a global total would be a figure this function had to revise.
 ///
 /// # Errors
-/// [`SearchError::Kernel`], the only variant there is, when the table's grid has no kernels at all —
-/// which is a grid whose columns do not close.
+/// Returns [`SearchError::Kernel`] when the grid's columns do not close, or [`SearchError::GridIndex`]
+/// if a checked grid operation rejects an index.
 ///
 /// # Panics
 /// If the table's grid yields no block to examine. A [`Grid`] has at least one cell and the first block
@@ -430,7 +432,47 @@ pub fn most_populous<P: Progress>(
     spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
-    let grid = *table.grid();
+    most_populous_by(*table.grid(), radius, spacing, progress, |kernel, col| {
+        Ok(circle::population(table, kernel, col)?)
+    })
+}
+
+/// The most populous circle of `radius` centred on any cell of the country's effective global grid.
+///
+/// Candidate centres range over the whole grid, including cells outside the country crop. A block's
+/// widened probe circle is queried through the same cropped country prefix, so its country population
+/// remains an upper bound for every candidate centre in that block.
+///
+/// # Errors
+/// Returns [`SearchError::Kernel`] when the grid's columns do not close, [`SearchError::GridIndex`] if a
+/// checked grid operation rejects an index, or [`SearchError::CountryPopulation`] if the crop cannot
+/// answer a query on the effective grid.
+pub fn country_most_populous<P: Progress>(
+    table: &CountryTable,
+    radius: RadiusKm,
+    spacing: Option<NonZeroU32>,
+    progress: &mut P,
+) -> Result<MostPopulous, SearchError> {
+    most_populous_by(
+        *table.effective_grid(),
+        radius,
+        spacing,
+        progress,
+        |kernel, col| Ok(circle::country_population(table, kernel, col)?),
+    )
+}
+
+fn most_populous_by<P, F>(
+    grid: Grid,
+    radius: RadiusKm,
+    spacing: Option<NonZeroU32>,
+    progress: &mut P,
+    mut measure: F,
+) -> Result<MostPopulous, SearchError>
+where
+    P: Progress,
+    F: FnMut(&Kernel, Col) -> Result<f64, SearchError>,
+{
     let mut level = Block::tile(
         &grid,
         spacing.unwrap_or_else(|| initial_spacing(&grid, radius)),
@@ -472,7 +514,7 @@ pub fn most_populous<P: Progress>(
         for block in &level {
             let (probe_row, probe_col) = block.probe(&grid);
             let widened = radius.widened_by(slack_km(&grid, *block)?);
-            let ceiling = circle::population(table, widest.get(probe_row, widened)?, probe_col)?;
+            let ceiling = measure(widest.get(probe_row, widened)?, probe_col)?;
             stats.blocks_examined += 1;
 
             // Strictly under, never equal. A block whose bound merely ties the incumbent may hold a
@@ -482,8 +524,7 @@ pub fn most_populous<P: Progress>(
             if best.is_some_and(|held| ceiling < held.population) {
                 stats.blocks_pruned += 1;
             } else {
-                let population =
-                    circle::population(table, exact.get(probe_row, radius)?, probe_col)?;
+                let population = measure(exact.get(probe_row, radius)?, probe_col)?;
                 let candidate = Candidate {
                     row: probe_row,
                     col: probe_col,
@@ -541,10 +582,12 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
+    use crate::domain::{FeatureId, Geometry, Polygon};
     use crate::geodesy::{LatLon, great_circle_km};
     use crate::kernel::Span;
+    use crate::ownership::{CellOwner, CellOwnership};
     use crate::raster::Synthetic;
-    use crate::table::{ColSpan, Decimation, build};
+    use crate::table::{ColSpan, CountryTable, Decimation, build, build_country};
 
     const WIDTH: u32 = 36;
     const HEIGHT: u32 = 18;
@@ -563,6 +606,168 @@ mod tests {
             -10.0,
         )
         .expect("a 36 x 18 whole-globe grid is valid")
+    }
+
+    fn rectangle(west: f64, south: f64, east: f64, north: f64) -> Polygon {
+        Polygon {
+            rings: vec![vec![
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: east,
+                },
+                LatLon {
+                    lat: north,
+                    lon: west,
+                },
+                LatLon {
+                    lat: south,
+                    lon: west,
+                },
+            ]],
+        }
+    }
+
+    fn country_fixture() -> (Grid, CountryTable, CellOwnership, FeatureId, Vec<Vec<f32>>) {
+        let grid = grid();
+        let feature = FeatureId::new("fixture-country").expect("fixture ID is valid");
+        let geometry = Geometry::MultiPolygon(vec![
+            rectangle(-30.0, 0.0, -20.0, 10.0),
+            rectangle(10.0, 0.0, 20.0, 10.0),
+            rectangle(170.0, -10.0, -170.0, 10.0),
+            rectangle(-10.0, 80.0, 0.0, 90.0),
+        ]);
+        let (ownership, diagnostics) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("synthetic country geometry is valid");
+        assert_eq!(diagnostics, []);
+
+        let mut cells = vec![vec![0.0_f32; grid.width() as usize]; grid.height() as usize];
+        cells[0][17] = 120.0;
+        cells[8][0] = 100.0;
+        cells[8][35] = 80.0;
+        cells[8][15] = 99.0;
+        cells[8][19] = 99.0;
+        let source_cells = cells.clone();
+        let country = build_country(
+            Synthetic::new(grid, -9999.0, source_cells.clone())
+                .expect("synthetic cells match the grid"),
+            &ownership,
+            &feature,
+            "fixture-boundary-v1",
+        )
+        .expect("all four synthetic land shapes are owned by the feature");
+        (grid, country, ownership, feature, source_cells)
+    }
+
+    fn exhaustive_country_maximum(
+        grid: &Grid,
+        ownership: &CellOwnership,
+        feature: &FeatureId,
+        cells: &[Vec<f32>],
+        radius_km: f64,
+    ) -> Candidate {
+        let owner = CellOwner::Feature(feature.clone());
+        let mut best = None;
+        for centre_row in grid.rows() {
+            for centre_col in grid.cols() {
+                let centre = grid
+                    .centre_of(centre_row, centre_col)
+                    .expect("candidate centre belongs to the effective grid");
+                let mut population = 0.0;
+                for row in grid.rows() {
+                    for col in grid.cols() {
+                        if ownership
+                            .owner_at(grid, row.get(), col.get())
+                            .expect("source cell belongs to ownership grid")
+                            == &owner
+                            && great_circle_km(
+                                centre,
+                                grid.centre_of(row, col)
+                                    .expect("source cell belongs to the grid"),
+                            ) <= radius_km
+                        {
+                            population += f64::from(cells[row.get() as usize][col.get() as usize]);
+                        }
+                    }
+                }
+                let candidate = Candidate {
+                    row: centre_row,
+                    col: centre_col,
+                    population,
+                };
+                best = Some(best.map_or(candidate, |held: Candidate| held.better(candidate)));
+            }
+        }
+        best.expect("the effective grid has cell centres")
+    }
+
+    #[test]
+    fn country_search_matches_exhaustive_global_centres_for_seam_pole_and_islands() {
+        let (grid, table, ownership, feature, cells) = country_fixture();
+
+        for radius_km in [0.0, 1_500.0, 2_500.0, 6_000.0, 20_016.0] {
+            let actual = country_most_populous(
+                &table,
+                RadiusKm::new(radius_km).expect("fixture radius is valid"),
+                Some(spacing(6)),
+                &mut (),
+            )
+            .expect("country search succeeds on the fixture");
+            let expected =
+                exhaustive_country_maximum(&grid, &ownership, &feature, &cells, radius_km);
+            assert_eq!(actual.centre.row, expected.row, "radius {radius_km} km");
+            assert_eq!(actual.centre.col, expected.col, "radius {radius_km} km");
+            assert_eq!(
+                actual.centre.population, expected.population,
+                "radius {radius_km} km"
+            );
+        }
+
+        let polar = country_most_populous(&table, radius(0.0), Some(spacing(6)), &mut ())
+            .expect("zero-radius country search succeeds");
+        assert_eq!(
+            (
+                polar.centre.row.get(),
+                polar.centre.col.get(),
+                polar.centre.population
+            ),
+            (0, 17, 120.0)
+        );
+
+        let seam = country_most_populous(&table, radius(1_500.0), Some(spacing(6)), &mut ())
+            .expect("seam country search succeeds");
+        assert_eq!(
+            (
+                seam.centre.row.get(),
+                seam.centre.col.get(),
+                seam.centre.population
+            ),
+            (8, 0, 180.0)
+        );
+
+        let between_islands =
+            country_most_populous(&table, radius(2_500.0), Some(spacing(6)), &mut ())
+                .expect("separated-island country search succeeds");
+        assert_eq!(between_islands.centre.population, 198.0);
+        assert_ne!(
+            ownership
+                .owner_at(
+                    &grid,
+                    between_islands.centre.row.get(),
+                    between_islands.centre.col.get(),
+                )
+                .expect("winner belongs to the global grid"),
+            &CellOwner::Feature(feature),
+            "the best centre may be outside the country"
+        );
     }
 
     fn spacing(cells: u32) -> NonZeroU32 {

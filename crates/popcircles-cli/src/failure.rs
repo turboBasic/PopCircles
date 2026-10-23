@@ -5,6 +5,7 @@
 // The nine `exit_code_for_*` functions stay private: `Failure`'s constructors are the only callers, and
 // a command that needs a class asks for it by naming the error it holds.
 
+use popcircles::circle::CountryPopulationError;
 use popcircles::grid::{GridError, GridIndexError};
 use popcircles::kernel::KernelError;
 use popcircles::raster::RasterError;
@@ -202,7 +203,9 @@ const fn exit_code_for_kernel_error(error: KernelError) -> u8 {
 const fn exit_code_for_search_error(error: SearchError) -> u8 {
     match error {
         SearchError::Kernel(error) => exit_code_for_kernel_error(error),
-        SearchError::GridIndex(_) => EXIT_BAD_INPUT,
+        SearchError::GridIndex(_)
+        | SearchError::CountryPopulation(CountryPopulationError::GridIndex(_)) => EXIT_BAD_INPUT,
+        SearchError::CountryPopulation(_) => EXIT_FAILURE,
     }
 }
 
@@ -366,6 +369,12 @@ mod tests {
                 lon_span: 90.0
             })),
             EXIT_BAD_INPUT
+        );
+        assert_eq!(
+            exit_code_for_search_error(SearchError::CountryPopulation(
+                CountryPopulationError::GridMismatch
+            )),
+            EXIT_FAILURE
         );
     }
 
