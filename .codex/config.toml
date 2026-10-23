@@ -8,5 +8,6 @@ approvals_reviewer = "auto_review"
 network_access = true
 writable_roots = [
   "~/.cache/mise",
+  "~/.cache/prek",
   "~/.cache/uv",
 ]
