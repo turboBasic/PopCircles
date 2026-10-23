@@ -6,3 +6,7 @@ approvals_reviewer = "auto_review"
 
 [sandbox_workspace_write]
 network_access = true
+writable_roots = [
+  "~/.cache/mise",
+  "~/.cache/uv",
+]
