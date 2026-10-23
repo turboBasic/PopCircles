@@ -38,11 +38,11 @@ issue checkbox the closing task reaches.
    do not silently rescope it and do not step over it to the next task.
 6. **Verify** exactly what the task's `Verify:` line asks for, and nothing less. A `Verify:` naming a
    command means running it, not reasoning about what it would print.
-7. **Run the gates** — `prek run --all-files`, then `mise run ci` — and fix what fails. Stage new
-   files first: `prek` reads tracked files only, so a run that passes over an untracked file has
-   checked nothing and the commit fails a moment later. Re-stage what a hook reformats and re-run;
-   that is expected, not a defect to investigate. A task's `Verify:` line may ask for less than both;
-   it never licenses less than both.
+7. **Run the gate** — `mise run ci` — and fix what fails. Its lint tasks run the repository-wide
+   hooks and language-specific checks; do not run a second full `prek` pass. Stage new files first
+   because the hook runner reads tracked files only. Re-stage what a hook reformats and rerun the
+   gate; that is expected behaviour, not a defect to investigate. A task's `Verify:` line may ask
+   for less than CI; it never licenses less.
 8. **Land it, then tick the box, before the next task starts.** Read `docs/ai/platform.md` "Git" before
    the run's first commit rather than after — it constrains which branch may receive one, and a commit on
    the wrong branch is not something the next task can undo. The task's change is one Conventional
@@ -54,9 +54,9 @@ issue checkbox the closing task reaches.
 9. **Take the next unchecked task in the same phase and repeat from step 5.** At the phase boundary,
    stop. Do not roll into the next phase.
 10. **Run the `review-change` skill as the `architect` agent over the phase's commits.** Hand it the facts
-    that skill's brief asks for, and state the one this loop owns: every commit in the range passed
-    `prek run --all-files` and `mise run ci` at step 7, so no gate in them is the review's to re-run. Facts
-    only — what the tasks were and what passed, never why a shape was chosen, because the verdict is worth
+    that skill's brief asks for, and state the one this loop owns: each task's final tree passed
+    `mise run ci` at step 7, and each commit's staged hooks passed during the commit, so no gate in them
+    is the review's to re-run. Facts only — what the tasks were and what passed, never why a shape was
     having only from a reader who has not been told. Once for the phase rather than per
     task — per-task invocation multiplies the cost by the task count for a commit that is still amendable
     inside its phase. Every task is committed and its box ticked by now, so a rejection cannot reopen
