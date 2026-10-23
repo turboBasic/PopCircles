@@ -50,10 +50,12 @@ expression: document
       "id": "AA",
       "name": "Alpha"
     },
+    "decimation": 1,
     "ledger": {
       "path": "shared-country.json",
       "radii": 20
-    }
+    },
+    "population_dataset": "population-count-2020-30arcsec"
   },
   "schema_version": 1,
   "tool": "popcircles",

@@ -22,8 +22,17 @@ from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
+from population_circles.country_outline import load_outline
 from population_circles.dataset_registry import Registry, load
-from population_circles.map_frame import PLATE_CARREE, PROJECTIONS, Frame, frame, graticule, project
+from population_circles.map_frame import (
+    PLATE_CARREE,
+    PROJECTIONS,
+    Frame,
+    country_frame,
+    frame,
+    graticule,
+    project,
+)
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
 # for one is what fails on a machine with no display, rather than falling back.
@@ -42,6 +51,11 @@ class UnregisteredDatasetError(ValueError):
         self.key = key
 
 
+class MissingCountryOutlineError(ValueError):
+    def __init__(self) -> None:
+        super().__init__("country result rendering requires its registered boundary outline")
+
+
 def citation(registry: Registry, key: str) -> str:
     # Keyed by the document rather than by this file: `data/registry.toml` owns the wording a
     # licence requires, and which row is owed it is the answer's own property. The registry arrives
@@ -58,6 +72,7 @@ def citation(registry: Registry, key: str) -> str:
 GRATICULE_LAYER = 1
 COASTLINE_LAYER = 2
 CIRCLE_LAYER = 3
+COUNTRY_LAYER = 2.5
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
 
@@ -92,7 +107,7 @@ def fill_circle(axes: Axes, geometry: BaseGeometry) -> None:
         )
 
 
-def outline(axes: Axes, geometry: BaseGeometry) -> None:
+def outline(axes: Axes, geometry: BaseGeometry, layer: float = HORIZON_LAYER) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
             PathPatch(
@@ -100,7 +115,7 @@ def outline(axes: Axes, geometry: BaseGeometry) -> None:
                 facecolor="none",
                 edgecolor="0.4",
                 linewidth=0.6,
-                zorder=HORIZON_LAYER,
+                zorder=layer,
             ),
         )
 
@@ -120,11 +135,17 @@ def title_of(answer: Answer) -> str:
     # The table is in the caption because a reader cannot otherwise tell a 30 arc-second answer
     # from a decimated one, and the two differ by more than rounding.
     circle = answer.circle
+    source = (
+        f"population dataset {answer.provenance.dataset} "
+        f"at decimation k={answer.provenance.decimation}"
+        if answer.country is not None
+        else f"table {answer.provenance.table}"
+    )
     return (
         f"{circle.radius_km:,.0f} km circle holding {answer.caption.share:.2%} of the population\n"
         f"{answer.caption.population:,.0f} people, "
         f"centred {textwrap.fill(plain_centre(answer), width=44, subsequent_indent='         ')}\n"
-        f"answered from table {answer.provenance.table}"
+        f"answered from {source}"
     )
 
 
@@ -152,6 +173,8 @@ def draw(axes: Axes, view: Frame, coastline: BaseGeometry | None) -> None:
     stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
     if coastline is not None:
         stroke(axes, project(view, coastline), "dimgrey", 0.5, COASTLINE_LAYER)
+    if view.country_outline is not None:
+        outline(axes, view.country_outline, COUNTRY_LAYER)
     fill_circle(axes, view.circle)
     outline(axes, view.horizon)
 
@@ -164,10 +187,18 @@ def render(
     # The basemap arrives drawn rather than named, so nothing under here reads a file and a caller
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
+    outline_and_credit: tuple[BaseGeometry, str] | None = None,
 ) -> Figure:
+    if answer.country is not None and outline_and_credit is None:
+        raise MissingCountryOutlineError
+    country_outline, boundary_attribution = outline_and_credit or (None, None)
     circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
-    view = frame(projection, built)
+    view = (
+        country_frame(built, country_outline)
+        if country_outline is not None
+        else frame(projection, built)
+    )
     centre = view.to_frame.transform(circle.centre.lon, circle.centre.lat)
 
     figure = plt.figure(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
@@ -176,12 +207,18 @@ def render(
     try:
         title = title_of(answer)
         country_lines = lines_for(answer)
-        footer_parts = (
-            [*country_lines, f"Population credit: {attribution}"]
-            if country_lines
-            else [attribution]
-        )
+        if answer.country is not None:
+            footer_parts = [
+                f"Country: {answer.country.name} ({answer.country.id})",
+                f"Boundary credit: {boundary_attribution}",
+                f"Population credit: {attribution}",
+            ]
+        elif country_lines:
+            footer_parts = [*country_lines, f"Population credit: {attribution}"]
+        else:
+            footer_parts = [attribution]
         footer = "\n".join(textwrap.fill(part, width=118) for part in footer_parts)
+        has_country_footer = answer.country is not None or bool(country_lines)
         # Room for the title above and the wrapped citation below, since both are placed at figure
         # coordinates rather than left to a layout engine.
         title_lines = title.count("\n") + 1
@@ -213,8 +250,8 @@ def render(
         annotate(figure, 0.985, title, 12.0, "top")
         # Wrapped: at this width a one-line citation runs off both edges of the figure,
         # which is an attribution nobody can read and so not an attribution.
-        annotate(figure, 0.04 / 6.0 if country_lines else 0.055, footer, 6.5, "bottom")
-        if country_lines:
+        annotate(figure, 0.04 / 6.0 if has_country_footer else 0.055, footer, 6.5, "bottom")
+        if has_country_footer:
             canvas = cast(FigureCanvasAgg, figure.canvas)
             canvas.draw()
             footer_height = figure.texts[-1].get_window_extent(canvas.get_renderer()).height
@@ -252,11 +289,20 @@ def render_file(
 ) -> None:
     document = json.loads(input_path.read_text(encoding="utf-8"))
     answer = circle_of(document)
+    registry = load()
     figure = render(
         answer,
         projection,
-        citation(load(), answer.provenance.dataset),
+        citation(registry, answer.provenance.dataset),
         coastline=None if no_coastlines else basemap(COASTLINE),
+        outline_and_credit=(
+            (
+                load_outline(answer, registry),
+                citation(registry, answer.country.boundary_dataset),
+            )
+            if answer.country is not None
+            else None
+        ),
     )
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)

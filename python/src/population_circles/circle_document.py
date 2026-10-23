@@ -80,7 +80,18 @@ class Provenance(BaseModel):
     model_config = _CONFIG
 
     dataset: str
-    table: str
+    table: str | None
+    decimation: int | None = None
+
+
+class CountryIdentity(BaseModel):
+    model_config = _CONFIG
+
+    id: Annotated[str, Field(min_length=1, pattern=r"\S")]
+    name: Annotated[str, Field(min_length=1, pattern=r"\S")]
+    boundary_dataset: Annotated[str, Field(min_length=1)]
+    boundary_revision: Annotated[str, Field(min_length=1)]
+    boundary_digest: Annotated[str, Field(pattern=r"^[0-9a-fA-F]{64}$")]
 
 
 class Settlement(BaseModel):
@@ -175,6 +186,7 @@ class Answer(BaseModel):
     circle: Circle
     caption: Caption
     provenance: Provenance
+    country: CountryIdentity | None = None
 
 
 class _DocumentProvenance(BaseModel):
@@ -264,6 +276,22 @@ class _Searched(_Payload):
         )
 
 
+class _CountrySearched(_Payload):
+    country: CountryIdentity
+    population_dataset: Annotated[str, Field(min_length=1)]
+    decimation: Annotated[int, Field(gt=0)]
+    circle: _Smallest
+
+    def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
+        answer = _Searched(circle=self.circle).as_answer(earth_radius_km, provenance)
+        return Answer(
+            circle=answer.circle,
+            caption=answer.caption,
+            provenance=answer.provenance,
+            country=self.country,
+        )
+
+
 # The two payload shapes a circle arrives in, and which kinds use which. `smallest` nests its circle
 # under a ledger that belongs to the run rather than to any one circle, which is why it is not the
 # same shape as the other two rather than a superset of them.
@@ -271,6 +299,7 @@ _PAYLOADS: Mapping[str, type[_Payload]] = {
     "circle": _Measured,
     "most-populous": _Measured,
     "smallest": _Searched,
+    "country-smallest": _CountrySearched,
 }
 
 
@@ -284,7 +313,7 @@ class SweepRecords(BaseModel):
     records: list[_SweepRecord]
 
 
-CIRCLE_KINDS = frozenset(_PAYLOADS)
+CIRCLE_KINDS = frozenset({"circle", "most-populous", "smallest"})
 
 
 def circle_of(document: Mapping[str, object]) -> Answer:
@@ -292,6 +321,16 @@ def circle_of(document: Mapping[str, object]) -> Answer:
     payload = _PAYLOADS.get(envelope.document)
     if payload is None:
         raise UnsupportedDocumentError(envelope.document)
+    if payload is _CountrySearched:
+        country_result = payload.model_validate(document.get("result"))
+        return country_result.as_answer(
+            envelope.earth_model.radius_km,
+            Provenance(
+                dataset=country_result.population_dataset,
+                table=None,
+                decimation=country_result.decimation,
+            ),
+        )
     provenance = envelope.provenance
     dataset = provenance.dataset if provenance else None
     if dataset is None:

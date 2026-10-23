@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import socket
@@ -10,11 +11,13 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 from population_circles.circle_document import Answer, circle_of
-from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
-from population_circles.dataset_registry import load, parse
-from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
+from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT, cap
+from population_circles.country_outline import BoundaryIdentityError, load_outline
+from population_circles.dataset_registry import Registry, load, parse
+from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
 from population_circles.render_map import (
     COASTLINE,
+    MissingCountryOutlineError,
     UnregisteredDatasetError,
     basemap,
     citation,
@@ -32,10 +35,14 @@ CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+MAX_LOCAL_EXTENT_METRES = 5_000_000
 NO_NETWORK = "a figure is drawn from the committed basemap and reaches no network"
 # Handed to `render` in place of a citation, so the footer assertion is about what the caller passed
 # rather than about a value the test could also have read.
 MARKER = "attribution handed to render by its caller"
+BOUNDARY_CREDIT = (
+    "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+)
 
 
 def document() -> dict[str, Any]:
@@ -98,11 +105,266 @@ def country_document(count: int = 1) -> dict[str, Any]:
     return result
 
 
+def country_circle_document(digest: str = "a" * 64) -> dict[str, Any]:
+    result = document()
+    result["document"] = "country-smallest"
+    result["result"] = {
+        "country": {
+            "id": "DE",
+            "name": "Germany",
+            "boundary_dataset": "gisco-countries-2024-1m",
+            "boundary_revision": "Countries 2024 snapshot",
+            "boundary_digest": digest,
+        },
+        "population_dataset": DATASET,
+        "decimation": 10,
+        "ledger": {"path": "out/country.json", "radii": 4},
+        "circle": {
+            "centre": {"lat": 51.0, "lon": 10.0},
+            "radius_km": 200.0,
+            "population": 40.0,
+            "share_achieved": 0.5,
+        },
+    }
+    result.pop("provenance")
+    return result
+
+
+def country_boundary_registry(
+    revision: str = "Countries 2024 snapshot",
+    digest: str = "a" * 64,
+    size: int = 1,
+) -> Registry:
+    return parse(
+        f"""[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+bytes = {size}
+sha256 = "{digest}"
+source_url = "https://example.invalid/source"
+licence = "fixture"
+licence_url = "https://example.invalid/licence"
+attribution = "{BOUNDARY_CREDIT}"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 2
+revision = "{revision}"
+source_id_field = "CNTR_ID"
+identity_policy = "ADR 0015"
+""",
+    )
+
+
+def boundary_feature(identifier: str, name: str, west: float) -> dict[str, Any]:
+    return {
+        "type": "Feature",
+        "properties": {"CNTR_ID": identifier, "NAME_ENGL": name},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[west, 0], [west + 1, 0], [west + 1, 1], [west, 1], [west, 0]]],
+        },
+    }
+
+
+def country_fixture(
+    tmp_path: Path,
+    features: list[dict[str, Any]],
+    centre: tuple[float, float] = (51.0, 10.0),
+) -> tuple[Answer, Registry, Path]:
+    content = json.dumps({"type": "FeatureCollection", "features": features})
+    registry_digest = hashlib.sha256(content.encode()).hexdigest()
+    registry = country_boundary_registry(digest=registry_digest, size=len(content.encode()))
+    path = registry.datasets["gisco-countries-2024-1m"].file(tmp_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    document = country_circle_document(registry_digest)
+    document["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
+    return circle_of(document), registry, path
+
+
+def polygon_feature(identifier: str, coordinates: list[list[list[float]]]) -> dict[str, Any]:
+    return {
+        "type": "Feature",
+        "properties": {"CNTR_ID": identifier, "NAME_ENGL": identifier},
+        "geometry": {"type": "Polygon", "coordinates": coordinates},
+    }
+
+
 def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
     before = plt.get_fignums()
     with pytest.raises(ValueError, match="unsupported projection 'unknown'"):
         render(circle_of(document()), "unknown", MARKER, coastline=None)
     assert plt.get_fignums() == before
+
+
+def test_country_outline_uses_the_registered_id_when_names_are_duplicated(
+    tmp_path: Path,
+) -> None:
+    features = [
+        boundary_feature("DE", "Same name", 0),
+        boundary_feature("FR", "Same name", 10),
+    ]
+    answer, registry, _ = country_fixture(tmp_path, features)
+    assert load_outline(answer, registry, tmp_path).bounds == (0, 0, 1, 1)
+
+    for bad_features, message in (
+        ([boundary_feature("FR", "Same name", 10)], "no feature with CNTR_ID='DE'"),
+        (
+            [boundary_feature("DE", "Germany", 0), boundary_feature("DE", "Germany", 10)],
+            "duplicate CNTR_ID 'DE'",
+        ),
+    ):
+        answer, registry, _ = country_fixture(tmp_path, bad_features)
+        with pytest.raises(ValueError, match=message):
+            load_outline(answer, registry, tmp_path)
+
+
+def test_country_outline_rejects_bytes_that_do_not_match_the_registered_digest(
+    tmp_path: Path,
+) -> None:
+    features = [boundary_feature("DE", "Germany", 0)]
+    answer, registry, path = country_fixture(tmp_path, features)
+    original = path.read_text()
+    path.write_text(original.replace("[0, 0]", "[2, 0]", 1))
+
+    with pytest.raises(BoundaryIdentityError, match="does not match the registry"):
+        load_outline(answer, registry, tmp_path)
+
+
+def test_a_country_result_is_not_rendered_without_its_outline() -> None:
+    before = plt.get_fignums()
+    with pytest.raises(
+        MissingCountryOutlineError, match="requires its registered boundary outline"
+    ):
+        render(circle_of(country_circle_document()), PLATE_CARREE, MARKER, coastline=None)
+    assert plt.get_fignums() == before
+
+
+@pytest.mark.parametrize(
+    ("name", "centre", "coordinates"),
+    [
+        (
+            "antimeridian",
+            (10.0, 179.0),
+            [[[170, 8], [-170, 8], [-170, 12], [170, 12], [170, 8]]],
+        ),
+        (
+            "polar",
+            (82.0, 20.0),
+            [[[10, 78], [30, 78], [30, 86], [10, 86], [10, 78]]],
+        ),
+    ],
+    ids=["antimeridian", "polar"],
+)
+def test_country_figure_draws_the_outline_and_circle_without_clipping(
+    name: str,
+    centre: tuple[float, float],
+    coordinates: list[list[list[float]]],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def refuse(*_args: object, **_kwargs: object) -> NoReturn:
+        raise AssertionError(NO_NETWORK)
+
+    for socket_name in ("socket", "create_connection", "socketpair"):
+        monkeypatch.setattr(socket, socket_name, refuse)
+
+    answer, registry, _ = country_fixture(
+        tmp_path,
+        [polygon_feature("DE", coordinates)],
+        centre,
+    )
+    assert answer.country is not None
+    country = load_outline(answer, registry, tmp_path)
+    circle = answer.circle
+    view = country_frame(
+        cap(circle.centre, circle.radius_km, circle.earth_radius_km),
+        country,
+    )
+    figure = render(
+        answer,
+        ORTHOGRAPHIC,
+        MARKER,
+        coastline=None,
+        outline_and_credit=(country, citation(registry, answer.country.boundary_dataset)),
+    )
+    try:
+        output = tmp_path / f"country-{name}.png"
+        figure.savefig(output, dpi=120)  # pyright: ignore[reportUnknownMemberType] — matplotlib kwargs
+        axes = figure.axes[0]
+        west, south, east, north = view.horizon.bounds
+        assert output.read_bytes().startswith(PNG_MAGIC)
+        assert axes.get_xlim() == pytest.approx((west, east))
+        assert axes.get_ylim() == pytest.approx((south, north))
+        assert view.country_outline is not None
+        assert east - west < MAX_LOCAL_EXTENT_METRES
+        assert north - south < MAX_LOCAL_EXTENT_METRES
+        assert view.horizon.covers(view.country_outline)
+        assert view.horizon.covers(view.circle)
+    finally:
+        plt.close(figure)
+
+
+def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
+    tmp_path: Path,
+) -> None:
+    answer, registry, _ = country_fixture(
+        tmp_path,
+        [boundary_feature("DE", "Germany", 9)],
+    )
+    assert answer.country is not None
+    answer = answer.model_copy(
+        update={
+            "country": answer.country.model_copy(
+                update={"name": "A country with an exceptionally long published name"},
+            ),
+        },
+    )
+    assert answer.country is not None
+    boundary = load_outline(answer, registry, tmp_path)
+    population_credit = citation(REGISTRY, DATASET)
+    boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
+    figure = render(
+        answer,
+        ORTHOGRAPHIC,
+        population_credit,
+        coastline=None,
+        outline_and_credit=(boundary, boundary_credit),
+    )
+    try:
+        canvas = FigureCanvasAgg(figure)
+        canvas.draw()
+        footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
+        axes = figure.axes[0].get_window_extent()
+        rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
+        assert "A country with an exceptionally long published name (DE)" in rendered_text
+        assert normalised(boundary_credit) in normalised(rendered_text)
+        assert normalised(population_credit) in normalised(rendered_text)
+        assert citation(REGISTRY, "coastline-1to110m") == ""
+        assert "Basemap credit:" not in rendered_text
+        assert footer.x0 >= 0
+        assert footer.x1 <= figure.bbox.x1
+        assert footer.y0 >= 0
+        assert footer.y1 <= axes.y0
+    finally:
+        plt.close(figure)
+
+
+def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> None:
+    answer = circle_of(country_circle_document())
+    for registry in (
+        country_boundary_registry(revision="a different snapshot"),
+        country_boundary_registry(digest="b" * 64),
+    ):
+        with pytest.raises(BoundaryIdentityError, match="does not match the registry"):
+            load_outline(answer, registry, tmp_path)
+
+
+def test_country_outline_names_the_fetch_task_when_its_file_is_missing(tmp_path: Path) -> None:
+    answer = circle_of(country_circle_document())
+    with pytest.raises(FileNotFoundError, match="mise run data:get"):
+        load_outline(answer, country_boundary_registry(), tmp_path)
 
 
 def test_an_unknown_terminal_projection_exits_two() -> None:
@@ -269,6 +531,15 @@ def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
         "2,639 km circle holding 25.03% of the population\n"
         "52,635 people, centred -85.0000, 105.0000\n"
         "answered from table 0xf17aa802a6890f0c at decimation 10"
+    )
+
+
+def test_country_title_names_the_population_dataset_and_decimation() -> None:
+    answer = circle_of(country_circle_document())
+    assert title_of(answer) == (
+        "200 km circle holding 50.00% of the population\n"
+        "40 people, centred 51.0000, 10.0000\n"
+        f"answered from population dataset {DATASET} at decimation k=10"
     )
 
 

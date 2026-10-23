@@ -1,7 +1,9 @@
+import math
 from dataclasses import dataclass
 
 from pyproj import CRS, Transformer
-from shapely.geometry import MultiLineString, Point
+from shapely import get_coordinates
+from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
@@ -47,6 +49,7 @@ class Frame:
     # The circle and the outline of the frame itself, both already in the frame's coordinates.
     circle: BaseGeometry
     horizon: BaseGeometry
+    country_outline: BaseGeometry | None = None
 
 
 def plate_carree(built: Cap) -> Frame:
@@ -74,6 +77,46 @@ def orthographic(built: Cap) -> Frame:
         visible=geographic(cap(built.centre, limb_km, built.earth_radius_km)),
         circle=transform(to_face.transform, built.polygon.intersection(disc)),
         horizon=transform(to_face.transform, disc),
+    )
+
+
+def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
+    coordinates = get_coordinates(country_outline)
+    longitudes = [math.radians(point[0]) for point in coordinates]
+    centre_lon = math.degrees(
+        math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
+    )
+    centre_lat = math.fsum(point[1] for point in coordinates) / len(coordinates)
+    centre = type(built.centre)(lat=centre_lat, lon=centre_lon)
+    face = projected_crs("ortho", centre, built.earth_radius_km)
+    to_face = Transformer.from_crs(built.geodetic, face, always_xy=True)
+
+    def unwrap(x: float, y: float, z: float | None = None) -> tuple[float, ...]:
+        lon = centre_lon + (x - centre_lon + HALF_TURN_DEG) % (2 * HALF_TURN_DEG) - HALF_TURN_DEG
+        return (lon, y) if z is None else (lon, y, z)
+
+    outline = transform(to_face.transform, transform(unwrap, country_outline))
+    circle_to_face = Transformer.from_crs(built.source, face, always_xy=True)
+    circle = transform(circle_to_face.transform, built.polygon)
+    if any(
+        not math.isfinite(value)
+        for geometry in (outline, circle)
+        for point in get_coordinates(geometry)
+        for value in point
+    ):
+        message = "country circle or outline extends beyond the orthographic horizon"
+        raise ValueError(message)
+    west = min(outline.bounds[0], circle.bounds[0])
+    south = min(outline.bounds[1], circle.bounds[1])
+    east = max(outline.bounds[2], circle.bounds[2])
+    north = max(outline.bounds[3], circle.bounds[3])
+    return Frame(
+        crs=face,
+        to_frame=to_face,
+        visible=WORLD,
+        circle=circle,
+        horizon=box(west, south, east, north),
+        country_outline=outline,
     )
 
 

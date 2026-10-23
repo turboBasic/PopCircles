@@ -1,6 +1,6 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").expect(\"fixture country ID\"),\n\"Fixture country\", \"gisco-countries-2024-1m\", \"2024\",\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
+expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").expect(\"fixture country ID\"),\n\"Fixture country\", \"gisco-countries-2024-1m\", \"2024\",\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n\"population-count-2020-30arcsec\", 10,\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
 ---
 {
   "schema_version": 1,
@@ -19,6 +19,8 @@ expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").
       "boundary_revision": "2024",
       "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 10,
     "ledger": {
       "path": "out/radii.json",
       "radii": 24

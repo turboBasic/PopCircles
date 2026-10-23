@@ -1,6 +1,8 @@
 import math
 
 import pytest
+from shapely import get_coordinates
+from shapely.geometry import MultiPolygon, Polygon, box
 
 from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
@@ -17,6 +19,7 @@ from population_circles.map_frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
     Frame,
+    country_frame,
     frame,
     graticule,
     project,
@@ -122,3 +125,47 @@ def test_the_shave_is_a_fraction_of_the_radius_it_shortens() -> None:
     # Stated as a fraction so it is the same 1 km whatever earth model a document carries, which is
     # the property that keeps the renderer free of a sphere of its own.
     assert LIMB_SHAVE * EARTH_RADIUS_KM * math.pi / 2.0 == pytest.approx(1.0, abs=1e-3)
+
+
+@pytest.mark.parametrize(
+    ("centre", "outline"),
+    [
+        (
+            Coordinate(lat=50.0, lon=10.0),
+            MultiPolygon(
+                [
+                    box(8, 49, 10, 51),
+                    box(11, 49, 12, 50),
+                ],
+            ),
+        ),
+        (
+            Coordinate(lat=10.0, lon=179.0),
+            Polygon([(170, 8), (-170, 8), (-170, 12), (170, 12), (170, 8)]),
+        ),
+        (
+            Coordinate(lat=82.0, lon=20.0),
+            box(10, 78, 30, 86),
+        ),
+    ],
+    ids=["multipart", "antimeridian", "high-latitude"],
+)
+def test_country_frame_contains_its_projected_outline_and_circle(
+    centre: Coordinate,
+    outline: Polygon | MultiPolygon,
+) -> None:
+    built = cap(centre, 500.0, EARTH_RADIUS_KM)
+    view = country_frame(built, outline)
+    for geometry in (view.country_outline, view.circle):
+        assert geometry is not None
+        assert all(
+            math.isfinite(value) for coordinate in get_coordinates(geometry) for value in coordinate
+        )
+        assert view.horizon.covers(geometry)
+
+
+def test_country_frame_refuses_a_large_circle_beyond_the_horizon() -> None:
+    built = cap(Coordinate(lat=51.0, lon=10.0), 15_000.0, EARTH_RADIUS_KM)
+
+    with pytest.raises(ValueError, match="extends beyond the orthographic horizon"):
+        country_frame(built, box(9, 50, 11, 52))

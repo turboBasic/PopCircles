@@ -963,10 +963,12 @@ pub struct CountryIdentityReport {
     boundary_digest: String,
 }
 
-/// One country's smallest-circle answer and the country identity it used.
+/// One country's smallest-circle answer, its boundary identity and its population source.
 #[derive(Debug, Clone, Serialize)]
 pub struct CountrySmallestDocument {
     country: CountryIdentityReport,
+    population_dataset: String,
+    decimation: u32,
     ledger: LedgerReport,
     circle: SmallestReport,
 }
@@ -980,9 +982,8 @@ impl CountrySmallestDocument {
     pub fn new(
         id: &FeatureId,
         name: &str,
-        boundary_dataset: &str,
-        boundary_revision: &str,
-        boundary_digest: &str,
+        boundary_identity: (&str, &str, &str),
+        population_source: (&str, u32),
         ledger: LedgerReport,
         circle: SmallestReport,
     ) -> Self {
@@ -990,10 +991,12 @@ impl CountrySmallestDocument {
             country: CountryIdentityReport {
                 id: id.as_str().to_owned(),
                 name: name.to_owned(),
-                boundary_dataset: boundary_dataset.to_owned(),
-                boundary_revision: boundary_revision.to_owned(),
-                boundary_digest: boundary_digest.to_owned(),
+                boundary_dataset: boundary_identity.0.to_owned(),
+                boundary_revision: boundary_identity.1.to_owned(),
+                boundary_digest: boundary_identity.2.to_owned(),
             },
+            population_dataset: population_source.0.to_owned(),
+            decimation: population_source.1,
             ledger,
             circle,
         }
@@ -1763,9 +1766,12 @@ mod tests {
         insta::assert_json_snapshot!(Envelope::new(CountrySmallestDocument::new(
             &FeatureId::new("AA").expect("fixture country ID"),
             "Fixture country",
-            "gisco-countries-2024-1m",
-            "2024",
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            (
+                "gisco-countries-2024-1m",
+                "2024",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ),
+            ("population-count-2020-30arcsec", 10),
             LedgerReport::new(ledger_path(), ledger.entries.len()),
             SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
         )));

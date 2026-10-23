@@ -100,14 +100,14 @@ pub(crate) fn smallest(
 
     let circle = SmallestReport::new(&found, table.effective_grid())
         .map_err(|error| Failure::grid_index(&error))?;
-    let (boundary_dataset, boundary_revision, boundary_digest) = prepared.boundary_identity();
+    let boundary_identity = prepared.boundary_identity();
+    let population_source = prepared.population_source();
     serialised(serde_json::to_string(&Envelope::new(
         CountrySmallestDocument::new(
             &feature.id,
             &feature.name,
-            boundary_dataset,
-            boundary_revision,
-            boundary_digest,
+            boundary_identity,
+            population_source,
             LedgerReport::new(&path, ledger.len()),
             circle,
         ),

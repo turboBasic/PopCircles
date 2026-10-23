@@ -21,9 +21,12 @@ def test_the_corpus_holds_documents() -> None:
 def test_a_committed_document_parses_and_names_its_dataset(document: Path) -> None:
     payload: Any = json.loads(document.read_text(encoding="utf-8"))
     envelope = Envelope.model_validate(payload)
-    assert envelope.provenance is not None
-    assert envelope.provenance.dataset is not None
-    if envelope.document in CIRCLE_KINDS:
+    if envelope.document == "country-smallest":
+        assert payload["result"]["population_dataset"]
+    else:
+        assert envelope.provenance is not None
+        assert envelope.provenance.dataset is not None
+    if envelope.document in CIRCLE_KINDS or envelope.document == "country-smallest":
         assert circle_of(payload)
 
 
