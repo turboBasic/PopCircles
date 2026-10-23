@@ -144,8 +144,8 @@ impl From<u32> for RadiusKm {
 /// Named fields rather than a tuple because [`zone_area_km2`] subtracts these two in one direction
 /// only, and a silent swap there flips a sign rather than failing.
 ///
-/// Only [`crate::grid::Grid::lat_bounds`] can construct a band, so callers cannot pass an inverted
-/// band to [`zone_area_km2`].
+/// Library consumers obtain bands from [`crate::grid::Grid::lat_bounds`], so they cannot pass an
+/// inverted band to [`zone_area_km2`].
 ///
 /// ```compile_fail
 /// use popcircles::geodesy::LatBand;
