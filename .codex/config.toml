@@ -2,7 +2,19 @@ model = "gpt-6-luna"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 approval_policy = "on-request"
-approvals_reviewer = "auto_review"
+approvals_reviewer = "user"
+
+## Additional configuration for Codex sandbox workspace write permissions suggested by ChatGPT
+
+default_permissions = "project-edit"
+
+[permissions.project-edit]
+extends = ":workspace"
+
+[permissions.project-edit.filesystem.":workspace_roots"]
+".codex/config.toml" = "write"
+
+## End of additional configuration for Codex sandbox workspace write permissions
 
 [sandbox_workspace_write]
 network_access = true
