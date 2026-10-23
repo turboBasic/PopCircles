@@ -109,6 +109,24 @@ pub(crate) struct CachedTableArgs {
 }
 
 #[derive(Args, Debug, Clone)]
+pub(crate) struct CountryTableArgs {
+    #[command(flatten)]
+    pub(crate) grid: DatasetGridArgs,
+    /// Fold every k by k native-cell block before searching.
+    #[arg(
+        long,
+        help = "Fold every k by k native-cell block; defaults to 1 for smallest and 10 for sweep"
+    )]
+    pub(crate) decimate: Option<u32>,
+}
+
+impl CountryTableArgs {
+    pub(crate) fn decimation(&self, default: u32) -> u32 {
+        self.decimate.unwrap_or(default)
+    }
+}
+
+#[derive(Args, Debug, Clone)]
 pub(crate) struct DatasetGridArgs {
     /// Population raster in data/registry.toml supplying defaults for omitted grid flags.
     #[arg(long)]
@@ -408,5 +426,26 @@ mod tests {
         assert!(parse_log_level("trace").is_err());
         assert!(parse_log_level("off").is_err());
         assert!(parse_log_level("nonsense").is_err());
+    }
+
+    #[test]
+    fn country_table_decimation_uses_the_command_default_unless_overridden() {
+        let args = CountryTableArgs {
+            grid: DatasetGridArgs {
+                dataset: None,
+                grid: GridArgs::default(),
+            },
+            decimate: None,
+        };
+        assert_eq!(args.decimation(1), 1);
+        assert_eq!(args.decimation(10), 10);
+        assert_eq!(
+            CountryTableArgs {
+                decimate: Some(2),
+                ..args
+            }
+            .decimation(10),
+            2
+        );
     }
 }

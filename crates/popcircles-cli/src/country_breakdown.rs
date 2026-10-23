@@ -11,13 +11,12 @@ use popcircles::kernel::Kernel;
 use popcircles::ownership::CellOwnership;
 use popcircles::raster::geotiff::GeoTiffSource;
 use popcircles::raster::{CellTallies, RasterError, RasterRow, RasterSource};
+use popcircles::table::CountryTable;
 use popcircles::table::{ColSpan, CountryTableBuildError, Decimation, build_country_decimated};
 
 use crate::boundaries::{self, BoundaryFeature};
 use crate::failure::{EXIT_MISSING_DATA, Failure};
-use crate::registry::{REGISTRY_PATH, Registry};
-
-const BOUNDARY_DATASET: &str = "gisco-countries-2024-1m";
+use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
 
 pub(crate) struct Prepared {
     source: Grid,
@@ -47,15 +46,15 @@ impl Prepared {
             None => registry.default_raster(),
         }
         .map_err(|error| Failure::registry(&error))?;
-        let boundary = registry.boundary(BOUNDARY_DATASET).ok_or_else(|| {
+        let boundary = registry.boundary(COUNTRY_BOUNDARY_DATASET).ok_or_else(|| {
             Failure::bad_input(format!(
-                "country boundary `{BOUNDARY_DATASET}` is not registered"
+                "country boundary `{COUNTRY_BOUNDARY_DATASET}` is not registered"
             ))
         })?;
         let path = &boundary.path;
         let source_id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
             Failure::bad_input(format!(
-                "country boundary `{BOUNDARY_DATASET}` has no source identifier field"
+                "country boundary `{COUNTRY_BOUNDARY_DATASET}` has no source identifier field"
             ))
         })?;
         let features = boundaries::load(path, source_id_field).map_err(|error| {
@@ -108,7 +107,7 @@ impl Prepared {
         let tallies = raster.finish();
         let boundary_digest = boundary.sha256.clone().ok_or_else(|| {
             Failure::bad_input(format!(
-                "country boundary `{BOUNDARY_DATASET}` has no registered digest"
+                "country boundary `{COUNTRY_BOUNDARY_DATASET}` has no registered digest"
             ))
         })?;
         Ok(Self {
@@ -137,6 +136,35 @@ impl Prepared {
             .map(|mut results| results.remove(0))
     }
 
+    pub(crate) fn country_table(
+        &self,
+        feature: &BoundaryFeature,
+    ) -> Result<Option<CountryTable>, Failure> {
+        match build_country_decimated(
+            Replay::new(self.source, &self.rows, self.tallies),
+            &self.ownership,
+            &feature.id,
+            self.decimation,
+            &self.boundary_digest,
+        ) {
+            Ok(table) => Ok(Some(table)),
+            Err(CountryTableBuildError::NoOwnedCells(_)) => Ok(None),
+            Err(error) => Err(Failure::bad_input(error.to_string())),
+        }
+    }
+
+    pub(crate) fn feature(&self, selector: &str) -> Result<&BoundaryFeature, Failure> {
+        boundaries::resolve(&self.features, selector).map_err(Failure::bad_input)
+    }
+
+    pub(crate) fn boundary_identity(&self) -> (&str, &str, &str) {
+        (
+            COUNTRY_BOUNDARY_DATASET,
+            &self.boundary_revision,
+            &self.boundary_digest,
+        )
+    }
+
     pub(crate) fn for_circles(
         &self,
         circles: &[((Row, Col), RadiusKm, f64)],
@@ -157,21 +185,8 @@ impl Prepared {
                 feature_count,
                 feature.id.as_str()
             );
-            let table = build_country_decimated(
-                Replay::new(self.source, &self.rows, self.tallies),
-                &self.ownership,
-                &feature.id,
-                self.decimation,
-                &self.boundary_digest,
-            );
-            let (table, total) = match table {
-                Ok(table) => {
-                    let total = table.total();
-                    (Some(table), total)
-                }
-                Err(CountryTableBuildError::NoOwnedCells(_)) => (None, 0.0),
-                Err(error) => return Err(Failure::bad_input(error.to_string())),
-            };
+            let table = self.country_table(feature)?;
+            let total = table.as_ref().map_or(0.0, CountryTable::total);
             for (index, (((_, centre), _radius, _), kernel)) in
                 circles.iter().zip(&kernels).enumerate()
             {
@@ -212,7 +227,7 @@ impl Prepared {
             }
         }
         let provenance = CountryBreakdownProvenance {
-            boundary_dataset: BOUNDARY_DATASET.to_owned(),
+            boundary_dataset: COUNTRY_BOUNDARY_DATASET.to_owned(),
             boundary_revision: self.boundary_revision.clone(),
             boundary_digest: self.boundary_digest.clone(),
             attribution: self.attribution.clone(),
@@ -270,5 +285,109 @@ impl RasterSource for Replay<'_> {
 
     fn finish(self) -> CellTallies {
         self.tallies
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::float_cmp)]
+mod tests {
+    use popcircles::circle;
+    use popcircles::domain::{Domain, FeatureId, Geometry, Polygon};
+    use popcircles::geodesy::{LatLon, RadiusKm};
+    use popcircles::grid::Grid;
+    use popcircles::kernel::Kernel;
+
+    use super::*;
+
+    fn country(id: &str, west: f64, east: f64) -> BoundaryFeature {
+        BoundaryFeature {
+            id: FeatureId::new(id).unwrap(),
+            name: id.to_owned(),
+            geometry: Geometry::Polygon(Polygon {
+                rings: vec![vec![
+                    LatLon {
+                        lat: 0.0,
+                        lon: west,
+                    },
+                    LatLon {
+                        lat: 0.0,
+                        lon: east,
+                    },
+                    LatLon {
+                        lat: 90.0,
+                        lon: east,
+                    },
+                    LatLon {
+                        lat: 90.0,
+                        lon: west,
+                    },
+                    LatLon {
+                        lat: 0.0,
+                        lon: west,
+                    },
+                ]],
+            }),
+        }
+    }
+
+    #[test]
+    fn selected_country_table_uses_only_its_owned_cells() {
+        let grid = Grid::new(
+            36,
+            18,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            10.0,
+            -10.0,
+        )
+        .unwrap();
+        let features = vec![country("AA", -180.0, 0.0), country("BB", 0.0, 180.0)];
+        let geometries = features
+            .iter()
+            .map(|feature| (feature.id.clone(), feature.geometry.clone()))
+            .collect::<Vec<_>>();
+        let (ownership, _) = CellOwnership::rasterize_features(&geometries, grid).unwrap();
+        let domains = features
+            .iter()
+            .map(|feature| {
+                Domain::rasterize(feature.id.clone(), &feature.geometry, grid)
+                    .unwrap()
+                    .0
+            })
+            .collect();
+        let prepared = Prepared {
+            source: grid,
+            effective: grid,
+            decimation: Decimation::none(grid),
+            rows: vec![vec![1.0; grid.width() as usize]; grid.height() as usize],
+            tallies: CellTallies::default(),
+            ownership,
+            domains,
+            features: features.clone(),
+            boundary_digest: "fixture".to_owned(),
+            boundary_revision: "fixture".to_owned(),
+            attribution: "fixture".to_owned(),
+        };
+
+        let selected = boundaries::resolve(&features, "AA").unwrap();
+        let table = prepared.country_table(selected).unwrap().unwrap();
+        assert_eq!(table.total(), 9.0 * 18.0);
+
+        let kernel = Kernel::new(grid, grid.row(4).unwrap(), RadiusKm::new(0.0).unwrap()).unwrap();
+        assert_eq!(
+            circle::country_population(&table, &kernel, grid.col(2).unwrap()).unwrap(),
+            1.0
+        );
+        assert_eq!(
+            circle::country_population(&table, &kernel, grid.col(22).unwrap()).unwrap(),
+            0.0
+        );
+        let south = Kernel::new(grid, grid.row(14).unwrap(), RadiusKm::new(0.0).unwrap()).unwrap();
+        assert_eq!(
+            circle::country_population(&table, &south, grid.col(2).unwrap()).unwrap(),
+            0.0
+        );
     }
 }

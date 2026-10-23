@@ -5,6 +5,7 @@
 // `CachedTable` is the one place a cache is opened, which is why a command asks for a table rather than
 // assembling the path, the identity and the provenance of one itself.
 
+pub(crate) mod country;
 pub(crate) mod distance;
 pub(crate) mod grid;
 pub(crate) mod search;

@@ -1,0 +1,275 @@
+---
+source: crates/popcircles/src/report.rs
+expression: document
+---
+{
+  "schema_version": 1,
+  "document": "country-sweep",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "shares": {
+      "from_percent": 10,
+      "to_percent": 30,
+      "step_percent": 10
+    },
+    "countries": [
+      {
+        "country": {
+          "id": "AA",
+          "name": "Alpha",
+          "boundary_dataset": "gisco-countries-2024-1m",
+          "boundary_revision": "2024",
+          "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "ledger": {
+          "path": "out/radii.json",
+          "radii": 44
+        },
+        "records": [
+          {
+            "share": 0.1,
+            "circle": {
+              "radius_km": 1108,
+              "centre": {
+                "lat": -85.0,
+                "lon": 5.0
+              },
+              "row": 17,
+              "col": 18,
+              "population": 22085.0,
+              "target": {
+                "share": 0.1,
+                "persons": 21027.600000000002,
+                "total": 210276.0
+              },
+              "share_achieved": 0.10502862903992848,
+              "short_below": {
+                "radius_km": 1107,
+                "population": 20856.0
+              },
+              "covers_whole_grid": false,
+              "predicate_slack_persons": 0.0000000029359075170987126,
+              "tolerance_persons": 0.0,
+              "stats": {
+                "radii_evaluated": 10,
+                "radii_reused": 12,
+                "searched": {
+                  "levels": 30,
+                  "blocks_examined": 6666,
+                  "blocks_pruned": 4919,
+                  "circles_evaluated": 1747,
+                  "kernels_built": 428
+                }
+              }
+            }
+          },
+          {
+            "share": 0.2,
+            "circle": {
+              "radius_km": 2199,
+              "centre": {
+                "lat": -85.0,
+                "lon": 15.0
+              },
+              "row": 17,
+              "col": 19,
+              "population": 42366.0,
+              "target": {
+                "share": 0.2,
+                "persons": 42055.200000000004,
+                "total": 210276.0
+              },
+              "share_achieved": 0.2014780574102608,
+              "short_below": {
+                "radius_km": 2198,
+                "population": 41205.0
+              },
+              "covers_whole_grid": false,
+              "predicate_slack_persons": 0.0000000029359075170987126,
+              "tolerance_persons": 0.0,
+              "stats": {
+                "radii_evaluated": 10,
+                "radii_reused": 14,
+                "searched": {
+                  "levels": 30,
+                  "blocks_examined": 3690,
+                  "blocks_pruned": 2688,
+                  "circles_evaluated": 1002,
+                  "kernels_built": 290
+                }
+              }
+            }
+          },
+          {
+            "share": 0.3,
+            "circle": {
+              "radius_km": 3329,
+              "centre": {
+                "lat": -85.0,
+                "lon": 5.0
+              },
+              "row": 17,
+              "col": 18,
+              "population": 63665.0,
+              "target": {
+                "share": 0.3,
+                "persons": 63082.799999999996,
+                "total": 210276.0
+              },
+              "share_achieved": 0.3027687420342788,
+              "short_below": {
+                "radius_km": 3328,
+                "population": 62580.0
+              },
+              "covers_whole_grid": false,
+              "predicate_slack_persons": 0.0000000029359075170987126,
+              "tolerance_persons": 0.0,
+              "stats": {
+                "radii_evaluated": 24,
+                "radii_reused": 0,
+                "searched": {
+                  "levels": 72,
+                  "blocks_examined": 14200,
+                  "blocks_pruned": 10453,
+                  "circles_evaluated": 3747,
+                  "kernels_built": 921
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "country": {
+          "id": "BB",
+          "name": "Beta",
+          "boundary_dataset": "gisco-countries-2024-1m",
+          "boundary_revision": "2024",
+          "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "ledger": {
+          "path": "out/radii.json",
+          "radii": 44
+        },
+        "records": [
+          {
+            "share": 0.1,
+            "circle": {
+              "radius_km": 1108,
+              "centre": {
+                "lat": -85.0,
+                "lon": 5.0
+              },
+              "row": 17,
+              "col": 18,
+              "population": 22085.0,
+              "target": {
+                "share": 0.1,
+                "persons": 21027.600000000002,
+                "total": 210276.0
+              },
+              "share_achieved": 0.10502862903992848,
+              "short_below": {
+                "radius_km": 1107,
+                "population": 20856.0
+              },
+              "covers_whole_grid": false,
+              "predicate_slack_persons": 0.0000000029359075170987126,
+              "tolerance_persons": 0.0,
+              "stats": {
+                "radii_evaluated": 10,
+                "radii_reused": 12,
+                "searched": {
+                  "levels": 30,
+                  "blocks_examined": 6666,
+                  "blocks_pruned": 4919,
+                  "circles_evaluated": 1747,
+                  "kernels_built": 428
+                }
+              }
+            }
+          },
+          {
+            "share": 0.2,
+            "circle": {
+              "radius_km": 2199,
+              "centre": {
+                "lat": -85.0,
+                "lon": 15.0
+              },
+              "row": 17,
+              "col": 19,
+              "population": 42366.0,
+              "target": {
+                "share": 0.2,
+                "persons": 42055.200000000004,
+                "total": 210276.0
+              },
+              "share_achieved": 0.2014780574102608,
+              "short_below": {
+                "radius_km": 2198,
+                "population": 41205.0
+              },
+              "covers_whole_grid": false,
+              "predicate_slack_persons": 0.0000000029359075170987126,
+              "tolerance_persons": 0.0,
+              "stats": {
+                "radii_evaluated": 10,
+                "radii_reused": 14,
+                "searched": {
+                  "levels": 30,
+                  "blocks_examined": 3690,
+                  "blocks_pruned": 2688,
+                  "circles_evaluated": 1002,
+                  "kernels_built": 290
+                }
+              }
+            }
+          },
+          {
+            "share": 0.3,
+            "circle": {
+              "radius_km": 3329,
+              "centre": {
+                "lat": -85.0,
+                "lon": 5.0
+              },
+              "row": 17,
+              "col": 18,
+              "population": 63665.0,
+              "target": {
+                "share": 0.3,
+                "persons": 63082.799999999996,
+                "total": 210276.0
+              },
+              "share_achieved": 0.3027687420342788,
+              "short_below": {
+                "radius_km": 3328,
+                "population": 62580.0
+              },
+              "covers_whole_grid": false,
+              "predicate_slack_persons": 0.0000000029359075170987126,
+              "tolerance_persons": 0.0,
+              "stats": {
+                "radii_evaluated": 24,
+                "radii_reused": 0,
+                "searched": {
+                  "levels": 72,
+                  "blocks_examined": 14200,
+                  "blocks_pruned": 10453,
+                  "circles_evaluated": 3747,
+                  "kernels_built": 921
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

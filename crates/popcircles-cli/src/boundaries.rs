@@ -32,6 +32,48 @@ pub struct BoundaryFeature {
     pub geometry: Geometry,
 }
 
+/// Resolves an exact canonical ID before an exact English name.
+///
+/// # Errors
+/// Returns a message with available candidates when the selector is unknown or ambiguous.
+pub fn resolve<'a>(
+    features: &'a [BoundaryFeature],
+    selector: &str,
+) -> Result<&'a BoundaryFeature, String> {
+    if let Some(feature) = features
+        .iter()
+        .find(|feature| feature.id.as_str() == selector)
+    {
+        return Ok(feature);
+    }
+
+    let matches: Vec<_> = features
+        .iter()
+        .filter(|feature| feature.name == selector)
+        .collect();
+    match matches.as_slice() {
+        [feature] => Ok(feature),
+        [] => Err(format!(
+            "unknown country {selector:?}; available countries: {}",
+            candidates(features.iter())
+        )),
+        _ => Err(format!(
+            "ambiguous country name {selector:?}; matching countries: {}",
+            candidates(matches.iter().copied())
+        )),
+    }
+}
+
+fn candidates<'a>(features: impl Iterator<Item = &'a BoundaryFeature>) -> String {
+    let mut features: Vec<_> = features.collect();
+    features.sort_by(|left, right| left.id.as_str().cmp(right.id.as_str()));
+    features
+        .iter()
+        .map(|feature| format!("{} ({})", feature.id.as_str(), feature.name))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// Reads a registered boundary file without mixing file access into geometry rasterization.
 ///
 /// # Errors
@@ -203,10 +245,66 @@ mod audit;
 mod cache;
 
 #[cfg(test)]
+#[allow(clippy::expect_used)] // Synthetic country fixtures and focused failures are clearer with assertion messages.
 mod tests {
     use super::*;
 
     const VALID: &str = r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"AA","name":"ignored"},"geometry":{"type":"MultiPolygon","coordinates":[[[[0,0],[2,0],[2,2],[0,0]]]]}}]}"#;
+
+    fn countries(entries: &[(&str, &str)]) -> Vec<BoundaryFeature> {
+        let features: Vec<_> = entries
+            .iter()
+            .map(|(id, name)| {
+                serde_json::json!({
+                    "type": "Feature",
+                    "properties": {"CNTR_ID": id, "NAME_ENGL": name},
+                    "geometry": {"type": "Polygon", "coordinates": []},
+                })
+            })
+            .collect();
+        decode(
+            &serde_json::json!({"type": "FeatureCollection", "features": features}).to_string(),
+            "CNTR_ID",
+        )
+        .expect("synthetic features decode")
+    }
+
+    #[test]
+    fn country_selector_prefers_exact_id_over_a_name_collision() {
+        let features = countries(&[("AA", "Alpha"), ("BB", "AA")]);
+
+        assert_eq!(
+            resolve(&features, "AA").map(|feature| feature.id.as_str()),
+            Ok("AA")
+        );
+    }
+
+    #[test]
+    fn country_selector_resolves_a_unique_exact_name() {
+        let features = countries(&[("AA", "Alpha"), ("BB", "Beta")]);
+
+        assert_eq!(
+            resolve(&features, "Beta").map(|feature| feature.id.as_str()),
+            Ok("BB")
+        );
+    }
+
+    #[test]
+    fn country_selector_lists_sorted_candidates_for_unknown_names() {
+        let features = countries(&[("BB", "Beta"), ("AA", "Alpha")]);
+
+        let error = resolve(&features, "Missing").expect_err("unknown name fails");
+        assert!(error.contains("AA (Alpha), BB (Beta)"), "{error}");
+    }
+
+    #[test]
+    fn country_selector_lists_duplicate_name_matches() {
+        let features = countries(&[("BB", "Same"), ("AA", "Same"), ("CC", "Other")]);
+
+        let error = resolve(&features, "Same").expect_err("duplicate name is ambiguous");
+        assert!(error.contains("AA (Same), BB (Same)"), "{error}");
+        assert!(!error.contains("CC"), "{error}");
+    }
 
     #[test]
     #[allow(clippy::expect_used)] // A focused parser test reports invalid fixtures at the assertion.

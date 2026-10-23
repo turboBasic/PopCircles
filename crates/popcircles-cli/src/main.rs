@@ -7,14 +7,16 @@ mod observe;
 mod registry;
 mod settlements;
 
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
 use args::{
-    CachedTableArgs, DatasetGridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs, TableArgs,
-    WindowArgs, parse_radius, parse_share,
+    CachedTableArgs, CountryTableArgs, DatasetGridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs,
+    TableArgs, WindowArgs, parse_radius, parse_share,
 };
 use clap::{Parser, Subcommand};
+use commands::country::list as list_countries;
 use commands::distance::distance_json;
 use commands::grid::describe_grid;
 use commands::search::{most_populous, population_at, smallest_for_share, sweep};
@@ -57,6 +59,11 @@ enum Command {
     Grid {
         #[command(subcommand)]
         command: GridCommand,
+    },
+    /// List countries and find per-country population circles.
+    Country {
+        #[command(subcommand)]
+        command: CountryCommand,
     },
     /// The summation table and its on-disk cache.
     Table {
@@ -122,6 +129,43 @@ enum GridCommand {
 }
 
 #[derive(Subcommand, Debug, Clone)]
+enum CountryCommand {
+    /// List available countries from the registered boundary dataset.
+    List,
+    /// Find the smallest population circle for one registered country.
+    Smallest {
+        /// Exact country feature identifier or unique English name.
+        #[arg(long)]
+        country: String,
+        /// The share of this country's population to reach, in whole percent.
+        #[arg(long, value_parser = parse_share)]
+        share: Share,
+        #[command(flatten)]
+        table: CountryTableArgs,
+        #[command(flatten)]
+        search: SearchArgs,
+        /// Country-specific resume ledger. Defaults to `out/countries/<ID>.json`.
+        #[arg(long)]
+        ledger: Option<PathBuf>,
+    },
+    /// Sweep requested shares over selected countries, resuming one ledger per country.
+    Sweep {
+        /// Exact country feature identifier or unique English name; may be repeated.
+        #[arg(long = "country", required = true)]
+        countries: Vec<String>,
+        #[command(flatten)]
+        shares: SweepArgs,
+        #[command(flatten)]
+        table: CountryTableArgs,
+        #[command(flatten)]
+        search: SearchArgs,
+        /// Directory for country-specific resume ledgers.
+        #[arg(long, default_value = "out/countries")]
+        ledger_dir: PathBuf,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
 enum TableCommand {
     /// Build a summation table from a registered dataset and publish it to the cache.
     Build {
@@ -181,6 +225,29 @@ fn run(command: Command) -> Result<String, Failure> {
         Command::Grid {
             command: GridCommand::Describe { grid },
         } => describe_grid(&grid),
+        Command::Country {
+            command: CountryCommand::List,
+        } => list_countries(),
+        Command::Country {
+            command:
+                CountryCommand::Smallest {
+                    country,
+                    share,
+                    table,
+                    search,
+                    ledger,
+                },
+        } => commands::country::smallest(&country, share, &table, search, ledger.as_deref()),
+        Command::Country {
+            command:
+                CountryCommand::Sweep {
+                    countries,
+                    shares,
+                    table,
+                    search,
+                    ledger_dir,
+                },
+        } => commands::country::sweep(&countries, shares, &table, search, &ledger_dir),
         Command::Table {
             command:
                 TableCommand::Build {

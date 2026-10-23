@@ -50,12 +50,14 @@
 //! | [`SmallestReport`] | `smallest-circle` | one smallest circle, with no ledger around it |
 //! | [`SmallestDocument`] | `smallest` | the smallest circle reaching one share |
 //! | [`SweepDocument`] | `sweep` | the smallest circle for each of a range of shares |
+//! | [`CountryListDocument`] | `country-list` | the available country identifiers and names |
+//! | [`CountrySmallestDocument`] | `country-smallest` | one country's smallest circle and its source identity |
 //!
-//! The last two are documents rather than bare payloads because a ledger belongs to the run and not to any
-//! one circle, and because a payload meaning either "a circle" or "some circles" would leave a consumer
-//! branching on which it got. `smallest-circle` is the circle inside the second of them, published on its
-//! own by a snapshot rather than by a command, and it carries a kind because a payload type that can be
-//! wrapped is one a consumer can be handed.
+//! `SmallestDocument` and `SweepDocument` wrap their circles because a ledger belongs to the run, not to
+//! one circle. `CountrySmallestDocument` also carries the feature identity that produced its answer.
+//! `smallest-circle` is the circle inside these documents, published on its own by a snapshot rather than
+//! by a command, and it carries a kind because a payload type that can be wrapped is one a consumer can be
+//! handed.
 //!
 //! **A [`SweepDocument`]'s `records` ascend by `target.share`.** That is part of the contract and held by
 //! construction, so a renderer plotting share against radius may read them in the order it gets them.
@@ -118,6 +120,7 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::country_breakdown::{CountryBreakdown, CountryBreakdownEntry};
+use crate::domain::FeatureId;
 use crate::geodesy::{EARTH_RADIUS_KM, LatLon, RadiusKm, wrap_lon};
 use crate::grid::{Col, Grid, GridIndexError, Row};
 use crate::raster::CellTallies;
@@ -136,11 +139,42 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// An associated constant rather than an argument to [`Envelope::new`], so a kind is a property of the
 /// payload type and no call site can wrap one payload under another's name. What the trait cannot do is
 /// make the kinds distinct — nothing checks two implementations for a constant they share — which is why
-/// `nine_payload_types_carry_nine_distinct_kinds` collects them into a set and counts it, and why a tenth
+/// `payload_types_carry_distinct_kinds` collects them into a set and counts it, and why another
 /// payload type owes that test a line as well as the table above.
 pub trait Document {
     /// What a consumer branches on before it reads anything under `result`.
     const KIND: &'static str;
+}
+
+/// The registered country features available to country commands.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountryListDocument {
+    countries: Vec<CountryListEntry>,
+}
+
+impl Document for CountryListDocument {
+    const KIND: &'static str = "country-list";
+}
+
+impl CountryListDocument {
+    #[must_use]
+    pub fn new(countries: Vec<(FeatureId, String)>) -> Self {
+        Self {
+            countries: countries
+                .into_iter()
+                .map(|(id, name)| CountryListEntry {
+                    id: id.as_str().to_owned(),
+                    name,
+                })
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CountryListEntry {
+    id: String,
+    name: String,
 }
 
 /// The earth model every distance in a document was measured on.
@@ -919,6 +953,123 @@ impl SmallestDocument {
     }
 }
 
+/// The registered country feature that a country search used.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountryIdentityReport {
+    id: String,
+    name: String,
+    boundary_dataset: String,
+    boundary_revision: String,
+    boundary_digest: String,
+}
+
+/// One country's smallest-circle answer and the country identity it used.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySmallestDocument {
+    country: CountryIdentityReport,
+    ledger: LedgerReport,
+    circle: SmallestReport,
+}
+
+impl Document for CountrySmallestDocument {
+    const KIND: &'static str = "country-smallest";
+}
+
+impl CountrySmallestDocument {
+    #[must_use]
+    pub fn new(
+        id: &FeatureId,
+        name: &str,
+        boundary_dataset: &str,
+        boundary_revision: &str,
+        boundary_digest: &str,
+        ledger: LedgerReport,
+        circle: SmallestReport,
+    ) -> Self {
+        Self {
+            country: CountryIdentityReport {
+                id: id.as_str().to_owned(),
+                name: name.to_owned(),
+                boundary_dataset: boundary_dataset.to_owned(),
+                boundary_revision: boundary_revision.to_owned(),
+                boundary_digest: boundary_digest.to_owned(),
+            },
+            ledger,
+            circle,
+        }
+    }
+}
+
+/// One requested share and the country-restricted circle that reached it.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySweepRecord {
+    share: f64,
+    circle: SmallestReport,
+}
+
+impl CountrySweepRecord {
+    #[must_use]
+    pub const fn new(circle: SmallestReport) -> Self {
+        Self {
+            share: circle.target.share,
+            circle,
+        }
+    }
+}
+
+/// One country's identity, resumable ledger and answers in a country sweep.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySweepCountry {
+    country: CountryIdentityReport,
+    ledger: LedgerReport,
+    records: Vec<CountrySweepRecord>,
+}
+
+impl CountrySweepCountry {
+    #[must_use]
+    pub fn new(
+        id: &FeatureId,
+        name: &str,
+        boundary_dataset: &str,
+        boundary_revision: &str,
+        boundary_digest: &str,
+        ledger: LedgerReport,
+        mut records: Vec<CountrySweepRecord>,
+    ) -> Self {
+        records.sort_by(|left, right| left.share.total_cmp(&right.share));
+        Self {
+            country: CountryIdentityReport {
+                id: id.as_str().to_owned(),
+                name: name.to_owned(),
+                boundary_dataset: boundary_dataset.to_owned(),
+                boundary_revision: boundary_revision.to_owned(),
+                boundary_digest: boundary_digest.to_owned(),
+            },
+            ledger,
+            records,
+        }
+    }
+}
+
+/// Results for requested countries and shares, with one ledger per country.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySweepDocument {
+    shares: SweepShares,
+    countries: Vec<CountrySweepCountry>,
+}
+
+impl Document for CountrySweepDocument {
+    const KIND: &'static str = "country-sweep";
+}
+
+impl CountrySweepDocument {
+    #[must_use]
+    pub fn new(shares: SweepShares, mut countries: Vec<CountrySweepCountry>) -> Self {
+        countries.sort_by(|left, right| left.country.id.cmp(&right.country.id));
+        Self { shares, countries }
+    }
+}
+
 /// The shares a sweep walked, in whole percent, which is the unit the flags take.
 ///
 /// Whole percent rather than the fractions the records carry: a step of a tenth accumulated in f64 makes
@@ -1025,7 +1176,7 @@ mod tests {
     }
 
     #[test]
-    fn nine_payload_types_carry_nine_distinct_kinds() {
+    fn payload_types_carry_distinct_kinds() {
         // The trait cannot check this: two implementations sharing a constant compile. So the set is
         // built and counted, which turns a copied `impl` block into a failure here rather than into two
         // documents a consumer cannot tell apart. `()`'s kind is deliberately absent — it is a fixture,
@@ -1040,8 +1191,11 @@ mod tests {
             SmallestReport::KIND,
             SmallestDocument::KIND,
             SweepDocument::KIND,
+            CountryListDocument::KIND,
+            CountrySmallestDocument::KIND,
+            CountrySweepDocument::KIND,
         ]);
-        assert_eq!(kinds.len(), 9, "{kinds:?}");
+        assert_eq!(kinds.len(), 12, "{kinds:?}");
     }
 
     #[test]
@@ -1605,6 +1759,16 @@ mod tests {
             LedgerReport::new(ledger_path(), ledger.entries.len()),
             SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
         )));
+
+        insta::assert_json_snapshot!(Envelope::new(CountrySmallestDocument::new(
+            &FeatureId::new("AA").expect("fixture country ID"),
+            "Fixture country",
+            "gisco-countries-2024-1m",
+            "2024",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            LedgerReport::new(ledger_path(), ledger.entries.len()),
+            SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
+        )));
     }
 
     #[test]
@@ -1716,5 +1880,67 @@ mod tests {
         )
         .expect("a 1 degree whole-globe grid is valid");
         insta::assert_json_snapshot!(Envelope::new(GridSummary::from(&grid)));
+    }
+
+    #[test]
+    fn the_country_list_document_holds_its_shape() {
+        let countries = CountryListDocument::new(vec![
+            (
+                FeatureId::new("AA").expect("valid country ID"),
+                "Alpha".to_owned(),
+            ),
+            (
+                FeatureId::new("BB").expect("valid country ID"),
+                "Beta".to_owned(),
+            ),
+        ]);
+
+        insta::assert_json_snapshot!(Envelope::new(countries));
+    }
+
+    #[test]
+    fn the_country_sweep_document_sorts_countries_and_shares() {
+        let grid = fixture_grid();
+        let payload = fixture_payload();
+        let table = Table::new(grid, &payload).expect("the fixture table is valid");
+        let mut ledger = Recorded::default();
+        let records: Vec<CountrySweepRecord> = [0.3, 0.1, 0.2]
+            .into_iter()
+            .map(|share| {
+                let found = smallest::smallest(
+                    &table,
+                    Share::new(share).expect("fixture share is valid"),
+                    Some(spacing(4)),
+                    &mut ledger,
+                    &mut (),
+                )
+                .expect("the fixture table can be searched");
+                CountrySweepRecord::new(
+                    SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
+                )
+            })
+            .collect();
+        assert!(
+            records
+                .iter()
+                .all(|record| record.share == record.circle.target.share)
+        );
+        let country = |id: &str, name: &str| {
+            CountrySweepCountry::new(
+                &FeatureId::new(id).expect("fixture country ID"),
+                name,
+                "gisco-countries-2024-1m",
+                "2024",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                LedgerReport::new(ledger_path(), ledger.entries.len()),
+                records.clone(),
+            )
+        };
+
+        let document = Envelope::new(CountrySweepDocument::new(
+            SweepShares::new(10, 30, 10),
+            vec![country("BB", "Beta"), country("AA", "Alpha")],
+        ));
+        insta::assert_json_snapshot!(document);
     }
 }

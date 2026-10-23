@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # rather than read optimistically.
 SCHEMA_VERSION = 1
 
-# The nine `report::Document::KIND` strings. Held as a Literal so an unrecognised kind is a schema
+# The published `Document::KIND` values. Held as a Literal so an unrecognised kind is a schema
 # refusal naming `document`, not a KeyError three frames later.
 DocumentKind = Literal[
     "distance",
@@ -21,6 +21,9 @@ DocumentKind = Literal[
     "smallest-circle",
     "smallest",
     "sweep",
+    "country-list",
+    "country-smallest",
+    "country-sweep",
 ]
 
 # frozen because nothing downstream of the boundary may edit what the document said, and

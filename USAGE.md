@@ -202,6 +202,44 @@ search sweep --from 10 --to 50 --step 20 --ledger out/radii.json
 A ledger describing another table is refused rather than resumed from, which is why there is no way to
 turn it off.
 
+## Countries
+
+`country list` prints the registered GISCO feature IDs and English names; it reads no population raster.
+For a search, `--country` accepts an exact feature ID or a unique exact name. An unknown selector or a
+name shared by several features fails with the candidate IDs and names. Fetch the registered raster and
+boundaries with `mise run data:get` first.
+
+```sh
+mise run cli -- country list
+# {…,"document":"country-list","result":{"countries":[{"id":"AD","name":"Andorra"},…]}}
+```
+
+One country uses the same share search, restricted to its uniquely owned population cells:
+
+```sh
+mise run cli -- country smallest --country DE --share 50 \
+  --dataset population-count-2020-30arcsec --decimate 10
+# {…,"document":"country-smallest","result":{"country":{"id":"DE","name":"Germany",
+#  "boundary_dataset":"gisco-countries-2024-1m",…},"ledger":{"path":"out/countries/4445.json",…},
+#  "circle":{"radius_km":…,"target":{"share":0.5,…},…}}}
+```
+
+Several countries and shares run in one command. Repeat `--country` for each selector; the result orders
+countries by canonical ID and each country's records by requested share:
+
+```sh
+mise run cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
+  --dataset population-count-2020-30arcsec --decimate 10
+# {…,"schema_version":1,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
+#  "countries":[{"country":{"id":"DE","name":"Germany",…},"ledger":{"path":"out/countries/4445.json",…},
+#  "records":[{"share":0.1,"circle":{"target":{"share":0.1,…},…}},…]},…]}}
+```
+
+Each country keeps its own resumable ledger under `out/countries`; pass `--ledger-dir` to choose another
+directory. Repeating a run resumes that country's saved radii. Progress and diagnostics go to stderr, while
+stdout contains one JSON document. Sweep at an affordable decimation such as `--decimate 10`; use
+`country smallest` at full resolution for a selected answer when needed.
+
 ## Maps
 
 From the checkout root, one command searches a named dataset and saves its map:

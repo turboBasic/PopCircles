@@ -165,6 +165,36 @@ def test_main_is_clean_on_real_repo() -> None:
     assert lint_docs.main() == 0
 
 
+def test_document_contract_requires_matching_kinds() -> None:
+    rust = """
+pub const SCHEMA_VERSION: u32 = 1;
+impl Document for Circle { const KIND: &'static str = "circle"; }
+"""
+    python = """
+SCHEMA_VERSION = 1
+DocumentKind = Literal["circle"]
+"""
+    assert lint_docs.document_contract_findings(rust, python) == []
+    findings = lint_docs.document_contract_findings(
+        rust, python.replace('Literal["circle"]', 'Literal["smallest"]')
+    )
+    assert findings == [
+        "Rust document kinds missing from Python: circle",
+        "Python document kinds missing from Rust: smallest",
+    ]
+
+
+def test_document_contract_requires_matching_schema_versions() -> None:
+    rust = """
+pub const SCHEMA_VERSION: u32 = 1;
+impl Document for Circle { const KIND: &'static str = "circle"; }
+"""
+    python = 'SCHEMA_VERSION = 2\nDocumentKind = Literal["circle"]'
+    assert lint_docs.document_contract_findings(rust, python) == [
+        "schema versions differ: Rust 1, Python 2"
+    ]
+
+
 def test_agent_files_are_in_scope_and_checked(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

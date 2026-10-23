@@ -225,6 +225,41 @@ path = "data/settlements/populated-places-1to10m.geojson"
         ]);
     }
 
+    fn register_two_countries(&self) {
+        let data = self.directory.path().join("data");
+        std::fs::write(
+            data.join("boundaries/gisco-countries-2024-1m.geojson"),
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"AA","NAME_ENGL":"Alpha"},"geometry":{"type":"Polygon","coordinates":[[[-180,-90],[0,-90],[0,90],[-180,90],[-180,-90]]]}},{"type":"Feature","properties":{"CNTR_ID":"BB","NAME_ENGL":"Beta"},"geometry":{"type":"Polygon","coordinates":[[[0,-90],[180,-90],[180,90],[0,90],[0,-90]]]}}]}"#,
+        )
+        .unwrap();
+        let registry = data.join("registry.toml");
+        let contents = std::fs::read_to_string(&registry).unwrap();
+        std::fs::write(
+            registry,
+            contents.replace("feature_count = 1", "feature_count = 2"),
+        )
+        .unwrap();
+    }
+
+    fn register_path_like_country(&self) {
+        let feature = serde_json::json!({
+            "type": "Feature",
+            "properties": {"CNTR_ID": "../victim", "NAME_ENGL": "Path-like ID"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-50,-50],[50,-50],[50,70],[-50,70],[-50,-50]]]},
+        });
+        std::fs::write(
+            self.directory
+                .path()
+                .join("data/boundaries/gisco-countries-2024-1m.geojson"),
+            serde_json::to_vec(&serde_json::json!({
+                "type": "FeatureCollection",
+                "features": [feature],
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
     fn ledger(&self, name: &str) -> PathBuf {
         self.directory.path().join(name)
     }
@@ -485,6 +520,253 @@ fn assert_oracle(breakdown: &serde_json::Value) {
     assert_eq!(entries[1]["fraction_of_country_population"], 0.5);
     assert_eq!(entries[1]["fraction_of_circle_population"], 0.2);
     assert_eq!(breakdown["reconciliation"]["unassigned_population"], 10.0);
+}
+
+#[test]
+fn country_list_reads_only_registered_boundaries_and_sorts_the_json_result() {
+    let directory = TempDir::new().unwrap();
+    let boundaries = directory.path().join("data/boundaries");
+    std::fs::create_dir_all(&boundaries).unwrap();
+    std::fs::write(
+        boundaries.join("gisco-countries-2024-1m.geojson"),
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"BB","NAME_ENGL":"Beta"},"geometry":{"type":"Polygon","coordinates":[]}},{"type":"Feature","properties":{"CNTR_ID":"AA","NAME_ENGL":"Alpha"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        directory.path().join("data/registry.toml"),
+        r#"
+[datasets.gisco-countries-2024-1m]
+kind = "boundary-vector"
+path = "data/boundaries/gisco-countries-2024-1m.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 2
+revision = "fixture"
+source_id_field = "CNTR_ID"
+identity_policy = "fixture"
+attribution = "Fixture boundary credit"
+"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_popcircles"))
+        .current_dir(directory.path())
+        .args(["country", "list"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert!(
+        output.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["document"], "country-list");
+    assert_eq!(document["result"]["countries"][0]["id"], "AA");
+    assert_eq!(document["result"]["countries"][1]["id"], "BB");
+    insta::assert_json_snapshot!("country-list-command", document);
+}
+
+#[test]
+fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    let invoke = |country: &str| {
+        run_with(
+            fixture.directory.path(),
+            &["--log-level".to_owned(), "error".to_owned()],
+            "country smallest",
+            &[
+                "--country",
+                country,
+                "--share",
+                "10",
+                "--dataset",
+                "population-count-2020-30arcsec",
+                "--decimate",
+                "1",
+                "--spacing",
+                "4",
+                "--ledger",
+                "shared-country.json",
+            ],
+        )
+    };
+    let first = invoke("AA");
+    assert!(
+        first.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.status.code(), Some(0), "{first:?}");
+    let mut document: serde_json::Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(document["document"], "country-smallest");
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["result"]["country"]["id"], "AA");
+    assert_eq!(document["result"]["country"]["name"], "Alpha");
+    assert_eq!(
+        document["result"]["country"]["boundary_dataset"],
+        "gisco-countries-2024-1m"
+    );
+    assert_eq!(
+        document["result"]["country"]["boundary_revision"],
+        "fixture"
+    );
+    assert_eq!(
+        document["result"]["country"]["boundary_digest"],
+        "a".repeat(64)
+    );
+    document["result"]["ledger"]["path"] = "shared-country.json".into();
+    insta::assert_json_snapshot!("country-smallest-command", document);
+
+    let second = invoke("BB");
+    assert_eq!(second.status.code(), Some(3), "{second:?}");
+    assert!(
+        String::from_utf8_lossy(&second.stderr).contains("does not describe the country wanted"),
+        "{second:?}"
+    );
+    assert!(second.stdout.is_empty(), "{second:?}");
+}
+
+#[test]
+fn country_id_cannot_redirect_the_default_ledger_path() {
+    let fixture = Fixture::build();
+    fixture.register_path_like_country();
+    let output = run_with(
+        fixture.directory.path(),
+        &["--log-level".to_owned(), "error".to_owned()],
+        "country smallest",
+        &[
+            "--country",
+            "../victim",
+            "--share",
+            "10",
+            "--dataset",
+            "population-count-2020-30arcsec",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let ledger = document["result"]["ledger"]["path"].as_str().unwrap();
+    assert_eq!(ledger, "out/countries/2e2e2f76696374696d.json");
+    assert!(fixture.directory.path().join(ledger).is_file());
+    assert!(!fixture.directory.path().join("out/victim.json").exists());
+}
+
+#[test]
+fn country_smallest_leaves_world_command_bytes_unchanged() {
+    let fixture = Fixture::build();
+    let args = ["--lat", "45", "--lon", "15", "--radius-km", "0"];
+    let before = fixture.run_ok("population-at", &args);
+    let country = run_with(
+        fixture.directory.path(),
+        &["--log-level".to_owned(), "error".to_owned()],
+        "country smallest",
+        &[
+            "--country",
+            "XX",
+            "--share",
+            "10",
+            "--dataset",
+            "population-count-2020-30arcsec",
+            "--ledger",
+            "country.json",
+        ],
+    );
+    assert!(country.status.success(), "{country:?}");
+    let after = fixture.run_ok("population-at", &args);
+    assert_eq!(before.stdout, after.stdout);
+    assert_eq!(before.stderr, after.stderr);
+    let mut document: serde_json::Value = serde_json::from_slice(&after.stdout).unwrap();
+    document["provenance"]["cache"]["header"] = "out/table.header.json".into();
+    document["provenance"]["cache"]["payload"] = "out/table.payload.bin".into();
+    insta::assert_json_snapshot!("country-smallest-world-compatibility", document);
+}
+
+#[test]
+fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    let invoke = |countries: &[&str], ledger_dir: &str| {
+        let flags = vec!["--log-level".to_owned(), "info".to_owned()];
+        let mut rest: Vec<&str> = countries
+            .iter()
+            .flat_map(|country| ["--country", *country])
+            .collect();
+        rest.extend([
+            "--from",
+            "10",
+            "--to",
+            "20",
+            "--step",
+            "10",
+            "--dataset",
+            "population-count-2020-30arcsec",
+            "--decimate",
+            "1",
+            "--spacing",
+            "4",
+            "--ledger-dir",
+            ledger_dir,
+        ]);
+        run_with(fixture.directory.path(), &flags, "country sweep", &rest)
+    };
+
+    let cold = invoke(&["AA", "BB"], "out/cold-ledgers");
+    assert_eq!(cold.status.code(), Some(0), "{cold:?}");
+    let mut cold_doc: serde_json::Value = serde_json::from_slice(&cold.stdout).unwrap();
+
+    let partial = invoke(&["AA"], "out/country-ledgers");
+    assert_eq!(partial.status.code(), Some(0), "{partial:?}");
+    let partial_doc: serde_json::Value = serde_json::from_slice(&partial.stdout).unwrap();
+    assert_eq!(partial_doc["document"], "country-sweep");
+    assert!(String::from_utf8_lossy(&partial.stderr).contains("AA"));
+
+    let resumed = invoke(&["BB", "AA"], "out/country-ledgers");
+    assert_eq!(resumed.status.code(), Some(0), "{resumed:?}");
+    let mut resumed_doc: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
+    let countries = resumed_doc["result"]["countries"].as_array().unwrap();
+    assert_eq!(countries.len(), 2);
+    assert_eq!(countries[0]["country"]["id"], "AA");
+    assert_eq!(countries[1]["country"]["id"], "BB");
+    for country in countries {
+        let records = country["records"].as_array().unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0]["share"], 0.1);
+        assert_eq!(records[1]["share"], 0.2);
+    }
+    let aa_ledger = countries[0]["ledger"]["path"].as_str().unwrap();
+    let bb_ledger = countries[1]["ledger"]["path"].as_str().unwrap();
+    assert_ne!(aa_ledger, bb_ledger);
+    assert!(fixture.directory.path().join(aa_ledger).is_file());
+    assert!(fixture.directory.path().join(bb_ledger).is_file());
+    let aa_state: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(fixture.directory.path().join(aa_ledger)).unwrap())
+            .unwrap();
+    let bb_state: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(fixture.directory.path().join(bb_ledger)).unwrap())
+            .unwrap();
+    assert_eq!(aa_state["identity"]["value"]["feature_id"], "AA");
+    assert_eq!(bb_state["identity"]["value"]["feature_id"], "BB");
+    let stderr = String::from_utf8_lossy(&resumed.stderr);
+    assert!(stderr.contains("AA") && stderr.contains("BB"), "{stderr}");
+
+    let warm = invoke(&["AA", "BB"], "out/country-ledgers");
+    assert_eq!(warm.status.code(), Some(0), "{warm:?}");
+    let mut warm_doc: serde_json::Value = serde_json::from_slice(&warm.stdout).unwrap();
+    for document in [&mut cold_doc, &mut resumed_doc, &mut warm_doc] {
+        for country in document["result"]["countries"].as_array_mut().unwrap() {
+            country["ledger"].as_object_mut().unwrap().remove("path");
+            for record in country["records"].as_array_mut().unwrap() {
+                record["circle"].as_object_mut().unwrap().remove("stats");
+            }
+        }
+    }
+    assert_eq!(cold_doc, resumed_doc);
+    assert_eq!(warm_doc, resumed_doc);
 }
 
 #[test]
