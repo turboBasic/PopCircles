@@ -112,7 +112,8 @@ repos:
 
       - id: cargo-clippy
         name: cargo clippy
-        entry: cargo clippy --all-targets --all-features -- -D warnings
+        # Standalone prek must use the workspace's pinned Rust, not the caller's PATH.
+        entry: mise exec -- cargo clippy --all-targets --all-features -- -D warnings
         language: system
         types: [rust]
         pass_filenames: false

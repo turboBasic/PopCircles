@@ -114,9 +114,13 @@ run = "uv run ruff check ."
 description = "Lint GitHub Actions workflows"
 run = "actionlint"
 
-# CI never runs prek, so a hook selected by id here and put in `lint`'s depends is what keeps
-# .pre-commit-config.yaml the only implementation. --all-files, not the staged set: nothing is staged
-# on a CI checkout. Three hooks, one subject: what may be a file in this tree at all.
+# These repository-wide checks have no other lint task; the remaining hooks are selected below.
+[tasks."lint:precommit"]
+description = "Check repository-wide hygiene hooks"
+run = "prek run --all-files trailing-whitespace end-of-file-fixer check-yaml check-toml check-merge-conflict version-bumps"
+
+# --all-files, not the staged set: nothing is staged on a CI checkout. Three hooks, one subject: what
+# may be a file in this tree at all.
 [tasks."lint:data"]
 description = "Check geo data has a registry row, no large blob is committed, and no image is"
 run = "prek run --all-files check-added-large-files geo-data-registered no-committed-images"
@@ -133,17 +137,17 @@ run = "prek run --all-files cargo-fmt taplo-fmt ruff-format"
 description = "Check what may silence a lint: the one unsafe exception, and no blanket #![allow] in src"
 run = "prek run --all-files single-unsafe-allow no-blanket-allow"
 
-# Same shape as `lint:data`: CI never runs prek on its own, and this is what puts the hook there.
+# Same shape as `lint:data`: this is what puts the hook in CI.
 [tasks."lint:markdown"]
 description = "Lint Markdown with markdownlint-cli2"
 run = "prek run --all-files markdownlint-cli2"
 
-# Same shape as `lint:data`: CI never runs prek on its own, and this is what puts the hook there.
+# Same shape as `lint:data`: this is what puts the hook in CI.
 [tasks."lint:cspell"]
 description = "Spell-check every tracked file with cspell"
 run = "prek run --all-files cspell"
 
-# Same shape as `lint:data`: CI never runs prek on its own, and this is what puts the hook there.
+# Same shape as `lint:data`: this is what puts the hook in CI.
 [tasks."lint:docs"]
 description = "Check pointers and the Structure tree with the lint-docs entry point"
 depends = ["deps"]
@@ -156,6 +160,7 @@ depends = [
   "lint:rustdoc",
   "lint:python",
   "lint:workflows",
+  "lint:precommit",
   "lint:data",
   "lint:format",
   "lint:exemptions",
