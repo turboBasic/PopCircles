@@ -277,6 +277,8 @@ class _Searched(_Payload):
 
 class _CountrySearched(_Payload):
     country: CountryIdentity
+    population_dataset: Annotated[str, Field(min_length=1)]
+    decimation: Annotated[int, Field(gt=0)]
     circle: _Smallest
 
     def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
@@ -318,6 +320,15 @@ def circle_of(document: Mapping[str, object]) -> Answer:
     payload = _PAYLOADS.get(envelope.document)
     if payload is None:
         raise UnsupportedDocumentError(envelope.document)
+    if payload is _CountrySearched:
+        country_result = payload.model_validate(document.get("result"))
+        return country_result.as_answer(
+            envelope.earth_model.radius_km,
+            Provenance(
+                dataset=country_result.population_dataset,
+                table=f"country table at decimation {country_result.decimation}",
+            ),
+        )
     provenance = envelope.provenance
     dataset = provenance.dataset if provenance else None
     if dataset is None:

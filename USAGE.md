@@ -279,7 +279,7 @@ mise run render -- --input out/most-populous.json --output out/globe.png --proje
 **The documents this project publishes its answers as are in the tree**, under
 [`results/`](results/), so
 `mise run render -- --input results/world-most-populous-1000km-5arcmin.json --output out/map.png` draws a
-figure on a clone that has fetched no raster at all. `mise run results:build` regenerates them.
+figure on a clone that has fetched no raster at all. `mise run results:build` regenerates the world documents.
 
 `--projection` takes `plate-carree`, which is what the viral maps used, or `orthographic` centred on the
 circle. Every figure carries the CC BY citation the raster's licence requires, and a test fails if that
@@ -297,10 +297,23 @@ region it misses cut out.
 draws complete ones on every pull request. `--no-coastlines` draws the cap over a bare graticule, which is
 a choice about the figure rather than a way to avoid a download.
 
-When the published document includes a country breakdown, the caption lists each country with its
-population inside and percentages of both country and circle populations, followed by accounting
-details and boundary credit. The figure grows to fit those lines; older documents keep their existing
-caption and need no country boundary files to render.
+When a world document includes a country breakdown, the caption lists each country with its population
+inside and percentages of both country and circle populations, followed by accounting details and
+boundary credit. The figure grows to fit those lines.
+
+A country-result document names its population dataset and decimation, and needs the registered GISCO
+vector at `data/boundaries/gisco-countries-2024-1m.geojson`. The renderer selects the canonical feature
+ID from the document and checks its boundary revision and digest against the registry before drawing.
+It derives the orthographic frame from the selected outline and the result circle, then shows the country
+name and ID with population and boundary credits from their registry rows. Rendering still reads no
+population raster, table or ledger. For example, the committed Germany result renders with:
+
+```sh
+mise run render -- --input results/germany-half-5arcmin.json --output out/germany-half.png
+```
+
+Fetch the boundary vector with `mise run data:get` when it is absent. Existing world documents need no
+country boundary file.
 
 Circle documents carry their nearest settlement, so a figure title can name it without opening the
 fetched places file. Markdown centre fragments use the same decision and link the circle's centre to

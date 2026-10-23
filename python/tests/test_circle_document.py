@@ -86,6 +86,8 @@ def country_searched() -> dict[str, Any]:
             "boundary_revision": "Countries 2024 snapshot",
             "boundary_digest": "a" * 64,
         },
+        "population_dataset": DATASET,
+        "decimation": 10,
         **searched(),
     }
 
@@ -171,23 +173,38 @@ def test_a_smallest_document_reads_the_circle_under_its_ledger() -> None:
 
 
 def test_a_country_smallest_document_retains_its_boundary_identity() -> None:
-    answer = circle_of(envelope("country-smallest", country_searched()))
+    payload = envelope("country-smallest", country_searched())
+    payload.pop("provenance")
+    answer = circle_of(payload)
     assert answer.circle.radius_km == SEARCHED_RADIUS_KM
     assert answer.country is not None
     assert (answer.country.id, answer.country.name) == ("DE", "Germany")
     assert answer.country.boundary_dataset == "gisco-countries-2024-1m"
     assert answer.country.boundary_revision == "Countries 2024 snapshot"
     assert answer.country.boundary_digest == "a" * 64
+    assert answer.provenance.dataset == DATASET
+    assert answer.provenance.table == "country table at decimation 10"
 
     missing_identity = country_searched()
     del missing_identity["country"]
+    invalid = envelope("country-smallest", missing_identity)
+    invalid.pop("provenance")
     with pytest.raises(ValidationError):
-        circle_of(envelope("country-smallest", missing_identity))
+        circle_of(invalid)
+
+    missing_population_source = country_searched()
+    del missing_population_source["population_dataset"]
+    invalid = envelope("country-smallest", missing_population_source)
+    invalid.pop("provenance")
+    with pytest.raises(ValidationError):
+        circle_of(invalid)
 
     mismatched_source = country_searched()
     mismatched_source["country"]["boundary_digest"] = "not-the-registered-digest"
+    invalid = envelope("country-smallest", mismatched_source)
+    invalid.pop("provenance")
     with pytest.raises(ValidationError):
-        circle_of(envelope("country-smallest", mismatched_source))
+        circle_of(invalid)
 
 
 def test_settlement_context_is_optional_and_validated_on_both_payload_shapes() -> None:

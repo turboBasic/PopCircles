@@ -22,6 +22,7 @@ pub(crate) struct Prepared {
     source: Grid,
     effective: Grid,
     decimation: Decimation,
+    population_dataset: String,
     rows: Vec<Vec<f32>>,
     tallies: CellTallies,
     ownership: CellOwnership,
@@ -41,8 +42,10 @@ impl Prepared {
     ) -> Result<Self, Failure> {
         let registry =
             Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
-        let population = match dataset_name {
-            Some(name) => registry.raster(name),
+        let (population_dataset, population) = match dataset_name {
+            Some(name) => registry
+                .raster(name)
+                .map(|dataset| (name.to_owned(), dataset)),
             None => registry.default_raster(),
         }
         .map_err(|error| Failure::registry(&error))?;
@@ -114,6 +117,7 @@ impl Prepared {
             source,
             effective,
             decimation,
+            population_dataset,
             rows,
             tallies,
             ownership,
@@ -163,6 +167,10 @@ impl Prepared {
             &self.boundary_revision,
             &self.boundary_digest,
         )
+    }
+
+    pub(crate) fn population_source(&self) -> (&str, u32) {
+        (&self.population_dataset, self.decimation.factor())
     }
 
     pub(crate) fn for_circles(
@@ -361,6 +369,7 @@ mod tests {
             source: grid,
             effective: grid,
             decimation: Decimation::none(grid),
+            population_dataset: "fixture".to_owned(),
             rows: vec![vec![1.0; grid.width() as usize]; grid.height() as usize],
             tallies: CellTallies::default(),
             ownership,

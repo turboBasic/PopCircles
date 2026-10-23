@@ -619,6 +619,11 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
         document["result"]["country"]["boundary_digest"],
         "a".repeat(64)
     );
+    assert_eq!(
+        document["result"]["population_dataset"],
+        "population-count-2020-30arcsec"
+    );
+    assert_eq!(document["result"]["decimation"], 1);
     document["result"]["ledger"]["path"] = "shared-country.json".into();
     insta::assert_json_snapshot!("country-smallest-command", document);
 

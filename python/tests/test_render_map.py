@@ -116,6 +116,8 @@ def country_circle_document(digest: str = "a" * 64) -> dict[str, Any]:
             "boundary_revision": "Countries 2024 snapshot",
             "boundary_digest": digest,
         },
+        "population_dataset": DATASET,
+        "decimation": 10,
         "ledger": {"path": "out/country.json", "radii": 4},
         "circle": {
             "centre": {"lat": 51.0, "lon": 10.0},
@@ -124,6 +126,7 @@ def country_circle_document(digest: str = "a" * 64) -> dict[str, Any]:
             "share_achieved": 0.5,
         },
     }
+    result.pop("provenance")
     return result
 
 

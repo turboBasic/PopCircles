@@ -229,9 +229,9 @@ impl Registry {
         })
     }
 
-    pub(crate) fn default_raster(&self) -> Result<Dataset, RegistryError> {
+    pub(crate) fn default_raster(&self) -> Result<(String, Dataset), RegistryError> {
         if let Ok(dataset) = self.raster("population-count-2020-30arcsec") {
-            return Ok(dataset);
+            return Ok(("population-count-2020-30arcsec".to_owned(), dataset));
         }
         let Some((name, Row::PopulationRaster(_))) = self
             .datasets
@@ -243,7 +243,7 @@ impl Registry {
                 known: String::new(),
             });
         };
-        self.raster(name)
+        Ok((name.clone(), self.raster(name)?))
     }
 
     /// Resolves a settlement-vector path without requiring population-grid metadata.
@@ -309,6 +309,18 @@ mod tests {
         // the height and the registry's own comment says so.
         assert_eq!(dataset.grid.lon_step, 1.0 / 120.0);
         assert_eq!(dataset.grid.lat_step, -1.0 / 120.0);
+    }
+
+    #[test]
+    fn default_raster_keeps_the_registry_key_with_its_source() {
+        let (name, dataset) = committed()
+            .default_raster()
+            .expect("the registry's default raster");
+        assert_eq!(name, "population-count-2020-30arcsec");
+        assert_eq!(
+            dataset.raster,
+            PathBuf::from("data/population/population-count-2020-30arcsec.tif")
+        );
     }
 
     #[test]
