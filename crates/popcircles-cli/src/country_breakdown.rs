@@ -444,11 +444,12 @@ mod tests {
                 .position(|candidate| candidate.id == feature.id)
                 .unwrap()];
             let started = Instant::now();
-            let table = prepared.country_table(feature).unwrap();
-            let total = table.as_ref().map_or(0.0, CountryTable::total);
-            let inside = table.as_ref().map_or(0.0, |table| {
-                circle::country_population(table, &kernel, centre.1).unwrap()
-            });
+            let table = prepared
+                .country_table(feature)
+                .unwrap()
+                .expect("selected benchmark countries have owned population cells");
+            let total = table.total();
+            let inside = circle::country_population(&table, &kernel, centre.1).unwrap();
             let intersects = circle_intersects_domain(domain, &kernel, centre.1).unwrap();
             timings.push(serde_json::json!({
                 "country_id": id,
@@ -460,12 +461,10 @@ mod tests {
                 "total": total,
                 "circle_population": inside,
                 "intersects": intersects,
-                "crop": table.as_ref().map(|table| {
-                    serde_json::json!({
-                        "width": table.grid().width(),
-                        "height": table.grid().height(),
-                    })
-                }),
+                "crop": {
+                    "width": table.grid().width(),
+                    "height": table.grid().height(),
+                },
             }));
         }
 
