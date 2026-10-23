@@ -225,6 +225,22 @@ path = "data/settlements/populated-places-1to10m.geojson"
         ]);
     }
 
+    fn register_two_countries(&self) {
+        let data = self.directory.path().join("data");
+        std::fs::write(
+            data.join("boundaries/gisco-countries-2024-1m.geojson"),
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"AA","NAME_ENGL":"Alpha"},"geometry":{"type":"Polygon","coordinates":[[[-180,-90],[0,-90],[0,90],[-180,90],[-180,-90]]]}},{"type":"Feature","properties":{"CNTR_ID":"BB","NAME_ENGL":"Beta"},"geometry":{"type":"Polygon","coordinates":[[[0,-90],[180,-90],[180,90],[0,90],[0,-90]]]}}]}"#,
+        )
+        .unwrap();
+        let registry = data.join("registry.toml");
+        let contents = std::fs::read_to_string(&registry).unwrap();
+        std::fs::write(
+            registry,
+            contents.replace("feature_count = 1", "feature_count = 2"),
+        )
+        .unwrap();
+    }
+
     fn ledger(&self, name: &str) -> PathBuf {
         self.directory.path().join(name)
     }
@@ -533,6 +549,93 @@ attribution = "Fixture boundary credit"
     assert_eq!(document["result"]["countries"][0]["id"], "AA");
     assert_eq!(document["result"]["countries"][1]["id"], "BB");
     insta::assert_json_snapshot!("country-list-command", document);
+}
+
+#[test]
+fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    let invoke = |country: &str| {
+        run_with(
+            fixture.directory.path(),
+            &["--log-level".to_owned(), "error".to_owned()],
+            "country smallest",
+            &[
+                "--country",
+                country,
+                "--share",
+                "10",
+                "--dataset",
+                "population-count-2020-30arcsec",
+                "--decimate",
+                "1",
+                "--spacing",
+                "4",
+                "--ledger",
+                "shared-country.json",
+            ],
+        )
+    };
+    let first = invoke("AA");
+    assert!(
+        first.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.status.code(), Some(0), "{first:?}");
+    let mut document: serde_json::Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(document["document"], "country-smallest");
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["result"]["country"]["id"], "AA");
+    assert_eq!(document["result"]["country"]["name"], "Alpha");
+    assert_eq!(
+        document["result"]["country"]["boundary_dataset"],
+        "gisco-countries-2024-1m"
+    );
+    assert_eq!(
+        document["result"]["country"]["boundary_revision"],
+        "fixture"
+    );
+    assert_eq!(
+        document["result"]["country"]["boundary_digest"],
+        "a".repeat(64)
+    );
+    document["result"]["ledger"]["path"] = "shared-country.json".into();
+    insta::assert_json_snapshot!("country-smallest-command", document);
+
+    let second = invoke("BB");
+    assert_eq!(second.status.code(), Some(3), "{second:?}");
+    assert!(
+        String::from_utf8_lossy(&second.stderr).contains("does not describe the country wanted"),
+        "{second:?}"
+    );
+    assert!(second.stdout.is_empty(), "{second:?}");
+}
+
+#[test]
+fn country_smallest_leaves_world_command_bytes_unchanged() {
+    let fixture = Fixture::build();
+    let args = ["--lat", "45", "--lon", "15", "--radius-km", "0"];
+    let before = fixture.run_ok("population-at", &args);
+    let country = run_with(
+        fixture.directory.path(),
+        &["--log-level".to_owned(), "error".to_owned()],
+        "country smallest",
+        &[
+            "--country",
+            "XX",
+            "--share",
+            "10",
+            "--dataset",
+            "population-count-2020-30arcsec",
+            "--ledger",
+            "country.json",
+        ],
+    );
+    assert!(country.status.success(), "{country:?}");
+    let after = fixture.run_ok("population-at", &args);
+    assert_eq!(before.stdout, after.stdout);
+    assert_eq!(before.stderr, after.stderr);
 }
 
 #[test]

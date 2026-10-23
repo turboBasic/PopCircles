@@ -7,8 +7,9 @@ List the registered country identifiers and names
 Usage: popcircles country [OPTIONS] <COMMAND>
 
 Commands:
-  list  List available countries from the registered boundary dataset
-  help  Print this message or the help of the given subcommand(s)
+  list      List available countries from the registered boundary dataset
+  smallest  Find the smallest population circle for one registered country
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
       --log-level <LEVEL>  How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]

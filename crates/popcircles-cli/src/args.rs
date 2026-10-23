@@ -109,6 +109,15 @@ pub(crate) struct CachedTableArgs {
 }
 
 #[derive(Args, Debug, Clone)]
+pub(crate) struct CountryTableArgs {
+    #[command(flatten)]
+    pub(crate) grid: DatasetGridArgs,
+    /// Fold every k by k native-cell block before searching.
+    #[arg(long, default_value_t = 1)]
+    pub(crate) decimate: u32,
+}
+
+#[derive(Args, Debug, Clone)]
 pub(crate) struct DatasetGridArgs {
     /// Population raster in data/registry.toml supplying defaults for omitted grid flags.
     #[arg(long)]

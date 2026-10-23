@@ -1,0 +1,61 @@
+---
+source: crates/popcircles/src/report.rs
+expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").expect(\"fixture country ID\"),\n\"Fixture country\", \"gisco-countries-2024-1m\", \"2024\",\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
+---
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "country": {
+      "id": "AA",
+      "name": "Fixture country",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "2024",
+      "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "ledger": {
+      "path": "out/radii.json",
+      "radii": 24
+    },
+    "circle": {
+      "radius_km": 2639,
+      "centre": {
+        "lat": -85.0,
+        "lon": 105.0
+      },
+      "row": 17,
+      "col": 28,
+      "population": 52635.0,
+      "target": {
+        "share": 0.25,
+        "persons": 52569.0,
+        "total": 210276.0
+      },
+      "share_achieved": 0.25031387319522913,
+      "short_below": {
+        "radius_km": 2638,
+        "population": 51510.0
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 0.0000000029359075170987126,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 24,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 72,
+          "blocks_examined": 14200,
+          "blocks_pruned": 10450,
+          "circles_evaluated": 3750,
+          "kernels_built": 921
+        }
+      }
+    }
+  }
+}

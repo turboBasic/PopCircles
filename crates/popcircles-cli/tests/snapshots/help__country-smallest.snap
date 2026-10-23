@@ -1,0 +1,23 @@
+---
+source: crates/popcircles-cli/tests/help.rs
+expression: help_for(path)
+---
+Find the smallest population circle for one registered country
+
+Usage: popcircles country smallest [OPTIONS] --country <COUNTRY> --share <SHARE>
+
+Options:
+      --country <COUNTRY>        Exact country feature identifier or unique English name
+      --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --share <SHARE>            The share of this country's population to reach, in whole percent
+      --dataset <DATASET>        Population raster in data/registry.toml supplying defaults for omitted grid flags
+      --width <WIDTH>            
+      --height <HEIGHT>          
+      --origin-lat <ORIGIN_LAT>  
+      --origin-lon <ORIGIN_LON>  
+      --lon-step <LON_STEP>      
+      --lat-step <LAT_STEP>      
+      --decimate <DECIMATE>      Fold every k by k native-cell block before searching [default: 1]
+      --spacing <SPACING>        Override the initial block side in cells, derived from each radius and the grid when omitted. Changes runtime only; the answer is the same at every spacing
+      --ledger <LEDGER>          Country-specific resume ledger. Defaults to `out/countries/<ID>.json`
+  -h, --help                     Print help

@@ -18,13 +18,14 @@ use std::process::Command;
 
 /// The eleven surfaces, each named by the snapshot it writes. `help` itself is clap's own and takes no
 /// arguments of ours, so it is not among them.
-const SURFACES: [(&str, &[&str]); 13] = [
+const SURFACES: [(&str, &[&str]); 14] = [
     ("binary", &[]),
     ("distance", &["distance"]),
     ("grid", &["grid"]),
     ("grid-describe", &["grid", "describe"]),
     ("country", &["country"]),
     ("country-list", &["country", "list"]),
+    ("country-smallest", &["country", "smallest"]),
     ("table", &["table"]),
     ("table-build", &["table", "build"]),
     ("table-query", &["table", "query"]),

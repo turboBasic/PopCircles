@@ -7,12 +7,13 @@ mod observe;
 mod registry;
 mod settlements;
 
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
 use args::{
-    CachedTableArgs, DatasetGridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs, TableArgs,
-    WindowArgs, parse_radius, parse_share,
+    CachedTableArgs, CountryTableArgs, DatasetGridArgs, LedgerArgs, LogArgs, SearchArgs, SweepArgs,
+    TableArgs, WindowArgs, parse_radius, parse_share,
 };
 use clap::{Parser, Subcommand};
 use commands::country::list as list_countries;
@@ -131,6 +132,22 @@ enum GridCommand {
 enum CountryCommand {
     /// List available countries from the registered boundary dataset.
     List,
+    /// Find the smallest population circle for one registered country.
+    Smallest {
+        /// Exact country feature identifier or unique English name.
+        #[arg(long)]
+        country: String,
+        /// The share of this country's population to reach, in whole percent.
+        #[arg(long, value_parser = parse_share)]
+        share: Share,
+        #[command(flatten)]
+        table: CountryTableArgs,
+        #[command(flatten)]
+        search: SearchArgs,
+        /// Country-specific resume ledger. Defaults to `out/countries/<ID>.json`.
+        #[arg(long)]
+        ledger: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -196,6 +213,16 @@ fn run(command: Command) -> Result<String, Failure> {
         Command::Country {
             command: CountryCommand::List,
         } => list_countries(),
+        Command::Country {
+            command:
+                CountryCommand::Smallest {
+                    country,
+                    share,
+                    table,
+                    search,
+                    ledger,
+                },
+        } => commands::country::smallest(&country, share, &table, search, ledger.as_deref()),
         Command::Table {
             command:
                 TableCommand::Build {

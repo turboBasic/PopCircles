@@ -51,6 +51,7 @@
 //! | [`SmallestDocument`] | `smallest` | the smallest circle reaching one share |
 //! | [`SweepDocument`] | `sweep` | the smallest circle for each of a range of shares |
 //! | [`CountryListDocument`] | `country-list` | the available country identifiers and names |
+//! | [`CountrySmallestDocument`] | `country-smallest` | one country's smallest circle and its source identity |
 //!
 //! The last two are documents rather than bare payloads because a ledger belongs to the run and not to any
 //! one circle, and because a payload meaning either "a circle" or "some circles" would leave a consumer
@@ -138,7 +139,7 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// An associated constant rather than an argument to [`Envelope::new`], so a kind is a property of the
 /// payload type and no call site can wrap one payload under another's name. What the trait cannot do is
 /// make the kinds distinct — nothing checks two implementations for a constant they share — which is why
-/// `ten_payload_types_carry_ten_distinct_kinds` collects them into a set and counts it, and why another
+/// `payload_types_carry_distinct_kinds` collects them into a set and counts it, and why another
 /// payload type owes that test a line as well as the table above.
 pub trait Document {
     /// What a consumer branches on before it reads anything under `result`.
@@ -952,6 +953,53 @@ impl SmallestDocument {
     }
 }
 
+/// The registered country feature that a country search used.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountryIdentityReport {
+    id: String,
+    name: String,
+    boundary_dataset: String,
+    boundary_revision: String,
+    boundary_digest: String,
+}
+
+/// One country's smallest-circle answer and the country identity it used.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySmallestDocument {
+    country: CountryIdentityReport,
+    ledger: LedgerReport,
+    circle: SmallestReport,
+}
+
+impl Document for CountrySmallestDocument {
+    const KIND: &'static str = "country-smallest";
+}
+
+impl CountrySmallestDocument {
+    #[must_use]
+    pub fn new(
+        id: &FeatureId,
+        name: &str,
+        boundary_dataset: &str,
+        boundary_revision: &str,
+        boundary_digest: &str,
+        ledger: LedgerReport,
+        circle: SmallestReport,
+    ) -> Self {
+        Self {
+            country: CountryIdentityReport {
+                id: id.as_str().to_owned(),
+                name: name.to_owned(),
+                boundary_dataset: boundary_dataset.to_owned(),
+                boundary_revision: boundary_revision.to_owned(),
+                boundary_digest: boundary_digest.to_owned(),
+            },
+            ledger,
+            circle,
+        }
+    }
+}
+
 /// The shares a sweep walked, in whole percent, which is the unit the flags take.
 ///
 /// Whole percent rather than the fractions the records carry: a step of a tenth accumulated in f64 makes
@@ -1058,7 +1106,7 @@ mod tests {
     }
 
     #[test]
-    fn ten_payload_types_carry_ten_distinct_kinds() {
+    fn payload_types_carry_distinct_kinds() {
         // The trait cannot check this: two implementations sharing a constant compile. So the set is
         // built and counted, which turns a copied `impl` block into a failure here rather than into two
         // documents a consumer cannot tell apart. `()`'s kind is deliberately absent — it is a fixture,
@@ -1074,8 +1122,9 @@ mod tests {
             SmallestDocument::KIND,
             SweepDocument::KIND,
             CountryListDocument::KIND,
+            CountrySmallestDocument::KIND,
         ]);
-        assert_eq!(kinds.len(), 10, "{kinds:?}");
+        assert_eq!(kinds.len(), 11, "{kinds:?}");
     }
 
     #[test]
@@ -1636,6 +1685,16 @@ mod tests {
         assert_eq!(ledger.entries.len() as u64, found.stats.radii_evaluated);
 
         insta::assert_json_snapshot!(Envelope::new(SmallestDocument::new(
+            LedgerReport::new(ledger_path(), ledger.entries.len()),
+            SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
+        )));
+
+        insta::assert_json_snapshot!(Envelope::new(CountrySmallestDocument::new(
+            &FeatureId::new("AA").expect("fixture country ID"),
+            "Fixture country",
+            "gisco-countries-2024-1m",
+            "2024",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             LedgerReport::new(ledger_path(), ledger.entries.len()),
             SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
         )));

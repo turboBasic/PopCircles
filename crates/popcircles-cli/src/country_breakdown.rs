@@ -153,6 +153,18 @@ impl Prepared {
         }
     }
 
+    pub(crate) fn feature(&self, selector: &str) -> Result<&BoundaryFeature, Failure> {
+        boundaries::resolve(&self.features, selector).map_err(Failure::bad_input)
+    }
+
+    pub(crate) fn boundary_identity(&self) -> (&str, &str, &str) {
+        (
+            COUNTRY_BOUNDARY_DATASET,
+            &self.boundary_revision,
+            &self.boundary_digest,
+        )
+    }
+
     pub(crate) fn for_circles(
         &self,
         circles: &[((Row, Col), RadiusKm, f64)],

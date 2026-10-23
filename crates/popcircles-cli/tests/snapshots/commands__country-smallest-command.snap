@@ -1,0 +1,61 @@
+---
+source: crates/popcircles-cli/tests/commands.rs
+expression: document
+---
+{
+  "document": "country-smallest",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "circle": {
+      "centre": {
+        "lat": -85.0,
+        "lon": -85.0
+      },
+      "col": 9,
+      "covers_whole_grid": false,
+      "population": 10574.0,
+      "predicate_slack_persons": 0.000000001456299081326051,
+      "radius_km": 715,
+      "row": 17,
+      "share_achieved": 0.1034415292207157,
+      "short_below": {
+        "population": 9345.0,
+        "radius_km": 714
+      },
+      "stats": {
+        "radii_evaluated": 20,
+        "radii_reused": 0,
+        "searched": {
+          "blocks_examined": 9844,
+          "blocks_pruned": 7391,
+          "circles_evaluated": 2453,
+          "kernels_built": 916,
+          "levels": 60
+        }
+      },
+      "target": {
+        "persons": 10222.2,
+        "share": 0.1,
+        "total": 102222.0
+      },
+      "tolerance_persons": 0.0
+    },
+    "country": {
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "boundary_revision": "fixture",
+      "id": "AA",
+      "name": "Alpha"
+    },
+    "ledger": {
+      "path": "shared-country.json",
+      "radii": 20
+    }
+  },
+  "schema_version": 1,
+  "tool": "popcircles",
+  "tool_version": "0.3.0"
+}
