@@ -3,7 +3,7 @@
 use std::fmt;
 
 use crate::geodesy::LatLon;
-use crate::grid::{BOUNDARY_TOLERANCE_DEG, Col, Grid, Row};
+use crate::grid::{BOUNDARY_TOLERANCE_DEG, Col, Grid, GridIndexError, Row};
 
 /// Version of the cell-membership rule used to produce domain intervals.
 ///
@@ -80,6 +80,8 @@ pub enum DomainError {
     GridMismatch,
     #[error("cell ({row}, {col}) is outside the effective grid")]
     CellOutsideGrid { row: u32, col: u32 },
+    #[error(transparent)]
+    GridIndex(#[from] GridIndexError),
     #[error(
         "feature {feature_id} component {component} ring {ring} vertex {vertex} has an invalid coordinate"
     )]
@@ -144,7 +146,7 @@ impl Domain {
 
         let mut rows = Vec::with_capacity(grid.height() as usize);
         for row in grid.rows() {
-            let latitude = grid.centre_lat(row);
+            let latitude = grid.centre_lat(row)?;
             let mut selected = Vec::new();
             for polygon in &prepared {
                 if latitude < polygon.south || latitude > polygon.north {
@@ -214,7 +216,7 @@ impl Geometry {
         for row in grid.rows() {
             let mut intervals = Vec::new();
             for polygon in &prepared {
-                intervals.extend(polygon.positive_area_row_intervals(row, &grid));
+                intervals.extend(polygon.positive_area_row_intervals(row, &grid)?);
             }
             rows.push(merge_intervals(intervals));
         }
@@ -334,13 +336,17 @@ impl PreparedPolygon {
         intervals
     }
 
-    fn positive_area_row_intervals(&self, row: Row, grid: &Grid) -> Vec<ColumnInterval> {
-        let centre = grid.centre_lat(row);
+    fn positive_area_row_intervals(
+        &self,
+        row: Row,
+        grid: &Grid,
+    ) -> Result<Vec<ColumnInterval>, GridIndexError> {
+        let centre = grid.centre_lat(row)?;
         let half_height = grid.lat_step().abs() / 2.0;
         let south = (centre - half_height).max(-90.0);
         let north = (centre + half_height).min(90.0);
         if north <= self.south || south >= self.north {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         let mut edges: Vec<ScanEdge> = self
             .scan_edges
@@ -350,7 +356,7 @@ impl PreparedPolygon {
             .filter(|edge| edge.max_lat() > south && edge.min_lat() < north)
             .collect();
         if edges.is_empty() {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         edges.sort_unstable_by(|first, second| first.min_lon().total_cmp(&second.min_lon()));
 
@@ -404,7 +410,7 @@ impl PreparedPolygon {
                 append_positive_area_span(west, east, grid, &mut intervals);
             }
         }
-        merge_intervals(intervals)
+        Ok(merge_intervals(intervals))
     }
 }
 
@@ -1061,8 +1067,11 @@ mod tests {
             let prepared: Vec<_> = polygons.iter().map(PreparedPolygon::new).collect();
             for row in grid.rows() {
                 for col in grid.cols() {
-                    let latitude = grid.centre_lat(row);
-                    let longitude = grid.centre_of(row, col).lon;
+                    let latitude = grid.centre_lat(row).expect("row belongs to the grid");
+                    let longitude = grid
+                        .centre_of(row, col)
+                        .expect("cell belongs to the grid")
+                        .lon;
                     let expected = prepared
                         .iter()
                         .any(|polygon| polygon.contains(latitude, longitude));
@@ -1105,8 +1114,11 @@ mod tests {
         let prepared = PreparedPolygon::new(&polygon);
         for row in grid.rows() {
             for col in grid.cols() {
-                let latitude = grid.centre_lat(row);
-                let longitude = grid.centre_of(row, col).lon;
+                let latitude = grid.centre_lat(row).expect("row belongs to the grid");
+                let longitude = grid
+                    .centre_of(row, col)
+                    .expect("cell belongs to the grid")
+                    .lon;
                 assert_eq!(
                     domain
                         .contains(&grid, row, col)

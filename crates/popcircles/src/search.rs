@@ -11,7 +11,7 @@ use std::num::NonZeroU32;
 use crate::bracket::Bracket;
 use crate::circle;
 use crate::geodesy::{RadiusKm, arc_km};
-use crate::grid::{Col, Grid, Row};
+use crate::grid::{Col, Grid, GridIndexError, Row};
 use crate::kernel::{Kernel, KernelError};
 use crate::progress::Progress;
 use crate::table::{RowBand, Table};
@@ -25,6 +25,8 @@ use crate::table::{RowBand, Table};
 pub enum SearchError {
     #[error("the search could not build a kernel")]
     Kernel(#[from] KernelError),
+    #[error(transparent)]
+    GridIndex(#[from] GridIndexError),
 }
 
 /// The relative amount [`slack_km`] inflates its answer by, so that the figure it returns dominates the
@@ -251,15 +253,14 @@ impl Candidate {
 /// circle is the whole sphere, every bound equals the raster's total and no block is ever pruned. That is
 /// the ceiling on a useful initial spacing rather than a correctness limit.
 ///
-/// # Panics
-/// If `grid` is not the grid `block`'s indices were minted by; `row_of` says why that is a stop.
-#[must_use]
-pub fn slack_km(grid: &Grid, block: Block) -> f64 {
+/// # Errors
+/// Returns [`SearchError::GridIndex`] if a block index is outside `grid`.
+pub fn slack_km(grid: &Grid, block: Block) -> Result<f64, SearchError> {
     let (probe_row, probe_col) = block.probe(grid);
-    let probe_lat = grid.centre_lat(probe_row);
+    let probe_lat = grid.centre_lat(probe_row)?;
 
-    let north = grid.centre_lat(block.rows().north());
-    let south = grid.centre_lat(block.rows().south());
+    let north = grid.centre_lat(block.rows().north())?;
+    let south = grid.centre_lat(block.rows().south())?;
     let delta_lat_deg = (north - probe_lat).abs().max((south - probe_lat).abs());
 
     // The probe is a cell of its own block, so neither difference underflows.
@@ -269,7 +270,7 @@ pub fn slack_km(grid: &Grid, block: Block) -> f64 {
 
     let two_hop_rad =
         delta_lat_deg.to_radians() + delta_lon_deg.to_radians() * probe_lat.to_radians().cos();
-    arc_km(two_hop_rad) * (1.0 + SLACK_MARGIN)
+    Ok(arc_km(two_hop_rad) * (1.0 + SLACK_MARGIN))
 }
 
 /// The largest initial side whose conservative equatorial bound stays below half the circumference.
@@ -470,8 +471,8 @@ pub fn most_populous<P: Progress>(
 
         for block in &level {
             let (probe_row, probe_col) = block.probe(&grid);
-            let widened = radius.widened_by(slack_km(&grid, *block));
-            let ceiling = circle::population(table, widest.get(probe_row, widened)?, probe_col);
+            let widened = radius.widened_by(slack_km(&grid, *block)?);
+            let ceiling = circle::population(table, widest.get(probe_row, widened)?, probe_col)?;
             stats.blocks_examined += 1;
 
             // Strictly under, never equal. A block whose bound merely ties the incumbent may hold a
@@ -482,7 +483,7 @@ pub fn most_populous<P: Progress>(
                 stats.blocks_pruned += 1;
             } else {
                 let population =
-                    circle::population(table, exact.get(probe_row, radius)?, probe_col);
+                    circle::population(table, exact.get(probe_row, radius)?, probe_col)?;
                 let candidate = Candidate {
                     row: probe_row,
                     col: probe_col,
@@ -608,7 +609,10 @@ mod tests {
         assert_eq!(selected.get(), expected, "{grid:?}, {radius:?}");
         for block in Block::tile(grid, selected) {
             assert!(
-                radius.widened_by(slack_km(grid, block)).km() < half,
+                radius
+                    .widened_by(slack_km(grid, block).expect("block indices belong to the grid"))
+                    .km()
+                    < half,
                 "{grid:?}, {radius:?}, {block:?}"
             );
         }
@@ -868,11 +872,17 @@ mod tests {
     /// The furthest cell of a block from its probe, by the distance test and nothing else.
     fn furthest_km(grid: &Grid, block: Block) -> f64 {
         let (probe_row, probe_col) = block.probe(grid);
-        let from = grid.centre_of(probe_row, probe_col);
+        let from = grid
+            .centre_of(probe_row, probe_col)
+            .expect("probe belongs to the grid");
         cells_of(block)
             .into_iter()
             .map(|(row, col)| {
-                great_circle_km(from, grid.centre_of(row_of(grid, row), col_of(grid, col)))
+                great_circle_km(
+                    from,
+                    grid.centre_of(row_of(grid, row), col_of(grid, col))
+                        .expect("cell belongs to the grid"),
+                )
             })
             .fold(0.0f64, f64::max)
     }
@@ -884,12 +894,16 @@ mod tests {
         for grid in [grid(), equatorial_grid()] {
             for cells in [4u32, 5, 18] {
                 for block in Block::tile(&grid, spacing(cells)) {
-                    let slack = slack_km(&grid, block);
+                    let slack = slack_km(&grid, block).expect("block indices belong to the grid");
                     let (probe_row, probe_col) = block.probe(&grid);
-                    let from = grid.centre_of(probe_row, probe_col);
+                    let from = grid
+                        .centre_of(probe_row, probe_col)
+                        .expect("probe belongs to the grid");
 
                     for (row, col) in cells_of(block) {
-                        let to = grid.centre_of(row_of(&grid, row), col_of(&grid, col));
+                        let to = grid
+                            .centre_of(row_of(&grid, row), col_of(&grid, col))
+                            .expect("cell belongs to the grid");
                         let actual = great_circle_km(from, to);
                         assert!(
                             slack >= actual,
@@ -909,7 +923,10 @@ mod tests {
         // and the widened radius a search builds from it is the radius itself.
         let grid = grid();
         for block in Block::tile(&grid, spacing(1)) {
-            assert_eq!(slack_km(&grid, block), 0.0);
+            assert_eq!(
+                slack_km(&grid, block).expect("block indices belong to the grid"),
+                0.0
+            );
         }
     }
 
@@ -923,7 +940,7 @@ mod tests {
         for column in [0u32, 17, 35] {
             for (north, south) in [(0u32, 5u32), (6, 11), (12, 17), (0, 17)] {
                 let block = block_of(&grid, north, south, column, column);
-                let slack = slack_km(&grid, block);
+                let slack = slack_km(&grid, block).expect("block indices belong to the grid");
                 let furthest = furthest_km(&grid, block);
 
                 assert!(slack >= furthest, "{block:?}: {slack} under {furthest}");
@@ -940,11 +957,15 @@ mod tests {
         // The second: on the equator the parallel is a great circle, so a longitude-only offset is again
         // exactly the geodesic. Row 4 of the equatorial fixture is latitude 0.
         let grid = equatorial_grid();
-        assert_eq!(grid.centre_lat(row_of(&grid, 4)), 0.0);
+        assert_eq!(
+            grid.centre_lat(row_of(&grid, 4))
+                .expect("equator row belongs to the grid"),
+            0.0
+        );
 
         for (first, last) in [(0u32, 3u32), (10, 17), (0, 17)] {
             let block = block_of(&grid, 4, 4, first, last);
-            let slack = slack_km(&grid, block);
+            let slack = slack_km(&grid, block).expect("block indices belong to the grid");
             let furthest = furthest_km(&grid, block);
 
             assert!(slack >= furthest, "{block:?}: {slack} under {furthest}");
@@ -961,8 +982,10 @@ mod tests {
         // the same rectangle of indices bounds a far shorter distance beside the pole than at the
         // equator. Asserted as an ordering rather than a figure.
         let grid = equatorial_grid();
-        let equator = slack_km(&grid, block_of(&grid, 4, 4, 0, 8));
-        let polar = slack_km(&grid, block_of(&grid, 0, 0, 0, 8));
+        let equator =
+            slack_km(&grid, block_of(&grid, 4, 4, 0, 8)).expect("block indices belong to the grid");
+        let polar =
+            slack_km(&grid, block_of(&grid, 0, 0, 0, 8)).expect("block indices belong to the grid");
         assert!(polar < equator, "{polar} is not under {equator}");
     }
 
@@ -985,7 +1008,7 @@ mod tests {
             let last = (first + width - 1).min(WIDTH - 1);
 
             let block = block_of(&grid, north, south, first, last);
-            let slack = slack_km(&grid, block);
+            let slack = slack_km(&grid, block).expect("block indices belong to the grid");
             prop_assert!(
                 slack >= furthest_km(&grid, block),
                 "{:?}: slack {} under {}",
@@ -1065,17 +1088,22 @@ mod tests {
                 for cells in &spacings {
                     for block in Block::tile(&grid, spacing(*cells)) {
                         let (probe_row, probe_col) = block.probe(&grid);
-                        let widened = radius(radius_km + slack_km(&grid, block));
+                        let widened = radius(
+                            radius_km
+                                + slack_km(&grid, block).expect("block indices belong to the grid"),
+                        );
                         let bound_kernel =
                             Kernel::new(grid, probe_row, widened).expect("a grid that closes");
-                        let bound = circle::population(&table, &bound_kernel, probe_col);
+                        let bound = circle::population(&table, &bound_kernel, probe_col)
+                            .expect("candidate belongs to the grid");
 
                         for (row, col) in cells_of(block) {
                             let here = circle::population(
                                 &table,
                                 &row_kernels[row as usize],
                                 col_of(&grid, col),
-                            );
+                            )
+                            .expect("candidate belongs to the grid");
                             assert!(
                                 here <= bound,
                                 "{}x{} grid, spacing {cells}, radius {radius_km} km, block \
@@ -1109,7 +1137,8 @@ mod tests {
                 let candidate = Candidate {
                     row,
                     col,
-                    population: circle::population(table, &kernel, col),
+                    population: circle::population(table, &kernel, col)
+                        .expect("candidate belongs to the grid"),
                 };
                 best = Some(match best {
                     Some(held) => held.better(candidate),
@@ -1378,6 +1407,8 @@ mod tests {
             .expect("the centre row is in the band");
         let cols = kernel
             .place(found.col)
+            .expect("winning column belongs to the grid")
+            .map(|placed| placed.expect("placement indices belong to the grid"))
             .find(|(row, _)| *row == found.row)
             .map(|(_, cols)| cols)
             .expect("the centre row is in the band");

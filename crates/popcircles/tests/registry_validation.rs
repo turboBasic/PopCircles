@@ -176,7 +176,9 @@ fn the_registry_raster_answers_the_published_half_of_the_world() {
         found.ambiguity
     );
 
-    let centre = grid.centre_of(found.centre.row, found.centre.col);
+    let centre = grid
+        .centre_of(found.centre.row, found.centre.col)
+        .expect("search result indices belong to the grid");
     assert!(
         (centre.lat - EXPECTED_CENTRE.lat).abs() <= CENTRE_BAND_DEG
             && (centre.lon - EXPECTED_CENTRE.lon).abs() <= CENTRE_BAND_DEG,

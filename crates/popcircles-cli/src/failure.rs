@@ -5,7 +5,7 @@
 // The nine `exit_code_for_*` functions stay private: `Failure`'s constructors are the only callers, and
 // a command that needs a class asks for it by naming the error it holds.
 
-use popcircles::grid::GridError;
+use popcircles::grid::{GridError, GridIndexError};
 use popcircles::kernel::KernelError;
 use popcircles::raster::RasterError;
 use popcircles::search::SearchError;
@@ -34,6 +34,10 @@ pub(crate) struct Failure {
 impl Failure {
     pub(crate) fn grid(error: &GridError) -> Self {
         Self::new(exit_code_for_grid_error(error), error)
+    }
+
+    pub(crate) fn grid_index(error: &GridIndexError) -> Self {
+        Self::bad_input(error.to_string())
     }
 
     pub(crate) fn table(error: &TableError) -> Self {
@@ -190,7 +194,7 @@ fn exit_code_for_build_error(error: &BuildError<CacheError>) -> u8 {
 /// bad input rather than a failure.
 const fn exit_code_for_kernel_error(error: KernelError) -> u8 {
     match error {
-        KernelError::ColumnsDoNotClose { .. } => EXIT_BAD_INPUT,
+        KernelError::ColumnsDoNotClose { .. } | KernelError::GridIndex(_) => EXIT_BAD_INPUT,
     }
 }
 
@@ -198,6 +202,7 @@ const fn exit_code_for_kernel_error(error: KernelError) -> u8 {
 const fn exit_code_for_search_error(error: SearchError) -> u8 {
     match error {
         SearchError::Kernel(error) => exit_code_for_kernel_error(error),
+        SearchError::GridIndex(_) => EXIT_BAD_INPUT,
     }
 }
 

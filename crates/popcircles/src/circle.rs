@@ -2,7 +2,7 @@
 // ground radius, anywhere on the globe. The geometry is the kernel's and the arithmetic is the table's,
 // so what is here is the fold between them and nothing else — no distance, no latitude, no angle.
 
-use crate::grid::Col;
+use crate::grid::{Col, GridIndexError};
 use crate::kernel::Kernel;
 use crate::table::{ColSpan, CountryTable, RowBand, Table};
 
@@ -10,10 +10,10 @@ use crate::table::{ColSpan, CountryTable, RowBand, Table};
 pub enum CountryPopulationError {
     #[error("the country crop and kernel use different effective grids")]
     GridMismatch,
-    #[error("centre column {col} is outside the effective grid")]
-    CentreOutsideGrid { col: u32 },
     #[error("mapped crop column {col} is outside the crop grid")]
     CropColumnOutsideGrid { col: u32 },
+    #[error(transparent)]
+    GridIndex(#[from] GridIndexError),
 }
 
 /// The population inside the circle `kernel` describes, centred on `centre` in the kernel's own row.
@@ -28,20 +28,23 @@ pub enum CountryPopulationError {
 /// # Panics
 /// If the kernel was built over a grid other than the table's. Both are a [`crate::grid::Grid`], so the
 /// types cannot catch it, and it is a wiring mistake rather than an input — the same reason
-/// [`crate::table::build`] stops on a decimation minted against a foreign grid. Also if `centre` was
-/// minted by a larger grid; [`crate::grid::Col`] says why that is a stop.
-#[must_use]
-pub fn population(table: &Table<'_>, kernel: &Kernel, centre: Col) -> f64 {
+/// [`crate::table::build`] stops on a decimation minted against a foreign grid.
+///
+/// # Errors
+/// Returns [`GridIndexError`] if `centre` is outside the kernel grid.
+pub fn population(table: &Table<'_>, kernel: &Kernel, centre: Col) -> Result<f64, GridIndexError> {
     assert_eq!(
         *table.grid(),
         *kernel.grid(),
         "the kernel was built over a different grid than this table"
     );
 
-    kernel
-        .place(centre)
-        .map(|(row, cols)| table.population(RowBand::new(row, row), cols))
-        .sum()
+    let mut total = 0.0;
+    for placed in kernel.place(centre)? {
+        let (row, cols) = placed?;
+        total += table.population(RowBand::new(row, row), cols);
+    }
+    Ok(total)
 }
 
 /// The population in a circle, restricted to uniquely owned cells of one country.
@@ -60,9 +63,7 @@ pub fn country_population(
     if effective_grid != kernel.grid() {
         return Err(CountryPopulationError::GridMismatch);
     }
-    if centre.get() >= effective_grid.width() {
-        return Err(CountryPopulationError::CentreOutsideGrid { col: centre.get() });
-    }
+    let placements = kernel.place(centre)?;
 
     let crop_grid = table.grid();
     let crop_start = table.west_col();
@@ -78,7 +79,8 @@ pub fn country_population(
     let crop_range_count = if crop_low_width > 0 { 2 } else { 1 };
     let cropped = table.table();
     let mut total = 0.0;
-    for (row, span) in kernel.place(centre) {
+    for placed in placements {
+        let (row, span) = placed?;
         let Some(crop_row_index) = row.get().checked_sub(table.north_row()) else {
             continue;
         };
@@ -231,10 +233,18 @@ mod tests {
     /// kernel left out; and it tests kilometres against kilometres, so it owes nothing to the angle the
     /// kernel converted the radius to.
     fn by_distance(grid: &Grid, centre: (Row, Col), radius_km: f64) -> f64 {
-        let from = grid.centre_of(centre.0, centre.1);
+        let from = grid
+            .centre_of(centre.0, centre.1)
+            .expect("indices belong to the fixture grid");
         grid.rows()
             .flat_map(|row| grid.cols().map(move |col| (row, col)))
-            .filter(|(row, col)| great_circle_km(from, grid.centre_of(*row, *col)) <= radius_km)
+            .filter(|(row, col)| {
+                great_circle_km(
+                    from,
+                    grid.centre_of(*row, *col)
+                        .expect("indices belong to the fixture grid"),
+                ) <= radius_km
+            })
             .map(|(row, col)| f64::from(cell(row.get(), col.get())))
             .sum()
     }
@@ -260,7 +270,9 @@ mod tests {
                 let kernel = Kernel::new(grid, centre_row, radius(radius_km))
                     .expect("fixture columns close on themselves");
                 for centre_col in grid.cols() {
-                    let centre = grid.centre_of(centre_row, centre_col);
+                    let centre = grid
+                        .centre_of(centre_row, centre_col)
+                        .expect("indices belong to the fixture grid");
                     let expected = grid
                         .rows()
                         .flat_map(|row| grid.cols().map(move |col| (row, col)))
@@ -270,7 +282,11 @@ mod tests {
                                 .is_ok_and(|owner| {
                                     owner == &crate::ownership::CellOwner::Feature(feature.clone())
                                 })
-                                && great_circle_km(centre, grid.centre_of(*row, *col)) <= radius_km
+                                && great_circle_km(
+                                    centre,
+                                    grid.centre_of(*row, *col)
+                                        .expect("indices belong to the fixture grid"),
+                                ) <= radius_km
                         })
                         .map(|(row, col)| f64::from(cell(row.get(), col.get())))
                         .sum::<f64>();
@@ -347,7 +363,9 @@ mod tests {
         let centre_row = grid.row(9).expect("a row of the fixture");
         let kernel = Kernel::new(grid, centre_row, radius(20_016.0))
             .expect("fixture columns close on themselves");
-        let centre_point = grid.centre_of(centre_row, centre);
+        let centre_point = grid
+            .centre_of(centre_row, centre)
+            .expect("indices belong to the fixture grid");
         let expected = grid
             .rows()
             .flat_map(|row| grid.cols().map(move |col| (row, col)))
@@ -357,7 +375,11 @@ mod tests {
                     .is_ok_and(|owner| {
                         owner == &crate::ownership::CellOwner::Feature(feature.clone())
                     })
-                    && great_circle_km(centre_point, grid.centre_of(*row, *col)) <= 20_016.0
+                    && great_circle_km(
+                        centre_point,
+                        grid.centre_of(*row, *col)
+                            .expect("indices belong to the fixture grid"),
+                    ) <= 20_016.0
             })
             .map(|(row, col)| f64::from(cell(row.get(), col.get())))
             .sum::<f64>();
@@ -382,7 +404,8 @@ mod tests {
                     Kernel::new(grid, centre_row, radius(radius_km)).expect("a whole-globe grid");
                 for centre_col in grid.cols() {
                     assert_eq!(
-                        population(&table, &kernel, centre_col),
+                        population(&table, &kernel, centre_col)
+                            .expect("fixture centre belongs to the kernel grid"),
                         by_distance(&grid, (centre_row, centre_col), radius_km),
                         "row {}, column {}, radius {radius_km} km",
                         centre_row.get(),
@@ -401,8 +424,9 @@ mod tests {
             .map(|row| {
                 (0..WIDTH)
                     .map(|col| {
-                        let source =
-                            grid.col_along(grid.col(col).expect("a column of the fixture"), -k);
+                        let source = grid
+                            .col_along(grid.col(col).expect("a column of the fixture"), -k)
+                            .expect("fixture column belongs to the grid");
                         cell(row, source.get())
                     })
                     .collect()
@@ -437,8 +461,15 @@ mod tests {
                     for centre_col in [0u32, 1, 35] {
                         let centre = grid.col(centre_col).expect("a column of the fixture");
                         assert_eq!(
-                            population(&shifted, &kernel, grid.col_along(centre, k)),
-                            population(&table, &kernel, centre),
+                            population(
+                                &shifted,
+                                &kernel,
+                                grid.col_along(centre, k)
+                                    .expect("indices belong to the fixture grid"),
+                            )
+                            .expect("fixture centre belongs to the kernel grid"),
+                            population(&table, &kernel, centre)
+                                .expect("fixture centre belongs to the kernel grid"),
                             "row {centre_row}, column {centre_col}, radius {radius_km} km, shift {k}"
                         );
                     }
@@ -460,8 +491,12 @@ mod tests {
         let centre = grid.col(7).expect("a column of the fixture");
 
         assert_eq!(
-            population(&table, &kernel, centre).to_bits(),
-            population(&table, &kernel, centre).to_bits()
+            population(&table, &kernel, centre)
+                .expect("fixture centre belongs to the kernel grid")
+                .to_bits(),
+            population(&table, &kernel, centre)
+                .expect("fixture centre belongs to the kernel grid")
+                .to_bits()
         );
     }
 
@@ -485,7 +520,8 @@ mod tests {
         for centre_col in [0u32, 18] {
             let centre = grid.col(centre_col).expect("a column of the fixture");
             assert_eq!(
-                population(&table, &kernel, centre),
+                population(&table, &kernel, centre)
+                    .expect("fixture centre belongs to the kernel grid"),
                 by_distance(&grid, (row, centre), 2000.0),
                 "column {centre_col}"
             );
@@ -504,6 +540,8 @@ mod tests {
 
         let (_, cols) = kernel
             .place(centre)
+            .expect("fixture centre belongs to the kernel grid")
+            .map(|placed| placed.expect("placement indices belong to the grid"))
             .find(|(placed, _)| *placed == row)
             .expect("the centre row is in the band");
         match cols {
@@ -514,7 +552,7 @@ mod tests {
         }
 
         assert_eq!(
-            population(&table, &kernel, centre),
+            population(&table, &kernel, centre).expect("fixture centre belongs to the kernel grid"),
             by_distance(&grid, (row, centre), 1500.0)
         );
     }
@@ -536,7 +574,8 @@ mod tests {
                 &table,
                 &kernel,
                 grid.col(23).expect("a column of the fixture")
-            ),
+            )
+            .expect("fixture centre belongs to the kernel grid"),
             table.population(rows, cols)
         );
     }
@@ -551,7 +590,7 @@ mod tests {
         let kernel = Kernel::new(grid, row, radius(0.0)).expect("zero is a radius");
 
         assert_eq!(
-            population(&table, &kernel, centre),
+            population(&table, &kernel, centre).expect("fixture centre belongs to the kernel grid"),
             f64::from(cell(row.get(), centre.get()))
         );
     }
@@ -587,8 +626,8 @@ mod tests {
             let outer = Kernel::new(grid, row, radius(radius_km + growth)).expect("a whole-globe grid");
 
             let (narrow, wide) = (
-                population(&table, &inner, centre),
-                population(&table, &outer, centre),
+                population(&table, &inner, centre).expect("fixture centre belongs to the kernel grid"),
+                population(&table, &outer, centre).expect("fixture centre belongs to the kernel grid"),
             );
             prop_assert!(
                 wide >= narrow,

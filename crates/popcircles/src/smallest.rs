@@ -942,7 +942,8 @@ mod tests {
             for centre in [0, 17, 35] {
                 let kernel = Kernel::new(grid, grid.middle_row(), ceiling_radius())
                     .expect("a grid that closes");
-                let folded = circle::population(&table, &kernel, col_of(&grid, centre));
+                let folded = circle::population(&table, &kernel, col_of(&grid, centre))
+                    .expect("centre belongs to the grid");
                 assert_eq!(
                     folded.to_bits(),
                     whole.to_bits(),
