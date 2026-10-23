@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::path::Path;
 
 use popcircles::report::{
@@ -75,7 +76,13 @@ pub(crate) fn smallest(
         ))
     })?;
     let path = ledger_path.map_or_else(
-        || Path::new("out/countries").join(format!("{}.json", feature.id.as_str())),
+        || {
+            let mut file = String::new();
+            for byte in feature.id.as_str().bytes() {
+                let _ = write!(file, "{byte:02x}");
+            }
+            Path::new("out/countries").join(format!("{file}.json"))
+        },
         Path::to_path_buf,
     );
     make_room_for(&path)?;

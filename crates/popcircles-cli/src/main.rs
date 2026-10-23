@@ -60,7 +60,7 @@ enum Command {
         #[command(subcommand)]
         command: GridCommand,
     },
-    /// List the registered country identifiers and names.
+    /// List countries and find per-country population circles.
     Country {
         #[command(subcommand)]
         command: CountryCommand,

@@ -2,7 +2,7 @@
 source: crates/popcircles-cli/tests/help.rs
 expression: help_for(path)
 ---
-List the registered country identifiers and names
+List countries and find per-country population circles
 
 Usage: popcircles country [OPTIONS] <COMMAND>
 

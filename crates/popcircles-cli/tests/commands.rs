@@ -241,6 +241,25 @@ path = "data/settlements/populated-places-1to10m.geojson"
         .unwrap();
     }
 
+    fn register_path_like_country(&self) {
+        let feature = serde_json::json!({
+            "type": "Feature",
+            "properties": {"CNTR_ID": "../victim", "NAME_ENGL": "Path-like ID"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-50,-50],[50,-50],[50,70],[-50,70],[-50,-50]]]},
+        });
+        std::fs::write(
+            self.directory
+                .path()
+                .join("data/boundaries/gisco-countries-2024-1m.geojson"),
+            serde_json::to_vec(&serde_json::json!({
+                "type": "FeatureCollection",
+                "features": [feature],
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
     fn ledger(&self, name: &str) -> PathBuf {
         self.directory.path().join(name)
     }
@@ -613,6 +632,31 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
 }
 
 #[test]
+fn country_id_cannot_redirect_the_default_ledger_path() {
+    let fixture = Fixture::build();
+    fixture.register_path_like_country();
+    let output = run_with(
+        fixture.directory.path(),
+        &["--log-level".to_owned(), "error".to_owned()],
+        "country smallest",
+        &[
+            "--country",
+            "../victim",
+            "--share",
+            "10",
+            "--dataset",
+            "population-count-2020-30arcsec",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let ledger = document["result"]["ledger"]["path"].as_str().unwrap();
+    assert_eq!(ledger, "out/countries/2e2e2f76696374696d.json");
+    assert!(fixture.directory.path().join(ledger).is_file());
+    assert!(!fixture.directory.path().join("out/victim.json").exists());
+}
+
+#[test]
 fn country_smallest_leaves_world_command_bytes_unchanged() {
     let fixture = Fixture::build();
     let args = ["--lat", "45", "--lon", "15", "--radius-km", "0"];
@@ -636,6 +680,10 @@ fn country_smallest_leaves_world_command_bytes_unchanged() {
     let after = fixture.run_ok("population-at", &args);
     assert_eq!(before.stdout, after.stdout);
     assert_eq!(before.stderr, after.stderr);
+    let mut document: serde_json::Value = serde_json::from_slice(&after.stdout).unwrap();
+    document["provenance"]["cache"]["header"] = "out/table.header.json".into();
+    document["provenance"]["cache"]["payload"] = "out/table.payload.bin".into();
+    insta::assert_json_snapshot!("country-smallest-world-compatibility", document);
 }
 
 #[test]

@@ -1,0 +1,95 @@
+---
+source: crates/popcircles-cli/tests/commands.rs
+expression: document
+---
+{
+  "document": "circle",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "provenance": {
+    "cache": {
+      "header": "out/table.header.json",
+      "payload": "out/table.payload.bin"
+    },
+    "decimation": 1,
+    "digest": "0x7667cdf23ac5ebc5",
+    "grid": {
+      "height": 18,
+      "lat_step": -10.0,
+      "lon_step": 10.0,
+      "middle_row_cell_area_km2": 1230166.8155696748,
+      "origin": {
+        "lat": 90.0,
+        "lon": -180.0
+      },
+      "spans_full_turn": true,
+      "width": 36
+    }
+  },
+  "result": {
+    "centre": {
+      "lat": 45.0,
+      "lon": 15.0
+    },
+    "col": 19,
+    "country_breakdown": {
+      "entries": [
+        {
+          "country_total_population": 34620.0,
+          "fraction_of_circle_population": 1.0,
+          "fraction_of_country_population": 0.0047371461582900055,
+          "id": "XX",
+          "name": "Fixture",
+          "population_inside": 164.0
+        }
+      ],
+      "provenance": {
+        "accounting_route": "unique-native-cell ownership; sequential cropped prefixes",
+        "aggregation_order_version": 1,
+        "attribution": "Fixture boundary credit",
+        "boundary_dataset": "gisco-countries-2024-1m",
+        "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "boundary_revision": "fixture",
+        "decimation": 1,
+        "effective_grid": {
+          "height": 18,
+          "lat_step": -10.0,
+          "lon_step": 10.0,
+          "middle_row_cell_area_km2": 1230166.8155696748,
+          "origin": {
+            "lat": 90.0,
+            "lon": -180.0
+          },
+          "spans_full_turn": true,
+          "width": 36
+        },
+        "membership_rule_version": 1,
+        "ownership_rule_version": 1
+      },
+      "reconciliation": {
+        "bound_persons": 0.000000008520804506417791,
+        "unassigned_population": 0.0
+      }
+    },
+    "nearest_settlement": {
+      "country": "Fixture",
+      "distance_km": 0.0,
+      "name": "Resolved centre",
+      "short_form": true
+    },
+    "population": 164.0,
+    "radius_km": 0.0,
+    "requested": {
+      "lat": 45.0,
+      "lon": 15.0
+    },
+    "row": 4,
+    "share_of_total": 0.00077992733359965,
+    "total_population": 210276.0
+  },
+  "schema_version": 1,
+  "tool": "popcircles",
+  "tool_version": "0.3.0"
+}

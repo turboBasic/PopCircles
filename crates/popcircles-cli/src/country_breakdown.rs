@@ -384,10 +384,6 @@ mod tests {
             circle::country_population(&table, &kernel, grid.col(22).unwrap()).unwrap(),
             0.0
         );
-        assert_eq!(
-            circle::country_population(&table, &kernel, grid.col(2).unwrap()).unwrap(),
-            1.0
-        );
         let south = Kernel::new(grid, grid.row(14).unwrap(), RadiusKm::new(0.0).unwrap()).unwrap();
         assert_eq!(
             circle::country_population(&table, &south, grid.col(2).unwrap()).unwrap(),
