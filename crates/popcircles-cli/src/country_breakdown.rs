@@ -246,7 +246,7 @@ impl Prepared {
             effective_grid: self.effective,
             decimation: self.decimation.factor(),
             accounting_route:
-                "unique-native-cell ownership; one cropped prefix at a time; parallel row folds"
+                "unique-native-cell ownership; one cropped prefix at a time; parallel prefix build and source scan"
                     .to_owned(),
         };
         circles
