@@ -77,6 +77,19 @@ def searched() -> dict[str, Any]:
     }
 
 
+def country_searched() -> dict[str, Any]:
+    return {
+        "country": {
+            "id": "DE",
+            "name": "Germany",
+            "boundary_dataset": "gisco-countries-2024-1m",
+            "boundary_revision": "Countries 2024 snapshot",
+            "boundary_digest": "a" * 64,
+        },
+        **searched(),
+    }
+
+
 def breakdown() -> dict[str, Any]:
     return {
         "entries": [
@@ -155,6 +168,26 @@ def test_a_smallest_document_reads_the_circle_under_its_ledger() -> None:
     assert answer.caption.population == SEARCHED_POPULATION
     assert answer.caption.share == SEARCHED_SHARE
     assert circle.centre.lat == SEARCHED_LAT
+
+
+def test_a_country_smallest_document_retains_its_boundary_identity() -> None:
+    answer = circle_of(envelope("country-smallest", country_searched()))
+    assert answer.circle.radius_km == SEARCHED_RADIUS_KM
+    assert answer.country is not None
+    assert (answer.country.id, answer.country.name) == ("DE", "Germany")
+    assert answer.country.boundary_dataset == "gisco-countries-2024-1m"
+    assert answer.country.boundary_revision == "Countries 2024 snapshot"
+    assert answer.country.boundary_digest == "a" * 64
+
+    missing_identity = country_searched()
+    del missing_identity["country"]
+    with pytest.raises(ValidationError):
+        circle_of(envelope("country-smallest", missing_identity))
+
+    mismatched_source = country_searched()
+    mismatched_source["country"]["boundary_digest"] = "not-the-registered-digest"
+    with pytest.raises(ValidationError):
+        circle_of(envelope("country-smallest", mismatched_source))
 
 
 def test_settlement_context_is_optional_and_validated_on_both_payload_shapes() -> None:
@@ -282,8 +315,8 @@ def test_a_recognised_kind_carrying_no_circle_names_the_kind() -> None:
     assert "distance" in str(caught.value)
 
     with pytest.raises(UnsupportedDocumentError) as country:
-        circle_of(envelope("country-smallest", {}))
-    assert country.value.kind == "country-smallest"
+        circle_of(envelope("country-sweep", {}))
+    assert country.value.kind == "country-sweep"
 
 
 def test_the_three_circle_bearing_kinds_are_the_ones_documented() -> None:
