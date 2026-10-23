@@ -1,5 +1,5 @@
 use std::fmt::Write as _;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use popcircles::report::{
     CountryListDocument, CountrySmallestDocument, CountrySweepCountry, CountrySweepDocument,
@@ -17,6 +17,14 @@ use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
 use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
+
+fn country_ledger_path(directory: &Path, id: &str) -> PathBuf {
+    let mut file = String::new();
+    for byte in id.bytes() {
+        let _ = write!(file, "{byte:02x}");
+    }
+    directory.join(format!("{file}.json"))
+}
 
 pub(crate) fn list() -> Result<String, Failure> {
     let registry =
@@ -78,13 +86,7 @@ pub(crate) fn smallest(
         ))
     })?;
     let path = ledger_path.map_or_else(
-        || {
-            let mut file = String::new();
-            for byte in feature.id.as_str().bytes() {
-                let _ = write!(file, "{byte:02x}");
-            }
-            Path::new("out/countries").join(format!("{file}.json"))
-        },
+        || country_ledger_path(Path::new("out/countries"), feature.id.as_str()),
         Path::to_path_buf,
     );
     make_room_for(&path)?;
@@ -145,11 +147,7 @@ pub(crate) fn sweep(
                 feature.id.as_str()
             ))
         })?;
-        let mut file = String::new();
-        for byte in feature.id.as_str().bytes() {
-            let _ = write!(file, "{byte:02x}");
-        }
-        let path = ledger_dir.join(format!("{file}.json"));
+        let path = country_ledger_path(ledger_dir, feature.id.as_str());
         make_room_for(&path)?;
         let mut ledger = CountryLedger::open_or_empty(&path, table.identity())
             .map_err(|error| crate::failure::Failure::ledger(&error))?;
