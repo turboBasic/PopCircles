@@ -20,17 +20,18 @@ Restricting to a country adds boundary data and a mask over the grid; the search
 Country identity follows GISCO's published country features and territorial interpretation
 ([ADR 0015](../decisions/0015-country-identities-follow-gisco-country-features.md)).
 
-Country population queries use masked prefix tables cropped to the selected domain bounds, processed
-sequentially ([ADR 0016](../decisions/0016-country-queries-use-cropped-prefixes.md)). This route
-serves both repeated country searches and the fixed-circle all-country workload. A native source-cell
+Country population queries use masked prefix tables cropped to the selected domain bounds, with one
+country table alive at a time ([ADR 0016](../decisions/0016-country-queries-use-cropped-prefixes.md)).
+This route serves both repeated country searches and the fixed-circle all-country workload. A native source-cell
 footprint assigns its full sanitized population to a GISCO feature only when positive-area contact
 qualifies exactly one feature. No match or multiple matches remain in an explicit unassigned residual;
 feature order never breaks ties. Classify at k=1 before coarser aggregation, and use the same ownership
 for country totals and circle queries ([ADR 0017](../decisions/0017-population-cells-belong-to-a-uniquely-intersected-country.md)).
 
 World-circle commands publish country composition from the registered population raster and GISCO
-boundaries. They prepare those inputs once, build one cropped country prefix at a time, and query only
-settled circles; a sweep reuses each country prefix across its answers.
+boundaries. They prepare those inputs once, build one cropped country prefix at a time with bounded
+within-country parallelism, and query only settled circles; a sweep reuses each country prefix across
+its answers.
 
 "On the globe" is the whole point. A circle drawn on an equirectangular image is not a circle on the
 Earth, and the well-known viral maps of the 50% circle got this wrong.

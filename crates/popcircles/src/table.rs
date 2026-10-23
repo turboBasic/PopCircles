@@ -482,6 +482,16 @@ pub enum CountryTableBuildError {
     NoOwnedCells(String),
     #[error("the country crop is not a valid grid")]
     CropGrid(#[source] GridError),
+    #[error("the buffered raster has {found} rows; its grid has {expected}")]
+    BufferedRowCount { expected: usize, found: usize },
+    #[error("buffered raster row {row} has {found} cells; its grid has {expected}")]
+    BufferedRowWidth {
+        row: usize,
+        expected: usize,
+        found: usize,
+    },
+    #[error("a country table worker panicked")]
+    WorkerPanicked,
 }
 
 /// Builds one country's cropped prefix and the source-wide unassigned residual.
@@ -619,6 +629,201 @@ pub fn build_country_decimated<S: RasterSource>(
     })
 }
 
+/// Builds one country's cropped prefix with two scoped execution contexts.
+///
+/// The worker computes each horizontal prefix row independently; the caller retains row order when
+/// folding those rows vertically, so parallel scheduling does not change the arithmetic order.
+///
+/// # Errors
+/// Returns an error when the buffered rows, ownership or decimation do not match the source grid,
+/// the feature owns no cells, or the worker fails.
+pub fn build_country_decimated_parallel(
+    source_grid: Grid,
+    rows: &[Vec<f32>],
+    ownership: &CellOwnership,
+    feature_id: &FeatureId,
+    decimation: Decimation,
+    boundary_source_digest: &str,
+) -> Result<CountryTable, CountryTableBuildError> {
+    if ownership.grid() != &source_grid || decimation.source() != &source_grid {
+        return Err(CountryTableBuildError::GridMismatch);
+    }
+    if rows.len() != source_grid.height() as usize {
+        return Err(CountryTableBuildError::BufferedRowCount {
+            expected: source_grid.height() as usize,
+            found: rows.len(),
+        });
+    }
+    for (row, values) in rows.iter().enumerate() {
+        if values.len() != source_grid.width() as usize {
+            return Err(CountryTableBuildError::BufferedRowWidth {
+                row,
+                expected: source_grid.width() as usize,
+                found: values.len(),
+            });
+        }
+    }
+
+    let effective_grid = *decimation.grid();
+    let factor = decimation.factor();
+    let Some((north_row, height, west_col, width)) = country_crop(ownership, feature_id, factor)
+    else {
+        return Err(CountryTableBuildError::NoOwnedCells(
+            feature_id.as_str().to_owned(),
+        ));
+    };
+    let grid = country_crop_grid(effective_grid, north_row, height, west_col, width)?;
+    let crop_width = width as usize;
+    let stride = crop_width + 1;
+    let (source_digest, residual, mut cells) = std::thread::scope(|scope| {
+        let worker = scope.spawn(|| {
+            fill_country_horizontal_rows(
+                rows,
+                ownership,
+                feature_id,
+                decimation,
+                (north_row, height, west_col, width),
+                stride,
+            )
+        });
+        let source_metadata = source_digest_and_residual(rows, ownership);
+        match worker.join() {
+            Ok(Ok(cells)) => source_metadata.map(|(digest, residual)| (digest, residual, cells)),
+            Ok(Err(error)) => Err(error),
+            Err(_) => Err(CountryTableBuildError::WorkerPanicked),
+        }
+    })?;
+
+    let mut acc = vec![0.0; stride];
+    let mut corr = vec![0.0; stride];
+    for row in 1..=height as usize {
+        let offset = row * stride;
+        for column in 1..stride {
+            let (sum, dropped) = two_sum(acc[column], cells[offset + column]);
+            (acc[column], corr[column]) = two_sum(sum, corr[column] + dropped);
+            cells[offset + column] = acc[column];
+        }
+    }
+
+    Ok(CountryTable {
+        source_grid,
+        effective_grid,
+        grid,
+        north_row,
+        west_col,
+        total: acc[crop_width],
+        unassigned: residual,
+        identity: CountryTableIdentity {
+            feature_id: feature_id.clone(),
+            source_digest,
+            boundary_source_digest: boundary_source_digest.to_owned(),
+            ownership_digest: country_ownership_digest(ownership),
+            source_grid,
+            effective_grid,
+            decimation: factor,
+            ownership_rule_version: OWNERSHIP_RULE_VERSION,
+            aggregation_order_version: COUNTRY_AGGREGATION_ORDER_VERSION,
+        },
+        cells,
+    })
+}
+
+fn source_digest_and_residual(
+    rows: &[Vec<f32>],
+    ownership: &CellOwnership,
+) -> Result<(u64, f64), CountryTableBuildError> {
+    let mut digest = FNV_OFFSET_BASIS;
+    let mut residual = 0.0;
+    let mut residual_corr = 0.0;
+    for (source_row, values) in ownership.grid().rows().zip(rows) {
+        for value in values {
+            digest = (digest ^ u64::from(value.to_bits())).wrapping_mul(FNV_PRIME);
+        }
+        let intervals =
+            ownership
+                .row_intervals(source_row.get())
+                .ok_or(OwnershipError::CellOutsideGrid {
+                    row: source_row.get(),
+                    col: 0,
+                })?;
+        for interval in intervals {
+            if let CellOwner::Unassigned(_) = interval.owner() {
+                for value in &values[interval.start() as usize..interval.end() as usize] {
+                    let (sum, dropped) = two_sum(residual, f64::from(*value));
+                    (residual, residual_corr) = two_sum(sum, residual_corr + dropped);
+                }
+            }
+        }
+    }
+    Ok((digest, residual + residual_corr))
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn fill_country_horizontal_rows(
+    rows: &[Vec<f32>],
+    ownership: &CellOwnership,
+    feature_id: &FeatureId,
+    decimation: Decimation,
+    crop: (u32, u32, u32, u32),
+    stride: usize,
+) -> Result<Vec<f64>, CountryTableBuildError> {
+    let effective_grid = *decimation.grid();
+    let factor = decimation.factor();
+    let (north_row, height, west_col, width) = crop;
+    let crop_width = width as usize;
+    let mut output = Vec::with_capacity((height as usize + 1) * stride);
+    output.resize(stride, 0.0);
+    let mut block = vec![0.0; crop_width];
+    let mut block_corr = vec![0.0; crop_width];
+    for effective_row in north_row..north_row + height {
+        for source_row in effective_row * factor..(effective_row + 1) * factor {
+            let values = &rows[source_row as usize];
+            let intervals =
+                ownership
+                    .row_intervals(source_row)
+                    .ok_or(OwnershipError::CellOutsideGrid {
+                        row: source_row,
+                        col: 0,
+                    })?;
+            for interval in intervals {
+                if !matches!(interval.owner(), CellOwner::Feature(owner) if owner == feature_id) {
+                    continue;
+                }
+                for column in interval.start()..interval.end() {
+                    let effective_col = column / factor;
+                    let crop_col = if effective_col >= west_col {
+                        effective_col - west_col
+                    } else {
+                        effective_grid.width() - west_col + effective_col
+                    };
+                    if crop_col < width {
+                        let index = crop_col as usize;
+                        let (sum, dropped) =
+                            two_sum(block[index], f64::from(values[column as usize]));
+                        (block[index], block_corr[index]) =
+                            two_sum(sum, block_corr[index] + dropped);
+                    }
+                }
+            }
+        }
+        country_horizontal_prefix_row(&mut output, &block, &block_corr);
+        block.fill(0.0);
+        block_corr.fill(0.0);
+    }
+    Ok(output)
+}
+
+fn country_horizontal_prefix_row(output: &mut Vec<f64>, block: &[f64], block_corr: &[f64]) {
+    output.push(0.0);
+    let mut prefix = 0.0;
+    let mut prefix_corr = 0.0;
+    for (&sum, &correction) in block.iter().zip(block_corr) {
+        let (sum, dropped) = two_sum(prefix, sum + correction);
+        (prefix, prefix_corr) = two_sum(sum, prefix_corr + dropped);
+        output.push(prefix);
+    }
+}
+
 fn country_crop_grid(
     effective_grid: Grid,
     north_row: u32,
@@ -646,16 +851,13 @@ fn append_country_prefix_row(
     block: &[f64],
     block_corr: &[f64],
 ) {
-    let mut prefix = 0.0;
-    let mut prefix_corr = 0.0;
-    for (index, (&sum, &correction)) in block.iter().zip(block_corr).enumerate() {
-        let (sum, dropped) = two_sum(prefix, sum + correction);
-        (prefix, prefix_corr) = two_sum(sum, prefix_corr + dropped);
-        let column = index + 1;
-        let (sum, dropped) = two_sum(acc[column], prefix);
+    let offset = cells.len();
+    country_horizontal_prefix_row(cells, block, block_corr);
+    for column in 1..acc.len() {
+        let (sum, dropped) = two_sum(acc[column], cells[offset + column]);
         (acc[column], corr[column]) = two_sum(sum, corr[column] + dropped);
+        cells[offset + column] = acc[column];
     }
-    cells.extend_from_slice(acc);
 }
 
 fn country_ownership_digest(ownership: &CellOwnership) -> u64 {
@@ -1017,6 +1219,102 @@ mod tests {
             table_a.total() + table_b.total() + table_a.unassigned(),
             78.0
         );
+    }
+
+    #[test]
+    fn parallel_country_prefix_matches_sequential_for_overlap_and_decimation() {
+        let grid = Grid::new(
+            36,
+            18,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            10.0,
+            -10.0,
+        )
+        .expect("fixture grid is valid");
+        let a = FeatureId::new("A").expect("fixture ID is valid");
+        let b = FeatureId::new("B").expect("fixture ID is valid");
+        let empty = FeatureId::new("EMPTY").expect("fixture ID is valid");
+        let features = vec![
+            (a.clone(), rectangle(-180.0, -30.0, 10.0, 30.0)),
+            (b.clone(), rectangle(-10.0, -30.0, 180.0, 30.0)),
+        ];
+        let (ownership, _) =
+            CellOwnership::rasterize_features(&features, grid).expect("ownership is valid");
+        let rows: Vec<Vec<f32>> = (0..grid.height())
+            .map(|row| {
+                (0..grid.width())
+                    .map(|col| (row * grid.width() + col + 1) as f32)
+                    .collect()
+            })
+            .collect();
+        let decimation = Decimation::new(grid, 3).expect("three divides the grid");
+
+        for feature in [&a, &b] {
+            let sequential = build_country_decimated(
+                Synthetic::new(grid, -9999.0, rows.clone()).expect("fixture shape is valid"),
+                &ownership,
+                feature,
+                decimation,
+                "fixture-boundaries",
+            )
+            .expect("feature owns cells");
+            let parallel = build_country_decimated_parallel(
+                grid,
+                &rows,
+                &ownership,
+                feature,
+                decimation,
+                "fixture-boundaries",
+            )
+            .expect("feature owns cells");
+            assert_eq!(parallel.cells, sequential.cells);
+            assert_eq!(parallel.total(), sequential.total());
+            assert_eq!(parallel.unassigned(), sequential.unassigned());
+            assert_eq!(parallel.identity(), sequential.identity());
+        }
+        let disjoint_features = vec![
+            (a.clone(), rectangle(-180.0, -30.0, -20.0, 30.0)),
+            (b.clone(), rectangle(20.0, -30.0, 180.0, 30.0)),
+        ];
+        let (disjoint_ownership, _) = CellOwnership::rasterize_features(&disjoint_features, grid)
+            .expect("disjoint ownership is valid");
+        for feature in [&a, &b] {
+            let sequential = build_country_decimated(
+                Synthetic::new(grid, -9999.0, rows.clone()).expect("fixture shape is valid"),
+                &disjoint_ownership,
+                feature,
+                decimation,
+                "fixture-boundaries",
+            )
+            .expect("feature owns cells");
+            let parallel = build_country_decimated_parallel(
+                grid,
+                &rows,
+                &disjoint_ownership,
+                feature,
+                decimation,
+                "fixture-boundaries",
+            )
+            .expect("feature owns cells");
+            assert_eq!(parallel.cells, sequential.cells);
+            assert_eq!(parallel.total(), sequential.total());
+            assert_eq!(parallel.unassigned(), sequential.unassigned());
+            assert_eq!(parallel.identity(), sequential.identity());
+        }
+        assert!(matches!(
+            build_country_decimated_parallel(
+                grid,
+                &rows,
+                &ownership,
+                &empty,
+                decimation,
+                "fixture-boundaries",
+            ),
+            Err(CountryTableBuildError::NoOwnedCells(_))
+        ));
     }
 
     #[test]

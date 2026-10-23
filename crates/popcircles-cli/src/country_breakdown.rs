@@ -12,7 +12,10 @@ use popcircles::ownership::CellOwnership;
 use popcircles::raster::geotiff::GeoTiffSource;
 use popcircles::raster::{CellTallies, RasterError, RasterRow, RasterSource};
 use popcircles::table::CountryTable;
-use popcircles::table::{ColSpan, CountryTableBuildError, Decimation, build_country_decimated};
+use popcircles::table::{
+    ColSpan, CountryTableBuildError, Decimation, build_country_decimated,
+    build_country_decimated_parallel,
+};
 
 use crate::boundaries::{self, BoundaryFeature};
 use crate::failure::{EXIT_MISSING_DATA, Failure};
@@ -144,17 +147,27 @@ impl Prepared {
         &self,
         feature: &BoundaryFeature,
     ) -> Result<Option<CountryTable>, Failure> {
-        match build_country_decimated(
+        country_table_result(build_country_decimated(
             Replay::new(self.source, &self.rows, self.tallies),
             &self.ownership,
             &feature.id,
             self.decimation,
             &self.boundary_digest,
-        ) {
-            Ok(table) => Ok(Some(table)),
-            Err(CountryTableBuildError::NoOwnedCells(_)) => Ok(None),
-            Err(error) => Err(Failure::bad_input(error.to_string())),
-        }
+        ))
+    }
+
+    fn country_table_parallel(
+        &self,
+        feature: &BoundaryFeature,
+    ) -> Result<Option<CountryTable>, Failure> {
+        country_table_result(build_country_decimated_parallel(
+            self.source,
+            &self.rows,
+            &self.ownership,
+            &feature.id,
+            self.decimation,
+            &self.boundary_digest,
+        ))
     }
 
     pub(crate) fn feature(&self, selector: &str) -> Result<&BoundaryFeature, Failure> {
@@ -178,6 +191,15 @@ impl Prepared {
         circles: &[((Row, Col), RadiusKm, f64)],
         world_population: f64,
     ) -> Result<Vec<CountryBreakdown>, Failure> {
+        self.for_circles_with(circles, world_population, Self::country_table_parallel)
+    }
+
+    fn for_circles_with(
+        &self,
+        circles: &[((Row, Col), RadiusKm, f64)],
+        world_population: f64,
+        build_table: impl Fn(&Self, &BoundaryFeature) -> Result<Option<CountryTable>, Failure>,
+    ) -> Result<Vec<CountryBreakdown>, Failure> {
         let kernels = circles
             .iter()
             .map(|((row, _), radius, _)| {
@@ -186,14 +208,16 @@ impl Prepared {
             .collect::<Result<Vec<_>, _>>()?;
         let mut contributions = vec![Vec::with_capacity(self.features.len()); circles.len()];
         let feature_count = self.features.len();
-        for (index, (feature, domain)) in self.features.iter().zip(&self.domains).enumerate() {
+        for (feature_index, (feature, domain)) in
+            self.features.iter().zip(&self.domains).enumerate()
+        {
             log::info!(
                 "country accounting {}/{}: {}",
-                index + 1,
+                feature_index + 1,
                 feature_count,
                 feature.id.as_str()
             );
-            let table = self.country_table(feature)?;
+            let table = build_table(self, feature)?;
             let total = table.as_ref().map_or(0.0, CountryTable::total);
             for (index, (((_, centre), _radius, _), kernel)) in
                 circles.iter().zip(&kernels).enumerate()
@@ -221,8 +245,9 @@ impl Prepared {
             attribution: self.attribution.clone(),
             effective_grid: self.effective,
             decimation: self.decimation.factor(),
-            accounting_route: "unique-native-cell ownership; sequential cropped prefixes"
-                .to_owned(),
+            accounting_route:
+                "unique-native-cell ownership; one cropped prefix at a time; parallel row folds"
+                    .to_owned(),
         };
         circles
             .iter()
@@ -238,6 +263,16 @@ impl Prepared {
                 .map_err(|error| Failure::bad_input(error.to_string()))
             })
             .collect()
+    }
+}
+
+fn country_table_result(
+    result: Result<CountryTable, CountryTableBuildError>,
+) -> Result<Option<CountryTable>, Failure> {
+    match result {
+        Ok(table) => Ok(Some(table)),
+        Err(CountryTableBuildError::NoOwnedCells(_)) => Ok(None),
+        Err(error) => Err(Failure::bad_input(error.to_string())),
     }
 }
 
@@ -314,6 +349,7 @@ mod tests {
     use popcircles::geodesy::{LatLon, RadiusKm};
     use popcircles::grid::Grid;
     use popcircles::kernel::Kernel;
+    use popcircles::report::CountryBreakdownReport;
 
     use super::*;
 
@@ -408,6 +444,77 @@ mod tests {
             circle::country_population(&table, &south, grid.col(2).unwrap()).unwrap(),
             0.0
         );
+    }
+
+    #[test]
+    fn parallel_country_accounting_matches_sequential_serialization() {
+        let grid = Grid::new(
+            36,
+            18,
+            LatLon {
+                lat: 90.0,
+                lon: -180.0,
+            },
+            10.0,
+            -10.0,
+        )
+        .unwrap();
+        let features = vec![country("AA", -180.0, 0.0), country("BB", 0.0, 180.0)];
+        let geometries = features
+            .iter()
+            .map(|feature| (feature.id.clone(), feature.geometry.clone()))
+            .collect::<Vec<_>>();
+        let (ownership, _) = CellOwnership::rasterize_features(&geometries, grid).unwrap();
+        let domains = features
+            .iter()
+            .map(|feature| {
+                Domain::rasterize(feature.id.clone(), &feature.geometry, grid)
+                    .unwrap()
+                    .0
+            })
+            .collect();
+        let prepared = Prepared {
+            source: grid,
+            effective: grid,
+            decimation: Decimation::none(grid),
+            population_dataset: "fixture".to_owned(),
+            rows: vec![vec![1.0; grid.width() as usize]; grid.height() as usize],
+            tallies: CellTallies::default(),
+            ownership,
+            domains,
+            features,
+            boundary_digest: "fixture".to_owned(),
+            boundary_revision: "fixture".to_owned(),
+            attribution: "fixture".to_owned(),
+        };
+        let circles = [(
+            (grid.row(4).unwrap(), grid.col(2).unwrap()),
+            RadiusKm::new(500.0).unwrap(),
+            1.0,
+        )];
+        let sequential = prepared
+            .for_circles_with(&circles, 648.0, Prepared::country_table)
+            .unwrap();
+        let repeated_sequential = prepared
+            .for_circles_with(&circles, 648.0, Prepared::country_table)
+            .unwrap();
+        let parallel = prepared.for_circles(&circles, 648.0).unwrap();
+        let repeated_parallel = prepared.for_circles(&circles, 648.0).unwrap();
+        let encode = |breakdowns: &[CountryBreakdown]| {
+            serde_json::to_vec(
+                &breakdowns
+                    .iter()
+                    .map(CountryBreakdownReport::from)
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+
+        assert_eq!(parallel, sequential);
+        assert_eq!(repeated_sequential, sequential);
+        assert_eq!(repeated_parallel, parallel);
+        assert_eq!(encode(&parallel), encode(&sequential));
+        assert_eq!(encode(&repeated_parallel), encode(&parallel));
     }
 
     #[test]

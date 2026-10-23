@@ -46,7 +46,7 @@ expression: document
         }
       ],
       "provenance": {
-        "accounting_route": "unique-native-cell ownership; sequential cropped prefixes",
+        "accounting_route": "unique-native-cell ownership; one cropped prefix at a time; parallel row folds",
         "aggregation_order_version": 1,
         "attribution": "Fixture boundary credit",
         "boundary_dataset": "gisco-countries-2024-1m",
