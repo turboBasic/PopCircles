@@ -1,6 +1,7 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(SmallestDocument::new(LedgerReport::new(ledger_path(),\nledger.entries.len()), SmallestReport::new(&found, &grid),))"
+assertion_line: 1761
+expression: "Envelope::new(SmallestDocument::new(LedgerReport::new(ledger_path(),\nledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
 ---
 {
   "schema_version": 1,
@@ -46,7 +47,7 @@ expression: "Envelope::new(SmallestDocument::new(LedgerReport::new(ledger_path()
           "blocks_examined": 14200,
           "blocks_pruned": 10450,
           "circles_evaluated": 3750,
-          "kernels_built": 921
+          "kernels_built": 1640
         }
       }
     }

@@ -1,6 +1,7 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(SmallestReport::new(&found, &grid))"
+assertion_line: 1718
+expression: "Envelope::new(SmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"))"
 ---
 {
   "schema_version": 1,
@@ -43,10 +44,10 @@ expression: "Envelope::new(SmallestReport::new(&found, &grid))"
       "radii_reused": 0,
       "searched": {
         "levels": 66,
-        "blocks_examined": 8214,
-        "blocks_pruned": 6320,
-        "circles_evaluated": 1894,
-        "kernels_built": 792
+        "blocks_examined": 12218,
+        "blocks_pruned": 9125,
+        "circles_evaluated": 3093,
+        "kernels_built": 1594
       }
     }
   }

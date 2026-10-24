@@ -1,5 +1,6 @@
 ---
 source: crates/popcircles/src/report.rs
+assertion_line: 1821
 expression: "Envelope::new(document)"
 ---
 {
@@ -52,7 +53,7 @@ expression: "Envelope::new(document)"
             "blocks_examined": 6666,
             "blocks_pruned": 4919,
             "circles_evaluated": 1747,
-            "kernels_built": 428
+            "kernels_built": 744
           }
         }
       },
@@ -86,7 +87,7 @@ expression: "Envelope::new(document)"
             "blocks_examined": 3690,
             "blocks_pruned": 2688,
             "circles_evaluated": 1002,
-            "kernels_built": 290
+            "kernels_built": 580
           }
         }
       },
@@ -120,7 +121,7 @@ expression: "Envelope::new(document)"
             "blocks_examined": 14200,
             "blocks_pruned": 10453,
             "circles_evaluated": 3747,
-            "kernels_built": 921
+            "kernels_built": 1640
           }
         }
       }
