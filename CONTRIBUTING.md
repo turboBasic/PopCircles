@@ -175,6 +175,11 @@ own with `gh workflow run agent-run.yml -f instruction='…'` when there is no i
 A release is a tag and the two binaries it attaches, from one workspace version and no registry; this is
 the sequence for cutting one.
 
+The `v*` release and `data-v*` dataset tag namespaces are protected: creating, retargeting or deleting
+one requires the Repository Admin bypass. Future users granted that role inherit the same permission.
+The ruleset does not replace the signed-tag authorization below; release tags must still be signed by
+a trusted `turboBasic` SSH signing key.
+
 ```sh
 mise run release:smoke  # both build legs on demand, macOS included, publishing nothing
 ```
