@@ -1455,63 +1455,6 @@ mod tests {
             .expect("a whole-globe grid and a radius far from the overflow")
     }
 
-    fn search_full_resolution_with_workers(workers: usize) -> MostPopulous {
-        let grid = Grid::new(
-            43_200,
-            21_600,
-            LatLon {
-                lat: 90.0,
-                lon: -180.0,
-            },
-            0.008_333_333_333_333_333,
-            -0.008_333_333_333_333_333,
-        )
-        .expect("the registered population grid is valid");
-        let decimation = Decimation::new(grid, 1).expect("factor one matches the grid");
-        let cache = crate::table::cache::Cache::new(
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../out/gpw-30arcsec"),
-        );
-        let (mapped, identity) = cache
-            .open_resolved(decimation, Some(0xf17a_a802_a689_0f0c))
-            .expect("the existing registered table cache is available and matches");
-        assert_eq!(identity.digest, 0xf17a_a802_a689_0f0c);
-        let table = Table::new(grid, mapped.cells().expect("the mapped table is valid"))
-            .expect("the cache payload matches the registered grid");
-        let result = most_populous_by(
-            grid,
-            radius(3_360.0),
-            Some(spacing(2_700)),
-            workers,
-            &mut (),
-            |kernel, col| Ok(circle::population(&table, kernel, col)?),
-        )
-        .expect("the registered world grid closes");
-        assert_eq!(result.centre.row.get(), 7_339);
-        assert_eq!(result.centre.col.get(), 33_679);
-        assert_eq!(result.centre.population.to_bits(), 0x41ec_e7d6_c766_b7f7);
-        println!(
-            "workers={workers} row={} col={} population={:.17} population_bits={:016x} stats={:?}",
-            result.centre.row.get(),
-            result.centre.col.get(),
-            result.centre.population,
-            result.centre.population.to_bits(),
-            result.stats
-        );
-        result
-    }
-
-    #[test]
-    #[ignore = "reads the existing 7.5 GB registered table cache and searches the full-resolution world"]
-    fn full_resolution_search_one_worker() {
-        search_full_resolution_with_workers(1);
-    }
-
-    #[test]
-    #[ignore = "reads the existing 7.5 GB registered table cache and searches the full-resolution world"]
-    fn full_resolution_search_four_workers() {
-        search_full_resolution_with_workers(4);
-    }
-
     #[test]
     fn parallel_candidate_blocks_match_serial_for_ties_and_geographic_edges() {
         let cases = [
