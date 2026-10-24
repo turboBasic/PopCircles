@@ -28,7 +28,7 @@ use crate::registry::{REGISTRY_PATH, Registry};
 
 const SETTLEMENTS_DATASET: &str = "populated-places-1to10m";
 
-fn settlement_places() -> Result<Vec<Place>, Failure> {
+pub(super) fn settlement_places() -> Result<Vec<Place>, Failure> {
     let registry =
         Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
     let path = registry
@@ -37,7 +37,10 @@ fn settlement_places() -> Result<Vec<Place>, Failure> {
     crate::settlements::load(&path).map_err(|error| Failure::settlements(&error))
 }
 
-fn settlement_context(centre: LatLon, places: &[Place]) -> Result<Option<Context>, Failure> {
+pub(super) fn settlement_context(
+    centre: LatLon,
+    places: &[Place],
+) -> Result<Option<Context>, Failure> {
     nearest_context(centre, places).map_err(|error| Failure::bad_input(error.to_string()))
 }
 

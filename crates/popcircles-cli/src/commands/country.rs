@@ -11,7 +11,7 @@ use popcircles::table::Decimation;
 
 use crate::args::{CountryTableArgs, SearchArgs, SweepArgs};
 use crate::boundaries;
-use crate::commands::search::shares;
+use crate::commands::search::{settlement_context, settlement_places, shares};
 use crate::commands::{make_room_for, serialised};
 use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
@@ -93,13 +93,20 @@ pub(crate) fn smallest(
     let mut ledger = CountryLedger::open_or_empty(&path, table.identity())
         .map_err(|error| Failure::ledger(&error))?;
     let mut progress = StderrProgress::new();
+    let places = settlement_places()?;
     let found =
         smallest::smallest_country(&table, share, search.spacing, &mut ledger, &mut progress)
             .map_err(|error| Failure::smallest(&error))?;
     progress.finish();
 
-    let circle = SmallestReport::new(&found, table.effective_grid())
+    let centre = table
+        .effective_grid()
+        .centre_of(found.centre.row, found.centre.col)
         .map_err(|error| Failure::grid_index(&error))?;
+    let context = settlement_context(centre, &places)?;
+    let circle = SmallestReport::new(&found, table.effective_grid())
+        .map_err(|error| Failure::grid_index(&error))?
+        .with_nearest_settlement(context.as_ref());
     let boundary_identity = prepared.boundary_identity();
     let population_source = prepared.population_source();
     serialised(serde_json::to_string(&Envelope::new(
