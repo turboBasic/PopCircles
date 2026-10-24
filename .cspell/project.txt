@@ -176,6 +176,7 @@ Mirzapur
 Borås
 Xichang
 WPP
+WCAG
 
 # --- Geographic names in published result data ---
 Arunachal

@@ -163,7 +163,8 @@ which is what makes the published checksum worth checking — is
 
 Those documents are the conventions for humans as much as for AI tools. They are split across files so
 each subject can be corrected and reviewed on its own, not so that any of them is optional — all of
-them apply to every change. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers setup and the task loop, and
+them apply to every change. [`ACCESSIBILITY.md`](ACCESSIBILITY.md) describes current accessibility
+priorities and limitations. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers setup and the task loop, and
 [`USAGE.md`](USAGE.md) is the worked reference for running the thing.
 
 ## Inspiration
