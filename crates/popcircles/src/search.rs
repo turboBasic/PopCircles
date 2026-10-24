@@ -381,6 +381,15 @@ struct KernelPair {
     widest: HeldKernel,
 }
 
+impl KernelPair {
+    fn new(grid: Grid, seed: Row, radius: RadiusKm) -> Result<Self, KernelError> {
+        Ok(Self {
+            exact: HeldKernel::new(grid, seed, radius)?,
+            widest: HeldKernel::new(grid, seed, radius)?,
+        })
+    }
+}
+
 impl HeldKernel {
     fn new(grid: Grid, row: Row, radius: RadiusKm) -> Result<Self, KernelError> {
         Ok(Self {
@@ -416,19 +425,18 @@ struct LevelOutcome {
     kernels_built: u64,
 }
 
-fn evaluate_chunk<F>(
+fn evaluate_blocks<F>(
     grid: Grid,
     radius: RadiusKm,
     best: Option<Candidate>,
     blocks: &[Block],
+    kernels: &mut KernelPair,
     measure: &F,
 ) -> Result<LevelOutcome, SearchError>
 where
     F: Fn(&Kernel, Col) -> Result<f64, SearchError> + Sync,
 {
-    let seed = grid.middle_row();
-    let mut exact = HeldKernel::new(grid, seed, radius)?;
-    let mut widest = HeldKernel::new(grid, seed, radius)?;
+    let kernels_before = kernels.exact.built + kernels.widest.built;
     let mut best = best;
     let mut outcome = LevelOutcome {
         best,
@@ -442,14 +450,14 @@ where
     for block in blocks {
         let (probe_row, probe_col) = block.probe(&grid);
         let widened = radius.widened_by(slack_km(&grid, *block)?);
-        let ceiling = measure(widest.get(probe_row, widened)?, probe_col)?;
+        let ceiling = measure(kernels.widest.get(probe_row, widened)?, probe_col)?;
         outcome.examined += 1;
 
         // Equal bounds stay live because a tied block may contain the north-west winner.
         if best.is_some_and(|held| ceiling < held.population) {
             outcome.pruned += 1;
         } else {
-            let population = measure(exact.get(probe_row, radius)?, probe_col)?;
+            let population = measure(kernels.exact.get(probe_row, radius)?, probe_col)?;
             let candidate = Candidate {
                 row: probe_row,
                 col: probe_col,
@@ -462,62 +470,23 @@ where
     }
 
     outcome.best = best;
-    outcome.kernels_built = exact.built + widest.built;
+    outcome.kernels_built = kernels.exact.built + kernels.widest.built - kernels_before;
     Ok(outcome)
 }
 
-fn evaluate_serial_level<P, F>(
+fn evaluate_chunk<F>(
     grid: Grid,
     radius: RadiusKm,
     best: Option<Candidate>,
     blocks: &[Block],
-    kernels: &mut KernelPair,
-    progress: &mut P,
     measure: &F,
 ) -> Result<LevelOutcome, SearchError>
 where
-    P: Progress,
-    F: Fn(&Kernel, Col) -> Result<f64, SearchError>,
+    F: Fn(&Kernel, Col) -> Result<f64, SearchError> + Sync,
 {
-    let total = u64::try_from(blocks.len()).unwrap_or(u64::MAX);
-    let kernels_before = kernels.exact.built + kernels.widest.built;
-    let mut outcome = LevelOutcome {
-        best,
-        survivors: Vec::new(),
-        examined: 0,
-        pruned: 0,
-        evaluated: 0,
-        kernels_built: 0,
-    };
-
-    for (index, block) in blocks.iter().enumerate() {
-        let (probe_row, probe_col) = block.probe(&grid);
-        let widened = radius.widened_by(slack_km(&grid, *block)?);
-        let ceiling = measure(kernels.widest.get(probe_row, widened)?, probe_col)?;
-        outcome.examined += 1;
-
-        // Equal bounds stay live because a tied block may contain the north-west winner.
-        if outcome.best.is_some_and(|held| ceiling < held.population) {
-            outcome.pruned += 1;
-        } else {
-            let population = measure(kernels.exact.get(probe_row, radius)?, probe_col)?;
-            let candidate = Candidate {
-                row: probe_row,
-                col: probe_col,
-                population,
-            };
-            outcome.best = Some(
-                outcome
-                    .best
-                    .map_or(candidate, |held| held.better(candidate)),
-            );
-            outcome.evaluated += 1;
-            outcome.survivors.push(*block);
-        }
-        progress.advance(u64::try_from(index + 1).unwrap_or(u64::MAX), total);
-    }
-
-    outcome.kernels_built = kernels.exact.built + kernels.widest.built - kernels_before;
+    let mut kernels = KernelPair::new(grid, grid.middle_row(), radius)?;
+    let mut outcome = evaluate_blocks(grid, radius, best, blocks, &mut kernels, measure)?;
+    outcome.kernels_built += 2;
     Ok(outcome)
 }
 
@@ -608,10 +577,7 @@ where
     let seed = grid.middle_row();
     let mut serial_kernels = if workers == 1 {
         stats.kernels_built = 2;
-        Some(KernelPair {
-            exact: HeldKernel::new(grid, seed, radius)?,
-            widest: HeldKernel::new(grid, seed, radius)?,
-        })
+        Some(KernelPair::new(grid, seed, radius)?)
     } else {
         None
     };
@@ -627,16 +593,14 @@ where
         });
         stats.levels += 1;
 
-        // Box 7's second granularity. Kernel placement gets no pair of its own: there is no discrete
-        // Placement builds are counted with the level because each chunk owns its own kernel cache.
+        // Kernel construction counts include each worker's private cache.
         let mut bracket = Bracket::open(module_path!(), format!("level {}", stats.levels));
         // Saturating rather than casting, so a host where a Vec's length does not fit a u64 reports a
         // capped total instead of a wrapped one.
         let total = u64::try_from(level.len()).unwrap_or(u64::MAX);
-        let parallel = serial_kernels.is_none();
         let outcomes = if let Some(kernels) = &mut serial_kernels {
-            vec![evaluate_serial_level(
-                grid, radius, best, &level, kernels, progress, &measure,
+            vec![evaluate_blocks(
+                grid, radius, best, &level, kernels, &measure,
             )?]
         } else {
             let workers = workers.min(level.len()).max(1);
@@ -672,10 +636,8 @@ where
             survivors.append(&mut outcome.survivors);
         }
         stats.kernels_built += kernels_built;
-        if parallel {
-            for done in 1..=total {
-                progress.advance(done, total);
-            }
+        for done in 1..=total {
+            progress.advance(done, total);
         }
         bracket.figure("kernels", kernels_built);
 
