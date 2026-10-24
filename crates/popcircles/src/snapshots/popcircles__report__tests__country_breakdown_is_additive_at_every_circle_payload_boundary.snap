@@ -1,5 +1,6 @@
 ---
 source: crates/popcircles/src/report.rs
+assertion_line: 1500
 expression: reports
 ---
 {
@@ -241,7 +242,7 @@ expression: reports
         "blocks_examined": 369,
         "blocks_pruned": 269,
         "circles_evaluated": 100,
-        "kernels_built": 29,
+        "kernels_built": 58,
         "levels": 3
       },
       "tolerance_persons": 0.0,
@@ -336,7 +337,7 @@ expression: reports
             "blocks_examined": 14200,
             "blocks_pruned": 10454,
             "circles_evaluated": 3746,
-            "kernels_built": 921,
+            "kernels_built": 1640,
             "levels": 72
           }
         },
@@ -440,7 +441,7 @@ expression: reports
           "blocks_examined": 14200,
           "blocks_pruned": 10454,
           "circles_evaluated": 3746,
-          "kernels_built": 921,
+          "kernels_built": 1640,
           "levels": 72
         }
       },
@@ -545,7 +546,7 @@ expression: reports
               "blocks_examined": 14200,
               "blocks_pruned": 10454,
               "circles_evaluated": 3746,
-              "kernels_built": 921,
+              "kernels_built": 1640,
               "levels": 72
             }
           },

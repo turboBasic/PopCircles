@@ -1,6 +1,7 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").expect(\"fixture country ID\"),\n\"Fixture country\", \"gisco-countries-2024-1m\", \"2024\",\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n\"population-count-2020-30arcsec\", 10,\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
+assertion_line: 1766
+expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").expect(\"fixture country ID\"),\n\"Fixture country\",\n(\"gisco-countries-2024-1m\", \"2024\",\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",),\n(\"population-count-2020-30arcsec\", 10),\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
 ---
 {
   "schema_version": 1,
@@ -55,7 +56,7 @@ expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").
           "blocks_examined": 14200,
           "blocks_pruned": 10450,
           "circles_evaluated": 3750,
-          "kernels_built": 921
+          "kernels_built": 1640
         }
       }
     }

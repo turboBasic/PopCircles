@@ -1,6 +1,7 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(MostPopulousReport::new(&found, &grid, total))"
+assertion_line: 1662
+expression: "Envelope::new(MostPopulousReport::new(&found, &grid,\ntotal).expect(\"search centre belongs to the grid\"))"
 ---
 {
   "schema_version": 1,
@@ -28,7 +29,7 @@ expression: "Envelope::new(MostPopulousReport::new(&found, &grid, total))"
       "blocks_examined": 369,
       "blocks_pruned": 269,
       "circles_evaluated": 100,
-      "kernels_built": 29
+      "kernels_built": 58
     }
   }
 }

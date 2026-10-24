@@ -1,5 +1,6 @@
 ---
 source: crates/popcircles/src/report.rs
+assertion_line: 1628
 expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).unwrap(), \"most_populous\":\n    serde_json::to_value(most_populous).unwrap(), \"smallest\":\n    serde_json::to_value(smallest).unwrap(), \"sweep\":\n    serde_json::to_value(sweep).unwrap(), \"ocean\":\n    serde_json::to_value(ocean).unwrap(),\n})"
 ---
 {
@@ -61,7 +62,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
         "blocks_examined": 369,
         "blocks_pruned": 269,
         "circles_evaluated": 100,
-        "kernels_built": 29,
+        "kernels_built": 58,
         "levels": 3
       },
       "tolerance_persons": 0.0,
@@ -133,7 +134,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
             "blocks_examined": 14200,
             "blocks_pruned": 10454,
             "circles_evaluated": 3746,
-            "kernels_built": 921,
+            "kernels_built": 1640,
             "levels": 72
           }
         },
@@ -194,7 +195,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
               "blocks_examined": 14200,
               "blocks_pruned": 10454,
               "circles_evaluated": 3746,
-              "kernels_built": 921,
+              "kernels_built": 1640,
               "levels": 72
             }
           },

@@ -7,6 +7,7 @@
 // circles themselves are `circle::population`'s and the geometry is `kernel`'s.
 
 use std::num::NonZeroU32;
+use std::thread;
 
 use crate::bracket::Bracket;
 use crate::circle::{self, CountryPopulationError};
@@ -375,6 +376,20 @@ struct HeldKernel {
     built: u64,
 }
 
+struct KernelPair {
+    exact: HeldKernel,
+    widest: HeldKernel,
+}
+
+impl KernelPair {
+    fn new(grid: Grid, seed: Row, radius: RadiusKm) -> Result<Self, KernelError> {
+        Ok(Self {
+            exact: HeldKernel::new(grid, seed, radius)?,
+            widest: HeldKernel::new(grid, seed, radius)?,
+        })
+    }
+}
+
 impl HeldKernel {
     fn new(grid: Grid, row: Row, radius: RadiusKm) -> Result<Self, KernelError> {
         Ok(Self {
@@ -399,6 +414,80 @@ impl HeldKernel {
         }
         Ok(&self.kernel)
     }
+}
+
+struct LevelOutcome {
+    best: Option<Candidate>,
+    survivors: Vec<Block>,
+    examined: u64,
+    pruned: u64,
+    evaluated: u64,
+    kernels_built: u64,
+}
+
+fn evaluate_blocks<F>(
+    grid: Grid,
+    radius: RadiusKm,
+    best: Option<Candidate>,
+    blocks: &[Block],
+    kernels: &mut KernelPair,
+    measure: &F,
+) -> Result<LevelOutcome, SearchError>
+where
+    F: Fn(&Kernel, Col) -> Result<f64, SearchError> + Sync,
+{
+    let kernels_before = kernels.exact.built + kernels.widest.built;
+    let mut best = best;
+    let mut outcome = LevelOutcome {
+        best,
+        survivors: Vec::new(),
+        examined: 0,
+        pruned: 0,
+        evaluated: 0,
+        kernels_built: 0,
+    };
+
+    for block in blocks {
+        let (probe_row, probe_col) = block.probe(&grid);
+        let widened = radius.widened_by(slack_km(&grid, *block)?);
+        let ceiling = measure(kernels.widest.get(probe_row, widened)?, probe_col)?;
+        outcome.examined += 1;
+
+        // Equal bounds stay live because a tied block may contain the north-west winner.
+        if best.is_some_and(|held| ceiling < held.population) {
+            outcome.pruned += 1;
+        } else {
+            let population = measure(kernels.exact.get(probe_row, radius)?, probe_col)?;
+            let candidate = Candidate {
+                row: probe_row,
+                col: probe_col,
+                population,
+            };
+            best = Some(best.map_or(candidate, |held| held.better(candidate)));
+            outcome.evaluated += 1;
+            outcome.survivors.push(*block);
+        }
+    }
+
+    outcome.best = best;
+    outcome.kernels_built = kernels.exact.built + kernels.widest.built - kernels_before;
+    Ok(outcome)
+}
+
+fn evaluate_chunk<F>(
+    grid: Grid,
+    radius: RadiusKm,
+    best: Option<Candidate>,
+    blocks: &[Block],
+    measure: &F,
+) -> Result<LevelOutcome, SearchError>
+where
+    F: Fn(&Kernel, Col) -> Result<f64, SearchError> + Sync,
+{
+    let mut kernels = KernelPair::new(grid, grid.middle_row(), radius)?;
+    let mut outcome = evaluate_blocks(grid, radius, best, blocks, &mut kernels, measure)?;
+    outcome.kernels_built += 2;
+    Ok(outcome)
 }
 
 /// The most populous circle of ground radius `radius` centred on a cell of the table's grid.
@@ -431,9 +520,14 @@ pub fn most_populous<P: Progress>(
     spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
-    most_populous_by(*table.grid(), radius, spacing, progress, |kernel, col| {
-        Ok(circle::population(table, kernel, col)?)
-    })
+    most_populous_by(
+        *table.grid(),
+        radius,
+        spacing,
+        4,
+        progress,
+        |kernel, col| Ok(circle::population(table, kernel, col)?),
+    )
 }
 
 /// The most populous circle of `radius` centred on any cell of the country's effective global grid.
@@ -456,6 +550,7 @@ pub fn country_most_populous<P: Progress>(
         *table.effective_grid(),
         radius,
         spacing,
+        1,
         progress,
         |kernel, col| Ok(circle::country_population(table, kernel, col)?),
     )
@@ -465,12 +560,13 @@ fn most_populous_by<P, F>(
     grid: Grid,
     radius: RadiusKm,
     spacing: Option<NonZeroU32>,
+    workers: usize,
     progress: &mut P,
-    mut measure: F,
+    measure: F,
 ) -> Result<MostPopulous, SearchError>
 where
     P: Progress,
-    F: FnMut(&Kernel, Col) -> Result<f64, SearchError>,
+    F: Fn(&Kernel, Col) -> Result<f64, SearchError> + Sync,
 {
     let mut level = Block::tile(
         &grid,
@@ -478,10 +574,13 @@ where
     );
     let mut best: Option<Candidate> = None;
     let mut stats = SearchStats::default();
-
     let seed = grid.middle_row();
-    let mut exact = HeldKernel::new(grid, seed, radius)?;
-    let mut widest = HeldKernel::new(grid, seed, radius)?;
+    let mut serial_kernels = if workers == 1 {
+        stats.kernels_built = 2;
+        Some(KernelPair::new(grid, seed, radius)?)
+    } else {
+        None
+    };
 
     while !level.is_empty() {
         // The traversal decision, and it buys two things at once: every kernel band slides north to south
@@ -494,54 +593,53 @@ where
         });
         stats.levels += 1;
 
-        // Box 7's second granularity. Kernel placement gets no pair of its own: there is no discrete
-        // placement step to open one around — `HeldKernel::get` builds lazily inside the block loop below,
-        // 15 891 times in the measured run — so what that entry wanted rides on this pair's end record as
-        // the delta over the level.
+        // Kernel construction counts include each worker's private cache.
         let mut bracket = Bracket::open(module_path!(), format!("level {}", stats.levels));
-        // Read from the two counters and not from `stats.kernels_built`, which is assigned once after this
-        // loop exits and so is zero at every level. They stand at 2 before the first level opens, one seed
-        // kernel each, which is what a delta keeps the first level from claiming.
-        let kernels_before = exact.built + widest.built;
-
         // Saturating rather than casting, so a host where a Vec's length does not fit a u64 reports a
         // capped total instead of a wrapped one.
         let total = u64::try_from(level.len()).unwrap_or(u64::MAX);
-        let mut done = 0u64;
-        let mut survivors: Vec<Block> = Vec::new();
-
-        for block in &level {
-            let (probe_row, probe_col) = block.probe(&grid);
-            let widened = radius.widened_by(slack_km(&grid, *block)?);
-            let ceiling = measure(widest.get(probe_row, widened)?, probe_col)?;
-            stats.blocks_examined += 1;
-
-            // Strictly under, never equal. A block whose bound merely ties the incumbent may hold a
-            // centre that ties it too and wins on position, and that centre is the answer — so a `<=`
-            // here would drop the tie before the tie-break ever saw it, and the result would depend on
-            // the spacing. Under a strict incumbent, every centre in the block is beaten outright.
-            if best.is_some_and(|held| ceiling < held.population) {
-                stats.blocks_pruned += 1;
-            } else {
-                let population = measure(exact.get(probe_row, radius)?, probe_col)?;
-                let candidate = Candidate {
-                    row: probe_row,
-                    col: probe_col,
-                    population,
-                };
-                best = Some(match best {
-                    Some(held) => held.better(candidate),
-                    None => candidate,
-                });
-                stats.circles_evaluated += 1;
-                survivors.push(*block);
-            }
-
-            done += 1;
+        let outcomes = if let Some(kernels) = &mut serial_kernels {
+            vec![evaluate_blocks(
+                grid, radius, best, &level, kernels, &measure,
+            )?]
+        } else {
+            let workers = workers.min(level.len()).max(1);
+            let chunk_size = level.len().div_ceil(workers);
+            let measure = &measure;
+            thread::scope(|scope| {
+                level
+                    .chunks(chunk_size)
+                    .map(|blocks| {
+                        scope.spawn(move || evaluate_chunk(grid, radius, best, blocks, measure))
+                    })
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .map(|handle| match handle.join() {
+                        Ok(outcome) => outcome,
+                        Err(panic) => std::panic::resume_unwind(panic),
+                    })
+                    .collect::<Result<Vec<_>, SearchError>>()
+            })?
+        };
+        let mut survivors = Vec::new();
+        let mut kernels_built = 0;
+        for mut outcome in outcomes {
+            best = match (best, outcome.best) {
+                (Some(held), Some(candidate)) => Some(held.better(candidate)),
+                (None, candidate) => candidate,
+                (best, None) => best,
+            };
+            stats.blocks_examined += outcome.examined;
+            stats.blocks_pruned += outcome.pruned;
+            stats.circles_evaluated += outcome.evaluated;
+            kernels_built += outcome.kernels_built;
+            survivors.append(&mut outcome.survivors);
+        }
+        stats.kernels_built += kernels_built;
+        for done in 1..=total {
             progress.advance(done, total);
         }
-
-        bracket.figure("kernels", exact.built + widest.built - kernels_before);
+        bracket.figure("kernels", kernels_built);
 
         level = survivors
             .into_iter()
@@ -549,7 +647,6 @@ where
             .collect();
     }
 
-    stats.kernels_built = exact.built + widest.built;
     match best {
         Some(centre) => Ok(MostPopulous {
             centre,
@@ -1356,6 +1453,44 @@ mod tests {
     fn search(table: &Table<'_>, radius_km: f64, cells: u32) -> MostPopulous {
         most_populous(table, radius(radius_km), Some(spacing(cells)), &mut ())
             .expect("a whole-globe grid and a radius far from the overflow")
+    }
+
+    #[test]
+    fn parallel_candidate_blocks_match_serial_for_ties_and_geographic_edges() {
+        let cases = [
+            (
+                planted(vec![((3, 4), (10, 11)), ((13, 14), (25, 26))], 100.0),
+                1500.0,
+            ),
+            (
+                planted(vec![((9, 9), (35, 35)), ((9, 9), (0, 0))], 100.0),
+                1500.0,
+            ),
+            (planted(vec![((0, 0), (0, 1))], 100.0), 2000.0),
+        ];
+
+        for (cells, radius_km) in cases {
+            let grid = grid();
+            let payload = payload_over(&grid, cells);
+            let table = Table::new(grid, &payload).expect("the build emits the padded product");
+            let run = |workers| {
+                most_populous_by(
+                    grid,
+                    radius(radius_km),
+                    Some(spacing(5)),
+                    workers,
+                    &mut (),
+                    |kernel, col| Ok(circle::population(&table, kernel, col)?),
+                )
+                .expect("the whole-globe grid closes")
+                .centre
+            };
+            let (serial, parallel) = (run(1), run(4));
+            assert_eq!(
+                (parallel.row, parallel.col, parallel.population.to_bits()),
+                (serial.row, serial.col, serial.population.to_bits())
+            );
+        }
     }
 
     #[test]
