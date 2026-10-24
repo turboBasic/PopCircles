@@ -38,6 +38,13 @@ run before opening a PR. Hooks run through
 [prek](https://github.com/j178/prek), not pre-commit; the config keeps pre-commit's filename and
 format because prek reads it.
 
+## Questions and ideas
+
+Use [Discussions](https://github.com/turboBasic/PopulationCircles2026/discussions) for usage questions,
+feedback on results, and ideas that are still being explored. Open an [issue](https://github.com/turboBasic/PopulationCircles2026/issues)
+for a reproducible bug or work ready to be scoped; link the discussion when an idea moves into an issue.
+Use a pull request to discuss a proposed code change.
+
 ## Data
 
 Input datasets live in [`data/`](data/README.md), described for a machine in

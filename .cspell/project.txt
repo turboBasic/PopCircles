@@ -177,6 +177,14 @@ Borås
 Xichang
 WPP
 
+# --- Geographic names in published result data ---
+Arunachal
+Aksai
+Senkaku
+Paracel
+Liancourt
+Spratly
+
 # --- Config keys and CLI ---
 addopts
 CNTR
