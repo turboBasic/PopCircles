@@ -224,6 +224,17 @@ run = "cargo test --release --all-features --test full_resolution_table -- --ign
 description = "Search the decimated grid's shape and check the bound prunes most of the globe"
 run = "cargo test --release --all-features --test decimated_search -- --ignored"
 
+# Not in ci: these searches need the existing 7.5 GB table cache and measure full-resolution execution.
+[tasks."test:search-full-one"]
+description = "Measure a full-resolution world search with one worker"
+depends = ["deps"]
+run = "cargo test --release --all-features -p popcircles --lib search::tests::full_resolution_search_one_worker -- --ignored --exact --nocapture"
+
+[tasks."test:search-full-four"]
+description = "Measure a full-resolution world search with four workers"
+depends = ["deps"]
+run = "cargo test --release --all-features -p popcircles --lib search::tests::full_resolution_search_four_workers -- --ignored --exact --nocapture"
+
 # Not in `test`, for time: 74.7 MB streamed through the build. Pins that `smallest`'s predicate slack
 # bounds the fold's real error at a world's magnitude, where the sums round — a fixture small enough
 # for the default suite has every partial sum exact, with nothing to measure.
