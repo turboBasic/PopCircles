@@ -5,7 +5,7 @@ import pytest
 from population_circles.centre_caption import markdown_centre, plain_centre
 from population_circles.circle_document import Answer, Settlement, circle_of
 from population_circles.render_map import title_of
-from test_render_map import CENTRE_LAT, CENTRE_LON, document
+from test_render_map import CENTRE_LAT, CENTRE_LON, country_circle_document, document
 
 DEFAULT_SETTLEMENT = Settlement(
     name="Fixture Place",
@@ -131,3 +131,14 @@ def test_long_figure_place_wraps_inside_the_centre_title() -> None:
     )
     title = title_of(answer)
     assert any(line.startswith("         ") for line in title.splitlines())
+
+
+def test_country_figure_title_uses_nested_nearest_settlement() -> None:
+    payload = country_circle_document()
+    payload["result"]["circle"]["nearest_settlement"] = DEFAULT_SETTLEMENT.model_dump()
+
+    title = title_of(circle_of(payload))
+
+    assert "centred 51.0000, 10.0000, 12 km from Fixture Place, Fixture Country" in " ".join(
+        title.split()
+    )

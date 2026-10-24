@@ -659,6 +659,93 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
 }
 
 #[test]
+fn country_smallest_labels_its_own_result_centre_without_changing_the_answer() {
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    let invoke = |ledger: &str| {
+        run_with(
+            fixture.directory.path(),
+            &["--log-level".to_owned(), "error".to_owned()],
+            "country smallest",
+            &[
+                "--country",
+                "AA",
+                "--share",
+                "10",
+                "--dataset",
+                "population-count-2020-30arcsec",
+                "--decimate",
+                "1",
+                "--spacing",
+                "4",
+                "--ledger",
+                ledger,
+            ],
+        )
+    };
+    let baseline = invoke("country-baseline.json");
+    assert!(baseline.status.success(), "{baseline:?}");
+    let baseline: serde_json::Value = serde_json::from_slice(&baseline.stdout).unwrap();
+    let centre = &baseline["result"]["circle"]["centre"];
+
+    fixture.write_centres(&[[
+        centre["lat"].as_f64().unwrap(),
+        centre["lon"].as_f64().unwrap(),
+    ]]);
+    let nearby = invoke("country-nearby.json");
+    assert!(nearby.status.success(), "{nearby:?}");
+    let nearby: serde_json::Value = serde_json::from_slice(&nearby.stdout).unwrap();
+    assert_fields_unchanged(
+        &baseline["result"]["circle"],
+        &nearby["result"]["circle"],
+        &[
+            "centre",
+            "row",
+            "col",
+            "radius_km",
+            "population",
+            "target",
+            "share_achieved",
+        ],
+    );
+    assert_eq!(
+        nearby["result"]["circle"]["nearest_settlement"]["name"],
+        "Place 0"
+    );
+    assert_eq!(
+        nearby["result"]["circle"]["nearest_settlement"]["country"],
+        "Fixture"
+    );
+    assert_eq!(
+        nearby["result"]["circle"]["nearest_settlement"]["distance_km"],
+        0.0
+    );
+
+    fixture.write_places(&[("Remote", "Fixture", -80.0, 0.0)]);
+    let remote = invoke("country-remote.json");
+    assert!(remote.status.success(), "{remote:?}");
+    let remote: serde_json::Value = serde_json::from_slice(&remote.stdout).unwrap();
+    assert_fields_unchanged(
+        &baseline["result"]["circle"],
+        &remote["result"]["circle"],
+        &[
+            "centre",
+            "row",
+            "col",
+            "radius_km",
+            "population",
+            "target",
+            "share_achieved",
+        ],
+    );
+    assert!(
+        remote["result"]["circle"]
+            .get("nearest_settlement")
+            .is_none()
+    );
+}
+
+#[test]
 fn country_id_cannot_redirect_the_default_ledger_path() {
     let fixture = Fixture::build();
     fixture.register_path_like_country();
