@@ -42,6 +42,9 @@ summation table and the queries answered from it, the four search commands, comb
 rendering, and what a run says about itself — together with how to choose `--decimate` and override spacing
 with `--spacing`. `mise run cli -- --help` is the full command and flag reference.
 
+Questions about using the project or early ideas belong in [Discussions][discussions]. Report
+reproducible bugs or work ready to be scoped in [Issues][issues].
+
 ## Validation
 
 Half the world's population — half of this raster's own 7 757 982 599 persons — is held by a circle of
@@ -184,11 +187,13 @@ Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepier
 [ci]: https://github.com/turboBasic/PopulationCircles2026/actions/workflows/ci.yml?query=branch%3Amain
 [ci-badge]: https://github.com/turboBasic/PopulationCircles2026/actions/workflows/ci.yml/badge.svg?branch=main
 [data-tag]: https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v1
+[discussions]: https://github.com/turboBasic/PopulationCircles2026/discussions
 [gallery]: https://turbobasic.github.io/PopulationCircles2026/
 [gpw]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
 [gpw-doi]: https://doi.org/10.7927/H4PN93PB
 [license]: LICENSE
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+[issues]: https://github.com/turboBasic/PopulationCircles2026/issues
 [releases]: https://github.com/turboBasic/PopulationCircles2026/releases
 [rust]: https://www.rust-lang.org/
 [rust-badge]: https://img.shields.io/badge/rust-1.99%2B-orange.svg
