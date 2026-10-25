@@ -352,6 +352,18 @@ fn merge(
     }
     for (id, mut user) in overlay.combinations {
         if let Some(builtin) = base.combinations.get_mut(&id) {
+            if user.provenance.is_some() {
+                return Err(invalid(
+                    overlay_path,
+                    format!("combination `{id}` cannot override provenance"),
+                ));
+            }
+            if user.attribution.is_some() {
+                return Err(invalid(
+                    overlay_path,
+                    format!("combination `{id}` cannot override attribution"),
+                ));
+            }
             if user.population_source.is_some() || user.boundary_source.is_some() {
                 for (field, supplied, expected) in [
                     (
@@ -633,6 +645,7 @@ mod tests {
     fn existing_ids_cannot_rebind_either_source_independently() {
         let registry = registry();
         for overlay in [
+            "[combinations.baseline]\nprovenance = \"user metadata\"",
             "[combinations.baseline]\npopulation_source = \"dataset:population-count-2020-30arcsec\"",
             "[combinations.baseline]\npopulation_source = \"dataset:population-count-2020-30arcsec\"\nboundary_source = \"dataset:coastline-1to110m\"",
             "[combinations.baseline]\npopulation_source = \"dataset:coastline-1to110m\"\nboundary_source = \"dataset:gisco-countries-2024-1m\"",
