@@ -70,16 +70,14 @@ fn derive(source_path: &Path, output_path: &Path) -> anyhow::Result<()> {
     let mut source_total = Sum::default();
     while let Some(row) = source.next_row() {
         let row = row?;
-        let coarse_y = usize::try_from(row.row.get() / FACTOR)? * usize::try_from(width)?;
-        for (x, value) in row.values.iter().copied().enumerate() {
-            let value = if value.is_finite() && value >= 0.0 {
-                value
-            } else {
-                0.0
-            };
-            source_total.add(f64::from(value));
-            sums[coarse_y + x / usize::try_from(FACTOR)?] += f64::from(value);
-        }
+        accumulate_row(
+            &mut sums,
+            width,
+            row.row.get(),
+            FACTOR,
+            row.values,
+            &mut source_total,
+        )?;
     }
     let tallies = source.finish();
     let (values, rounding_bound) = finish_sums(sums)?;
@@ -209,10 +207,13 @@ fn digest(path: &Path) -> anyhow::Result<String> {
 
 fn self_check() -> anyhow::Result<()> {
     let source = [1.0, 2.0, 3.0, NODATA, 0.0, 5.0, 7.0, 8.0, 9.0];
-    let sums = aggregate(&source, 3, 3, 2)?;
+    let (sums, source_total) = aggregate(&source, 3, 3, 2)?;
     let (values, rounding_bound) = finish_sums(sums)?;
-    let total_bound = rounding_bound + 4.0 * f64::EPSILON * 35.0;
-    if (compensated_sum(values.iter().map(|value| f64::from(*value))) - 35.0).abs() > total_bound {
+    let total_bound = rounding_bound + 4.0 * f64::EPSILON * source_total;
+    if source_total.to_bits() != 35.0_f64.to_bits()
+        || (compensated_sum(values.iter().map(|value| f64::from(*value))) - source_total).abs()
+            > total_bound
+    {
         bail!("synthetic total exceeded its rounding bound {total_bound:.9}");
     }
     if values != [3.0, 8.0, 15.0, 9.0] {
@@ -255,24 +256,51 @@ fn self_check() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn aggregate(values: &[f32], width: u32, height: u32, factor: u32) -> anyhow::Result<Vec<f64>> {
+fn aggregate(
+    values: &[f32],
+    width: u32,
+    height: u32,
+    factor: u32,
+) -> anyhow::Result<(Vec<f64>, f64)> {
     let coarse_width = width.div_ceil(factor);
     let coarse_height = height.div_ceil(factor);
     let mut sums = vec![0.0; usize::try_from(coarse_width)? * usize::try_from(coarse_height)?];
+    let mut total = Sum::default();
     for y in 0..height {
-        for x in 0..width {
-            let value = values[usize::try_from(y)? * usize::try_from(width)? + usize::try_from(x)?];
-            let value = if value.is_finite() && value >= 0.0 {
-                value
-            } else {
-                0.0
-            };
-            let index = usize::try_from(y / factor)? * usize::try_from(coarse_width)?
-                + usize::try_from(x / factor)?;
-            sums[index] += f64::from(value);
-        }
+        let start = usize::try_from(y)? * usize::try_from(width)?;
+        let end = start + usize::try_from(width)?;
+        accumulate_row(
+            &mut sums,
+            coarse_width,
+            y,
+            factor,
+            &values[start..end],
+            &mut total,
+        )?;
     }
-    Ok(sums)
+    Ok((sums, total.value()))
+}
+
+fn accumulate_row(
+    sums: &mut [f64],
+    coarse_width: u32,
+    row: u32,
+    factor: u32,
+    values: &[f32],
+    total: &mut Sum,
+) -> anyhow::Result<()> {
+    let coarse_y = usize::try_from(row / factor)? * usize::try_from(coarse_width)?;
+    let factor = usize::try_from(factor)?;
+    for (x, value) in values.iter().copied().enumerate() {
+        let value = if value.is_finite() && value >= 0.0 {
+            value
+        } else {
+            0.0
+        };
+        total.add(f64::from(value));
+        sums[coarse_y + x / factor] += f64::from(value);
+    }
+    Ok(())
 }
 
 #[derive(Default)]
