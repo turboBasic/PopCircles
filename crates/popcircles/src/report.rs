@@ -149,6 +149,7 @@ pub trait Document {
 /// The registered country features available to country commands.
 #[derive(Debug, Clone, Serialize)]
 pub struct CountryListDocument {
+    selection: CountrySelectionReport,
     countries: Vec<CountryListEntry>,
 }
 
@@ -158,8 +159,9 @@ impl Document for CountryListDocument {
 
 impl CountryListDocument {
     #[must_use]
-    pub fn new(countries: Vec<(FeatureId, String)>) -> Self {
+    pub fn new(selection: CountrySelectionReport, countries: Vec<(FeatureId, String)>) -> Self {
         Self {
+            selection,
             countries: countries
                 .into_iter()
                 .map(|(id, name)| CountryListEntry {
@@ -167,6 +169,53 @@ impl CountryListDocument {
                     name,
                 })
                 .collect(),
+        }
+    }
+}
+
+/// A configured source named by a country calculation, with known fingerprint and credit.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySourceReport {
+    name: String,
+    sha256: Option<String>,
+    attribution: Option<String>,
+}
+
+impl CountrySourceReport {
+    /// Names one configured source and any fingerprint or credit available to publish.
+    #[must_use]
+    pub fn new(name: &str, sha256: Option<&str>, attribution: Option<&str>) -> Self {
+        Self {
+            name: name.to_owned(),
+            sha256: sha256.map(str::to_owned),
+            attribution: attribution.map(str::to_owned),
+        }
+    }
+}
+
+/// The configured population/boundary pair and resolution a country operation used.
+#[derive(Debug, Clone, Serialize)]
+pub struct CountrySelectionReport {
+    combination_id: String,
+    resolution: u32,
+    population_source: CountrySourceReport,
+    boundary_source: CountrySourceReport,
+}
+
+impl CountrySelectionReport {
+    /// Records the configured source pair and resolution selected by the command.
+    #[must_use]
+    pub const fn new(
+        combination_id: String,
+        resolution: u32,
+        population_source: CountrySourceReport,
+        boundary_source: CountrySourceReport,
+    ) -> Self {
+        Self {
+            combination_id,
+            resolution,
+            population_source,
+            boundary_source,
         }
     }
 }
@@ -959,13 +1008,14 @@ pub struct CountryIdentityReport {
     id: String,
     name: String,
     boundary_dataset: String,
-    boundary_revision: String,
+    boundary_revision: Option<String>,
     boundary_digest: String,
 }
 
 /// One country's smallest-circle answer, its boundary identity and its population source.
 #[derive(Debug, Clone, Serialize)]
 pub struct CountrySmallestDocument {
+    selection: CountrySelectionReport,
     country: CountryIdentityReport,
     population_dataset: String,
     decimation: u32,
@@ -980,19 +1030,21 @@ impl Document for CountrySmallestDocument {
 impl CountrySmallestDocument {
     #[must_use]
     pub fn new(
+        selection: CountrySelectionReport,
         id: &FeatureId,
         name: &str,
-        boundary_identity: (&str, &str, &str),
+        boundary_identity: (&str, Option<&str>, &str),
         population_source: (&str, u32),
         ledger: LedgerReport,
         circle: SmallestReport,
     ) -> Self {
         Self {
+            selection,
             country: CountryIdentityReport {
                 id: id.as_str().to_owned(),
                 name: name.to_owned(),
                 boundary_dataset: boundary_identity.0.to_owned(),
-                boundary_revision: boundary_identity.1.to_owned(),
+                boundary_revision: boundary_identity.1.map(str::to_owned),
                 boundary_digest: boundary_identity.2.to_owned(),
             },
             population_dataset: population_source.0.to_owned(),
@@ -1034,7 +1086,7 @@ impl CountrySweepCountry {
         id: &FeatureId,
         name: &str,
         boundary_dataset: &str,
-        boundary_revision: &str,
+        boundary_revision: Option<&str>,
         boundary_digest: &str,
         ledger: LedgerReport,
         mut records: Vec<CountrySweepRecord>,
@@ -1045,7 +1097,7 @@ impl CountrySweepCountry {
                 id: id.as_str().to_owned(),
                 name: name.to_owned(),
                 boundary_dataset: boundary_dataset.to_owned(),
-                boundary_revision: boundary_revision.to_owned(),
+                boundary_revision: boundary_revision.map(str::to_owned),
                 boundary_digest: boundary_digest.to_owned(),
             },
             ledger,
@@ -1057,6 +1109,7 @@ impl CountrySweepCountry {
 /// Results for requested countries and shares, with one ledger per country.
 #[derive(Debug, Clone, Serialize)]
 pub struct CountrySweepDocument {
+    selection: CountrySelectionReport,
     shares: SweepShares,
     countries: Vec<CountrySweepCountry>,
 }
@@ -1067,9 +1120,17 @@ impl Document for CountrySweepDocument {
 
 impl CountrySweepDocument {
     #[must_use]
-    pub fn new(shares: SweepShares, mut countries: Vec<CountrySweepCountry>) -> Self {
+    pub fn new(
+        selection: CountrySelectionReport,
+        shares: SweepShares,
+        mut countries: Vec<CountrySweepCountry>,
+    ) -> Self {
         countries.sort_by(|left, right| left.country.id.cmp(&right.country.id));
-        Self { shares, countries }
+        Self {
+            selection,
+            shares,
+            countries,
+        }
     }
 }
 
@@ -1376,6 +1437,23 @@ mod tests {
             -10.0,
         )
         .expect("a 36 x 18 whole-globe grid is valid")
+    }
+
+    fn fixture_country_selection() -> CountrySelectionReport {
+        CountrySelectionReport::new(
+            "fixture".to_owned(),
+            10,
+            CountrySourceReport::new(
+                "population-count-2020-30arcsec",
+                Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                Some("Population credit"),
+            ),
+            CountrySourceReport::new(
+                "gisco-countries-2024-1m",
+                Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                Some("Boundary credit"),
+            ),
+        )
     }
 
     /// Distinct at every position and no larger than 648, so every partial sum is exact in f64: a cell
@@ -1764,11 +1842,12 @@ mod tests {
         )));
 
         insta::assert_json_snapshot!(Envelope::new(CountrySmallestDocument::new(
+            fixture_country_selection(),
             &FeatureId::new("AA").expect("fixture country ID"),
             "Fixture country",
             (
                 "gisco-countries-2024-1m",
-                "2024",
+                Some("2024"),
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             ),
             ("population-count-2020-30arcsec", 10),
@@ -1890,16 +1969,25 @@ mod tests {
 
     #[test]
     fn the_country_list_document_holds_its_shape() {
-        let countries = CountryListDocument::new(vec![
-            (
-                FeatureId::new("AA").expect("valid country ID"),
-                "Alpha".to_owned(),
-            ),
-            (
-                FeatureId::new("BB").expect("valid country ID"),
-                "Beta".to_owned(),
-            ),
-        ]);
+        let selection = CountrySelectionReport::new(
+            "fixture".to_owned(),
+            1,
+            CountrySourceReport::new("population-fixture", None, None),
+            CountrySourceReport::new("boundary-fixture", None, None),
+        );
+        let countries = CountryListDocument::new(
+            selection,
+            vec![
+                (
+                    FeatureId::new("AA").expect("valid country ID"),
+                    "Alpha".to_owned(),
+                ),
+                (
+                    FeatureId::new("BB").expect("valid country ID"),
+                    "Beta".to_owned(),
+                ),
+            ],
+        );
 
         insta::assert_json_snapshot!(Envelope::new(countries));
     }
@@ -1936,7 +2024,7 @@ mod tests {
                 &FeatureId::new(id).expect("fixture country ID"),
                 name,
                 "gisco-countries-2024-1m",
-                "2024",
+                Some("2024"),
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 LedgerReport::new(ledger_path(), ledger.entries.len()),
                 records.clone(),
@@ -1944,6 +2032,7 @@ mod tests {
         };
 
         let document = Envelope::new(CountrySweepDocument::new(
+            fixture_country_selection(),
             SweepShares::new(10, 30, 10),
             vec![country("BB", "Beta"), country("AA", "Alpha")],
         ));

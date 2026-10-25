@@ -60,6 +60,7 @@ pub(crate) enum RegistryError {
 pub(crate) struct Dataset {
     pub(crate) raster: PathBuf,
     pub(crate) sha256: Option<String>,
+    pub(crate) attribution: Option<String>,
     pub(crate) grid: GridValues,
     pub(crate) epsg: u16,
     pub(crate) nodata: f32,
@@ -85,6 +86,7 @@ enum Row {
 struct PopulationRaster {
     path: PathBuf,
     sha256: Option<String>,
+    attribution: Option<String>,
     width: u32,
     height: u32,
     origin_lat: f64,
@@ -213,6 +215,7 @@ impl Registry {
         Ok(Dataset {
             raster: row.path.clone(),
             sha256: row.sha256.clone(),
+            attribution: row.attribution.clone(),
             grid: GridValues {
                 width: row.width,
                 height: row.height,

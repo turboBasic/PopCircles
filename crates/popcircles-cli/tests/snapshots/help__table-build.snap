@@ -1,13 +1,14 @@
 ---
 source: crates/popcircles-cli/tests/help.rs
+assertion_line: 65
 expression: help_for(path)
 ---
 Build a summation table from a registered dataset and publish it to the cache
 
-Usage: popcircles table build [OPTIONS] --dataset <DATASET>
+Usage: popcircles table build [OPTIONS]
 
 Options:
-      --dataset <DATASET>        The dataset to build from, which names the registered raster and supplies its default grid and tags
+      --dataset <DATASET>        Dataset to build from; defaults to the configured population dataset
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
       --config <PATH>            Optional configuration file layered over data/config.toml
       --width <WIDTH>            

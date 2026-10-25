@@ -12,6 +12,20 @@ expression: "Envelope::new(countries)"
     "radius_km": 6371.0088
   },
   "result": {
+    "selection": {
+      "combination_id": "fixture",
+      "resolution": 1,
+      "population_source": {
+        "name": "population-fixture",
+        "sha256": null,
+        "attribution": null
+      },
+      "boundary_source": {
+        "name": "boundary-fixture",
+        "sha256": null,
+        "attribution": null
+      }
+    },
     "countries": [
       {
         "id": "AA",

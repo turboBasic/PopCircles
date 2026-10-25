@@ -1,5 +1,6 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
+assertion_line: 1068
 expression: document
 ---
 {
@@ -13,6 +14,7 @@ expression: document
       "header": "out/table.header.json",
       "payload": "out/table.payload.bin"
     },
+    "dataset": "population-count-2020-30arcsec",
     "decimation": 1,
     "digest": "0x7667cdf23ac5ebc5",
     "grid": {
@@ -50,7 +52,7 @@ expression: document
         "aggregation_order_version": 1,
         "attribution": "Fixture boundary credit",
         "boundary_dataset": "gisco-countries-2024-1m",
-        "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "boundary_digest": "23539926a0e7e867f4f4771569a583aec56f4276b365604b8d1b3a31260d2e1e",
         "boundary_revision": "fixture",
         "decimation": 1,
         "effective_grid": {

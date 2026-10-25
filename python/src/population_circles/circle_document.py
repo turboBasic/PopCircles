@@ -90,8 +90,25 @@ class CountryIdentity(BaseModel):
     id: Annotated[str, Field(min_length=1, pattern=r"\S")]
     name: Annotated[str, Field(min_length=1, pattern=r"\S")]
     boundary_dataset: Annotated[str, Field(min_length=1)]
-    boundary_revision: Annotated[str, Field(min_length=1)]
+    boundary_revision: Annotated[str, Field(min_length=1)] | None = None
     boundary_digest: Annotated[str, Field(pattern=r"^[0-9a-fA-F]{64}$")]
+
+
+class CountrySource(BaseModel):
+    model_config = _CONFIG
+
+    name: Annotated[str, Field(min_length=1)]
+    sha256: Annotated[str, Field(pattern=r"^[0-9a-fA-F]{64}$")] | None = None
+    attribution: Annotated[str, Field(min_length=1)] | None = None
+
+
+class CountrySelection(BaseModel):
+    model_config = _CONFIG
+
+    combination_id: Annotated[str, Field(min_length=1)]
+    resolution: Annotated[int, Field(gt=0)]
+    population_source: CountrySource
+    boundary_source: CountrySource
 
 
 class Settlement(BaseModel):
@@ -187,6 +204,7 @@ class Answer(BaseModel):
     caption: Caption
     provenance: Provenance
     country: CountryIdentity | None = None
+    selection: CountrySelection | None = None
 
 
 class _DocumentProvenance(BaseModel):
@@ -280,6 +298,7 @@ class _CountrySearched(_Payload):
     country: CountryIdentity
     population_dataset: Annotated[str, Field(min_length=1)]
     decimation: Annotated[int, Field(gt=0)]
+    selection: CountrySelection | None = None
     circle: _Smallest
 
     def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
@@ -289,6 +308,7 @@ class _CountrySearched(_Payload):
             caption=answer.caption,
             provenance=answer.provenance,
             country=self.country,
+            selection=self.selection,
         )
 
 

@@ -55,6 +55,21 @@ impl CachedTable {
         let (mapped, identity) = cache
             .open_resolved(decimation, args.digest)
             .map_err(|error| Failure::cache(&error))?;
+        if let Some(expected) = args.grid.dataset.as_deref() {
+            match mapped.dataset() {
+                Some(actual) if actual != expected => {
+                    return Err(Failure::bad_input(format!(
+                        "cached table names population dataset `{actual}`, but `{expected}` was selected"
+                    )));
+                }
+                None => {
+                    return Err(Failure::bad_input(format!(
+                        "cached table has no population dataset identity; rebuild it with `table build --dataset {expected}`"
+                    )));
+                }
+                Some(_) => {}
+            }
+        }
 
         // Box 6's resolved input, here because this is already the one place a cache is opened. It names
         // what a reader would otherwise reconstruct from four flags: which table, from where, and at what
