@@ -10,6 +10,7 @@ Commands:
   list          List available countries from the registered boundary dataset
   combinations  List configured population and boundary source combinations
   prepare       Prepare one configured country combination for local use
+  fetch         Fetch one configured prepared country combination from its remote location
   smallest      Find the smallest population circle for one registered country
   sweep         Sweep requested shares over selected countries, resuming one ledger per country
   help          Print this message or the help of the given subcommand(s)
