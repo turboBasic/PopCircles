@@ -66,10 +66,12 @@ owner already holds it. Lowest first:
 | L5 entry points | routing only | `CLAUDE.md`, `AGENTS.md`, `.codex/agents/*.toml`, `.github/copilot-instructions.md`, `opencode.json` |
 
 Within L3, [`ai/platform.md`](ai/platform.md) wins wherever it and an application doc would
-conflict. `README.md`, `USAGE.md` and `CONTRIBUTING.md` are the human layer and may restate what these
-files own, each earning it by a way of being read that no owner serves: `README.md` is read first,
-`CONTRIBUTING.md` cold and once, `USAGE.md` with a terminal open and returned to. Where any of them and
-the instruction layer disagree, the instruction layer governs.
+conflict. The human layer includes [`README.md`](../README.md), [`USAGE.md`](../USAGE.md),
+[`PERFORMANCE.md`](../PERFORMANCE.md) and [`CONTRIBUTING.md`](../CONTRIBUTING.md). They may restate
+what these files own, each earning it by a way of being read that no owner serves: README is read
+first, USAGE with a terminal open and returned to, PERFORMANCE for technical details about runtime
+and search work, and CONTRIBUTING by someone preparing a change. Where any of them and the instruction
+layer disagree, the instruction layer governs.
 `data/registry.toml` is the dataset registry and owns what a machine reads of each dataset;
 `data/README.md` owns the provenance and the fetching mechanics, and is a restater of the rest — the
 split [ADR 0009](decisions/0009-input-data-is-published-not-versioned.md) took.

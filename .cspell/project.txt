@@ -36,6 +36,8 @@ taplo
 # --- Domain vocabulary ---
 antimeridian
 arcmin
+arcminute
+arcminutes
 basemap
 binade
 binades

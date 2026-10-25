@@ -361,6 +361,7 @@ new root.
 CLAUDE.md                        Claude entry point — imports only
 AGENTS.md                        Codex entry point — follows Claude's imports
 ACCESSIBILITY.md                 accessibility priorities, reporting and known limits
+PERFORMANCE.md                   runtime, memory and search trade-offs
 .agents/skills                   Codex skill discovery — symlink to .claude/skills
 .codex/agents/                   Codex persona adapters — routing only
 .github/copilot-instructions.md  Copilot entry point — routing only

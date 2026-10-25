@@ -236,6 +236,35 @@ When a run fails, inspect release state before retrying; a lookup error does not
   tag — a tag that moves lies to everyone who already fetched it. Publishing the draft is therefore the
   one step in this sequence that cannot be taken back, which is why it is yours and not the workflow's.
 
+### Verifying a downloaded release
+
+Each release includes a `.sha256` checksum beside each binary and a `provenance.sigstore.json` bundle.
+Verify a downloaded binary against the bundle to confirm that GitHub's release workflow produced it
+from the expected source commit.
+
+Set `TAG` to the release tag and `COMMIT` to its source commit. To find the commit, inspect the tag's
+commit target, for example with `git ls-remote` and the annotated tag's peeled ref:
+
+```sh
+git ls-remote https://github.com/turboBasic/PopulationCircles2026.git \
+  "refs/tags/$TAG" "refs/tags/$TAG^{}"
+```
+
+The peeled `^{}` line is the commit. Download the matching binary and `provenance.sigstore.json`
+from the release, then verify them:
+
+```sh
+gh attestation verify ./popcircles-aarch64-apple-darwin \
+  --repo turboBasic/PopulationCircles2026 \
+  --signer-workflow turboBasic/PopulationCircles2026/.github/workflows/release.yml \
+  --source-ref "refs/tags/$TAG" \
+  --source-digest "$COMMIT" \
+  --bundle ./provenance.sigstore.json
+```
+
+Use the Linux binary when applicable. The same command verifies either `.sha256` file; pass the
+downloaded checksum file as the first argument.
+
 ## The conventions
 
 The conventions AI tools follow are the conventions humans follow here.
