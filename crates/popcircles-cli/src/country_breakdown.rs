@@ -23,6 +23,10 @@ use crate::failure::{EXIT_MISSING_DATA, Failure};
 use crate::prepared::{self, GridDocument, PreparedManifest, PreparedWriter, Request, Source};
 use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
 
+#[expect(
+    dead_code,
+    reason = "country queries now read prepared manifests; unit tests retain this accounting oracle"
+)]
 pub(crate) struct Prepared {
     source: Grid,
     effective: Grid,
@@ -57,6 +61,10 @@ struct CountryData {
     tallies: CellTallies,
 }
 
+#[expect(
+    dead_code,
+    reason = "country queries now read prepared manifests; unit tests retain this accounting oracle"
+)]
 impl Prepared {
     pub(crate) fn prepare_combination(
         combination: &Combination,

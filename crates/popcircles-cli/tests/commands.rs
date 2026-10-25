@@ -101,6 +101,7 @@ impl Fixture {
             .map(|row| (0..WIDTH).map(|col| cell(row, col)).collect())
             .collect();
         fixture.register_settlements(&rows);
+        fixture.refresh_boundary_digest();
         let source = Synthetic::new(grid, NODATA, rows).expect("the rows are the grid's shape");
 
         let cache = Cache::new(fixture.directory.path().join("table"));
@@ -257,6 +258,7 @@ local = "out/countries/fixture/1"
             contents.replace("feature_count = 1", "feature_count = 2"),
         )
         .unwrap();
+        self.refresh_boundary_digest();
     }
 
     fn register_empty_country(&self) {
@@ -279,6 +281,30 @@ local = "out/countries/fixture/1"
             contents.replace("feature_count = 2", "feature_count = 3"),
         )
         .unwrap();
+        self.refresh_boundary_digest();
+    }
+
+    fn refresh_boundary_digest(&self) {
+        let boundary = self
+            .directory
+            .path()
+            .join("data/boundaries/gisco-countries-2024-1m.geojson");
+        let digest = format!("{:x}", Sha256::digest(std::fs::read(boundary).unwrap()));
+        let registry = self.directory.path().join("data/registry.toml");
+        let contents = std::fs::read_to_string(&registry).unwrap();
+        let old = contents
+            .lines()
+            .find_map(|line| {
+                line.strip_prefix("sha256 = \"")
+                    .and_then(|rest| rest.strip_suffix('\"'))
+            })
+            .unwrap();
+        std::fs::write(registry, contents.replace(old, &digest)).unwrap();
+    }
+
+    fn prepare_country_data(&self) {
+        let output = run_with(self.directory.path(), &[], "country prepare", &[]);
+        assert_eq!(output.status.code(), Some(0), "{output:?}");
     }
 
     fn register_path_like_country(&self) {
@@ -298,6 +324,7 @@ local = "out/countries/fixture/1"
             .unwrap(),
         )
         .unwrap();
+        self.refresh_boundary_digest();
     }
 
     fn ledger(&self, name: &str) -> PathBuf {
@@ -770,6 +797,141 @@ fn country_prepare_uses_configured_defaults_and_explicit_replacement() {
 }
 
 #[test]
+fn configured_country_combination_uses_prepared_identity_and_refuses_missing_or_mismatched_data() {
+    let (fixture, _, flags, _, _, _) = country_prepare_fixture();
+    let query = [
+        "--country",
+        "AA",
+        "--share",
+        "10",
+        "--spacing",
+        "4",
+        "--ledger",
+        "configured-country.json",
+    ];
+    let missing = run_with(fixture.directory.path(), &flags, "country smallest", &query);
+    assert_eq!(missing.status.code(), Some(3), "{missing:?}");
+    let missing_message = String::from_utf8_lossy(&missing.stderr);
+    assert!(missing_message.contains("country prepare"), "{missing:?}");
+    assert!(
+        !fixture
+            .directory
+            .path()
+            .join("out/local-preview/2/manifest.json")
+            .exists()
+    );
+
+    let prepared = run_with(fixture.directory.path(), &flags, "country prepare", &[]);
+    assert_eq!(prepared.status.code(), Some(0), "{prepared:?}");
+    let default = run_with(fixture.directory.path(), &flags, "country smallest", &query);
+    assert_eq!(default.status.code(), Some(0), "{default:?}");
+    let default: serde_json::Value = serde_json::from_slice(&default.stdout).unwrap();
+    assert_eq!(default["result"]["country"]["id"], "AA");
+    assert!(
+        default["result"]["population_dataset"]
+            .as_str()
+            .unwrap()
+            .starts_with("file:"),
+        "{default:?}"
+    );
+    assert_eq!(default["result"]["decimation"], 2);
+}
+
+#[test]
+fn configured_country_combination_override_uses_its_prepared_table_and_refuses_relabeling() {
+    let (fixture, user_config, _, _, _, _) = country_prepare_fixture();
+    let query = [
+        "--country",
+        "AA",
+        "--share",
+        "10",
+        "--spacing",
+        "4",
+        "--ledger",
+        "configured-country.json",
+    ];
+    let alternate_config = fixture.directory.path().join("alternate.toml");
+    let mut alternate = std::fs::read_to_string(&user_config).unwrap();
+    alternate.push_str(
+        r#"
+
+[combinations.alternate]
+population_source = "file:data/population/population-count-2020-30arcsec.tif"
+boundary_source = "file:data/boundaries/gisco-countries-2024-1m.geojson"
+default_resolution = 1
+
+[combinations.alternate.population_metadata]
+width = 36
+height = 18
+origin_lat = 90.0
+origin_lon = -180.0
+lon_step = 10.0
+lat_step = -10.0
+epsg = 4326
+nodata = -3.402823e38
+
+[combinations.alternate.boundary_metadata]
+source_id_field = "CNTR_ID"
+
+[combinations.alternate.resolutions.1]
+local = "out/alternate/1"
+"#,
+    );
+    std::fs::write(&alternate_config, &alternate).unwrap();
+    let alternate_flags = vec![
+        "--config".to_owned(),
+        alternate_config.display().to_string(),
+    ];
+    let alternate_prepared = run_with(
+        fixture.directory.path(),
+        &alternate_flags,
+        "country prepare",
+        &["--combination", "alternate"],
+    );
+    assert_eq!(
+        alternate_prepared.status.code(),
+        Some(0),
+        "{alternate_prepared:?}"
+    );
+    let mut alternate_query_args = vec!["--combination", "alternate", "--resolution", "1"];
+    alternate_query_args.extend(query[..6].iter().copied());
+    alternate_query_args.extend(["--ledger", "alternate-country.json"]);
+    let alternate_query = run_with(
+        fixture.directory.path(),
+        &alternate_flags,
+        "country smallest",
+        &alternate_query_args,
+    );
+    assert_eq!(
+        alternate_query.status.code(),
+        Some(0),
+        "{alternate_query:?}"
+    );
+    let alternate_result: serde_json::Value =
+        serde_json::from_slice(&alternate_query.stdout).unwrap();
+    assert_eq!(alternate_result["result"]["decimation"], 1);
+
+    let mismatch_config = fixture.directory.path().join("mismatch.toml");
+    let mismatch = alternate.replace("[combinations.alternate]", "[combinations.mismatch]");
+    let mismatch = mismatch.replace("[combinations.alternate.", "[combinations.mismatch.");
+    std::fs::write(&mismatch_config, mismatch).unwrap();
+    let mismatch_flags = vec!["--config".to_owned(), mismatch_config.display().to_string()];
+    let mut mismatch_args = vec!["--combination", "mismatch", "--resolution", "1"];
+    mismatch_args.extend(query);
+    let mismatch = run_with(
+        fixture.directory.path(),
+        &mismatch_flags,
+        "country smallest",
+        &mismatch_args,
+    );
+    assert_eq!(mismatch.status.code(), Some(2), "{mismatch:?}");
+    assert!(
+        String::from_utf8_lossy(&mismatch.stderr).contains("combination ID"),
+        "{mismatch:?}"
+    );
+}
+
+#[test]
 fn country_fetch_resolves_configuration_and_refuses_local_only_or_unknown_targets() {
     let (fixture, _, flags, _, _, _) = country_prepare_fixture();
     let local_only = run_with(fixture.directory.path(), &flags, "country fetch", &[]);
@@ -862,6 +1024,7 @@ fn country_prepare_fingerprints_registered_sources_and_refuses_checksum_mismatch
 fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
     let fixture = Fixture::build();
     fixture.register_two_countries();
+    fixture.prepare_country_data();
     let invoke = |country: &str| {
         run_with(
             fixture.directory.path(),
@@ -872,10 +1035,6 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
                 country,
                 "--share",
                 "10",
-                "--dataset",
-                "population-count-2020-30arcsec",
-                "--decimate",
-                "1",
                 "--spacing",
                 "4",
                 "--ledger",
@@ -905,7 +1064,18 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
     );
     assert_eq!(
         document["result"]["country"]["boundary_digest"],
-        "a".repeat(64)
+        format!(
+            "{:x}",
+            Sha256::digest(
+                std::fs::read(
+                    fixture
+                        .directory
+                        .path()
+                        .join("data/boundaries/gisco-countries-2024-1m.geojson")
+                )
+                .unwrap()
+            )
+        )
     );
     assert_eq!(
         document["result"]["population_dataset"],
@@ -928,6 +1098,7 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
 fn country_smallest_labels_its_own_result_centre_without_changing_the_answer() {
     let fixture = Fixture::build();
     fixture.register_two_countries();
+    fixture.prepare_country_data();
     let invoke = |ledger: &str| {
         run_with(
             fixture.directory.path(),
@@ -938,10 +1109,6 @@ fn country_smallest_labels_its_own_result_centre_without_changing_the_answer() {
                 "AA",
                 "--share",
                 "10",
-                "--dataset",
-                "population-count-2020-30arcsec",
-                "--decimate",
-                "1",
                 "--spacing",
                 "4",
                 "--ledger",
@@ -1015,18 +1182,12 @@ fn country_smallest_labels_its_own_result_centre_without_changing_the_answer() {
 fn country_id_cannot_redirect_the_default_ledger_path() {
     let fixture = Fixture::build();
     fixture.register_path_like_country();
+    fixture.prepare_country_data();
     let output = run_with(
         fixture.directory.path(),
         &["--log-level".to_owned(), "error".to_owned()],
         "country smallest",
-        &[
-            "--country",
-            "../victim",
-            "--share",
-            "10",
-            "--dataset",
-            "population-count-2020-30arcsec",
-        ],
+        &["--country", "../victim", "--share", "10"],
     );
     assert_eq!(output.status.code(), Some(0), "{output:?}");
     let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
@@ -1039,6 +1200,7 @@ fn country_id_cannot_redirect_the_default_ledger_path() {
 #[test]
 fn country_smallest_leaves_world_command_bytes_unchanged() {
     let fixture = Fixture::build();
+    fixture.prepare_country_data();
     let args = ["--lat", "45", "--lon", "15", "--radius-km", "0"];
     let before = fixture.run_ok("population-at", &args);
     let country = run_with(
@@ -1050,8 +1212,6 @@ fn country_smallest_leaves_world_command_bytes_unchanged() {
             "XX",
             "--share",
             "10",
-            "--dataset",
-            "population-count-2020-30arcsec",
             "--ledger",
             "country.json",
         ],
@@ -1071,6 +1231,7 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
     let fixture = Fixture::build();
     fixture.register_two_countries();
     fixture.register_empty_country();
+    fixture.prepare_country_data();
     let invoke = |countries: &[&str], ledger_dir: &str| {
         let flags = vec!["--log-level".to_owned(), "info".to_owned()];
         let mut rest: Vec<&str> = countries
@@ -1084,10 +1245,6 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
             "20",
             "--step",
             "10",
-            "--dataset",
-            "population-count-2020-30arcsec",
-            "--decimate",
-            "1",
             "--spacing",
             "4",
             "--ledger-dir",

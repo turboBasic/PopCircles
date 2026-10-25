@@ -22,7 +22,6 @@ use args::{
     TableArgs, WindowArgs, parse_radius, parse_share,
 };
 use clap::{Parser, Subcommand};
-use commands::country::list as list_countries;
 use commands::distance::distance_json;
 use commands::grid::describe_grid;
 use commands::search::{most_populous, population_at, smallest_for_share, sweep};
@@ -266,48 +265,7 @@ fn dispatch(command: Command, config_path: Option<&std::path::Path>) -> Result<S
         Command::Grid {
             command: GridCommand::Describe { grid },
         } => describe_grid(&grid),
-        Command::Country {
-            command: CountryCommand::List,
-        } => list_countries(),
-        Command::Country {
-            command: CountryCommand::Combinations,
-        } => commands::country::list_combinations(config_path),
-        Command::Country {
-            command:
-                CountryCommand::Prepare {
-                    combination,
-                    resolution,
-                    replace,
-                },
-        } => commands::country::prepare(config_path, combination.as_deref(), resolution, replace),
-        Command::Country {
-            command:
-                CountryCommand::Fetch {
-                    combination,
-                    resolution,
-                    replace,
-                },
-        } => commands::country::fetch(config_path, combination.as_deref(), resolution, replace),
-        Command::Country {
-            command:
-                CountryCommand::Smallest {
-                    country,
-                    share,
-                    table,
-                    search,
-                    ledger,
-                },
-        } => commands::country::smallest(&country, share, &table, search, ledger.as_deref()),
-        Command::Country {
-            command:
-                CountryCommand::Sweep {
-                    countries,
-                    shares,
-                    table,
-                    search,
-                    ledger_dir,
-                },
-        } => commands::country::sweep(&countries, shares, &table, search, &ledger_dir),
+        Command::Country { command } => dispatch_country(command, config_path),
         Command::Table {
             command:
                 TableCommand::Build {
@@ -347,6 +305,47 @@ fn dispatch(command: Command, config_path: Option<&std::path::Path>) -> Result<S
             search,
             ledger,
         } => sweep(&cached, shares, search, &ledger),
+    }
+}
+
+fn dispatch_country(
+    command: CountryCommand,
+    config_path: Option<&std::path::Path>,
+) -> Result<String, Failure> {
+    match command {
+        CountryCommand::List => commands::country::list(),
+        CountryCommand::Combinations => commands::country::list_combinations(config_path),
+        CountryCommand::Prepare {
+            combination,
+            resolution,
+            replace,
+        } => commands::country::prepare(config_path, combination.as_deref(), resolution, replace),
+        CountryCommand::Fetch {
+            combination,
+            resolution,
+            replace,
+        } => commands::country::fetch(config_path, combination.as_deref(), resolution, replace),
+        CountryCommand::Smallest {
+            country,
+            share,
+            table,
+            search,
+            ledger,
+        } => commands::country::smallest(
+            config_path,
+            &country,
+            share,
+            &table,
+            search,
+            ledger.as_deref(),
+        ),
+        CountryCommand::Sweep {
+            countries,
+            shares,
+            table,
+            search,
+            ledger_dir,
+        } => commands::country::sweep(config_path, &countries, shares, &table, search, &ledger_dir),
     }
 }
 

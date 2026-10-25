@@ -10,7 +10,7 @@ use popcircles::report::{
 };
 use popcircles::smallest::cache::CountryLedger;
 use popcircles::smallest::{self, Share};
-use popcircles::table::Decimation;
+use popcircles::table::CountryTable;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use tempfile::Builder;
@@ -21,9 +21,9 @@ use crate::commands::search::{settlement_context, settlement_places, shares};
 use crate::commands::{make_room_for, serialised};
 use crate::config::{Combination, Configuration};
 use crate::country_breakdown::Prepared;
-use crate::failure::{EXIT_MISSING_DATA, Failure};
+use crate::failure::{EXIT_BAD_INPUT, EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
-use crate::prepared::{PreparedManifest, Request};
+use crate::prepared::{Loaded, PreparedManifest, Request};
 use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
 
 fn country_ledger_path(directory: &Path, id: &str) -> PathBuf {
@@ -416,29 +416,248 @@ fn prepared_document(
     )))
 }
 
+struct SelectedPrepared {
+    loaded: Loaded,
+    features: Vec<crate::boundaries::BoundaryFeature>,
+    revision: String,
+}
+
+struct QueryPopulation {
+    grid: popcircles::grid::Grid,
+    epsg: u16,
+    nodata: f32,
+    sha256: Option<String>,
+}
+
+struct QueryBoundary {
+    path: PathBuf,
+    id_field: String,
+    registered_sha256: Option<String>,
+    revision: String,
+}
+
+impl SelectedPrepared {
+    fn feature(&self, selector: &str) -> Result<&crate::boundaries::BoundaryFeature, Failure> {
+        crate::boundaries::resolve(&self.features, selector).map_err(Failure::bad_input)
+    }
+
+    fn country_table(&mut self, id: &str) -> Result<Option<CountryTable>, Failure> {
+        self.loaded
+            .load_table(id)
+            .map_err(|error| Failure::bad_input(error.to_string()))
+    }
+
+    fn boundary_identity(&self) -> (&str, &str, &str) {
+        (
+            self.loaded
+                .manifest
+                .boundary_source
+                .name
+                .strip_prefix("dataset:")
+                .unwrap_or(&self.loaded.manifest.boundary_source.name),
+            &self.revision,
+            self.loaded
+                .manifest
+                .boundary_source
+                .sha256
+                .as_deref()
+                .unwrap_or_default(),
+        )
+    }
+
+    fn population_source(&self) -> (&str, u32) {
+        (
+            self.loaded
+                .manifest
+                .population_source
+                .name
+                .strip_prefix("dataset:")
+                .unwrap_or(&self.loaded.manifest.population_source.name),
+            self.loaded.manifest.resolution,
+        )
+    }
+}
+
+fn query_population_source(
+    combination: &Combination,
+    registry: &Registry,
+) -> Result<QueryPopulation, Failure> {
+    if let Some(name) = combination.population_source.strip_prefix("dataset:") {
+        let dataset = registry
+            .raster(name)
+            .map_err(|error| Failure::registry(&error))?;
+        Ok(QueryPopulation {
+            grid: dataset.grid.grid().map_err(|error| Failure::grid(&error))?,
+            epsg: dataset.epsg,
+            nodata: dataset.nodata,
+            sha256: dataset.sha256,
+        })
+    } else {
+        let spec = combination
+            .population
+            .ok_or_else(|| Failure::bad_input("local population source metadata is missing"))?;
+        Ok(QueryPopulation {
+            grid: spec.grid,
+            epsg: spec.epsg,
+            nodata: spec.nodata,
+            sha256: None,
+        })
+    }
+}
+
+fn query_boundary_source(
+    combination: &Combination,
+    registry: &Registry,
+) -> Result<QueryBoundary, Failure> {
+    if let Some(name) = combination.boundary_source.strip_prefix("dataset:") {
+        let boundary = registry.boundary(name).ok_or_else(|| {
+            Failure::bad_input(format!("`{name}` is not a registered boundary dataset"))
+        })?;
+        let id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
+            Failure::bad_input(format!("boundary dataset `{name}` has no source ID field"))
+        })?;
+        Ok(QueryBoundary {
+            path: boundary.path.clone(),
+            id_field: id_field.to_owned(),
+            registered_sha256: boundary.sha256.clone(),
+            revision: boundary.revision.clone().unwrap_or_default(),
+        })
+    } else {
+        let path = combination
+            .boundary_source
+            .strip_prefix("file:")
+            .filter(|path| !path.is_empty())
+            .ok_or_else(|| Failure::bad_input("invalid boundary_source"))?;
+        let id_field = combination
+            .boundary_source_id_field
+            .clone()
+            .ok_or_else(|| Failure::bad_input("local boundary source ID field is missing"))?;
+        Ok(QueryBoundary {
+            path: Path::new(path).to_path_buf(),
+            id_field,
+            registered_sha256: None,
+            revision: String::new(),
+        })
+    }
+}
+
+fn load_selected_prepared(
+    config_path: Option<&Path>,
+    args: &CountryTableArgs,
+) -> Result<SelectedPrepared, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let (combination, resolution) = config
+        .combination(args.combination.as_deref(), args.resolution)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let registry =
+        Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
+    let population = query_population_source(combination, &registry)?;
+    let boundary = query_boundary_source(combination, &registry)?;
+    let actual_boundary_sha256 =
+        crate::prepared::fingerprint_file(&boundary.path).map_err(|error| Failure {
+            code: EXIT_MISSING_DATA,
+            message: format!(
+                "selected boundary source at {} could not be read: {error}; fetch the registered boundary data or provide the configured local file",
+                boundary.path.display()
+            ),
+        })?;
+    if boundary
+        .registered_sha256
+        .as_deref()
+        .is_some_and(|expected| expected != actual_boundary_sha256)
+    {
+        return Err(Failure::bad_input(format!(
+            "selected boundary source at {} does not match its registered SHA-256",
+            boundary.path.display()
+        )));
+    }
+    let request = Request {
+        combination_id: &combination.id,
+        resolution,
+        population_source: &combination.population_source,
+        population_sha256: population.sha256.as_deref(),
+        boundary_source: &combination.boundary_source,
+        boundary_sha256: Some(&actual_boundary_sha256),
+        boundary_source_id_field: &boundary.id_field,
+        population_epsg: population.epsg,
+        population_nodata: population.nodata,
+        source_grid: population.grid,
+    };
+    let location = &combination.resolutions[&resolution];
+    let directory = location.local.as_deref().ok_or_else(|| Failure {
+        code: EXIT_MISSING_DATA,
+        message: format!(
+            "combination `{}` resolution {resolution} has no local prepared data; run `country fetch --combination {} --resolution {resolution}`",
+            combination.id, combination.id
+        ),
+    })?;
+    let loaded = PreparedManifest::load(directory, &request).map_err(|error| {
+        let guidance = if location.remote.is_some() {
+            format!(
+                "; run `country prepare --combination {} --resolution {resolution}` or `country fetch --combination {} --resolution {resolution}`",
+                combination.id, combination.id
+            )
+        } else {
+            format!(
+                "; run `country prepare --combination {} --resolution {resolution}`",
+                combination.id
+            )
+        };
+        let missing = match &error {
+            crate::prepared::PreparedError::ManifestRead { source, .. }
+            | crate::prepared::PreparedError::PayloadRead { source, .. } => {
+                source.kind() == std::io::ErrorKind::NotFound
+            }
+            _ => false,
+        };
+        Failure {
+            code: if missing {
+                EXIT_MISSING_DATA
+            } else {
+                EXIT_BAD_INPUT
+            },
+            message: format!("prepared data at {} is missing, invalid or mismatched: {error}{guidance}", directory.display()),
+        }
+    })?;
+    let features = crate::boundaries::load(&boundary.path, &boundary.id_field).map_err(|error| {
+        if boundary.path.exists() {
+            Failure::bad_input(error.to_string())
+        } else {
+            Failure {
+                code: EXIT_MISSING_DATA,
+                message: format!(
+                    "selected boundary source at {} is missing; fetch the registered boundary data before querying",
+                    boundary.path.display()
+                ),
+            }
+        }
+    })?;
+    Ok(SelectedPrepared {
+        loaded,
+        features,
+        revision: boundary.revision,
+    })
+}
+
 pub(crate) fn smallest(
+    config_path: Option<&Path>,
     selector: &str,
     share: Share,
     args: &CountryTableArgs,
     search: SearchArgs,
     ledger_path: Option<&Path>,
 ) -> Result<String, Failure> {
-    let source = args.grid.grid()?;
-    let factor = args.decimation(1);
-    let decimation = Decimation::new(source, factor).map_err(|error| Failure::table(&error))?;
-    let prepared = Prepared::load(
-        args.grid.dataset.as_deref(),
-        source,
-        *decimation.grid(),
-        factor,
-    )?;
-    let feature = prepared.feature(selector)?;
-    let table = prepared.country_table(feature)?.ok_or_else(|| {
-        Failure::bad_input(format!(
-            "country {} owns no population cells at this resolution",
-            feature.id.as_str()
-        ))
-    })?;
+    let mut prepared = load_selected_prepared(config_path, args)?;
+    let feature = prepared.feature(selector)?.clone();
+    let table = prepared
+        .country_table(feature.id.as_str())?
+        .ok_or_else(|| {
+            Failure::bad_input(format!(
+                "country {} owns no population cells at this resolution",
+                feature.id.as_str()
+            ))
+        })?;
     let path = ledger_path.map_or_else(
         || country_ledger_path(Path::new("out/countries"), feature.id.as_str()),
         Path::to_path_buf,
@@ -476,34 +695,30 @@ pub(crate) fn smallest(
 }
 
 pub(crate) fn sweep(
+    config_path: Option<&Path>,
     selectors: &[String],
     range: SweepArgs,
     args: &CountryTableArgs,
     search: SearchArgs,
     ledger_dir: &Path,
 ) -> Result<String, Failure> {
-    let source = args.grid.grid()?;
-    let factor = args.decimation(10);
-    let decimation = Decimation::new(source, factor).map_err(|error| Failure::table(&error))?;
-    let prepared = Prepared::load(
-        args.grid.dataset.as_deref(),
-        source,
-        *decimation.grid(),
-        factor,
-    )?;
+    let mut prepared = load_selected_prepared(config_path, args)?;
     let walk = shares(range.from, range.to, range.step)?;
     let mut features = selectors
         .iter()
-        .map(|selector| prepared.feature(selector))
+        .map(|selector| prepared.feature(selector).cloned())
         .collect::<Result<Vec<_>, _>>()?;
     features.sort_by(|left, right| left.id.as_str().cmp(right.id.as_str()));
     features.dedup_by(|left, right| left.id == right.id);
 
     let (boundary_dataset, boundary_revision, boundary_digest) = prepared.boundary_identity();
+    let boundary_dataset = boundary_dataset.to_owned();
+    let boundary_revision = boundary_revision.to_owned();
+    let boundary_digest = boundary_digest.to_owned();
     let mut countries = Vec::with_capacity(features.len());
     for feature in features {
         let started = std::time::Instant::now();
-        let Some(table) = prepared.country_table(feature)? else {
+        let Some(table) = prepared.country_table(feature.id.as_str())? else {
             eprintln!(
                 "{}: no owned population cells at this resolution",
                 feature.id.as_str()
@@ -549,9 +764,9 @@ pub(crate) fn sweep(
         countries.push(CountrySweepCountry::new(
             &feature.id,
             &feature.name,
-            boundary_dataset,
-            boundary_revision,
-            boundary_digest,
+            &boundary_dataset,
+            &boundary_revision,
+            &boundary_digest,
             LedgerReport::new(&path, ledger.len()),
             records,
         ));

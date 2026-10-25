@@ -52,7 +52,7 @@ expression: document
         "aggregation_order_version": 1,
         "attribution": "Fixture boundary credit",
         "boundary_dataset": "gisco-countries-2024-1m",
-        "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "boundary_digest": "23539926a0e7e867f4f4771569a583aec56f4276b365604b8d1b3a31260d2e1e",
         "boundary_revision": "fixture",
         "decimation": 1,
         "effective_grid": {
