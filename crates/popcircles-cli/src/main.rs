@@ -143,6 +143,18 @@ enum CountryCommand {
     List,
     /// List configured population and boundary source combinations.
     Combinations,
+    /// Prepare one configured country combination for local use.
+    Prepare {
+        /// Combination ID; defaults to the configured country combination.
+        #[arg(long)]
+        combination: Option<String>,
+        /// Prepared resolution; defaults to that combination's default resolution.
+        #[arg(long)]
+        resolution: Option<u32>,
+        /// Replace the currently published prepared generation.
+        #[arg(long)]
+        replace: bool,
+    },
     /// Find the smallest population circle for one registered country.
     Smallest {
         /// Exact country feature identifier or unique English name.
@@ -242,6 +254,14 @@ fn run(command: Command, config_path: Option<&std::path::Path>) -> Result<String
         Command::Country {
             command: CountryCommand::Combinations,
         } => commands::country::list_combinations(config_path),
+        Command::Country {
+            command:
+                CountryCommand::Prepare {
+                    combination,
+                    resolution,
+                    replace,
+                },
+        } => commands::country::prepare(config_path, combination.as_deref(), resolution, replace),
         Command::Country {
             command:
                 CountryCommand::Smallest {

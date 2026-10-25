@@ -856,6 +856,20 @@ pub(crate) fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+pub(crate) fn fingerprint_file(path: &Path) -> io::Result<String> {
+    let mut file = File::open(path)?;
+    let mut buffer = vec![0; 64 * 1024].into_boxed_slice();
+    let mut digest = Sha256::new();
+    loop {
+        let read = file.read(&mut buffer)?;
+        if read == 0 {
+            break;
+        }
+        digest.update(&buffer[..read]);
+    }
+    Ok(format!("{:x}", digest.finalize()))
+}
+
 fn valid_sha256(value: &str) -> bool {
     value.len() == 64
         && value

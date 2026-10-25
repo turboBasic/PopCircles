@@ -14,7 +14,7 @@ use crate::args::{CountryTableArgs, SearchArgs, SweepArgs};
 use crate::boundaries;
 use crate::commands::search::{settlement_context, settlement_places, shares};
 use crate::commands::{make_room_for, serialised};
-use crate::config::Configuration;
+use crate::config::{Combination, Configuration};
 use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
@@ -100,6 +100,56 @@ pub(crate) fn list_combinations(config_path: Option<&Path>) -> Result<String, Fa
         .collect();
     serialised(serde_json::to_string(&Envelope::new(
         CombinationListDocument { combinations },
+    )))
+}
+
+#[derive(Debug, Serialize)]
+struct PreparedCombinationDocument {
+    combination_id: String,
+    resolution: u32,
+    directory: PathBuf,
+}
+
+impl Document for PreparedCombinationDocument {
+    const KIND: &'static str = "country-prepared";
+}
+
+pub(crate) fn prepare(
+    config_path: Option<&Path>,
+    combination_id: Option<&str>,
+    resolution: Option<u32>,
+    replace: bool,
+) -> Result<String, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let (combination, resolution) = config
+        .combination(combination_id, resolution)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    Prepared::prepare_combination(combination, resolution, replace)?;
+    let directory = combination
+        .resolutions
+        .get(&resolution)
+        .and_then(|location| location.local.as_ref())
+        .ok_or_else(|| {
+            Failure::bad_input(format!(
+                "combination `{}` resolution {resolution} has no local output directory",
+                combination.id
+            ))
+        })?;
+    prepared_document(combination, resolution, directory)
+}
+
+fn prepared_document(
+    combination: &Combination,
+    resolution: u32,
+    directory: &Path,
+) -> Result<String, Failure> {
+    serialised(serde_json::to_string(&Envelope::new(
+        PreparedCombinationDocument {
+            combination_id: combination.id.clone(),
+            resolution,
+            directory: directory.to_path_buf(),
+        },
     )))
 }
 

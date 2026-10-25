@@ -97,20 +97,8 @@ pub(crate) struct Combination {
         reason = "#222 carries supplied provenance into calculation results"
     )]
     pub(crate) provenance: Option<String>,
-    #[expect(
-        dead_code,
-        reason = "#222 carries supplied attribution into calculation results"
-    )]
     pub(crate) attribution: Option<String>,
-    #[expect(
-        dead_code,
-        reason = "#220 country prepare consumes declared local raster metadata"
-    )]
     pub(crate) population: Option<RasterSpec>,
-    #[expect(
-        dead_code,
-        reason = "#220 country prepare consumes the local boundary ID field"
-    )]
     pub(crate) boundary_source_id_field: Option<String>,
 }
 
@@ -234,13 +222,6 @@ impl Configuration {
         explicit.unwrap_or(&self.default_population_dataset)
     }
 
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "#222 connects configured defaults to calculation selection"
-        )
-    )]
     pub(crate) fn combination(
         &self,
         id: Option<&str>,

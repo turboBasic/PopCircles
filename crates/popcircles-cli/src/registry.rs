@@ -59,7 +59,6 @@ pub(crate) enum RegistryError {
 #[derive(Debug)]
 pub(crate) struct Dataset {
     pub(crate) raster: PathBuf,
-    #[cfg(test)]
     pub(crate) sha256: Option<String>,
     pub(crate) grid: GridValues,
     pub(crate) epsg: u16,
@@ -85,7 +84,6 @@ enum Row {
 #[derive(Debug, Deserialize)]
 struct PopulationRaster {
     path: PathBuf,
-    #[cfg(test)]
     sha256: Option<String>,
     width: u32,
     height: u32,
@@ -214,7 +212,6 @@ impl Registry {
 
         Ok(Dataset {
             raster: row.path.clone(),
-            #[cfg(test)]
             sha256: row.sha256.clone(),
             grid: GridValues {
                 width: row.width,
