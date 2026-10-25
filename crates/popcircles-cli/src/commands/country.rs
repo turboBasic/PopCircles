@@ -253,6 +253,7 @@ fn fetch_bundle(
         .tempdir_in(parent)
         .map_err(|error| Failure::bad_input(error.to_string()))?;
     let remote = remote.trim_end_matches('/');
+    // shortcut: manifests above 16 MiB are refused; raise the limit if future bundles exceed it.
     download_file(
         agent,
         &format!("{remote}/manifest.json"),
@@ -672,6 +673,25 @@ mod tests {
         assert!(validate_remote("https://user@example.com/prepared").is_err());
         assert!(validate_remote("https://example.com/prepared?token=value").is_err());
         assert!(validate_remote("https://example.com/prepared").is_ok());
+    }
+
+    #[test]
+    fn country_fetch_caps_manifest_size() {
+        let body = b"manifest".to_vec();
+        let (remote, server) = local_server(HashMap::from([(
+            "/prepared/manifest.json".to_owned(),
+            (body.clone(), body.len()),
+        )]));
+        let directory = tempfile::tempdir().expect("temporary download directory exists");
+        let error = download_file(
+            &local_agent(),
+            &format!("{remote}/manifest.json"),
+            &directory.path().join("manifest.json"),
+            u64::try_from(body.len() - 1).expect("fixture length fits u64"),
+        )
+        .expect_err("manifest exceeds its configured size limit");
+        server.join().expect("local server finishes");
+        assert!(error.message.contains("size limit"));
     }
 
     #[test]
