@@ -469,14 +469,16 @@ pub enum PreparedCountryTableError {
     CropGrid(#[source] GridError),
     #[error("prepared country table total is not the final prefix value")]
     Total,
+    #[error("prepared country table prefix encodes a negative cell population")]
+    NegativeCell,
 }
 
 impl CountryTable {
     /// Restores a prefix table after its wire metadata and payload integrity have been checked.
     ///
     /// # Errors
-    /// Rejects a payload with the wrong padded length, inconsistent identity or crop, or a total
-    /// that differs from the final prefix cell.
+    /// Rejects a payload with the wrong padded length, inconsistent identity or crop, a negative
+    /// cell population, or a total that differs from the final prefix cell.
     pub fn from_prepared(
         prepared: PreparedCountryTable,
     ) -> Result<Self, PreparedCountryTableError> {
@@ -531,6 +533,17 @@ impl CountryTable {
             || total.to_bits() != last.to_bits()
         {
             return Err(PreparedCountryTableError::Total);
+        }
+        let stride = width as usize + 1;
+        for row in 0..=height as usize {
+            for col in 1..=width as usize {
+                let index = row * stride + col;
+                if cells[index] < cells[index - 1]
+                    || (row > 0 && cells[index] < cells[index - stride])
+                {
+                    return Err(PreparedCountryTableError::NegativeCell);
+                }
+            }
         }
         Ok(Self {
             source_grid,
@@ -1369,6 +1382,21 @@ mod tests {
         })
         .expect("the prepared prefix restores its table");
         assert_eq!(restored, table_a);
+        let invalid = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: *table_a.grid(),
+            north_row: table_a.north_row(),
+            west_col: table_a.west_col(),
+            total: 5.0,
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: vec![0.0, 10.0, 5.0, 0.0, 10.0, 5.0],
+        });
+        assert!(matches!(
+            invalid,
+            Err(PreparedCountryTableError::NegativeCell)
+        ));
         let table = table_a.table();
         let (rows, cols) = table.whole();
         assert_eq!(table.population(rows, cols), 11.0);
