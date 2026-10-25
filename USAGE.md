@@ -310,6 +310,46 @@ stdout stays exactly one JSON document at every level.
 
 ## Choosing the inputs
 
+### Population datasets and country combinations
+
+`data/registry.toml` names the declared input datasets. The built-in `data/config.toml` selects the
+world population default and the `gpw-2020-gisco-2024` country combination. Use `--config PATH` to
+layer a user TOML file over those built-in choices; relative file sources and prepared-data locations
+in that file resolve beside it.
+
+For example, save this as `my-data.toml` to add a combination using a local population file and the
+declared GISCO boundary dataset:
+
+```toml
+[defaults]
+country_combination = "local-gpw"
+
+[combinations.local-gpw]
+population_source = "file:population.tif"
+boundary_source = "dataset:gisco-countries-2024-1m"
+default_resolution = 10
+
+[combinations.local-gpw.resolutions.10]
+local = "out/local-gpw/10"
+```
+
+Select that file with `--config my-data.toml`. A `dataset:<name>` source must name a compatible entry
+in `data/registry.toml`; `file:<path>` names a local input. To override a built-in combination, keep
+its ID and source pair, then change its default resolution or add/replace a resolution location. A
+source pair cannot be rebound under an existing ID; add a new ID for a different pair. Global defaults
+can select another registered population dataset or configured combination. Optional `provenance`
+and `attribution` text can be recorded on a new combination.
+
+List the effective built-in and user combinations with:
+
+```sh
+mise run cli -- country combinations --config my-data.toml
+# {…,"document":"country-combinations","result":{"combinations":[…]}}
+```
+
+The list shows configured source pairs and resolutions. It does not fetch inputs or check whether
+source or prepared-data files exist.
+
 **Choose the detail level with `--decimate`.** Use `10` for quick exploration, as in the examples above,
 or `2` for a practical balance between detail and speed. Use `1` for full resolution. Build and search
 with the same value. Country sweeps default to `10`; the other searches default to `1`.
