@@ -98,6 +98,9 @@ native source; all three measured radii and centres matched at 10%, 50% and 90% 
 This result describes those measured shares; the [issue records the timing method and full
 comparison][coarse-comparison].
 
+The measurements pass the pre-recorded default-adoption bar in #223; no answer-change condition
+remains open for this default.
+
 ## coastline-1to110m
 
 | Property | Value |
