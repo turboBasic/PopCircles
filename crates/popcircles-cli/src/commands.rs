@@ -55,6 +55,13 @@ impl CachedTable {
         let (mapped, identity) = cache
             .open_resolved(decimation, args.digest)
             .map_err(|error| Failure::cache(&error))?;
+        if let (Some(expected), Some(actual)) = (args.grid.dataset.as_deref(), mapped.dataset())
+            && expected != actual
+        {
+            return Err(Failure::bad_input(format!(
+                "cached table names population dataset `{actual}`, but `{expected}` was selected"
+            )));
+        }
 
         // Box 6's resolved input, here because this is already the one place a cache is opened. It names
         // what a reader would otherwise reconstruct from four flags: which table, from where, and at what
@@ -87,12 +94,12 @@ impl CachedTable {
         Table::new(self.grid, cells).map_err(|error| Failure::table(&error))
     }
 
-    pub(crate) fn provenance(&self) -> Provenance {
+    pub(crate) fn provenance(&self, selected_dataset: Option<&str>) -> Provenance {
         // The name comes off the header rather than off a flag, which is what lets a command that takes no
         // `--dataset` publish one.
         Provenance::new(
             &self.identity,
-            self.mapped.dataset(),
+            self.mapped.dataset().or(selected_dataset),
             &self.header,
             &self.payload,
         )

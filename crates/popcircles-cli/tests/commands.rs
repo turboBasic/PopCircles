@@ -1551,7 +1551,7 @@ fn every_cache_reader_infers_the_same_digest_and_answers() {
                 );
                 assert_eq!(
                     inferred["provenance"]["dataset"],
-                    serde_json::json!(dataset)
+                    serde_json::json!(dataset.unwrap_or("population-count-2020-30arcsec"))
                 );
             }
 
@@ -1872,6 +1872,64 @@ fn a_document_answered_from_a_named_table_names_that_dataset() {
     assert_eq!(
         document["provenance"]["dataset"],
         serde_json::Value::from("population-count-2020-30arcsec")
+    );
+}
+
+#[test]
+fn configured_world_dataset_is_published_in_result_provenance() {
+    let dataset = "population-count-2020-30arcsec";
+    for source_dataset in [None, Some(dataset)] {
+        let fixture = Fixture::over(dense, source_dataset);
+        let output = fixture.run_ok(
+            "population-at",
+            &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
+        );
+        let document = successful_document(&output);
+        assert_eq!(document["provenance"]["dataset"], dataset);
+    }
+}
+
+#[test]
+fn a_cached_table_cannot_be_claimed_for_a_different_selected_dataset() {
+    let fixture = Fixture::named("population-count-2020-30arcsec");
+    let registry = fixture.directory.path().join("data/registry.toml");
+    let mut text = std::fs::read_to_string(&registry).unwrap();
+    text.push_str(
+        r#"
+
+[datasets.tiny]
+kind = "population-raster"
+path = "data/population/tiny.tif"
+width = 36
+height = 18
+origin_lat = 90.0
+origin_lon = -180.0
+lon_step = 10.0
+lat_step = -10.0
+epsg = 4326
+nodata = -3.402823e38
+"#,
+    );
+    std::fs::write(registry, text).unwrap();
+
+    let output = fixture.run_ok(
+        "population-at",
+        &[
+            "--dataset",
+            "tiny",
+            "--lat",
+            "48",
+            "--lon",
+            "11",
+            "--radius-km",
+            "1200",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(2), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("cached table names population dataset `population-count-2020-30arcsec`, but `tiny` was selected"),
+        "{output:?}"
     );
 }
 

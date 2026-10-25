@@ -1,5 +1,6 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
+assertion_line: 1068
 expression: document
 ---
 {
@@ -13,6 +14,7 @@ expression: document
       "header": "out/table.header.json",
       "payload": "out/table.payload.bin"
     },
+    "dataset": "population-count-2020-30arcsec",
     "decimation": 1,
     "digest": "0x7667cdf23ac5ebc5",
     "grid": {
