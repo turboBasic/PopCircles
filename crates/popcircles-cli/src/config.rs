@@ -104,13 +104,6 @@ pub(crate) struct Combination {
 
 #[derive(Debug)]
 pub(crate) struct Configuration {
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "#222 connects configured defaults to calculation selection"
-        )
-    )]
     pub(crate) default_population_dataset: String,
     pub(crate) default_country_combination: String,
     pub(crate) combinations: BTreeMap<String, Combination>,
@@ -211,13 +204,6 @@ impl Configuration {
         })
     }
 
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "#222 connects configured defaults to calculation selection"
-        )
-    )]
     pub(crate) fn population_dataset<'a>(&'a self, explicit: Option<&'a str>) -> &'a str {
         explicit.unwrap_or(&self.default_population_dataset)
     }
@@ -658,7 +644,7 @@ mod tests {
     "#;
 
     #[test]
-    fn committed_configuration_loads_and_keeps_the_explicit_population_choice() {
+    fn configured_world_dataset_uses_default_and_explicit_choice() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let config = Configuration::load_from_paths(
             &root.join(BUILTIN_CONFIG_PATH),

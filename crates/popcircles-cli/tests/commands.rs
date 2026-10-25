@@ -220,6 +220,23 @@ path = "data/settlements/populated-places-1to10m.geojson"
 "#,
         )
         .unwrap();
+        std::fs::write(
+            data.join("config.toml"),
+            r#"
+[defaults]
+population_dataset = "population-count-2020-30arcsec"
+country_combination = "fixture"
+
+[combinations.fixture]
+population_source = "dataset:population-count-2020-30arcsec"
+boundary_source = "dataset:gisco-countries-2024-1m"
+default_resolution = 1
+
+[combinations.fixture.resolutions.1]
+local = "out/countries/fixture/1"
+"#,
+        )
+        .unwrap();
         self.write_places(&[
             ("Resolved centre", "Fixture", 45.0, 15.0),
             ("Requested point", "Fixture", 48.0, 11.0),

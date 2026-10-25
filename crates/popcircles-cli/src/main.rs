@@ -27,6 +27,7 @@ use commands::distance::distance_json;
 use commands::grid::describe_grid;
 use commands::search::{most_populous, population_at, smallest_for_share, sweep};
 use commands::table::{build_table, query_table};
+use config::Configuration;
 use failure::{EXIT_FAILURE, Failure};
 use observe::StderrLog;
 use popcircles::geodesy::RadiusKm;
@@ -204,9 +205,9 @@ enum CountryCommand {
 enum TableCommand {
     /// Build a summation table from a registered dataset and publish it to the cache.
     Build {
-        /// The dataset to build from, which names the registered raster and supplies its default grid and tags.
+        /// Dataset to build from; defaults to the configured population dataset.
         #[arg(long)]
-        dataset: String,
+        dataset: Option<String>,
         #[command(flatten)]
         grid: args::GridArgs,
         /// Override the registered Float32 nodata sentinel.
@@ -247,6 +248,11 @@ fn main() -> ExitCode {
 }
 
 fn run(command: Command, config_path: Option<&std::path::Path>) -> Result<String, Failure> {
+    let command = select_world_dataset(command, config_path)?;
+    dispatch(command, config_path)
+}
+
+fn dispatch(command: Command, config_path: Option<&std::path::Path>) -> Result<String, Failure> {
     match command {
         Command::Distance {
             from_lat,
@@ -311,7 +317,10 @@ fn run(command: Command, config_path: Option<&std::path::Path>) -> Result<String
                     epsg,
                     table,
                 },
-        } => build_table(&dataset, grid, nodata, epsg, &table),
+        } => {
+            let dataset = selected_population_dataset(config_path, dataset.as_deref())?;
+            build_table(&dataset, grid, nodata, epsg, &table)
+        }
         Command::Table {
             command: TableCommand::Query { cached, window },
         } => query_table(&cached, window.window()),
@@ -339,6 +348,95 @@ fn run(command: Command, config_path: Option<&std::path::Path>) -> Result<String
             ledger,
         } => sweep(&cached, shares, search, &ledger),
     }
+}
+
+fn select_world_dataset(
+    command: Command,
+    config_path: Option<&std::path::Path>,
+) -> Result<Command, Failure> {
+    let command = match command {
+        Command::PopulationAt {
+            mut cached,
+            lat,
+            lon,
+            radius_km,
+        } => {
+            cached.grid.dataset = Some(selected_population_dataset(
+                config_path,
+                cached.grid.dataset.as_deref(),
+            )?);
+            Command::PopulationAt {
+                cached,
+                lat,
+                lon,
+                radius_km,
+            }
+        }
+        Command::MostPopulous {
+            mut cached,
+            radius_km,
+            search,
+        } => {
+            cached.grid.dataset = Some(selected_population_dataset(
+                config_path,
+                cached.grid.dataset.as_deref(),
+            )?);
+            Command::MostPopulous {
+                cached,
+                radius_km,
+                search,
+            }
+        }
+        Command::SmallestForShare {
+            mut cached,
+            share,
+            search,
+            ledger,
+        } => {
+            cached.grid.dataset = Some(selected_population_dataset(
+                config_path,
+                cached.grid.dataset.as_deref(),
+            )?);
+            Command::SmallestForShare {
+                cached,
+                share,
+                search,
+                ledger,
+            }
+        }
+        Command::Sweep {
+            mut cached,
+            shares,
+            search,
+            ledger,
+        } => {
+            cached.grid.dataset = Some(selected_population_dataset(
+                config_path,
+                cached.grid.dataset.as_deref(),
+            )?);
+            Command::Sweep {
+                cached,
+                shares,
+                search,
+                ledger,
+            }
+        }
+        command => command,
+    };
+    Ok(command)
+}
+
+fn selected_population_dataset(
+    config_path: Option<&std::path::Path>,
+    explicit: Option<&str>,
+) -> Result<String, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let dataset = config.population_dataset(explicit).to_owned();
+    crate::registry::Registry::load(std::path::Path::new(crate::registry::REGISTRY_PATH))
+        .and_then(|registry| registry.raster(&dataset))
+        .map_err(|error| Failure::registry(&error))?;
+    Ok(dataset)
 }
 
 // unwrap and expect are both warn at workspace level and lint:rust runs --all-targets, so tests need
