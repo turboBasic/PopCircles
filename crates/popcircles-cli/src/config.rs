@@ -529,6 +529,16 @@ mod tests {
     #[test]
     fn invalid_defaults_duplicate_ids_and_undeclared_sources_are_rejected() {
         let registry = registry();
+        for missing in ["population", "country combination"] {
+            let mut config = document(VALID);
+            if missing == "population" {
+                config.defaults.population_dataset = None;
+            } else {
+                config.defaults.country_combination = None;
+            }
+            assert!(validate_complete(&config, Path::new("fixture.toml"), &registry).is_err());
+        }
+
         let mut missing_default = document(VALID);
         missing_default
             .combinations
@@ -574,12 +584,12 @@ mod tests {
             );
         }
 
-        let duplicate = r"
+        let duplicate = r#"
             [combinations.same]
-            value = 1
+            population_source = "dataset:population-count-2020-30arcsec"
             [combinations.same]
-            value = 2
-        ";
+            boundary_source = "dataset:gisco-countries-2024-1m"
+        "#;
         assert!(toml::from_str::<Document>(duplicate).is_err());
 
         let mut unknown = document(VALID);
