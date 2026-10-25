@@ -2,6 +2,9 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use popcircles::geodesy::LatLon;
+use popcircles::grid::Grid;
+use popcircles::raster::{PixelType, RasterSpec};
 use serde::Deserialize;
 
 use crate::registry::{REGISTRY_PATH, Registry};
@@ -52,6 +55,27 @@ struct PartialCombination {
     resolutions: BTreeMap<u32, Location>,
     provenance: Option<String>,
     attribution: Option<String>,
+    population_metadata: Option<PartialPopulationMetadata>,
+    boundary_metadata: Option<PartialBoundaryMetadata>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+struct PartialPopulationMetadata {
+    width: Option<u32>,
+    height: Option<u32>,
+    origin_lat: Option<f64>,
+    origin_lon: Option<f64>,
+    lon_step: Option<f64>,
+    lat_step: Option<f64>,
+    epsg: Option<u16>,
+    nodata: Option<f32>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+struct PartialBoundaryMetadata {
+    source_id_field: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
@@ -78,6 +102,16 @@ pub(crate) struct Combination {
         reason = "#222 carries supplied attribution into calculation results"
     )]
     pub(crate) attribution: Option<String>,
+    #[expect(
+        dead_code,
+        reason = "#220 country prepare consumes declared local raster metadata"
+    )]
+    pub(crate) population: Option<RasterSpec>,
+    #[expect(
+        dead_code,
+        reason = "#220 country prepare consumes the local boundary ID field"
+    )]
+    pub(crate) boundary_source_id_field: Option<String>,
 }
 
 #[derive(Debug)]
@@ -143,6 +177,12 @@ impl Configuration {
                     ),
                 ));
             }
+            let population =
+                local_population_spec(source_path, &id, row.population_metadata.as_ref())?;
+            let boundary_source_id_field = row
+                .boundary_metadata
+                .as_ref()
+                .and_then(|metadata| metadata.source_id_field.clone());
             combinations.insert(
                 id.clone(),
                 Combination {
@@ -162,6 +202,8 @@ impl Configuration {
                     default_resolution,
                     provenance: row.provenance,
                     attribution: row.attribution,
+                    population,
+                    boundary_source_id_field,
                     id,
                 },
             );
@@ -259,6 +301,7 @@ fn validate_complete(
         })?;
         validate_source(path, id, "population_source", population, registry, true)?;
         validate_source(path, id, "boundary_source", boundary, registry, false)?;
+        validate_source_metadata(path, id, row, population, boundary)?;
         let default = row.default_resolution.ok_or_else(|| {
             invalid(
                 path,
@@ -316,6 +359,124 @@ fn validate_complete(
         ));
     }
     Ok(())
+}
+
+fn validate_source_metadata(
+    path: &Path,
+    id: &str,
+    row: &PartialCombination,
+    population: &str,
+    boundary: &str,
+) -> Result<(), ConfigError> {
+    for (field, local, present) in [
+        (
+            "population_metadata",
+            population.starts_with("file:"),
+            row.population_metadata.is_some(),
+        ),
+        (
+            "boundary_metadata",
+            boundary.starts_with("file:"),
+            row.boundary_metadata.is_some(),
+        ),
+    ] {
+        if local != present {
+            return Err(invalid(
+                path,
+                format!(
+                    "combination `{id}` {field} is required for a local source and forbidden for a dataset source"
+                ),
+            ));
+        }
+    }
+    if let Some(metadata) = &row.population_metadata {
+        let _ = population_spec(path, id, metadata)?;
+    }
+    if row.boundary_metadata.is_some()
+        && row
+            .boundary_metadata
+            .as_ref()
+            .and_then(|metadata| metadata.source_id_field.as_deref())
+            .is_none_or(str::is_empty)
+    {
+        return Err(invalid(
+            path,
+            format!("combination `{id}` boundary_metadata.source_id_field is missing or empty"),
+        ));
+    }
+    Ok(())
+}
+
+fn local_population_spec(
+    path: &Path,
+    id: &str,
+    metadata: Option<&PartialPopulationMetadata>,
+) -> Result<Option<RasterSpec>, ConfigError> {
+    metadata
+        .map(|metadata| population_spec(path, id, metadata))
+        .transpose()
+}
+
+fn population_spec(
+    path: &Path,
+    id: &str,
+    metadata: &PartialPopulationMetadata,
+) -> Result<RasterSpec, ConfigError> {
+    macro_rules! required {
+        ($field:ident) => {
+            metadata.$field.ok_or_else(|| {
+                invalid(
+                    path,
+                    format!(
+                        "combination `{id}` population_metadata.{} is required",
+                        stringify!($field)
+                    ),
+                )
+            })?
+        };
+    }
+    let width = required!(width);
+    let height = required!(height);
+    let origin_lat = required!(origin_lat);
+    let origin_lon = required!(origin_lon);
+    let lon_step = required!(lon_step);
+    let lat_step = required!(lat_step);
+    let epsg = required!(epsg);
+    let nodata = required!(nodata);
+    let grid = Grid::new(
+        width,
+        height,
+        LatLon {
+            lat: origin_lat,
+            lon: origin_lon,
+        },
+        lon_step,
+        lat_step,
+    )
+    .map_err(|error| {
+        invalid(
+            path,
+            format!("combination `{id}` population_metadata grid: {error}"),
+        )
+    })?;
+    if epsg == 0 {
+        return Err(invalid(
+            path,
+            format!("combination `{id}` population_metadata.epsg must be positive"),
+        ));
+    }
+    if !nodata.is_finite() {
+        return Err(invalid(
+            path,
+            format!("combination `{id}` population_metadata.nodata must be finite"),
+        ));
+    }
+    Ok(RasterSpec {
+        grid,
+        epsg,
+        pixel: PixelType::Float32,
+        nodata,
+    })
 }
 
 fn validate_source(
@@ -642,6 +803,16 @@ mod tests {
             default_resolution = 1
             provenance = "local"
 
+            [combinations.extra.population_metadata]
+            width = 1
+            height = 1
+            origin_lat = 1.0
+            origin_lon = 0.0
+            lon_step = 1.0
+            lat_step = -1.0
+            epsg = 4326
+            nodata = -9999.0
+
             [combinations.extra.resolutions.1]
             remote = "https://example.invalid/prepared"
         "#,
@@ -679,6 +850,102 @@ mod tests {
             let overlay = document(overlay);
             assert!(merge(&mut base, overlay, Path::new("user.toml"), &registry).is_err());
         }
+    }
+
+    #[test]
+    fn local_sources_require_complete_valid_metadata_and_datasets_reject_it() {
+        let registry = registry();
+        let valid = r#"
+            [defaults]
+            population_dataset = "population-count-2020-30arcsec"
+            country_combination = "local"
+
+            [combinations.local]
+            population_source = "file:population.tif"
+            boundary_source = "file:boundaries.geojson"
+            default_resolution = 1
+
+            [combinations.local.population_metadata]
+            width = 2
+            height = 2
+            origin_lat = 1.0
+            origin_lon = 0.0
+            lon_step = 1.0
+            lat_step = -1.0
+            epsg = 4326
+            nodata = -9999.0
+
+            [combinations.local.boundary_metadata]
+            source_id_field = "CNTR_ID"
+
+            [combinations.local.resolutions.1]
+            local = "prepared"
+        "#;
+        let parsed = document(valid);
+        validate_complete(&parsed, Path::new("user.toml"), &registry)
+            .expect("a complete local source pair is valid");
+
+        for field in [
+            "width",
+            "height",
+            "origin_lat",
+            "origin_lon",
+            "lon_step",
+            "lat_step",
+            "epsg",
+            "nodata",
+        ] {
+            let missing = valid
+                .lines()
+                .filter(|line| !line.trim_start().starts_with(&format!("{field} =")))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let error = toml::from_str::<Document>(&missing)
+                .ok()
+                .and_then(|parsed| {
+                    validate_complete(&parsed, Path::new("user.toml"), &registry).err()
+                })
+                .expect("missing local population metadata is refused");
+            assert!(error.to_string().contains(field), "{error}");
+        }
+
+        for (text, field) in [
+            (
+                valid.replace("width = 2", "width = 0"),
+                "population_metadata grid",
+            ),
+            (
+                valid.replace("epsg = 4326", "epsg = 0"),
+                "population_metadata.epsg",
+            ),
+            (
+                valid.replace("nodata = -9999.0", "nodata = inf"),
+                "population_metadata.nodata",
+            ),
+            (
+                valid.replace("source_id_field = \"CNTR_ID\"", "source_id_field = \"\""),
+                "boundary_metadata.source_id_field",
+            ),
+        ] {
+            let parsed = document(&text);
+            let error = validate_complete(&parsed, Path::new("user.toml"), &registry)
+                .expect_err("invalid local metadata is refused");
+            assert!(error.to_string().contains(field), "{error}");
+        }
+
+        let dataset_metadata = valid
+            .replace(
+                "file:population.tif",
+                "dataset:population-count-2020-30arcsec",
+            )
+            .replace("file:boundaries.geojson", "dataset:gisco-countries-2024-1m");
+        let error = validate_complete(
+            &document(&dataset_metadata),
+            Path::new("user.toml"),
+            &registry,
+        )
+        .expect_err("metadata on registered sources is refused");
+        assert!(error.to_string().contains("population_metadata"));
     }
 
     #[test]
