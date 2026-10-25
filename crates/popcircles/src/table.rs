@@ -552,7 +552,7 @@ impl CountryTable {
                 let northeast = cells[index - stride];
                 let southwest = cells[index - 1];
                 let southeast = cells[index];
-                let population = (southeast + northwest) - (northeast + southwest);
+                let population = (southeast - northeast) - (southwest - northwest);
                 let rounding_bound =
                     8.0 * f64::EPSILON * southeast.max(northwest).max(northeast).max(southwest);
                 if population < -rounding_bound {
@@ -1427,6 +1427,21 @@ mod tests {
         });
         assert!(matches!(
             invalid_2d,
+            Err(PreparedCountryTableError::NegativeCell)
+        ));
+        let invalid_overflow = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: crop,
+            north_row: 0,
+            west_col: 0,
+            total: 1.6e308,
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: vec![0.0, 0.0, 0.0, 0.0, 1e308, 1.5e308, 0.0, 1.5e308, 1.6e308],
+        });
+        assert!(matches!(
+            invalid_overflow,
             Err(PreparedCountryTableError::NegativeCell)
         ));
         let table = table_a.table();
