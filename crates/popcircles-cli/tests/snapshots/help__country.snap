@@ -7,11 +7,13 @@ List countries and find per-country population circles
 Usage: popcircles country [OPTIONS] <COMMAND>
 
 Commands:
-  list      List available countries from the registered boundary dataset
-  smallest  Find the smallest population circle for one registered country
-  sweep     Sweep requested shares over selected countries, resuming one ledger per country
-  help      Print this message or the help of the given subcommand(s)
+  list          List available countries from the registered boundary dataset
+  combinations  List configured population and boundary source combinations
+  smallest      Find the smallest population circle for one registered country
+  sweep         Sweep requested shares over selected countries, resuming one ledger per country
+  help          Print this message or the help of the given subcommand(s)
 
 Options:
       --log-level <LEVEL>  How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>      Optional configuration file layered over data/config.toml
   -h, --help               Print help

@@ -9,6 +9,7 @@ Usage: popcircles country smallest [OPTIONS] --country <COUNTRY> --share <SHARE>
 Options:
       --country <COUNTRY>        Exact country feature identifier or unique English name
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>            Optional configuration file layered over data/config.toml
       --share <SHARE>            The share of this country's population to reach, in whole percent
       --dataset <DATASET>        Population raster in data/registry.toml supplying defaults for omitted grid flags
       --width <WIDTH>            

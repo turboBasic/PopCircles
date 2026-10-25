@@ -3,16 +3,18 @@ use std::path::{Path, PathBuf};
 
 use popcircles::report::{
     CountryListDocument, CountrySmallestDocument, CountrySweepCountry, CountrySweepDocument,
-    CountrySweepRecord, Envelope, LedgerReport, SmallestReport, SweepShares,
+    CountrySweepRecord, Document, Envelope, LedgerReport, SmallestReport, SweepShares,
 };
 use popcircles::smallest::cache::CountryLedger;
 use popcircles::smallest::{self, Share};
 use popcircles::table::Decimation;
+use serde::Serialize;
 
 use crate::args::{CountryTableArgs, SearchArgs, SweepArgs};
 use crate::boundaries;
 use crate::commands::search::{settlement_context, settlement_places, shares};
 use crate::commands::{make_room_for, serialised};
+use crate::config::Configuration;
 use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
@@ -59,6 +61,45 @@ pub(crate) fn list() -> Result<String, Failure> {
 
     serialised(serde_json::to_string(&Envelope::new(
         CountryListDocument::new(countries),
+    )))
+}
+
+#[derive(Debug, Serialize)]
+struct CombinationListDocument {
+    combinations: Vec<CombinationListEntry>,
+}
+
+impl Document for CombinationListDocument {
+    const KIND: &'static str = "country-combinations";
+}
+
+#[derive(Debug, Serialize)]
+struct CombinationListEntry {
+    id: String,
+    population_source: String,
+    boundary_source: String,
+    available_resolutions: Vec<u32>,
+    default_resolution: u32,
+    is_default: bool,
+}
+
+pub(crate) fn list_combinations(config_path: Option<&Path>) -> Result<String, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let combinations = config
+        .combinations
+        .values()
+        .map(|combination| CombinationListEntry {
+            id: combination.id.clone(),
+            population_source: combination.population_source.clone(),
+            boundary_source: combination.boundary_source.clone(),
+            available_resolutions: combination.resolutions.keys().copied().collect(),
+            default_resolution: combination.default_resolution,
+            is_default: combination.id == config.default_country_combination,
+        })
+        .collect();
+    serialised(serde_json::to_string(&Envelope::new(
+        CombinationListDocument { combinations },
     )))
 }
 

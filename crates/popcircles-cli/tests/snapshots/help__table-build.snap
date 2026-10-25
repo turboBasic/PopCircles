@@ -9,6 +9,7 @@ Usage: popcircles table build [OPTIONS] --dataset <DATASET>
 Options:
       --dataset <DATASET>        The dataset to build from, which names the registered raster and supplies its default grid and tags
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>            Optional configuration file layered over data/config.toml
       --width <WIDTH>            
       --height <HEIGHT>          
       --origin-lat <ORIGIN_LAT>  
