@@ -175,5 +175,21 @@ source_id_field = "CNTR_ID"
 identity_policy = "fixture"
 "#,
     )?;
+    std::fs::write(
+        root.join("data/config.toml"),
+        r#"
+[defaults]
+population_dataset = "tiny"
+country_combination = "fixture"
+
+[combinations.fixture]
+population_source = "dataset:tiny"
+boundary_source = "dataset:gisco-countries-2024-1m"
+default_resolution = 1
+
+[combinations.fixture.resolutions.1]
+local = "out/countries/fixture/1"
+"#,
+    )?;
     Ok(())
 }
