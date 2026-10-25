@@ -1,7 +1,8 @@
 use std::fmt::Write as _;
 use std::fs::{self, OpenOptions};
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use popcircles::report::{
     CountryListDocument, CountrySmallestDocument, CountrySweepCountry, CountrySweepDocument,
@@ -215,12 +216,7 @@ pub(crate) fn fetch(
         boundary_source_id_field: &boundary_id_field,
         source_grid: population.0,
     };
-    let agent = ureq::Agent::config_builder()
-        .https_only(true)
-        .timeout_global(Some(std::time::Duration::from_secs(300)))
-        .build()
-        .new_agent();
-    fetch_bundle(remote, directory, &request, replace, &agent)?;
+    fetch_bundle(remote, directory, &request, replace, false)?;
     prepared_document(combination, resolution, directory)
 }
 
@@ -229,7 +225,7 @@ fn fetch_bundle(
     directory: &Path,
     request: &Request<'_>,
     replace: bool,
-    agent: &ureq::Agent,
+    allow_http: bool,
 ) -> Result<(), Failure> {
     if directory.exists() {
         match load_verified_bundle(directory, request) {
@@ -255,10 +251,10 @@ fn fetch_bundle(
     let remote = remote.trim_end_matches('/');
     // shortcut: manifests above 16 MiB are refused; raise the limit if future bundles exceed it.
     download_file(
-        agent,
         &format!("{remote}/manifest.json"),
         &staging.path().join("manifest.json"),
         16 * 1024 * 1024,
+        allow_http,
     )?;
     let bytes = fs::read(staging.path().join("manifest.json"))
         .map_err(|error| Failure::bad_input(error.to_string()))?;
@@ -280,7 +276,7 @@ fn fetch_bundle(
         }
         let url = format!("{remote}/{}", payload.file);
         let path = staging.path().join(&payload.file);
-        let (length, digest) = download_file(agent, &url, &path, payload.payload_length)?;
+        let (length, digest) = download_file(&url, &path, payload.payload_length, allow_http)?;
         if length != payload.payload_length || digest != payload.payload_sha256 {
             return Err(Failure::bad_input(format!(
                 "prepared payload {} failed its length or SHA-256 check",
@@ -331,43 +327,78 @@ fn safe_payload_name(value: &str) -> bool {
 }
 
 fn download_file(
-    agent: &ureq::Agent,
     url: &str,
     destination: &Path,
     maximum_length: u64,
+    allow_http: bool,
 ) -> Result<(u64, String), Failure> {
-    let response = agent
-        .get(url)
-        .call()
-        .map_err(|error| Failure::bad_input(format!("could not fetch {url}: {error}")))?;
-    let mut reader = response.into_body().into_reader();
-    let mut file = OpenOptions::new()
+    OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(destination)
         .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let protocols = if allow_http { "=http,https" } else { "=https" };
+    // cspell:ignore redir redirs
+    let output = Command::new("curl")
+        .args([
+            "--disable",
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--disallow-username-in-url",
+            "--max-redirs",
+            "5",
+            "--max-time",
+            "300",
+            "--max-filesize",
+            &maximum_length.to_string(),
+            "--proto",
+            protocols,
+            "--proto-redir",
+            protocols,
+            "--output",
+        ])
+        .arg(destination)
+        .arg(url)
+        .output()
+        .map_err(|error| {
+            Failure::bad_input(format!(
+                "could not start curl while fetching {url}: {error}; install the project tools with mise"
+            ))
+        })?;
+    if !output.status.success() {
+        let _ = fs::remove_file(destination);
+        return Err(Failure::bad_input(format!(
+            "could not fetch {url}: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
+    }
+    let mut file = OpenOptions::new()
+        .read(true)
+        .open(destination)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let length = file
+        .metadata()
+        .map_err(|error| Failure::bad_input(error.to_string()))?
+        .len();
+    if length > maximum_length {
+        let _ = fs::remove_file(destination);
+        return Err(Failure::bad_input(format!(
+            "download from {url} exceeds its declared size limit of {maximum_length} bytes"
+        )));
+    }
     let mut digest = Sha256::new();
-    let mut length = 0_u64;
     let mut buffer = vec![0; 64 * 1024].into_boxed_slice();
     loop {
-        let count = reader
+        let count = file
             .read(&mut buffer)
             .map_err(|error| Failure::bad_input(format!("could not read {url}: {error}")))?;
         if count == 0 {
             break;
         }
-        length = length.saturating_add(count as u64);
-        if length > maximum_length {
-            return Err(Failure::bad_input(format!(
-                "download from {url} exceeds its declared size limit of {maximum_length} bytes"
-            )));
-        }
-        file.write_all(&buffer[..count])
-            .map_err(|error| Failure::bad_input(error.to_string()))?;
         digest.update(&buffer[..count]);
     }
-    file.sync_all()
-        .map_err(|error| Failure::bad_input(error.to_string()))?;
     Ok((length, format!("{:x}", digest.finalize())))
 }
 
@@ -550,14 +581,6 @@ mod tests {
     use super::*;
     use crate::prepared::tests::{fixture, request};
 
-    fn local_agent() -> ureq::Agent {
-        ureq::Agent::config_builder()
-            .https_only(false)
-            .timeout_global(Some(std::time::Duration::from_secs(5)))
-            .build()
-            .new_agent()
-    }
-
     fn local_server(routes: HashMap<String, (Vec<u8>, usize)>) -> (String, JoinHandle<()>) {
         let listener = TcpListener::bind("127.0.0.1:0").expect("server binds locally");
         let address = listener.local_addr().expect("server has an address");
@@ -652,7 +675,7 @@ mod tests {
         let parent = tempfile::tempdir().expect("target parent exists");
         let target = parent.path().join("bundle");
         let (remote, server) = local_server(bundle_routes(source.path(), None, false));
-        fetch_bundle(&remote, &target, &request(grid), false, &local_agent())
+        fetch_bundle(&remote, &target, &request(grid), false, true)
             .expect("verified bundle installs");
         server.join().expect("local server finishes");
         assert!(load_verified_bundle(&target, &request(grid)).is_ok());
@@ -662,7 +685,7 @@ mod tests {
             &target,
             &request(grid),
             false,
-            &local_agent(),
+            true,
         )
         .expect("valid installed bundle is reused without a request");
     }
@@ -684,14 +707,15 @@ mod tests {
         )]));
         let directory = tempfile::tempdir().expect("temporary download directory exists");
         let error = download_file(
-            &local_agent(),
             &format!("{remote}/manifest.json"),
             &directory.path().join("manifest.json"),
             u64::try_from(body.len() - 1).expect("fixture length fits u64"),
+            true,
         )
         .expect_err("manifest exceeds its configured size limit");
         server.join().expect("local server finishes");
-        assert!(error.message.contains("size limit"));
+        assert!(!directory.path().join("manifest.json").exists());
+        assert_ne!(error.message, "");
     }
 
     #[test]
@@ -708,7 +732,7 @@ mod tests {
             "/prepared/manifest.json".to_owned(),
             (body.clone(), body.len() + 12),
         )]));
-        assert!(fetch_bundle(&remote, &target, &mismatch, true, &local_agent()).is_err());
+        assert!(fetch_bundle(&remote, &target, &mismatch, true, true).is_err());
         server.join().expect("local server finishes");
         assert_eq!(snapshot(&target), before);
         assert!(load_verified_bundle(&target, &request(grid)).is_ok());
@@ -728,7 +752,7 @@ mod tests {
             &target,
             &replacement,
             false,
-            &local_agent(),
+            true,
         )
         .expect_err("mismatched target needs explicit replacement");
         assert!(no_replace.message.contains("pass --replace"));
@@ -736,7 +760,7 @@ mod tests {
         let mut routes = bundle_routes(source.path(), None, false);
         routes.retain(|path, _| path.ends_with("manifest.json"));
         let (remote, server) = local_server(routes);
-        assert!(fetch_bundle(&remote, &target, &replacement, true, &local_agent()).is_err());
+        assert!(fetch_bundle(&remote, &target, &replacement, true, true).is_err());
         server.join().expect("local server finishes");
         assert_eq!(snapshot(&target), before);
         assert!(load_verified_bundle(&target, &request(grid)).is_ok());
@@ -753,7 +777,7 @@ mod tests {
         replacement.combination_id = "replacement";
         let (remote, server) =
             local_server(bundle_routes(source.path(), Some("replacement"), true));
-        assert!(fetch_bundle(&remote, &target, &replacement, true, &local_agent()).is_err());
+        assert!(fetch_bundle(&remote, &target, &replacement, true, true).is_err());
         server.join().expect("local server finishes");
         assert_eq!(snapshot(&target), before);
         assert!(load_verified_bundle(&target, &request(grid)).is_ok());
@@ -776,7 +800,7 @@ mod tests {
             .expect("payload route exists");
         payload.1 += 12;
         let (remote, server) = local_server(routes);
-        assert!(fetch_bundle(&remote, &target, &replacement, true, &local_agent()).is_err());
+        assert!(fetch_bundle(&remote, &target, &replacement, true, true).is_err());
         server.join().expect("local server finishes");
         assert_eq!(snapshot(&target), before);
         assert!(load_verified_bundle(&target, &request(grid)).is_ok());

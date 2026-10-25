@@ -28,7 +28,6 @@ serde_json = "1"
 sha2 = "0.10"
 tempfile = "3"
 thiserror = "2"
-ureq = { version = "3", default-features = false, features = ["rustls"] }
 # Parse only: the CLI reads `data/registry.toml` and writes nothing back, so the writing half and the
 # format-preserving edit machinery are features nothing here reaches.
 toml = { version = "1.1", default-features = false, features = ["parse", "serde"] }
