@@ -21,6 +21,7 @@ use popcircles::grid::Grid;
 use popcircles::raster::Synthetic;
 use popcircles::table::cache::Cache;
 use popcircles::table::{Decimation, build};
+use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 
 const WIDTH: u32 = 36;
@@ -590,6 +591,210 @@ attribution = "Fixture boundary credit"
     assert_eq!(document["result"]["countries"][0]["id"], "AA");
     assert_eq!(document["result"]["countries"][1]["id"], "BB");
     insta::assert_json_snapshot!("country-list-command", document);
+}
+
+fn country_prepare_fixture() -> (Fixture, PathBuf, Vec<String>, PathBuf, PathBuf, String) {
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    fixture.register_empty_country();
+    let data = fixture.directory.path().join("data");
+    std::fs::write(
+        data.join("config.toml"),
+        r#"
+[defaults]
+population_dataset = "population-count-2020-30arcsec"
+country_combination = "baseline"
+
+[combinations.baseline]
+population_source = "dataset:population-count-2020-30arcsec"
+boundary_source = "dataset:gisco-countries-2024-1m"
+default_resolution = 1
+
+[combinations.baseline.resolutions.1]
+local = "out/baseline/1"
+"#,
+    )
+    .unwrap();
+    let population = data.join("population/population-count-2020-30arcsec.tif");
+    let boundary = data.join("boundaries/gisco-countries-2024-1m.geojson");
+    let boundary_digest = format!("{:x}", Sha256::digest(std::fs::read(&boundary).unwrap()));
+    let registry_path = data.join("registry.toml");
+    let registry = std::fs::read_to_string(&registry_path).unwrap();
+    std::fs::write(
+        &registry_path,
+        registry.replace(&"a".repeat(64), &boundary_digest),
+    )
+    .unwrap();
+    let user_config = fixture.directory.path().join("local-preview.toml");
+    std::fs::write(
+        &user_config,
+        format!(
+            r#"
+[defaults]
+country_combination = "local-preview"
+
+[combinations.local-preview]
+population_source = "file:{}"
+boundary_source = "file:{}"
+default_resolution = 2
+
+[combinations.local-preview.population_metadata]
+width = 36
+height = 18
+origin_lat = 90.0
+origin_lon = -180.0
+lon_step = 10.0
+lat_step = -10.0
+epsg = 4326
+nodata = -3.402823e38
+
+[combinations.local-preview.boundary_metadata]
+source_id_field = "CNTR_ID"
+
+[combinations.local-preview.resolutions.1]
+local = "out/local-preview/1"
+
+[combinations.local-preview.resolutions.2]
+local = "out/local-preview/2"
+"#,
+            population.display(),
+            boundary.display(),
+        ),
+    )
+    .unwrap();
+
+    let flags = vec!["--config".to_owned(), user_config.display().to_string()];
+    (
+        fixture,
+        user_config,
+        flags,
+        population,
+        registry_path,
+        boundary_digest,
+    )
+}
+
+#[test]
+fn country_prepare_uses_configured_defaults_and_explicit_replacement() {
+    let (fixture, user_config, flags, population, _, _) = country_prepare_fixture();
+    let default = run_with(fixture.directory.path(), &flags, "country prepare", &[]);
+    let document = successful_document(&default);
+    assert_eq!(document["document"], "country-prepared");
+    assert_eq!(document["result"]["combination_id"], "local-preview");
+    assert_eq!(document["result"]["resolution"], 2);
+    let manifest_path = fixture
+        .directory
+        .path()
+        .join("out/local-preview/2/manifest.json");
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(manifest_path).unwrap()).unwrap();
+    assert_eq!(manifest["population_source"]["epsg"], 4326);
+    assert_eq!(manifest["population_source"]["nodata"], -3.402_823e38_f32);
+    assert_eq!(manifest["boundary_source"]["source_id_field"], "CNTR_ID");
+    assert_eq!(manifest["features"][0]["id"], "AA");
+    assert_eq!(manifest["features"][0]["table"]["total"], 96_696.0);
+    assert_eq!(manifest["features"][1]["id"], "BB");
+    assert_eq!(manifest["features"][1]["table"]["total"], 108_054.0);
+    assert_eq!(manifest["features"][2]["id"], "EMPTY");
+    assert!(manifest["features"][2]["table"].is_null());
+
+    let missing_population = fixture.directory.path().join("missing-population.tif");
+    let missing_config = fixture.directory.path().join("missing-source.toml");
+    std::fs::write(
+        &missing_config,
+        std::fs::read_to_string(&user_config).unwrap().replace(
+            &population.display().to_string(),
+            &missing_population.display().to_string(),
+        ),
+    )
+    .unwrap();
+    let missing_flags = vec!["--config".to_owned(), missing_config.display().to_string()];
+    let missing = run_with(
+        fixture.directory.path(),
+        &missing_flags,
+        "country prepare",
+        &["--resolution", "1"],
+    );
+    assert_eq!(missing.status.code(), Some(3), "{missing:?}");
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("population_source"));
+    assert!(
+        !fixture
+            .directory
+            .path()
+            .join("out/local-preview/1/manifest.json")
+            .exists()
+    );
+
+    let explicit = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country prepare",
+        &["--combination", "local-preview", "--resolution", "1"],
+    );
+    assert_eq!(explicit.status.code(), Some(0), "{explicit:?}");
+    let refused = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country prepare",
+        &["--combination", "local-preview", "--resolution", "1"],
+    );
+    assert_eq!(refused.status.code(), Some(2), "{refused:?}");
+    let replaced = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country prepare",
+        &[
+            "--combination",
+            "local-preview",
+            "--resolution",
+            "1",
+            "--replace",
+        ],
+    );
+    assert_eq!(replaced.status.code(), Some(0), "{replaced:?}");
+}
+
+#[test]
+fn country_prepare_fingerprints_registered_sources_and_refuses_checksum_mismatch() {
+    let (fixture, _, _, population, registry_path, boundary_digest) = country_prepare_fixture();
+    let registered = run_with(
+        fixture.directory.path(),
+        &[],
+        "country prepare",
+        &["--combination", "baseline"],
+    );
+    assert_eq!(registered.status.code(), Some(0), "{registered:?}");
+    let registered_path = fixture
+        .directory
+        .path()
+        .join("out/baseline/1/manifest.json");
+    let registered_manifest = std::fs::read(&registered_path).unwrap();
+    let registered_manifest_json: serde_json::Value =
+        serde_json::from_slice(&registered_manifest).unwrap();
+    assert_eq!(
+        registered_manifest_json["population_source"]["sha256"],
+        format!("{:x}", Sha256::digest(std::fs::read(&population).unwrap()))
+    );
+    assert_eq!(
+        registered_manifest_json["boundary_source"]["sha256"],
+        boundary_digest
+    );
+    std::fs::write(
+        &registry_path,
+        std::fs::read_to_string(&registry_path)
+            .unwrap()
+            .replace(&boundary_digest, &"b".repeat(64)),
+    )
+    .unwrap();
+    let mismatch = run_with(
+        fixture.directory.path(),
+        &[],
+        "country prepare",
+        &["--combination", "baseline", "--replace"],
+    );
+    assert_eq!(mismatch.status.code(), Some(2), "{mismatch:?}");
+    assert!(String::from_utf8_lossy(&mismatch.stderr).contains("registered SHA-256"));
+    assert_eq!(std::fs::read(registered_path).unwrap(), registered_manifest);
 }
 
 #[test]

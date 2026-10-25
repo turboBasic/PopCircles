@@ -18,7 +18,9 @@ use popcircles::table::{
 };
 
 use crate::boundaries::{self, BoundaryFeature};
+use crate::config::Combination;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
+use crate::prepared::{self, GridDocument, PreparedManifest, PreparedWriter, Request, Source};
 use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
 
 pub(crate) struct Prepared {
@@ -36,7 +38,114 @@ pub(crate) struct Prepared {
     attribution: String,
 }
 
+struct CountryInputs {
+    population_path: std::path::PathBuf,
+    raster_spec: popcircles::raster::RasterSpec,
+    population_digest: String,
+    boundary_path: std::path::PathBuf,
+    boundary_id_field: String,
+    boundary_digest: String,
+    boundary_attribution: Option<String>,
+}
+
+struct CountryData {
+    source: Grid,
+    decimation: Decimation,
+    features: Vec<BoundaryFeature>,
+    ownership: CellOwnership,
+    rows: Vec<Vec<f32>>,
+    tallies: CellTallies,
+}
+
 impl Prepared {
+    pub(crate) fn prepare_combination(
+        combination: &Combination,
+        resolution: u32,
+        replace: bool,
+    ) -> Result<(), Failure> {
+        let registry =
+            Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
+        let inputs = resolve_country_inputs(combination, &registry)?;
+        let data = load_country_data(&inputs, resolution)?;
+        verify_country_sources_unchanged(&inputs)?;
+
+        let destination = combination
+            .resolutions
+            .get(&resolution)
+            .and_then(|location| location.local.as_deref())
+            .ok_or_else(|| {
+                Failure::bad_input(format!(
+                    "combination `{}` resolution {resolution} has no local output directory",
+                    combination.id
+                ))
+            })?;
+        let manifest = PreparedManifest {
+            format_version: prepared::FORMAT_VERSION,
+            combination_id: combination.id.clone(),
+            resolution,
+            population_source: Source {
+                name: combination.population_source.clone(),
+                sha256: Some(inputs.population_digest.clone()),
+                attribution: combination.attribution.clone(),
+                epsg: Some(inputs.raster_spec.epsg),
+                nodata: Some(inputs.raster_spec.nodata),
+                id_field: None,
+            },
+            boundary_source: Source {
+                name: combination.boundary_source.clone(),
+                sha256: Some(inputs.boundary_digest.clone()),
+                attribution: inputs
+                    .boundary_attribution
+                    .clone()
+                    .or_else(|| combination.attribution.clone()),
+                epsg: None,
+                nodata: None,
+                id_field: Some(inputs.boundary_id_field.clone()),
+            },
+            source_grid: GridDocument::from_grid(data.source),
+            effective_grid: GridDocument::from_grid(*data.decimation.grid()),
+            decimation: resolution,
+            ownership_rule_version: popcircles::ownership::OWNERSHIP_RULE_VERSION,
+            aggregation_order_version: popcircles::table::COUNTRY_AGGREGATION_ORDER_VERSION,
+            byte_order: prepared::ByteOrder::Little,
+            features: Vec::new(),
+        };
+        let mut writer = PreparedWriter::new(destination, manifest, replace)
+            .map_err(|error| Failure::bad_input(error.to_string()))?;
+        for feature in &data.features {
+            let table = country_table_result(build_country_decimated(
+                Replay::new(data.source, &data.rows, data.tallies),
+                &data.ownership,
+                &feature.id,
+                data.decimation,
+                &inputs.boundary_digest,
+            ))?;
+            writer
+                .write_feature(&feature.id, table.as_ref())
+                .map_err(|error| Failure::bad_input(error.to_string()))?;
+        }
+        writer
+            .publish()
+            .map_err(|error| Failure::bad_input(error.to_string()))?;
+        PreparedManifest::load(
+            destination,
+            &Request {
+                combination_id: &combination.id,
+                resolution,
+                population_source: &combination.population_source,
+                population_sha256: Some(&inputs.population_digest),
+                boundary_source: &combination.boundary_source,
+                boundary_sha256: Some(&inputs.boundary_digest),
+                population_epsg: inputs.raster_spec.epsg,
+                population_nodata: inputs.raster_spec.nodata,
+                boundary_source_id_field: &inputs.boundary_id_field,
+                source_grid: data.source,
+            },
+        )
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+        Ok(())
+    }
+
     pub(crate) fn load(
         dataset_name: Option<&str>,
         source: Grid,
@@ -266,6 +375,144 @@ impl Prepared {
     }
 }
 
+fn resolve_country_inputs(
+    combination: &Combination,
+    registry: &Registry,
+) -> Result<CountryInputs, Failure> {
+    let (population_path, raster_spec, expected_population_digest) =
+        if let Some(name) = combination.population_source.strip_prefix("dataset:") {
+            let dataset = registry
+                .raster(name)
+                .map_err(|error| Failure::registry(&error))?;
+            let grid = dataset.grid.grid().map_err(|error| Failure::grid(&error))?;
+            (
+                dataset.raster,
+                popcircles::raster::RasterSpec {
+                    grid,
+                    epsg: dataset.epsg,
+                    pixel: popcircles::raster::PixelType::Float32,
+                    nodata: dataset.nodata,
+                },
+                dataset.sha256,
+            )
+        } else {
+            let path = combination
+                .population_source
+                .strip_prefix("file:")
+                .filter(|path| !path.is_empty())
+                .ok_or_else(|| Failure::bad_input("invalid population_source"))?;
+            let spec = combination
+                .population
+                .ok_or_else(|| Failure::bad_input("local population source metadata is missing"))?;
+            (Path::new(path).to_path_buf(), spec, None)
+        };
+    let (boundary_path, boundary_id_field, expected_boundary_digest, boundary_attribution) =
+        if let Some(name) = combination.boundary_source.strip_prefix("dataset:") {
+            let boundary = registry.boundary(name).ok_or_else(|| {
+                Failure::bad_input(format!("`{name}` is not a registered boundary dataset"))
+            })?;
+            let id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
+                Failure::bad_input(format!("boundary dataset `{name}` has no source ID field"))
+            })?;
+            (
+                boundary.path.clone(),
+                id_field.to_owned(),
+                boundary.sha256.clone(),
+                boundary.attribution.clone(),
+            )
+        } else {
+            let path = combination
+                .boundary_source
+                .strip_prefix("file:")
+                .filter(|path| !path.is_empty())
+                .ok_or_else(|| Failure::bad_input("invalid boundary_source"))?;
+            let id_field = combination
+                .boundary_source_id_field
+                .as_deref()
+                .ok_or_else(|| Failure::bad_input("local boundary source ID field is missing"))?;
+            (
+                Path::new(path).to_path_buf(),
+                id_field.to_owned(),
+                None,
+                None,
+            )
+        };
+    let population_digest = fingerprint_source("population_source", &population_path)?;
+    if expected_population_digest
+        .as_deref()
+        .is_some_and(|expected| expected != population_digest)
+    {
+        return Err(Failure::bad_input(format!(
+            "population source {} does not match its registered SHA-256",
+            population_path.display()
+        )));
+    }
+    let boundary_digest = fingerprint_source("boundary_source", &boundary_path)?;
+    if expected_boundary_digest
+        .as_deref()
+        .is_some_and(|expected| expected != boundary_digest)
+    {
+        return Err(Failure::bad_input(format!(
+            "boundary source {} does not match its registered SHA-256",
+            boundary_path.display()
+        )));
+    }
+    Ok(CountryInputs {
+        population_path,
+        raster_spec,
+        population_digest,
+        boundary_path,
+        boundary_id_field,
+        boundary_digest,
+        boundary_attribution,
+    })
+}
+
+fn load_country_data(inputs: &CountryInputs, resolution: u32) -> Result<CountryData, Failure> {
+    let source = inputs.raster_spec.grid;
+    let decimation = Decimation::new(source, resolution)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let features = boundaries::load(&inputs.boundary_path, &inputs.boundary_id_field).map_err(
+        |error| {
+            if inputs.boundary_path.exists() {
+                Failure::bad_input(error.to_string())
+            } else {
+                Failure {
+                    code: EXIT_MISSING_DATA,
+                    message: format!(
+                        "boundary_source at {} is missing; provide the declared local file or fetch the registered dataset",
+                        inputs.boundary_path.display()
+                    ),
+                }
+            }
+        },
+    )?;
+    let geometries: Vec<(FeatureId, Geometry)> = features
+        .iter()
+        .map(|feature| (feature.id.clone(), feature.geometry.clone()))
+        .collect();
+    let (ownership, _) = CellOwnership::rasterize_features(&geometries, source)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let mut raster = GeoTiffSource::open(&inputs.population_path, &inputs.raster_spec)
+        .map_err(|error| Failure::bad_input(format!("population_source: {error}")))?;
+    let mut rows = Vec::with_capacity(source.height() as usize);
+    while let Some(row) = raster.next_row() {
+        rows.push(
+            row.map_err(|error| Failure::bad_input(format!("population_source: {error}")))?
+                .values
+                .to_vec(),
+        );
+    }
+    Ok(CountryData {
+        source,
+        decimation,
+        features,
+        ownership,
+        rows,
+        tallies: raster.finish(),
+    })
+}
+
 fn country_table_result(
     result: Result<CountryTable, CountryTableBuildError>,
 ) -> Result<Option<CountryTable>, Failure> {
@@ -274,6 +521,41 @@ fn country_table_result(
         Err(CountryTableBuildError::NoOwnedCells(_)) => Ok(None),
         Err(error) => Err(Failure::bad_input(error.to_string())),
     }
+}
+
+fn fingerprint_source(field: &str, path: &Path) -> Result<String, Failure> {
+    prepared::fingerprint_file(path).map_err(|error| Failure {
+        code: EXIT_MISSING_DATA,
+        message: format!("{field} at {} could not be read: {error}", path.display()),
+    })
+}
+
+fn verify_country_sources_unchanged(inputs: &CountryInputs) -> Result<(), Failure> {
+    for (field, path, expected) in [
+        (
+            "population_source",
+            &inputs.population_path,
+            &inputs.population_digest,
+        ),
+        (
+            "boundary_source",
+            &inputs.boundary_path,
+            &inputs.boundary_digest,
+        ),
+    ] {
+        verify_source_unchanged(field, path, expected)?;
+    }
+    Ok(())
+}
+
+fn verify_source_unchanged(field: &str, path: &Path, expected: &str) -> Result<(), Failure> {
+    if fingerprint_source(field, path)? != expected {
+        return Err(Failure::bad_input(format!(
+            "{field} at {} changed while preparation was reading it; retry with stable source files",
+            path.display()
+        )));
+    }
+    Ok(())
 }
 
 fn circle_intersects_domain(
@@ -352,6 +634,21 @@ mod tests {
     use popcircles::report::CountryBreakdownReport;
 
     use super::*;
+
+    #[test]
+    fn changed_input_bytes_are_refused_before_prepared_output_is_created() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("source.tif");
+        std::fs::write(&path, b"before").unwrap();
+        let expected = prepared::fingerprint_file(&path).unwrap();
+        std::fs::write(&path, b"after").unwrap();
+        let error = verify_source_unchanged("population_source", &path, &expected).unwrap_err();
+        assert!(
+            error
+                .message
+                .contains("changed while preparation was reading it")
+        );
+    }
 
     fn country(id: &str, west: f64, east: f64) -> BoundaryFeature {
         BoundaryFeature {

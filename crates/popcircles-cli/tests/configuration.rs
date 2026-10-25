@@ -59,6 +59,19 @@ fn combination_listing_uses_builtin_and_user_configuration_without_opening_sourc
         boundary_source = "file:missing-boundaries.geojson"
         default_resolution = 5
 
+        [combinations.local-preview.population_metadata]
+        width = 2
+        height = 2
+        origin_lat = 1.0
+        origin_lon = 0.0
+        lon_step = 1.0
+        lat_step = -1.0
+        epsg = 4326
+        nodata = -9999.0
+
+        [combinations.local-preview.boundary_metadata]
+        source_id_field = "CNTR_ID"
+
         [combinations.local-preview.resolutions.5]
         local = "not-prepared"
     "#,

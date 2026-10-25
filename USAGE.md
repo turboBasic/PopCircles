@@ -350,6 +350,24 @@ mise run cli -- country combinations --config my-data.toml
 The list shows configured source pairs and resolutions. It does not fetch inputs or check whether
 source or prepared-data files exist.
 
+Prepare a combination before using its country tables:
+
+```sh
+mise run cli -- country prepare
+mise run cli -- country prepare --combination local-gpw --resolution 10
+```
+
+The command defaults to the configured country combination and its default resolution. It reads
+`dataset:<name>` inputs using `data/registry.toml`, or reads `file:<path>` inputs using metadata in the
+combination: a local population GeoTIFF needs its grid, EPSG code and nodata sentinel, and a local
+boundary GeoJSON needs its string identifier property. Preparation validates and fingerprints both
+input files, applies the same cell ownership and aggregation rules as country searches, and writes a
+versioned manifest plus portable country-prefix files under the selected resolution's `local`
+directory. It checks the prepared output through the shared reader before reporting success. A
+registered file whose bytes differ from its registry SHA-256 is refused. Existing prepared output is
+preserved unless `--replace` is passed explicitly. Fetching remote inputs and selecting prepared
+combinations in searches are separate actions.
+
 **Choose the detail level with `--decimate`.** Use `10` for quick exploration, as in the examples above,
 or `2` for a practical balance between detail and speed. Use `1` for full resolution. Build and search
 with the same value. Country sweeps default to `10`; the other searches default to `1`.

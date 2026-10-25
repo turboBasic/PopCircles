@@ -361,41 +361,92 @@ pub struct CountryTableIdentity {
     aggregation_order_version: u32,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct PreparedCountryTableIdentity {
+    pub feature_id: FeatureId,
+    pub source_digest: u64,
+    pub boundary_source_digest: String,
+    pub ownership_digest: u64,
+    pub source_grid: Grid,
+    pub effective_grid: Grid,
+    pub decimation: u32,
+    pub ownership_rule_version: u32,
+    pub aggregation_order_version: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PreparedCountryTable {
+    pub source_grid: Grid,
+    pub effective_grid: Grid,
+    pub grid: Grid,
+    pub north_row: u32,
+    pub west_col: u32,
+    pub total: f64,
+    pub unassigned: f64,
+    pub identity: CountryTableIdentity,
+    pub cells: Vec<f64>,
+}
+
 impl CountryTableIdentity {
-    pub(crate) const fn feature_id(&self) -> &FeatureId {
+    #[must_use]
+    pub const fn feature_id(&self) -> &FeatureId {
         &self.feature_id
     }
 
-    pub(crate) const fn source_digest(&self) -> u64 {
+    #[must_use]
+    pub const fn source_digest(&self) -> u64 {
         self.source_digest
     }
 
-    pub(crate) fn boundary_source_digest(&self) -> &str {
+    #[must_use]
+    pub fn boundary_source_digest(&self) -> &str {
         &self.boundary_source_digest
     }
 
-    pub(crate) const fn ownership_digest(&self) -> u64 {
+    #[must_use]
+    pub const fn ownership_digest(&self) -> u64 {
         self.ownership_digest
     }
 
-    pub(crate) const fn source_grid(&self) -> &Grid {
+    #[must_use]
+    pub const fn source_grid(&self) -> &Grid {
         &self.source_grid
     }
 
-    pub(crate) const fn effective_grid(&self) -> &Grid {
+    #[must_use]
+    pub const fn effective_grid(&self) -> &Grid {
         &self.effective_grid
     }
 
-    pub(crate) const fn decimation(&self) -> u32 {
+    #[must_use]
+    pub const fn decimation(&self) -> u32 {
         self.decimation
     }
 
-    pub(crate) const fn ownership_rule_version(&self) -> u32 {
+    #[must_use]
+    pub const fn ownership_rule_version(&self) -> u32 {
         self.ownership_rule_version
     }
 
-    pub(crate) const fn aggregation_order_version(&self) -> u32 {
+    #[must_use]
+    pub const fn aggregation_order_version(&self) -> u32 {
         self.aggregation_order_version
+    }
+}
+
+impl From<PreparedCountryTableIdentity> for CountryTableIdentity {
+    fn from(parts: PreparedCountryTableIdentity) -> Self {
+        Self {
+            feature_id: parts.feature_id,
+            source_digest: parts.source_digest,
+            boundary_source_digest: parts.boundary_source_digest,
+            ownership_digest: parts.ownership_digest,
+            source_grid: parts.source_grid,
+            effective_grid: parts.effective_grid,
+            decimation: parts.decimation,
+            ownership_rule_version: parts.ownership_rule_version,
+            aggregation_order_version: parts.aggregation_order_version,
+        }
     }
 }
 
@@ -406,7 +457,122 @@ pub const COUNTRY_AGGREGATION_ORDER_VERSION: u32 = 1;
 #[error("the derived country table identity does not match the requested source or rules")]
 pub struct CountryTableIdentityError;
 
+#[derive(Debug, thiserror::Error)]
+pub enum PreparedCountryTableError {
+    #[error("prepared country table has {found} prefix cells; expected {expected}")]
+    PayloadLength { expected: usize, found: usize },
+    #[error("prepared country table identity does not match its grids or decimation")]
+    Identity,
+    #[error("prepared country table crop is outside its effective grid")]
+    CropBounds,
+    #[error("prepared country table crop grid is invalid")]
+    CropGrid(#[source] GridError),
+    #[error("prepared country table total is not the final prefix value")]
+    Total,
+    #[error("prepared country table prefix encodes a negative cell population")]
+    NegativeCell,
+}
+
 impl CountryTable {
+    /// Restores a prefix table after its wire metadata and payload integrity have been checked.
+    ///
+    /// # Errors
+    /// Rejects a payload with the wrong padded length, inconsistent identity or crop, a negative
+    /// cell population, or a total that differs from the final prefix cell.
+    pub fn from_prepared(
+        prepared: PreparedCountryTable,
+    ) -> Result<Self, PreparedCountryTableError> {
+        let PreparedCountryTable {
+            source_grid,
+            effective_grid,
+            grid,
+            north_row,
+            west_col,
+            total,
+            unassigned,
+            identity,
+            cells,
+        } = prepared;
+        let decimation = Decimation::new(source_grid, identity.decimation)
+            .map_err(|_| PreparedCountryTableError::Identity)?;
+        if identity.source_grid != source_grid
+            || identity.effective_grid != effective_grid
+            || *decimation.grid() != effective_grid
+        {
+            return Err(PreparedCountryTableError::Identity);
+        }
+        let height = grid.height();
+        let width = grid.width();
+        if north_row
+            .checked_add(height)
+            .is_none_or(|end| end > effective_grid.height())
+            || width > effective_grid.width()
+            || west_col >= effective_grid.width()
+        {
+            return Err(PreparedCountryTableError::CropBounds);
+        }
+        let expected_grid = country_crop_grid(effective_grid, north_row, height, west_col, width)
+            .map_err(|error| match error {
+            CountryTableBuildError::CropGrid(source) => PreparedCountryTableError::CropGrid(source),
+            _ => PreparedCountryTableError::CropBounds,
+        })?;
+        if grid != expected_grid {
+            return Err(PreparedCountryTableError::CropBounds);
+        }
+        let expected = padded_len(&grid);
+        if cells.len() != expected {
+            return Err(PreparedCountryTableError::PayloadLength {
+                expected,
+                found: cells.len(),
+            });
+        }
+        let last = cells[expected - 1];
+        if !total.is_finite()
+            || !unassigned.is_finite()
+            || !cells.iter().all(|cell| cell.is_finite() && *cell >= 0.0)
+            || total.to_bits() != last.to_bits()
+        {
+            return Err(PreparedCountryTableError::Total);
+        }
+        let stride = width as usize + 1;
+        for row in 0..=height as usize {
+            for col in 1..=width as usize {
+                let index = row * stride + col;
+                if cells[index] < cells[index - 1]
+                    || (row > 0 && cells[index] < cells[index - stride])
+                {
+                    return Err(PreparedCountryTableError::NegativeCell);
+                }
+            }
+        }
+        for row in 1..=height as usize {
+            for col in 1..=width as usize {
+                let index = row * stride + col;
+                let northwest = cells[index - stride - 1];
+                let northeast = cells[index - stride];
+                let southwest = cells[index - 1];
+                let southeast = cells[index];
+                let population = (southeast - northeast) - (southwest - northwest);
+                let rounding_bound =
+                    8.0 * f64::EPSILON * southeast.max(northwest).max(northeast).max(southwest);
+                if population < -rounding_bound {
+                    return Err(PreparedCountryTableError::NegativeCell);
+                }
+            }
+        }
+        Ok(Self {
+            source_grid,
+            effective_grid,
+            grid,
+            north_row,
+            west_col,
+            total,
+            unassigned,
+            identity,
+            cells,
+        })
+    }
+
     #[must_use]
     pub const fn source_grid(&self) -> &Grid {
         &self.source_grid
@@ -446,6 +612,12 @@ impl CountryTable {
     #[must_use]
     pub const fn identity(&self) -> &CountryTableIdentity {
         &self.identity
+    }
+
+    /// Immutable padded prefix payload for a portable prepared-data writer.
+    #[must_use]
+    pub fn prefix_cells(&self) -> &[f64] {
+        &self.cells
     }
 
     /// # Errors
@@ -1212,6 +1384,66 @@ mod tests {
         assert_eq!(table_b.total(), 15.0);
         assert_eq!(table_a.unassigned(), 52.0);
         assert_eq!(table_b.unassigned(), 52.0);
+        let restored = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: *table_a.grid(),
+            north_row: table_a.north_row(),
+            west_col: table_a.west_col(),
+            total: table_a.total(),
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: table_a.prefix_cells().to_vec(),
+        })
+        .expect("the prepared prefix restores its table");
+        assert_eq!(restored, table_a);
+        let invalid = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: *table_a.grid(),
+            north_row: table_a.north_row(),
+            west_col: table_a.west_col(),
+            total: 5.0,
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: vec![0.0, 10.0, 5.0, 0.0, 10.0, 5.0],
+        });
+        assert!(matches!(
+            invalid,
+            Err(PreparedCountryTableError::NegativeCell)
+        ));
+        let crop = country_crop_grid(*table_a.effective_grid(), 0, 2, 0, 2)
+            .expect("the 2 by 2 fixture crop is valid");
+        let invalid_2d = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: crop,
+            north_row: 0,
+            west_col: 0,
+            total: 22.0,
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: vec![0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 0.0, 15.0, 22.0],
+        });
+        assert!(matches!(
+            invalid_2d,
+            Err(PreparedCountryTableError::NegativeCell)
+        ));
+        let invalid_overflow = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: crop,
+            north_row: 0,
+            west_col: 0,
+            total: 1.6e308,
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: vec![0.0, 0.0, 0.0, 0.0, 1e308, 1.5e308, 0.0, 1.5e308, 1.6e308],
+        });
+        assert!(matches!(
+            invalid_overflow,
+            Err(PreparedCountryTableError::NegativeCell)
+        ));
         let table = table_a.table();
         let (rows, cols) = table.whole();
         assert_eq!(table.population(rows, cols), 11.0);
