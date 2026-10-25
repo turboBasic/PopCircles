@@ -1,8 +1,8 @@
 # Data
 
-Input datasets, one directory per kind, described for a machine in [`registry.toml`](registry.toml) and
-for a person here. Generated products — summation tables, rendered maps — never live here: they are
-gitignored (`*.bin`, `out/`) and reproducible from these inputs.
+This folder contains the source data used by the project. The files are described for the program in
+[`registry.toml`][registry] and explained here. Results made from the source data, such as lookup
+tables and maps, are generated when needed and are not stored here.
 
 ```text
 data/
@@ -11,30 +11,32 @@ data/
   settlements/  populated places
 ```
 
-A new kind gets its own directory, a row in [`registry.toml`](registry.toml) and an entry below. Keep
-names lowercase and hyphenated, and put the grid resolution in the filename when a dataset comes in
-several. **Every filename here is this project's own description of the contents, and matches no
-publisher's**, so what identifies a dataset is the provenance recorded below and never its name — a file
-downloaded from the source is renamed to its heading here before it is usable.
+Each type of data has its own folder, a row in [`registry.toml`][registry], and an entry below.
+Filenames use lowercase words separated by hyphens. If there are several resolutions, the filename
+includes the resolution. **These filenames are project labels, not the publishers' original names.** The
+information below identifies each source file. Rename a downloaded file to match its heading before
+using it.
 
 ## Getting it
 
-A large dataset is published rather than committed, so it is absent from a fresh clone until fetched:
+Large data files are kept in a download rather than in the source code repository. They are not included
+when you first clone the project. Fetch them with:
 
 ```sh
 mise run setup
 mise run data:get   # fetch every registered dataset not already here, and verify it
 ```
 
-`data:get` needs no account anywhere. It reads [`registry.toml`](registry.toml), checks each file
-against the `sha256` recorded there **before** putting it in place, and downloads nothing already
-present and correct. A download that fails verification leaves nothing behind. On success it prints the
-attribution each licence requires, which is the moment a user acquires the obligation.
+`data:get` does not require an account. It reads [`registry.toml`][registry] and checks each
+download against its recorded SHA-256 checksum before saving it. It skips files that are already
+present and correct. If a download fails the check, it is not saved. After a successful download, the
+command prints any credit required by the data's licence.
 
-A small dataset is a committed Git blob and needs none of this — the coastline below is one, so a clone
-draws a complete figure before fetching anything. Which of the two a dataset is, its row says.
+A small dataset is included in the repository, so it is already available after cloning. The coastline
+below is one; maps can use it without downloading anything. The registry says whether each dataset is
+included or must be fetched.
 Obtaining an independent copy from the publisher, to check a republished asset against its source, is
-[`CONTRIBUTING.md`](../CONTRIBUTING.md#verifying-a-published-dataset).
+[`CONTRIBUTING.md`][contributing-data].
 
 ## population-count-2020-30arcsec
 
@@ -58,7 +60,7 @@ accumulator lands 0.15 low — it gives 7 757 982 599.17, and the file is not wh
 **It is [Gridded Population of the World, Version 4.11 (GPWv4.11): Population Count Adjusted to Match
 the 2015 Revision of UN WPP Country Totals, Revision 11][gpw-adj]**, year **2020**, 30 arc-second
 GeoTIFF — CIESIN, Columbia University, distributed by NASA SEDAC, DOI
-[10.7927/H4PN93PB](https://doi.org/10.7927/H4PN93PB). SEDAC's own host is gone and the DOI is the route
+[10.7927/H4PN93PB][gpw-doi]. SEDAC's own host is gone and the DOI is the route
 that survived it. It is the WPP-adjusted variant rather than the unadjusted [Population Count][gpw-raw]:
 the two differ only in values, and their catalogued maxima of 602 380 and 627 597 are what the measured
 `Largest cell` identifies this copy by — the file's own `GDALMetadata` is generic and claims none of it.
@@ -70,10 +72,6 @@ published map or figure derived from this raster carries the citation:
 > *Gridded Population of the World, Version 4 (GPWv4): Population Count Adjusted to Match 2015
 > Revision of UN WPP Country Totals, Revision 11.* Palisades, NY: NASA Socioeconomic Data and
 > Applications Center (SEDAC). <https://doi.org/10.7927/H4PN93PB>
-
-[cc-by]: https://creativecommons.org/licenses/by/4.0/
-[gpw-adj]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
-[gpw-raw]: https://doi.org/10.7927/H4JW8BX5
 
 ## coastline-1to110m
 
@@ -106,10 +104,6 @@ attribution, so a figure over this basemap carries the raster's citation alone. 
 too is welcomed by the project and is not done, for the reason the citation's wording is checked at all:
 what a figure says about its sources should be what those sources ask for and nothing else.
 
-[ne]: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
-[ne-tag]: https://github.com/nvkelso/natural-earth-vector/releases/tag/v5.1.2
-[ne-terms]: https://www.naturalearthdata.com/about/terms-of-use/
-
 ## populated-places-1to10m
 
 | Property | Value |
@@ -126,7 +120,7 @@ size. The `NAME` and `ADM0NAME` properties supply the settlement and country lab
 
 The upstream file is available anonymously, but its 19 MB size is above the repository's committed-file
 limit, so this exact copy is published in a data-only release and fetched by `mise run data:get`. The
-release asset is [`populated-places-1to10m.geojson`](https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v2/populated-places-1to10m.geojson).
+release asset is [`populated-places-1to10m.geojson`][populated-places-asset].
 
 Natural Earth is in the public domain. Its [terms of use][ne-terms] require no attribution, so settlement
 names add no credit to a figure.
@@ -146,7 +140,7 @@ names add no credit to a figure.
 The publisher serves one worldwide GeoJSON file. The 2024 product has received later corrections;
 the checksum above identifies the exact bytes selected here, and `CNTR_ID` identifies each feature
 within that snapshot. The publisher offers no DOI or validated persistent identifier for these exact
-bytes. The territorial interpretation follows [ADR 0015](../docs/decisions/0015-country-identities-follow-gisco-country-features.md):
+bytes. The territorial interpretation follows [ADR 0015][adr-gisco]:
 each published feature is retained as one identity, including multipart countries, separate
 dependencies and the publisher's disputed-area treatment. The nine invalid source geometries remain
 unchanged; country-mask work must decide their behavior explicitly.
@@ -171,9 +165,22 @@ shasum -a 256 /tmp/CNTR_RG_01M_2024_4326.geojson
 
 The published file is renamed to `gisco-countries-2024-1m.geojson` in `data/boundaries/`; no
 extraction, simplification or reprojection is performed. Compare the resulting digest with the row in
-[`registry.toml`](registry.toml). The registry's `fetch_url` is the stable project release asset;
+[`registry.toml`][registry]. The registry's `fetch_url` is the stable project release asset;
 the publisher URL above is provenance and a way to reproduce the selected bytes while it still
 serves them.
 
-[gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
+<!-- Links -->
+
+[adr-gisco]: ../docs/decisions/0015-country-identities-follow-gisco-country-features.md
+[cc-by]: https://creativecommons.org/licenses/by/4.0/
+[contributing-data]: ../CONTRIBUTING.md#verifying-a-published-dataset
 [gisco-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson
+[gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
+[gpw-adj]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
+[gpw-doi]: https://doi.org/10.7927/H4PN93PB
+[gpw-raw]: https://doi.org/10.7927/H4JW8BX5
+[ne]: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
+[ne-tag]: https://github.com/nvkelso/natural-earth-vector/releases/tag/v5.1.2
+[ne-terms]: https://www.naturalearthdata.com/about/terms-of-use/
+[populated-places-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v2/populated-places-1to10m.geojson
+[registry]: registry.toml
