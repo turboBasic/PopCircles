@@ -755,6 +755,52 @@ fn country_prepare_uses_configured_defaults_and_explicit_replacement() {
 }
 
 #[test]
+fn country_fetch_resolves_configuration_and_refuses_local_only_or_unknown_targets() {
+    let (fixture, _, flags, _, _, _) = country_prepare_fixture();
+    let local_only = run_with(fixture.directory.path(), &flags, "country fetch", &[]);
+    assert_eq!(local_only.status.code(), Some(2), "{local_only:?}");
+    assert!(
+        String::from_utf8_lossy(&local_only.stderr).contains("no remote URL"),
+        "{local_only:?}"
+    );
+    assert!(String::from_utf8_lossy(&local_only.stderr).contains("resolution 2"));
+    assert!(
+        !fixture
+            .directory
+            .path()
+            .join("out/local-preview/2")
+            .exists()
+    );
+
+    let explicit_resolution = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country fetch",
+        &["--resolution", "1"],
+    );
+    assert_eq!(explicit_resolution.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&explicit_resolution.stderr).contains("resolution 1"));
+
+    let unavailable_resolution = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country fetch",
+        &["--resolution", "99"],
+    );
+    assert_eq!(unavailable_resolution.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&unavailable_resolution.stderr).contains("no resolution 99"));
+
+    let unknown = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country fetch",
+        &["--combination", "unknown"],
+    );
+    assert_eq!(unknown.status.code(), Some(2), "{unknown:?}");
+    assert!(String::from_utf8_lossy(&unknown.stderr).contains("unknown country combination"));
+}
+
+#[test]
 fn country_prepare_fingerprints_registered_sources_and_refuses_checksum_mismatch() {
     let (fixture, _, _, population, registry_path, boundary_digest) = country_prepare_fixture();
     let registered = run_with(

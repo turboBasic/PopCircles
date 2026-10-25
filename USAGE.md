@@ -368,6 +368,36 @@ registered file whose bytes differ from its registry SHA-256 is refused. Existin
 preserved unless `--replace` is passed explicitly. Fetching remote inputs and selecting prepared
 combinations in searches are separate actions.
 
+To fetch an already prepared bundle, set `remote` beside the local install directory. The remote URL
+names a directory that serves `manifest.json` and the payload files named by that manifest:
+
+```toml
+[combinations.local-gpw.resolutions.10]
+local = "out/local-gpw/10"
+remote = "https://data.example.org/prepared/local-gpw/10"
+```
+
+Then run the explicit fetch command:
+
+```sh
+mise run cli -- country fetch
+mise run cli -- country fetch --combination local-gpw --resolution 10
+```
+
+Fetch defaults to the configured combination and its default resolution. It accepts direct HTTPS
+locations without credentials or query strings, validates the manifest identity and every payload,
+and checks the prepared tables before installing them. An already valid local bundle is reused without
+network access. If the target is invalid or belongs to a different configured identity, pass
+`--replace`; failed downloads or validation leave the previous bundle intact:
+
+```sh
+mise run cli -- country fetch --combination local-gpw --resolution 10 --replace
+```
+
+Fetch never runs implicitly during a search. Use `country prepare` when the raw population and boundary
+sources are available locally; use `country fetch` when the configured prepared bundle is published
+at its remote location.
+
 **Choose the detail level with `--decimate`.** Use `10` for quick exploration, as in the examples above,
 or `2` for a practical balance between detail and speed. Use `1` for full resolution. Build and search
 with the same value. Country sweeps default to `10`; the other searches default to `1`.

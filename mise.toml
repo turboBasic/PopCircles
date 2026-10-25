@@ -17,6 +17,8 @@ node = "24.19.0"
 # where most tools here take `latest` — this one decides what a workflow does, not whether a file is
 # formatted, so a moving version would produce a run nobody could reproduce.
 opencode = "1.18.18"
+# HTTPS transport for the explicit country fetch command; use the same release on Linux and macOS.
+"github:stunnel/static-curl" = "8.23.0"
 
 [env]
 _.python.venv = { path = ".venv", create = true }

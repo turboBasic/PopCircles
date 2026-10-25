@@ -29,9 +29,11 @@ fignums
 hardlink
 pytest
 ruff
+rustls
 shellcheck
 sigstore
 taplo
+ureq
 
 # --- Domain vocabulary ---
 antimeridian

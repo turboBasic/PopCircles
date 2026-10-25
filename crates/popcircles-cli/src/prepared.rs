@@ -425,6 +425,45 @@ impl Drop for PreparedWriter {
 }
 
 impl PreparedManifest {
+    pub(crate) fn validate(&self, request: &Request<'_>) -> Result<(), PreparedError> {
+        validate_manifest(self, request)
+    }
+
+    pub(crate) fn install(
+        directory: &Path,
+        manifest: Self,
+        downloaded: &Path,
+        replace: bool,
+    ) -> Result<(), PreparedError> {
+        let mut writer = PreparedWriter::new(directory, manifest, replace)?;
+        for (index, feature) in writer.manifest.features.iter_mut().enumerate() {
+            let Some(payload) = &mut feature.table else {
+                continue;
+            };
+            if !safe_payload_path(&payload.file) {
+                return Err(PreparedError::UnsafePayloadPath {
+                    path: payload.file.clone(),
+                });
+            }
+            let source = downloaded.join(&payload.file);
+            let file_name = format!(
+                "generation-{}-feature-{index:04}.prefix.f64le",
+                writer.generation
+            );
+            let destination = directory.join(&file_name);
+            writer.created.push(destination.clone());
+            copy_verified_payload(
+                &source,
+                &destination,
+                payload.payload_length,
+                &payload.payload_sha256,
+            )?;
+            payload.file = file_name;
+        }
+        writer.features.clone_from(&writer.manifest.features);
+        writer.publish()
+    }
+
     pub(crate) fn publish(
         directory: &Path,
         manifest: Self,
@@ -499,6 +538,37 @@ impl PreparedManifest {
         }
         Ok(Loaded { manifest, payloads })
     }
+}
+
+fn copy_verified_payload(
+    source: &Path,
+    destination: &Path,
+    expected_length: u64,
+    expected_digest: &str,
+) -> Result<(), PreparedError> {
+    let mut input = File::open(source).map_err(|source_error| PreparedError::PayloadRead {
+        path: source.to_path_buf(),
+        source: source_error,
+    })?;
+    let mut output = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(destination)
+        .map_err(|source_error| PreparedError::PayloadWrite {
+            path: destination.to_path_buf(),
+            source: source_error,
+        })?;
+    io::copy(&mut input, &mut output).map_err(|source_error| PreparedError::PayloadWrite {
+        path: destination.to_path_buf(),
+        source: source_error,
+    })?;
+    output
+        .sync_all()
+        .map_err(|source_error| PreparedError::PayloadWrite {
+            path: destination.to_path_buf(),
+            source: source_error,
+        })?;
+    verify_written_payload(destination, expected_length, expected_digest)
 }
 
 fn validate_manifest(
@@ -890,7 +960,7 @@ fn require(matches: bool, ground: &'static str) -> Result<(), PreparedError> {
     clippy::expect_used,
     reason = "fixture failures should identify the operation that failed"
 )]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use popcircles::domain::{Geometry, Polygon};
     use popcircles::ownership::CellOwnership;
@@ -929,7 +999,7 @@ mod tests {
         })
     }
 
-    fn fixture() -> (TempDir, Grid) {
+    pub(crate) fn fixture() -> (TempDir, Grid) {
         let directory = tempfile::tempdir().expect("fixture directory is available");
         let grid = grid();
         let country = FeatureId::new("A").expect("feature ID is valid");
@@ -1011,7 +1081,7 @@ mod tests {
         (directory, grid)
     }
 
-    fn request(grid: Grid) -> Request<'static> {
+    pub(crate) fn request(grid: Grid) -> Request<'static> {
         Request {
             combination_id: "fixture",
             resolution: 1,

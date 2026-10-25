@@ -1,0 +1,15 @@
+---
+source: crates/popcircles-cli/tests/help.rs
+expression: help_for(path)
+---
+Fetch one configured prepared country combination from its remote location
+
+Usage: popcircles country fetch [OPTIONS]
+
+Options:
+      --combination <COMBINATION>  Combination ID; defaults to the configured country combination
+      --log-level <LEVEL>          How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>              Optional configuration file layered over data/config.toml
+      --resolution <RESOLUTION>    Prepared resolution; defaults to that combination's default resolution
+      --replace                    Replace an existing prepared bundle after the fetched bundle is verified
+  -h, --help                       Print help

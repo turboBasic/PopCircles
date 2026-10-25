@@ -34,6 +34,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
+tempfile.workspace = true
 toml.workspace = true
 
 # `tests/commands.rs` builds a real cache to run the binary against, and a temporary directory is what
@@ -42,4 +43,3 @@ toml.workspace = true
 # command runner is needed.
 [dev-dependencies]
 insta.workspace = true
-tempfile.workspace = true

@@ -1,5 +1,8 @@
 use std::fmt::Write as _;
+use std::fs::{self, OpenOptions};
+use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use popcircles::report::{
     CountryListDocument, CountrySmallestDocument, CountrySweepCountry, CountrySweepDocument,
@@ -9,6 +12,8 @@ use popcircles::smallest::cache::CountryLedger;
 use popcircles::smallest::{self, Share};
 use popcircles::table::Decimation;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
+use tempfile::Builder;
 
 use crate::args::{CountryTableArgs, SearchArgs, SweepArgs};
 use crate::boundaries;
@@ -18,6 +23,7 @@ use crate::config::{Combination, Configuration};
 use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
+use crate::prepared::{PreparedManifest, Request};
 use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
 
 fn country_ledger_path(directory: &Path, id: &str) -> PathBuf {
@@ -137,6 +143,263 @@ pub(crate) fn prepare(
             ))
         })?;
     prepared_document(combination, resolution, directory)
+}
+
+pub(crate) fn fetch(
+    config_path: Option<&Path>,
+    combination_id: Option<&str>,
+    resolution: Option<u32>,
+    replace: bool,
+) -> Result<String, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let (combination, resolution) = config
+        .combination(combination_id, resolution)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let location = &combination.resolutions[&resolution];
+    let remote = location.remote.as_deref().ok_or_else(|| {
+        Failure::bad_input(format!(
+            "combination `{}` resolution {resolution} has no remote URL",
+            combination.id
+        ))
+    })?;
+    let directory = location.local.as_deref().ok_or_else(|| {
+        Failure::bad_input(format!(
+            "combination `{}` resolution {resolution} has no local install directory",
+            combination.id
+        ))
+    })?;
+    validate_remote(remote)?;
+    let registry =
+        Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
+    let population = if let Some(name) = combination.population_source.strip_prefix("dataset:") {
+        let dataset = registry
+            .raster(name)
+            .map_err(|error| Failure::registry(&error))?;
+        (
+            dataset.grid.grid().map_err(|error| Failure::grid(&error))?,
+            dataset.epsg,
+            dataset.nodata,
+            dataset.sha256,
+        )
+    } else {
+        let spec = combination
+            .population
+            .ok_or_else(|| Failure::bad_input("local population source metadata is missing"))?;
+        (spec.grid, spec.epsg, spec.nodata, None)
+    };
+    let (boundary_id_field, boundary_sha256) =
+        if let Some(name) = combination.boundary_source.strip_prefix("dataset:") {
+            let boundary = registry.boundary(name).ok_or_else(|| {
+                Failure::bad_input(format!("`{name}` is not a registered boundary dataset"))
+            })?;
+            let field = boundary.source_id_field.clone().ok_or_else(|| {
+                Failure::bad_input(format!("boundary dataset `{name}` has no source ID field"))
+            })?;
+            (field, boundary.sha256.clone())
+        } else {
+            let field = combination
+                .boundary_source_id_field
+                .clone()
+                .ok_or_else(|| Failure::bad_input("local boundary source ID field is missing"))?;
+            (field, None)
+        };
+    let request = Request {
+        combination_id: &combination.id,
+        resolution,
+        population_source: &combination.population_source,
+        population_sha256: population.3.as_deref(),
+        boundary_source: &combination.boundary_source,
+        boundary_sha256: boundary_sha256.as_deref(),
+        population_epsg: population.1,
+        population_nodata: population.2,
+        boundary_source_id_field: &boundary_id_field,
+        source_grid: population.0,
+    };
+    fetch_bundle(remote, directory, &request, replace, false)?;
+    prepared_document(combination, resolution, directory)
+}
+
+fn fetch_bundle(
+    remote: &str,
+    directory: &Path,
+    request: &Request<'_>,
+    replace: bool,
+    allow_http: bool,
+) -> Result<(), Failure> {
+    if directory.exists() {
+        match load_verified_bundle(directory, request) {
+            Ok(()) => return Ok(()),
+            Err(error) if !replace => {
+                return Err(Failure::bad_input(format!(
+                    "prepared data at {} is invalid or does not match the configured identity ({error}); pass --replace to replace it",
+                    directory.display()
+                )));
+            }
+            Err(_) => {}
+        }
+    }
+    let parent = directory
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    fs::create_dir_all(parent).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let staging = Builder::new()
+        .prefix(".country-fetch-")
+        .tempdir_in(parent)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let remote = remote.trim_end_matches('/');
+    // shortcut: manifests above 16 MiB are refused; raise the limit if future bundles exceed it.
+    download_file(
+        &format!("{remote}/manifest.json"),
+        &staging.path().join("manifest.json"),
+        16 * 1024 * 1024,
+        allow_http,
+    )?;
+    let bytes = fs::read(staging.path().join("manifest.json"))
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let manifest: PreparedManifest = serde_json::from_slice(&bytes).map_err(|error| {
+        Failure::bad_input(format!("remote prepared manifest is invalid: {error}"))
+    })?;
+    manifest
+        .validate(request)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    for feature in &manifest.features {
+        let Some(payload) = &feature.table else {
+            continue;
+        };
+        if !safe_payload_name(&payload.file) {
+            return Err(Failure::bad_input(format!(
+                "prepared payload path is not a safe relative file name: {}",
+                payload.file
+            )));
+        }
+        let url = format!("{remote}/{}", payload.file);
+        let path = staging.path().join(&payload.file);
+        let (length, digest) = download_file(&url, &path, payload.payload_length, allow_http)?;
+        if length != payload.payload_length || digest != payload.payload_sha256 {
+            return Err(Failure::bad_input(format!(
+                "prepared payload {} failed its length or SHA-256 check",
+                payload.file
+            )));
+        }
+    }
+    load_verified_bundle(staging.path(), request).map_err(Failure::bad_input)?;
+    PreparedManifest::install(directory, manifest, staging.path(), replace)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    Ok(())
+}
+
+fn load_verified_bundle(directory: &Path, request: &Request<'_>) -> Result<(), String> {
+    let mut loaded =
+        PreparedManifest::load(directory, request).map_err(|error| error.to_string())?;
+    let ids: Vec<_> = loaded.feature_ids().map(str::to_owned).collect();
+    for id in ids {
+        loaded.load_table(&id).map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn validate_remote(remote: &str) -> Result<(), Failure> {
+    if !remote
+        .strip_prefix("https://")
+        .and_then(|url| url.split('/').next())
+        .is_some_and(|authority| !authority.is_empty() && !authority.contains('@'))
+    {
+        return Err(Failure::bad_input(format!(
+            "prepared bundle location must be a direct HTTPS URL without credentials: {remote}"
+        )));
+    }
+    if remote.contains(['?', '#']) {
+        return Err(Failure::bad_input(
+            "prepared bundle URL must not include a query or fragment",
+        ));
+    }
+    Ok(())
+}
+
+fn safe_payload_name(value: &str) -> bool {
+    !value.is_empty()
+        && value != "."
+        && value != ".."
+        && !value.contains('/')
+        && !value.contains('\\')
+}
+
+fn download_file(
+    url: &str,
+    destination: &Path,
+    maximum_length: u64,
+    allow_http: bool,
+) -> Result<(u64, String), Failure> {
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(destination)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let protocols = if allow_http { "=http,https" } else { "=https" };
+    // cspell:ignore redir redirs
+    let output = Command::new("curl")
+        .args([
+            "--disable",
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--disallow-username-in-url",
+            "--max-redirs",
+            "5",
+            "--max-time",
+            "300",
+            "--max-filesize",
+            &maximum_length.to_string(),
+            "--proto",
+            protocols,
+            "--proto-redir",
+            protocols,
+            "--output",
+        ])
+        .arg(destination)
+        .arg(url)
+        .output()
+        .map_err(|error| {
+            Failure::bad_input(format!(
+                "could not start curl while fetching {url}: {error}; install the project tools with mise"
+            ))
+        })?;
+    if !output.status.success() {
+        let _ = fs::remove_file(destination);
+        return Err(Failure::bad_input(format!(
+            "could not fetch {url}: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
+    }
+    let mut file = OpenOptions::new()
+        .read(true)
+        .open(destination)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let length = file
+        .metadata()
+        .map_err(|error| Failure::bad_input(error.to_string()))?
+        .len();
+    if length > maximum_length {
+        let _ = fs::remove_file(destination);
+        return Err(Failure::bad_input(format!(
+            "download from {url} exceeds its declared size limit of {maximum_length} bytes"
+        )));
+    }
+    let mut digest = Sha256::new();
+    let mut buffer = vec![0; 64 * 1024].into_boxed_slice();
+    loop {
+        let count = file
+            .read(&mut buffer)
+            .map_err(|error| Failure::bad_input(format!("could not read {url}: {error}")))?;
+        if count == 0 {
+            break;
+        }
+        digest.update(&buffer[..count]);
+    }
+    Ok((length, format!("{:x}", digest.finalize())))
 }
 
 fn prepared_document(
@@ -300,4 +563,246 @@ pub(crate) fn sweep(
             countries,
         ),
     )))
+}
+#[cfg(test)]
+#[expect(
+    clippy::expect_used,
+    reason = "local-server fixture failures should identify the operation that failed"
+)]
+mod tests {
+    use std::collections::HashMap;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread::{self, JoinHandle};
+
+    use popcircles::grid::Grid;
+    use tempfile::TempDir;
+
+    use super::*;
+    use crate::prepared::tests::{fixture, request};
+
+    fn local_server(routes: HashMap<String, (Vec<u8>, usize)>) -> (String, JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("server binds locally");
+        let address = listener.local_addr().expect("server has an address");
+        let requests = routes.len();
+        let server = thread::spawn(move || {
+            for _ in 0..requests {
+                let (mut stream, _) = listener.accept().expect("server accepts request");
+                let mut request = [0; 4096];
+                let count = stream.read(&mut request).expect("request is readable");
+                let path = String::from_utf8_lossy(&request[..count])
+                    .split_whitespace()
+                    .nth(1)
+                    .expect("request contains a path")
+                    .to_owned();
+                let (body, declared_length) = routes.get(&path).expect("route exists");
+                write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\nContent-Length: {declared_length}\r\nConnection: close\r\n\r\n"
+                )
+                .expect("response headers are written");
+                stream.write_all(body).expect("response body is written");
+            }
+        });
+        (format!("http://{address}/prepared"), server)
+    }
+
+    fn bundle_routes(
+        directory: &Path,
+        changed_id: Option<&str>,
+        corrupt_payload: bool,
+    ) -> HashMap<String, (Vec<u8>, usize)> {
+        let manifest_path = directory.join("manifest.json");
+        let mut manifest: PreparedManifest =
+            serde_json::from_slice(&fs::read(&manifest_path).expect("source manifest is readable"))
+                .expect("source manifest parses");
+        if let Some(id) = changed_id {
+            manifest.combination_id = id.to_owned();
+        }
+        let manifest = serde_json::to_vec(&manifest).expect("remote manifest serializes");
+        let parsed: PreparedManifest =
+            serde_json::from_slice(&manifest).expect("remote manifest parses");
+        let payload = parsed.features[0]
+            .table
+            .as_ref()
+            .expect("fixture country has a table");
+        let mut payload_bytes =
+            fs::read(directory.join(&payload.file)).expect("payload is readable");
+        if corrupt_payload {
+            payload_bytes[0] ^= 0x01;
+        }
+        HashMap::from([
+            (
+                "/prepared/manifest.json".to_owned(),
+                (manifest.clone(), manifest.len()),
+            ),
+            (
+                format!("/prepared/{}", payload.file),
+                (payload_bytes.clone(), payload_bytes.len()),
+            ),
+        ])
+    }
+
+    fn snapshot(directory: &Path) -> Vec<(String, Vec<u8>)> {
+        let mut files: Vec<_> = fs::read_dir(directory)
+            .expect("bundle directory is readable")
+            .map(|entry| {
+                let entry = entry.expect("bundle entry is readable");
+                (
+                    entry.file_name().to_string_lossy().into_owned(),
+                    fs::read(entry.path()).expect("bundle file is readable"),
+                )
+            })
+            .collect();
+        files.sort_by(|left, right| left.0.cmp(&right.0));
+        files
+    }
+
+    fn install_fixture(target: &Path) -> (TempDir, Grid) {
+        let (source, grid) = fixture();
+        let manifest: PreparedManifest = serde_json::from_slice(
+            &fs::read(source.path().join("manifest.json")).expect("fixture manifest is readable"),
+        )
+        .expect("fixture manifest parses");
+        PreparedManifest::install(target, manifest, source.path(), false)
+            .expect("fixture installs transactionally");
+        (source, grid)
+    }
+
+    #[test]
+    fn country_fetch_installs_a_verified_download_and_reuses_it_without_network() {
+        let (source, grid) = fixture();
+        let parent = tempfile::tempdir().expect("target parent exists");
+        let target = parent.path().join("bundle");
+        let (remote, server) = local_server(bundle_routes(source.path(), None, false));
+        fetch_bundle(&remote, &target, &request(grid), false, true)
+            .expect("verified bundle installs");
+        server.join().expect("local server finishes");
+        assert!(load_verified_bundle(&target, &request(grid)).is_ok());
+
+        fetch_bundle(
+            "http://127.0.0.1:1/prepared",
+            &target,
+            &request(grid),
+            false,
+            true,
+        )
+        .expect("valid installed bundle is reused without a request");
+    }
+
+    #[test]
+    fn country_fetch_rejects_non_https_and_credential_bearing_locations() {
+        assert!(validate_remote("http://example.com/prepared").is_err());
+        assert!(validate_remote("https://user@example.com/prepared").is_err());
+        assert!(validate_remote("https://example.com/prepared?token=value").is_err());
+        assert!(validate_remote("https://example.com/prepared").is_ok());
+    }
+
+    #[test]
+    fn country_fetch_caps_manifest_size() {
+        let body = b"manifest".to_vec();
+        let (remote, server) = local_server(HashMap::from([(
+            "/prepared/manifest.json".to_owned(),
+            (body.clone(), body.len()),
+        )]));
+        let directory = tempfile::tempdir().expect("temporary download directory exists");
+        let error = download_file(
+            &format!("{remote}/manifest.json"),
+            &directory.path().join("manifest.json"),
+            u64::try_from(body.len() - 1).expect("fixture length fits u64"),
+            true,
+        )
+        .expect_err("manifest exceeds its configured size limit");
+        server.join().expect("local server finishes");
+        assert!(!directory.path().join("manifest.json").exists());
+        assert_ne!(error.message, "");
+    }
+
+    #[test]
+    fn country_fetch_truncated_download_preserves_the_existing_bundle() {
+        let (_, grid) = fixture();
+        let parent = tempfile::tempdir().expect("target parent exists");
+        let target = parent.path().join("bundle");
+        let (source, _) = install_fixture(&target);
+        let before = snapshot(&target);
+        let mut mismatch = request(grid);
+        mismatch.combination_id = "replacement";
+        let body = fs::read(source.path().join("manifest.json")).expect("manifest is readable");
+        let (remote, server) = local_server(HashMap::from([(
+            "/prepared/manifest.json".to_owned(),
+            (body.clone(), body.len() + 12),
+        )]));
+        assert!(fetch_bundle(&remote, &target, &mismatch, true, true).is_err());
+        server.join().expect("local server finishes");
+        assert_eq!(snapshot(&target), before);
+        assert!(load_verified_bundle(&target, &request(grid)).is_ok());
+    }
+
+    #[test]
+    fn country_fetch_requires_replacement_for_a_mismatched_target_and_refuses_wrong_identity() {
+        let (_, grid) = fixture();
+        let parent = tempfile::tempdir().expect("target parent exists");
+        let target = parent.path().join("bundle");
+        let (source, _) = install_fixture(&target);
+        let before = snapshot(&target);
+        let mut replacement = request(grid);
+        replacement.combination_id = "replacement";
+        let no_replace = fetch_bundle(
+            "http://127.0.0.1:1/prepared",
+            &target,
+            &replacement,
+            false,
+            true,
+        )
+        .expect_err("mismatched target needs explicit replacement");
+        assert!(no_replace.message.contains("pass --replace"));
+
+        let mut routes = bundle_routes(source.path(), None, false);
+        routes.retain(|path, _| path.ends_with("manifest.json"));
+        let (remote, server) = local_server(routes);
+        assert!(fetch_bundle(&remote, &target, &replacement, true, true).is_err());
+        server.join().expect("local server finishes");
+        assert_eq!(snapshot(&target), before);
+        assert!(load_verified_bundle(&target, &request(grid)).is_ok());
+    }
+
+    #[test]
+    fn country_fetch_checksum_failure_preserves_the_existing_bundle() {
+        let (_, grid) = fixture();
+        let parent = tempfile::tempdir().expect("target parent exists");
+        let target = parent.path().join("bundle");
+        let (source, _) = install_fixture(&target);
+        let before = snapshot(&target);
+        let mut replacement = request(grid);
+        replacement.combination_id = "replacement";
+        let (remote, server) =
+            local_server(bundle_routes(source.path(), Some("replacement"), true));
+        assert!(fetch_bundle(&remote, &target, &replacement, true, true).is_err());
+        server.join().expect("local server finishes");
+        assert_eq!(snapshot(&target), before);
+        assert!(load_verified_bundle(&target, &request(grid)).is_ok());
+    }
+
+    #[test]
+    fn country_fetch_interrupted_payload_preserves_the_existing_bundle() {
+        let (_, grid) = fixture();
+        let parent = tempfile::tempdir().expect("target parent exists");
+        let target = parent.path().join("bundle");
+        let (source, _) = install_fixture(&target);
+        let before = snapshot(&target);
+        let mut replacement = request(grid);
+        replacement.combination_id = "replacement";
+        let mut routes = bundle_routes(source.path(), Some("replacement"), false);
+        let payload = routes
+            .iter_mut()
+            .find(|(path, _)| !path.ends_with("manifest.json"))
+            .map(|(_, response)| response)
+            .expect("payload route exists");
+        payload.1 += 12;
+        let (remote, server) = local_server(routes);
+        assert!(fetch_bundle(&remote, &target, &replacement, true, true).is_err());
+        server.join().expect("local server finishes");
+        assert_eq!(snapshot(&target), before);
+        assert!(load_verified_bundle(&target, &request(grid)).is_ok());
+    }
 }
