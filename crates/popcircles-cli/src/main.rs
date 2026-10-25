@@ -5,6 +5,11 @@ mod config;
 mod country_breakdown;
 mod failure;
 mod observe;
+#[expect(
+    dead_code,
+    reason = "#220 preparation and #221 fetched combinations consume this shared format"
+)]
+mod prepared;
 mod registry;
 mod settlements;
 
