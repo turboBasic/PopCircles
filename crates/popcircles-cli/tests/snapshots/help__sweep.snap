@@ -9,6 +9,7 @@ Usage: popcircles sweep [OPTIONS] --from <FROM> --to <TO> --step <STEP>
 Options:
       --dataset <DATASET>        Population raster in data/registry.toml supplying defaults for omitted grid flags
       --log-level <LEVEL>        How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>            Optional configuration file layered over data/config.toml
       --width <WIDTH>            
       --height <HEIGHT>          
       --origin-lat <ORIGIN_LAT>  

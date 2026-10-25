@@ -68,12 +68,27 @@ pub(crate) struct Combination {
     pub(crate) boundary_source: String,
     pub(crate) resolutions: BTreeMap<u32, Location>,
     pub(crate) default_resolution: u32,
+    #[expect(
+        dead_code,
+        reason = "#222 carries supplied provenance into calculation results"
+    )]
     pub(crate) provenance: Option<String>,
+    #[expect(
+        dead_code,
+        reason = "#222 carries supplied attribution into calculation results"
+    )]
     pub(crate) attribution: Option<String>,
 }
 
 #[derive(Debug)]
 pub(crate) struct Configuration {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "#222 connects configured defaults to calculation selection"
+        )
+    )]
     pub(crate) default_population_dataset: String,
     pub(crate) default_country_combination: String,
     pub(crate) combinations: BTreeMap<String, Combination>,
@@ -157,10 +172,24 @@ impl Configuration {
         })
     }
 
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "#222 connects configured defaults to calculation selection"
+        )
+    )]
     pub(crate) fn population_dataset<'a>(&'a self, explicit: Option<&'a str>) -> &'a str {
         explicit.unwrap_or(&self.default_population_dataset)
     }
 
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "#222 connects configured defaults to calculation selection"
+        )
+    )]
     pub(crate) fn combination(
         &self,
         id: Option<&str>,
@@ -469,12 +498,12 @@ mod tests {
             .default_resolution = Some(5);
         assert!(validate_complete(&missing_default, Path::new("fixture.toml"), &registry).is_err());
 
-        let duplicate = r#"
+        let duplicate = r"
             [combinations.same]
             value = 1
             [combinations.same]
             value = 2
-        "#;
+        ";
         assert!(toml::from_str::<Document>(duplicate).is_err());
 
         let mut unknown = document(VALID);

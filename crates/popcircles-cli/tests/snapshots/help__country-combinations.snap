@@ -1,0 +1,12 @@
+---
+source: crates/popcircles-cli/tests/help.rs
+expression: help_for(path)
+---
+List configured population and boundary source combinations
+
+Usage: popcircles country combinations [OPTIONS]
+
+Options:
+      --log-level <LEVEL>  How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>      Optional configuration file layered over data/config.toml
+  -h, --help               Print help

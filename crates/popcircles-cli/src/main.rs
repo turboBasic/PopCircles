@@ -1,6 +1,7 @@
 mod args;
 pub mod boundaries;
 mod commands;
+mod config;
 mod country_breakdown;
 mod failure;
 mod observe;
@@ -38,6 +39,9 @@ use popcircles::smallest::Share;
 struct Cli {
     #[command(flatten)]
     log: LogArgs,
+    /// Optional configuration file layered over data/config.toml.
+    #[arg(long, global = true, value_name = "PATH")]
+    config: Option<PathBuf>,
     #[command(subcommand)]
     command: Command,
 }
@@ -132,6 +136,8 @@ enum GridCommand {
 enum CountryCommand {
     /// List available countries from the registered boundary dataset.
     List,
+    /// List configured population and boundary source combinations.
+    Combinations,
     /// Find the smallest population circle for one registered country.
     Smallest {
         /// Exact country feature identifier or unique English name.
@@ -199,7 +205,7 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
     StderrLog::install(started, cli.log.log_level);
 
-    match run(cli.command) {
+    match run(cli.command, cli.config.as_deref()) {
         Ok(json) => {
             println!("{json}");
             ExitCode::SUCCESS
@@ -211,7 +217,7 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(command: Command) -> Result<String, Failure> {
+fn run(command: Command, config_path: Option<&std::path::Path>) -> Result<String, Failure> {
     match command {
         Command::Distance {
             from_lat,
@@ -228,6 +234,9 @@ fn run(command: Command) -> Result<String, Failure> {
         Command::Country {
             command: CountryCommand::List,
         } => list_countries(),
+        Command::Country {
+            command: CountryCommand::Combinations,
+        } => commands::country::list_combinations(config_path),
         Command::Country {
             command:
                 CountryCommand::Smallest {
