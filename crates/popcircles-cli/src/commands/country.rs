@@ -620,10 +620,7 @@ fn load_selected_prepared(
     let actual_boundary_sha256 =
         crate::prepared::fingerprint_file(&boundary.path).map_err(|error| Failure {
             code: EXIT_MISSING_DATA,
-            message: format!(
-                "{} could not be read: {error}",
-                boundary_source_guidance(&boundary)
-            ),
+            message: format!("{} ({error})", boundary_source_guidance(&boundary)),
         })?;
     if boundary
         .registered_sha256

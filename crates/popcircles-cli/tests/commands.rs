@@ -889,6 +889,13 @@ fn configured_country_combination_uses_prepared_identity_and_refuses_missing_or_
         String::from_utf8_lossy(&missing.stderr).contains("provide or fix the configured file"),
         "{missing:?}"
     );
+    assert_eq!(
+        String::from_utf8_lossy(&missing.stderr)
+            .matches("could not be read")
+            .count(),
+        1,
+        "{missing:?}"
+    );
 }
 
 #[test]
