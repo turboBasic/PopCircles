@@ -57,5 +57,11 @@ def test_readme_centre_fragment_is_generated_from_the_flagship_document() -> Non
     payload: Any = json.loads(document.read_text(encoding="utf-8"))
     fragment = markdown_centre(circle_of(payload))
     readme = document.parents[1] / "README.md"
+    text = readme.read_text(encoding="utf-8")
+    centre_url = next(
+        line.removeprefix("[map-centre]: ")
+        for line in text.splitlines()
+        if line.startswith("[map-centre]: ")
+    )
 
-    assert fragment in readme.read_text(encoding="utf-8")
+    assert fragment in text.replace("][map-centre]", f"]({centre_url})")
