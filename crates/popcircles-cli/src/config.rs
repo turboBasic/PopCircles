@@ -256,17 +256,26 @@ fn validate_complete(
                 format!("combination `{id}` is missing default_resolution"),
             )
         })?;
+        if row.resolutions.contains_key(&0) {
+            return Err(invalid(
+                path,
+                format!("combination `{id}` has invalid resolution 0"),
+            ));
+        }
         if row.resolutions.is_empty() || !row.resolutions.contains_key(&default) {
             return Err(invalid(
                 path,
                 format!("combination `{id}` default_resolution {default} is unavailable"),
             ));
         }
-        if row
-            .resolutions
-            .iter()
-            .any(|(_, location)| location.local.is_none() && location.remote.is_none())
-        {
+        if row.resolutions.iter().any(|(_, location)| {
+            (location.local.is_none() && location.remote.is_none())
+                || location
+                    .local
+                    .as_ref()
+                    .is_some_and(|path| path.as_os_str().is_empty())
+                || location.remote.as_deref().is_some_and(str::is_empty)
+        }) {
             return Err(invalid(
                 path,
                 format!("combination `{id}` has a resolution without a local or remote location"),
@@ -497,6 +506,43 @@ mod tests {
             .expect("row exists")
             .default_resolution = Some(5);
         assert!(validate_complete(&missing_default, Path::new("fixture.toml"), &registry).is_err());
+
+        let mut zero_resolution = document(VALID);
+        let row = zero_resolution
+            .combinations
+            .get_mut("baseline")
+            .expect("row exists");
+        row.default_resolution = Some(0);
+        row.resolutions.insert(
+            0,
+            Location {
+                local: Some(PathBuf::from("cache")),
+                remote: None,
+            },
+        );
+        assert!(validate_complete(&zero_resolution, Path::new("fixture.toml"), &registry).is_err());
+
+        for location in [
+            Location {
+                local: Some(PathBuf::new()),
+                remote: None,
+            },
+            Location {
+                local: None,
+                remote: Some(String::new()),
+            },
+        ] {
+            let mut empty_location = document(VALID);
+            empty_location
+                .combinations
+                .get_mut("baseline")
+                .expect("row exists")
+                .resolutions
+                .insert(10, location);
+            assert!(
+                validate_complete(&empty_location, Path::new("fixture.toml"), &registry).is_err()
+            );
+        }
 
         let duplicate = r"
             [combinations.same]
