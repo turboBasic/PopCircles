@@ -411,12 +411,13 @@ fn merge(
                 ),
             ] {
                 validate_source(overlay_path, &id, field, &source, registry, population)?;
-                if let Some(file) = source.strip_prefix("file:") {
-                    let resolved = resolve(overlay_path, Path::new(file));
+                if source.starts_with("file:") {
                     if field == "population_source" {
-                        user.population_source = Some(format!("file:{}", resolved.display()));
+                        user.population_source =
+                            Some(resolve_file_source(overlay_path, &id, field, &source)?);
                     } else {
-                        user.boundary_source = Some(format!("file:{}", resolved.display()));
+                        user.boundary_source =
+                            Some(resolve_file_source(overlay_path, &id, field, &source)?);
                     }
                 }
             }
@@ -437,6 +438,23 @@ fn resolve(config_path: &Path, path: &Path) -> PathBuf {
     } else {
         config_path.parent().unwrap_or(Path::new(".")).join(path)
     }
+}
+
+fn resolve_file_source(
+    config_path: &Path,
+    id: &str,
+    field: &str,
+    source: &str,
+) -> Result<String, ConfigError> {
+    let file = source.strip_prefix("file:").unwrap_or_default();
+    let resolved = resolve(config_path, Path::new(file));
+    let Some(path) = resolved.to_str() else {
+        return Err(invalid(
+            config_path,
+            format!("combination `{id}` {field} path cannot be represented as UTF-8"),
+        ));
+    };
+    Ok(format!("file:{path}"))
 }
 
 fn invalid(path: &Path, message: impl Into<String>) -> ConfigError {
@@ -623,5 +641,86 @@ mod tests {
             let overlay = document(overlay);
             assert!(merge(&mut base, overlay, Path::new("user.toml"), &registry).is_err());
         }
+    }
+
+    #[test]
+    fn user_population_default_can_change_to_another_registered_raster() {
+        let registry = Registry::parse(
+            Path::new("registry.toml"),
+            r#"
+                [datasets.pop-a]
+                kind = "population-raster"
+                path = "data/population/pop-a.tif"
+                width = 1
+                height = 1
+                origin_lat = 1.0
+                origin_lon = 0.0
+                lon_step = 1.0
+                lat_step = -1.0
+                epsg = 4326
+                nodata = -9999.0
+
+                [datasets.pop-b]
+                kind = "population-raster"
+                path = "data/population/pop-b.tif"
+                width = 1
+                height = 1
+                origin_lat = 1.0
+                origin_lon = 0.0
+                lon_step = 1.0
+                lat_step = -1.0
+                epsg = 4326
+                nodata = -9999.0
+
+                [datasets.boundaries]
+                kind = "boundary-vector"
+                path = "data/boundaries/boundaries.geojson"
+                sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+            "#,
+        )
+        .expect("fixture registry is valid");
+        let mut base = document(
+            r#"
+                [defaults]
+                population_dataset = "pop-a"
+                country_combination = "baseline"
+
+                [combinations.baseline]
+                population_source = "dataset:pop-a"
+                boundary_source = "dataset:boundaries"
+                default_resolution = 1
+
+                [combinations.baseline.resolutions.1]
+                local = "cache"
+            "#,
+        );
+        merge(
+            &mut base,
+            document("[defaults]\npopulation_dataset = \"pop-b\""),
+            Path::new("user.toml"),
+            &registry,
+        )
+        .expect("registered population default override is valid");
+        assert_eq!(base.defaults.population_dataset.as_deref(), Some("pop-b"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_file_source_rejects_a_resolved_path_that_cannot_be_serialized() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        let config_path = PathBuf::from(OsString::from_vec(vec![
+            b'/', b't', b'm', b'p', b'/', 0xff, b'/', b'u', b's', b'e', b'r', b'.', b't', b'o',
+            b'm', b'l',
+        ]));
+        let error = resolve_file_source(
+            &config_path,
+            "local",
+            "population_source",
+            "file:population.tif",
+        )
+        .expect_err("lossy path conversion is refused");
+        assert!(error.to_string().contains("local` population_source"));
     }
 }
