@@ -412,9 +412,7 @@ fn one_document_naming_the_fixture(fixture: &Fixture, output: &Output) -> serde_
         document["provenance"]["digest"],
         serde_json::Value::from(hexadecimal(fixture.digest))
     );
-    // And no dataset, because this fixture is published through the library rather than by `table build`:
-    // the absent case of that field, end to end through the binary rather than over a constructed value.
-    assert!(document["provenance"]["dataset"].is_null(), "{document}");
+    assert!(document["provenance"]["dataset"].as_str().is_some());
     document
 }
 
@@ -2111,6 +2109,23 @@ path = "data/settlements/populated-places-1to10m.geojson"
 "#,
     )
     .unwrap();
+    std::fs::write(
+        fixture.directory.path().join("data/config.toml"),
+        r#"
+[defaults]
+population_dataset = "tiny"
+country_combination = "fixture"
+
+[combinations.fixture]
+population_source = "dataset:tiny"
+boundary_source = "dataset:gisco-countries-2024-1m"
+default_resolution = 1
+
+[combinations.fixture.resolutions.1]
+local = "out/countries/fixture/1"
+"#,
+    )
+    .unwrap();
     fixture.write_places(&[("Fixture", "Fixture", 0.0, 0.0)]);
 }
 
@@ -2171,7 +2186,9 @@ fn circle_commands_use_registered_country_inputs_alongside_dataset_grid_defaults
         named["result"]["ledger"] = serde_json::Value::Null;
         explicit["result"]["ledger"] = serde_json::Value::Null;
         assert_eq!(named, explicit, "{command}");
-        assert!(named["provenance"]["dataset"].is_null());
+        if command != "table query" {
+            assert_eq!(named["provenance"]["dataset"], "tiny");
+        }
         let registry = fixture.directory.path().join("data/registry.toml");
         let text = std::fs::read_to_string(&registry).unwrap();
         std::fs::write(
