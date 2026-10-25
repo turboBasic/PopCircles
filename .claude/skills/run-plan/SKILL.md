@@ -63,7 +63,7 @@ issue checkbox the closing task reaches.
     the updated ponytail report to the Architect. Do not start the next phase until both reviews are
     recorded, every finding has one of those three answers, and the final tree passes CI. A failure
     this session cannot resolve ends the run with the current task unchecked or phase unresolved.
-11. **Record the execution reviews at the end of the phase in the plan.** Replace its
+11. **Record the execution reviews and compact context at the end of the phase in the plan.** Replace its
     `Reviewer findings (execution): Pending phase review.` note with both verdicts, their findings,
     how each was resolved (commit or follow-up), and verification evidence. Do not leave the pending
     note once review is complete.
