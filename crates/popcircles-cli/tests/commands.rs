@@ -763,6 +763,7 @@ fn country_fetch_resolves_configuration_and_refuses_local_only_or_unknown_target
         String::from_utf8_lossy(&local_only.stderr).contains("no remote URL"),
         "{local_only:?}"
     );
+    assert!(String::from_utf8_lossy(&local_only.stderr).contains("resolution 2"));
     assert!(
         !fixture
             .directory
@@ -770,6 +771,24 @@ fn country_fetch_resolves_configuration_and_refuses_local_only_or_unknown_target
             .join("out/local-preview/2")
             .exists()
     );
+
+    let explicit_resolution = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country fetch",
+        &["--resolution", "1"],
+    );
+    assert_eq!(explicit_resolution.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&explicit_resolution.stderr).contains("resolution 1"));
+
+    let unavailable_resolution = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country fetch",
+        &["--resolution", "99"],
+    );
+    assert_eq!(unavailable_resolution.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&unavailable_resolution.stderr).contains("no resolution 99"));
 
     let unknown = run_with(
         fixture.directory.path(),
