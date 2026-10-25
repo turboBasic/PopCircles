@@ -96,20 +96,29 @@ pub(crate) struct Configuration {
 
 impl Configuration {
     pub(crate) fn load(user_path: Option<&Path>) -> Result<Self, ConfigError> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let builtin_path = root.join(BUILTIN_CONFIG_PATH);
-        let registry_path = root.join(REGISTRY_PATH);
-        let registry = Registry::load(&registry_path).map_err(|error| ConfigError::Invalid {
-            path: registry_path.clone(),
+        Self::load_from_paths(
+            Path::new(BUILTIN_CONFIG_PATH),
+            Path::new(REGISTRY_PATH),
+            user_path,
+        )
+    }
+
+    fn load_from_paths(
+        builtin_path: &Path,
+        registry_path: &Path,
+        user_path: Option<&Path>,
+    ) -> Result<Self, ConfigError> {
+        let registry = Registry::load(registry_path).map_err(|error| ConfigError::Invalid {
+            path: registry_path.to_path_buf(),
             message: error.to_string(),
         })?;
-        let mut base = read_document(&builtin_path)?;
-        validate_complete(&base, &builtin_path, &registry)?;
+        let mut base = read_document(builtin_path)?;
+        validate_complete(&base, builtin_path, &registry)?;
         if let Some(path) = user_path {
             let overlay = read_document(path)?;
             merge(&mut base, overlay, path, &registry)?;
         }
-        let source_path = user_path.unwrap_or(&builtin_path);
+        let source_path = user_path.unwrap_or(builtin_path);
         let default_population_dataset = base
             .defaults
             .population_dataset
@@ -508,7 +517,13 @@ mod tests {
 
     #[test]
     fn committed_configuration_loads_and_keeps_the_explicit_population_choice() {
-        let config = Configuration::load(None).expect("the committed configuration is valid");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let config = Configuration::load_from_paths(
+            &root.join(BUILTIN_CONFIG_PATH),
+            &root.join(REGISTRY_PATH),
+            None,
+        )
+        .expect("the committed configuration is valid");
         assert_eq!(
             config.default_population_dataset,
             "population-count-2020-30arcsec"
