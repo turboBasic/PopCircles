@@ -24,6 +24,7 @@ COUNTRY_FEATURE_COUNT = 263
 # Named here rather than imported from the renderer: this file tests the registry, and which row a
 # figure happens to credit is the renderer's business.
 RASTER_KEY = "population-count-2020-30arcsec"
+COARSE_RASTER_KEY = "population-count-2020-10arcmin"
 SETTLEMENT_ROW = """
 [datasets.example-places]
 kind = "settlement-vector"
@@ -78,6 +79,26 @@ def test_the_nodata_literal_narrows_to_the_f32_rust_pins() -> None:
     raster = load().datasets[RASTER_KEY]
     assert isinstance(raster, PopulationRaster)
     assert struct.unpack("<I", struct.pack("<f", raster.nodata))[0] == RUST_NODATA_BITS
+
+
+def test_the_coarse_population_names_its_direct_source_and_grid() -> None:
+    datasets = load().datasets
+    coarse = datasets[COARSE_RASTER_KEY]
+    source = datasets[RASTER_KEY]
+    assert isinstance(coarse, PopulationRaster)
+    assert isinstance(source, PopulationRaster)
+    assert (coarse.width, coarse.height) == (2160, 1080)
+    assert coarse.derived_from_dataset == RASTER_KEY
+    assert coarse.derived_from_sha256 == source.sha256
+
+
+def test_a_derived_population_source_must_match_the_registered_digest() -> None:
+    text = REGISTRY.read_text(encoding="utf-8").replace(
+        'derived_from_sha256 = "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"',
+        f'derived_from_sha256 = "{"0" * 64}"',
+    )
+    with pytest.raises(ValidationError, match="does not match its registered source identity"):
+        parse(text)
 
 
 def test_a_committed_row_describes_the_file_on_disk() -> None:
