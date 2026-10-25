@@ -1,6 +1,6 @@
 ---
 name: run-plan
-description: Execute a phase of a scratch implementation plan under tmp/ - every task in it verified, checked off and committed on its own, stopping at the phase boundary. Use when the user asks to run, execute, or continue an implementation plan.
+description: Execute the remaining phases of a scratch implementation plan through completion - every task verified, checked off and committed on its own, with review at each phase boundary. Use when the user asks to run, execute, or continue an implementation plan.
 ---
 
 # Run a plan
@@ -9,8 +9,9 @@ description: Execute a phase of a scratch implementation plan under tmp/ - every
 the plan is the product owner's and the plan's shape the architect's, so a task this role believes wrong goes
 back to them.
 
-One invocation advances a plan by one phase. The task stays the unit of verification and the unit of
-commit — the phase is only how far the run goes without a human in the loop, and neither a task nor a
+One invocation advances a plan from its first unchecked task through completion. The task stays the
+unit of verification and the unit of commit; the phase is a review checkpoint, not a stopping point.
+Never stop at a phase boundary unless the user explicitly asks you to stop there. Neither a task nor a
 phase boundary is crossed with work uncommitted. The loop below is the plan-execution contract;
 `docs/ai/platform.md` "Implementation plans" owns what a plan file contains and where it lives, and a
 plan's own ground rules add to this loop without replacing it.
@@ -21,15 +22,14 @@ issue checkbox the closing task reaches.
 
 ## Steps
 
-1. **Locate the plan.** Resolve the number, slug or bare description the user gave against the
-   `*.plan.md` files under `tmp/`; if more than one matches, ask rather than guessing. A plan outside
-   `tmp/` is not a plan this skill runs — the only home a plan file has is that directory.
+1. **Locate the plan.** For `gh-<issue>` requests, look first in `tmp/gh-<issue>/`. Otherwise resolve
+   the number, slug or bare description against `*.plan.md` files under `tmp/`. If more than one plan
+   matches, ask rather than guessing.
 2. **Read the status line first.** A plan marked complete is frozen and is never executed — say so
    and stop.
-3. **Settle the scope before the first task, never during.** The default is the phase holding the
-   first unchecked task, run to its end. Ask up front where the request reads narrower or wider than
-   that — one named task, a phase that is not the current one, the rest of the plan — because a scope
-   question raised after the second commit is a question about work already landed.
+3. **Settle the scope before the first task, never during.** By default, run every remaining phase
+   through completion. Stop after a named task or at a named phase boundary only when the user
+   explicitly limits the run that way; never infer a phase stop from the plan's structure.
 4. **Read the plan's ground rules and the phase heading.** The rules constrain how every task in the
    run is done. A `Model:` note the running session is weaker than stops the run before the first
    task; a stronger session is worth naming and no reason to stop.
@@ -38,11 +38,11 @@ issue checkbox the closing task reaches.
    do not silently rescope it and do not step over it to the next task.
 6. **Verify** exactly what the task's `Verify:` line asks for, and nothing less. A `Verify:` naming a
    command means running it, not reasoning about what it would print.
-7. **Run the gate** — `mise run ci` — and fix what fails. Its lint tasks run the repository-wide
-   hooks and language-specific checks; do not run a second full `prek` pass. Stage new files first
-   because the hook runner reads tracked files only. Re-stage what a hook reformats and rerun the
-   gate; that is expected behaviour, not a defect to investigate. A task's `Verify:` line may ask
-   for less than CI; it never licenses less.
+7. **After the phase's tasks are committed, run the gate** — `mise run ci` — and fix what fails. Its
+   lint tasks run the repository-wide hooks and language-specific checks; do not run a second full
+   `prek` pass. Stage new files first because the hook runner reads tracked files only. Re-stage what
+   a hook reformats and rerun the gate; that is expected behaviour, not a defect to investigate. A
+   task's `Verify:` line may ask for less than CI; it never licenses less.
 8. **Land it, then tick the box, before the next task starts.** Read `docs/ai/platform.md` "Git" before
    the run's first commit rather than after — it constrains which branch may receive one, and a commit on
    the wrong branch is not something the next task can undo. The task's change is one Conventional
@@ -51,22 +51,26 @@ issue checkbox the closing task reaches.
    recover from. **Never batched to the phase boundary either**, which is the tempting shape because the
    ticks are cheap and the boundary is where the file is read: a run interrupted mid-phase then
    under-reports what landed, and the next one re-derives work already committed.
-9. **Take the next unchecked task in the same phase and repeat from step 5.** At the phase boundary,
-   stop. Do not roll into the next phase.
-10. **Run the `review-change` skill as the `architect` agent over the phase's commits.** Hand it the facts
-    that skill's brief asks for, and state the one this loop owns: each task's final tree passed
-    `mise run ci` at step 7, and each commit's staged hooks passed during the commit, so no gate in them
-    is the review's to re-run. Facts only — what the tasks were and what passed, never why a shape was
-    having only from a reader who has not been told. Once for the phase rather than per
-    task — per-task invocation multiplies the cost by the task count for a commit that is still amendable
-    inside its phase. Every task is committed and its box ticked by now, so a rejection cannot reopen
-    anything; what it obliges is one of three answers, and ticked boxes stay ticked because the commit is
-    the durable half. The three are a further commit inside this phase, a task appended to the next
-    phase, or an entry in `docs/follow-ups.md`.
-11. **Report** the tasks that landed, what the review found and how each finding was answered, and what
-    the next phase holds. **The phase is not reported complete until every finding has one of those three
-    answers or the owner overrides it** — an unanswered finding is the one thing that makes the boundary a
-    formality, and a report written before the review is the same thing with the order hidden.
+9. **At each phase boundary, review, then continue.** First run the `ponytail:review` skill over the
+   phase's commits and capture its complete output. Then run `review-change` as the `architect` agent,
+   passing it that output and the facts its brief asks for. State that the phase's final tree passed
+   `mise run ci` at step 7, and each commit's staged hooks passed during the commit, so neither review
+   needs to rerun those gates. Review once per phase, not per task.
+10. **Account for every review finding before proceeding.** A rejection or finding is work to address,
+    not a reason to abandon the plan. Make a further commit in this phase, append a task to a later
+    phase, or record an obligation in `docs/follow-ups.md`, as appropriate. Verify any fix and rerun
+    the phase gate if its tree changed; then repeat both reviews on the changed phase commits and pass
+    the updated ponytail report to the Architect. Do not start the next phase until both reviews are
+    recorded, every finding has one of those three answers, and the final tree passes CI. A failure
+    this session cannot resolve ends the run with the current task unchecked or phase unresolved.
+11. **Record the execution reviews at the end of the phase in the plan.** Replace its
+    `Reviewer findings (execution): Pending phase review.` note with both verdicts, their findings,
+    how each was resolved (commit or follow-up), and verification evidence. Do not leave the pending
+    note once review is complete.
+12. **Continue with the next unchecked task**, including the first task of the next phase, unless the
+    user explicitly asked to stop at this boundary. At plan completion, report the tasks that landed,
+    phase review results and finding resolutions, and the final plan status. Do not report the plan
+    complete while any phase has an unresolved finding or failed gate.
 
 ## Judgment
 

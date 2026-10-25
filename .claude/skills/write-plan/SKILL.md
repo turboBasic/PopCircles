@@ -1,6 +1,6 @@
 ---
 name: write-plan
-description: Author a scratch implementation plan under tmp/ that run-plan can execute - tasks sized to one green commit, each ending in a Verify line that can fail. Use when the user asks to write, draft or decompose an implementation plan.
+description: Author a scratch implementation plan that run-plan can execute - tasks sized to one commit, each ending in a Verify line that can fail. Use when the user asks to write, draft or decompose an implementation plan.
 ---
 
 # Write a plan
@@ -19,39 +19,55 @@ act on this without asking the author what was meant?
 
 ## Steps
 
-1. **Start from the issue, not from a blank plan.** The issue and its thread are the decomposition; this
+1. **Use `tmp/product-owner-plan.md` as optional context.** If it exists, check whether it says
+   anything relevant to this issue. Carry relevant priority, dependency or scope decisions into the
+   plan, and flag conflicts rather than silently changing them. If the plan changes something that
+   file already tracks, it may be updated to match; otherwise no edit is needed. If it has no relevant
+   information, proceed without inferring any.
+2. **Start from the issue, not from a blank plan.** The issue and its thread are the decomposition; this
    file is that decomposition made executable, and the two are not allowed to disagree about what the
    work is. Read the whole thread and the roadmap issue above it first —
    `docs/ai/platform.md` "Issues" says why the body alone is not the requirement. Where the plan has to
    depart from the issue, the departure is a comment on the issue before it is a task here.
-2. **Measure the tree before drafting.** Read the files the work will touch, run the gates, get the
+3. **Name the plan from its issue.** For a request to plan issue `#123`, use `tmp/gh-123/` as its
+   directory. In general, for issue number `<issue>` and a short kebab-case description `<slug>`, write
+   `tmp/gh-<issue>/gh-<issue>-<slug>.plan.md` and put all plan-specific scratch files,
+   evidence and artifacts under `tmp/gh-<issue>/`. These angle-bracket forms are instructions to
+   substitute the actual issue number and slug; never write them literally or use the example issue
+   number 14 unless that is the issue being planned. Use the same path and name in links.
+4. **Measure the tree before drafting.** Read the files the work will touch, run the gates, get the
    counts and the values. Cite what you found: line numbers, measured figures, what a command actually
    printed. A task naming what it will change is executable; a task naming a goal is a wish, and the
    difference only surfaces when someone tries to run it.
-3. **Decompose into tasks first, write the sections after.** The task list is the plan and everything
+5. **Decompose into tasks first, write the sections after.** The task list is the plan and everything
    else is packaging. Order the tasks so each is executable when it is reached — a task needing a later
    one is a stall the executor cannot resolve, because it may not skip ahead.
-4. **Size every task to one commit that leaves the tree green.** This is the constraint that actually
-   shapes a decomposition, and the one most often broken: `run-plan` runs the gates after each task and
-   commits the result, so a task that only compiles once its successor lands can never pass. It is why
-   the shape that works is usually declare, then wire, then fill, rather than one task per finished
-   feature.
-5. **Write each `Verify:` so that it can fail.** Name a command and what its output must show, or a
-   state a reader can check and disagree with. "Tests pass" verifies nothing — the gates run anyway, on
-   every task. Prefer the assertion that would have caught the mistake you are worried about:
+6. **Size every task to one commit.** Keep tasks executable in order, and make the phase's final tree
+   pass `run-plan`'s CI gate. A phase may include a sequence such as declare, then wire, then fill,
+   when the final state only works once those tasks land together.
+7. **Write each `Verify:` so that it can fail.** Name a command and what its output must show, or a
+   state a reader can check and disagree with. "Tests pass" verifies nothing — CI runs at the phase
+   boundary. Prefer the assertion that would have caught the mistake you are worried about:
    `rg -n 'scaffolding only'` returns nothing; the totals match the four figures the registry records;
    the same 1 test runs before and after. Prefer too an assertion the work under test cannot satisfy by
    editing itself — "the tolerance assertion passes" is met by widening the tolerance, while "the same 1
    test runs before and after" forces whoever would fake it to break something else.
-6. **Phase only where the grouping carries information** — a shared prerequisite, a change of subject, a
-   `Model:` the phase expects. Phases exist so a reader can see the shape of the work; numbering that
-   only counts is noise. A boundary also costs something, now that `run-plan` stops at one: it is where
-   the plan is handed back for a look, so put it where a look is worth taking.
-7. **Make every Ground rule and every Out of scope entry rule something out.** A ground rule earns its
+8. **Give every phase a model and effort.** Start each phase with `Model:` and `Thinking effort:` lines,
+   followed by a short justification for both the model and effort. Default to GPT-6-Luna
+   (`gpt-6-luna`) and choose the lowest effort that fits that phase's uncertainty and risk. Use another
+   model only when Luna is materially unfit for the work, and say why. Judge each phase independently;
+   don't copy one setting across phases without considering their different demands. Phases exist where
+   a shared prerequisite, a change of subject, or a meaningful review boundary makes grouping useful.
+9. **Reserve a findings note at each phase end.** End each phase with `Reviewer findings (execution):`
+   followed by `Pending phase review.` This is the only intentional placeholder in the plan: `run-plan`
+   replaces it after review with the verdict, findings, resolution commit or follow-up, and verification
+   evidence. Do not predict findings while authoring the plan, and do not leave the pending text after
+   review.
+10. **Make every Ground rule and every Out of scope entry rule something out.** A ground rule earns its
    place by naming a mistake available in *this* work, not by restating a convention the instruction
    layer already binds. An Out of scope entry carries the reason it lost, so a later reader cannot
    mistake the omission for an oversight.
-8. **Make the last task land what outlives the file, and judge where it lands.** The plan is scratch and is
+11. **Make the last task land what outlives the file, and judge where it lands.** The plan is scratch and is
    thrown away, so the closing task is what survives it: the issue's checkboxes and the roadmap box ticked,
    the status line set to complete with the date, and every remaining obligation given a home. Which home is
    a judgment rather than a default — a remainder shaped like work someone will do is an issue, and
