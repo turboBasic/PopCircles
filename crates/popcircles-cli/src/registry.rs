@@ -355,10 +355,15 @@ mod tests {
 
     #[test]
     fn the_coarse_raster_names_its_direct_source_identity() {
-        let coarse = committed()
+        let registry = committed();
+        let coarse = registry
             .raster("population-count-2020-10arcmin")
             .expect("the coarse population dataset is registered with its source identity");
+        let native = registry
+            .raster("population-count-2020-30arcsec")
+            .expect("the native population dataset remains registered");
         assert_eq!((coarse.grid.width, coarse.grid.height), (2160, 1080));
+        assert_ne!(coarse.sha256, native.sha256);
     }
 
     #[test]
