@@ -187,7 +187,7 @@ def render(
     # The basemap arrives drawn rather than named, so nothing under here reads a file and a caller
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
-    outline_and_credit: tuple[BaseGeometry, str] | None = None,
+    outline_and_credit: tuple[BaseGeometry | None, str] | None = None,
 ) -> Figure:
     if answer.country is not None and outline_and_credit is None:
         raise MissingCountryOutlineError
@@ -290,15 +290,21 @@ def render_file(
     document = json.loads(input_path.read_text(encoding="utf-8"))
     answer = circle_of(document)
     registry = load()
+    population_attribution = (
+        answer.selection.population_source.attribution if answer.selection is not None else None
+    ) or citation(registry, answer.provenance.dataset)
+    boundary_attribution = (
+        answer.selection.boundary_source.attribution if answer.selection is not None else None
+    )
     figure = render(
         answer,
         projection,
-        citation(registry, answer.provenance.dataset),
+        population_attribution,
         coastline=None if no_coastlines else basemap(COASTLINE),
         outline_and_credit=(
             (
                 load_outline(answer, registry),
-                citation(registry, answer.country.boundary_dataset),
+                boundary_attribution or citation(registry, answer.country.boundary_dataset),
             )
             if answer.country is not None
             else None

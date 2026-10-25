@@ -589,38 +589,9 @@ fn assert_oracle(breakdown: &serde_json::Value) {
 
 #[test]
 fn country_list_reads_only_registered_boundaries_and_sorts_the_json_result() {
-    let directory = TempDir::new().unwrap();
-    let boundaries = directory.path().join("data/boundaries");
-    std::fs::create_dir_all(&boundaries).unwrap();
-    std::fs::write(
-        boundaries.join("gisco-countries-2024-1m.geojson"),
-        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"BB","NAME_ENGL":"Beta"},"geometry":{"type":"Polygon","coordinates":[]}},{"type":"Feature","properties":{"CNTR_ID":"AA","NAME_ENGL":"Alpha"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
-    )
-    .unwrap();
-    std::fs::write(
-        directory.path().join("data/registry.toml"),
-        r#"
-[datasets.gisco-countries-2024-1m]
-kind = "boundary-vector"
-path = "data/boundaries/gisco-countries-2024-1m.geojson"
-sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-format = "GeoJSON"
-crs = "EPSG:4326"
-axis_order = "longitude-latitude"
-feature_count = 2
-revision = "fixture"
-source_id_field = "CNTR_ID"
-identity_policy = "fixture"
-attribution = "Fixture boundary credit"
-"#,
-    )
-    .unwrap();
-
-    let output = Command::new(env!("CARGO_BIN_EXE_popcircles"))
-        .current_dir(directory.path())
-        .args(["country", "list"])
-        .output()
-        .unwrap();
+    let fixture = Fixture::build();
+    fixture.register_two_countries();
+    let output = run_with(fixture.directory.path(), &[], "country list", &[]);
     assert!(output.status.success(), "{output:?}");
     assert!(
         output.stderr.is_empty(),
@@ -630,9 +601,68 @@ attribution = "Fixture boundary credit"
     let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(document["schema_version"], 1);
     assert_eq!(document["document"], "country-list");
+    assert_eq!(document["result"]["selection"]["combination_id"], "fixture");
+    assert_eq!(document["result"]["selection"]["resolution"], 1);
     assert_eq!(document["result"]["countries"][0]["id"], "AA");
     assert_eq!(document["result"]["countries"][1]["id"], "BB");
     insta::assert_json_snapshot!("country-list-command", document);
+}
+
+#[test]
+fn country_list_uses_the_explicit_combinations_boundary_source() {
+    let fixture = Fixture::build();
+    let boundary_path = fixture
+        .directory
+        .path()
+        .join("data/boundaries/alternate.geojson");
+    std::fs::write(
+        &boundary_path,
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"ZZ","NAME_ENGL":"Alternate"},"geometry":{"type":"Polygon","coordinates":[[[-10,-10],[10,-10],[10,10],[-10,10],[-10,-10]]]}}]}"#,
+    )
+    .unwrap();
+    let config = fixture.directory.path().join("list-alternate.toml");
+    std::fs::write(
+        &config,
+        format!(
+            r#"
+[combinations.alternate-list]
+population_source = "dataset:population-count-2020-30arcsec"
+boundary_source = "file:{}"
+default_resolution = 1
+
+[combinations.alternate-list.resolutions.1]
+local = "out/alternate-list/1"
+
+[combinations.alternate-list.boundary_metadata]
+source_id_field = "CNTR_ID"
+"#,
+            boundary_path.display()
+        ),
+    )
+    .unwrap();
+    let flags = vec!["--config".to_owned(), config.display().to_string()];
+    let output = run_with(
+        fixture.directory.path(),
+        &flags,
+        "country list",
+        &["--combination", "alternate-list"],
+    );
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(document["result"]["countries"].as_array().unwrap().len(), 1);
+    assert_eq!(document["result"]["countries"][0]["id"], "ZZ");
+    assert_eq!(
+        document["result"]["selection"]["combination_id"],
+        "alternate-list"
+    );
+    assert_eq!(document["result"]["selection"]["resolution"], 1);
+    assert_eq!(
+        document["result"]["selection"]["boundary_source"]["sha256"],
+        format!(
+            "{:x}",
+            Sha256::digest(std::fs::read(boundary_path).unwrap())
+        )
+    );
 }
 
 fn country_prepare_fixture() -> (Fixture, PathBuf, Vec<String>, PathBuf, PathBuf, String) {

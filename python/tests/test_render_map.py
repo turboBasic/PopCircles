@@ -9,7 +9,9 @@ import pytest
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
+from shapely.geometry.base import BaseGeometry
 
+import population_circles.render_map as render_map_module
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT, cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
@@ -23,6 +25,7 @@ from population_circles.render_map import (
     citation,
     main,
     render,
+    render_file,
     title_of,
 )
 
@@ -206,7 +209,9 @@ def test_country_outline_uses_the_registered_id_when_names_are_duplicated(
         boundary_feature("FR", "Same name", 10),
     ]
     answer, registry, _ = country_fixture(tmp_path, features)
-    assert load_outline(answer, registry, tmp_path).bounds == (0, 0, 1, 1)
+    outline = load_outline(answer, registry, tmp_path)
+    assert outline is not None
+    assert outline.bounds == (0, 0, 1, 1)
 
     for bad_features, message in (
         ([boundary_feature("FR", "Same name", 10)], "no feature with CNTR_ID='DE'"),
@@ -277,6 +282,7 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
     )
     assert answer.country is not None
     country = load_outline(answer, registry, tmp_path)
+    assert country is not None
     circle = answer.circle
     view = country_frame(
         cap(circle.centre, circle.radius_km, circle.earth_radius_km),
@@ -323,6 +329,7 @@ def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
     )
     assert answer.country is not None
     boundary = load_outline(answer, registry, tmp_path)
+    assert boundary is not None
     population_credit = citation(REGISTRY, DATASET)
     boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
     figure = render(
@@ -541,6 +548,73 @@ def test_country_title_names_the_population_dataset_and_decimation() -> None:
         "40 people, centred 51.0000, 10.0000\n"
         f"answered from population dataset {DATASET} at decimation k=10"
     )
+
+
+def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = country_circle_document()
+    payload["result"]["selection"] = {
+        "combination_id": "local-preview",
+        "resolution": 2,
+        "population_source": {
+            "name": DATASET,
+            "sha256": "b" * 64,
+            "attribution": "Selected population credit",
+        },
+        "boundary_source": {
+            "name": "gisco-countries-2024-1m",
+            "sha256": "a" * 64,
+            "attribution": "Selected boundary credit",
+        },
+    }
+    source = tmp_path / "country.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "country.png"
+    captured: dict[str, object] = {}
+    current_render = render_map_module.render
+
+    def capture(
+        answer: Answer,
+        projection: str,
+        attribution: str,
+        *,
+        coastline: BaseGeometry | None,
+        outline_and_credit: tuple[BaseGeometry | None, str] | None = None,
+    ) -> Figure:
+        captured["population_attribution"] = attribution
+        captured["outline_and_credit"] = outline_and_credit
+        return current_render(
+            answer,
+            projection,
+            attribution,
+            coastline=coastline,
+            outline_and_credit=outline_and_credit,
+        )
+
+    monkeypatch.setattr(render_map_module, "render", capture)
+
+    def no_outline(_answer: Answer, _registry: Registry, _root: Path = Path()) -> None:
+        return None
+
+    monkeypatch.setattr(render_map_module, "load_outline", no_outline)
+    render_file(source, output, no_coastlines=True)
+    assert captured["population_attribution"] == "Selected population credit"
+    assert captured["outline_and_credit"] == (None, "Selected boundary credit")
+    assert output.read_bytes().startswith(PNG_MAGIC)
+
+
+def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:
+    payload = country_circle_document()
+    payload["result"]["country"]["boundary_dataset"] = "file:data/boundaries/local.geojson"
+    payload["result"]["country"]["boundary_revision"] = None
+    payload["result"]["selection"] = {
+        "combination_id": "local-preview",
+        "resolution": 2,
+        "population_source": {"name": DATASET},
+        "boundary_source": {"name": "file:data/boundaries/local.geojson"},
+    }
+    assert load_outline(circle_of(payload), REGISTRY) is None
 
 
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])

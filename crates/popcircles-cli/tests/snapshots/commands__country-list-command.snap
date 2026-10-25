@@ -18,7 +18,21 @@ expression: document
         "id": "BB",
         "name": "Beta"
       }
-    ]
+    ],
+    "selection": {
+      "boundary_source": {
+        "attribution": "Fixture boundary credit",
+        "name": "gisco-countries-2024-1m",
+        "sha256": "084a50f51c80173d31bae894264ca58926031a4e39cededa123ef982b3865760"
+      },
+      "combination_id": "fixture",
+      "population_source": {
+        "attribution": null,
+        "name": "population-count-2020-30arcsec",
+        "sha256": null
+      },
+      "resolution": 1
+    }
   },
   "schema_version": 1,
   "tool": "popcircles",

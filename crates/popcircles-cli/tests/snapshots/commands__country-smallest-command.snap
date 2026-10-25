@@ -55,7 +55,21 @@ expression: document
       "path": "shared-country.json",
       "radii": 20
     },
-    "population_dataset": "population-count-2020-30arcsec"
+    "population_dataset": "population-count-2020-30arcsec",
+    "selection": {
+      "boundary_source": {
+        "attribution": "Fixture boundary credit",
+        "name": "gisco-countries-2024-1m",
+        "sha256": "084a50f51c80173d31bae894264ca58926031a4e39cededa123ef982b3865760"
+      },
+      "combination_id": "fixture",
+      "population_source": {
+        "attribution": null,
+        "name": "population-count-2020-30arcsec",
+        "sha256": "1e9f491680642708b37bb47141cd6e78310d6aa10aae7569f715ebc4da9788c3"
+      },
+      "resolution": 1
+    }
   },
   "schema_version": 1,
   "tool": "popcircles",

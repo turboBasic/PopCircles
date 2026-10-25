@@ -13,6 +13,20 @@ expression: document
     "radius_km": 6371.0088
   },
   "result": {
+    "selection": {
+      "combination_id": "fixture",
+      "resolution": 10,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attribution": "Population credit"
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attribution": "Boundary credit"
+      }
+    },
     "shares": {
       "from_percent": 10,
       "to_percent": 30,

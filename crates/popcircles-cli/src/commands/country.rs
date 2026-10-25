@@ -5,8 +5,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use popcircles::report::{
-    CountryListDocument, CountrySmallestDocument, CountrySweepCountry, CountrySweepDocument,
-    CountrySweepRecord, Document, Envelope, LedgerReport, SmallestReport, SweepShares,
+    CountryListDocument, CountrySelectionReport, CountrySmallestDocument, CountrySourceReport,
+    CountrySweepCountry, CountrySweepDocument, CountrySweepRecord, Document, Envelope,
+    LedgerReport, SmallestReport, SweepShares,
 };
 use popcircles::smallest::cache::CountryLedger;
 use popcircles::smallest::{self, Share};
@@ -24,7 +25,7 @@ use crate::country_breakdown::Prepared;
 use crate::failure::{EXIT_BAD_INPUT, EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
 use crate::prepared::{Loaded, PreparedManifest, Request};
-use crate::registry::{COUNTRY_BOUNDARY_DATASET, REGISTRY_PATH, Registry};
+use crate::registry::{REGISTRY_PATH, Registry};
 
 fn country_ledger_path(directory: &Path, id: &str) -> PathBuf {
     let mut file = String::new();
@@ -34,27 +35,47 @@ fn country_ledger_path(directory: &Path, id: &str) -> PathBuf {
     directory.join(format!("{file}.json"))
 }
 
-pub(crate) fn list() -> Result<String, Failure> {
+pub(crate) fn list(
+    config_path: Option<&Path>,
+    combination_id: Option<&str>,
+    resolution: Option<u32>,
+) -> Result<String, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let (combination, resolution) = config
+        .combination(combination_id, resolution)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
     let registry =
         Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
-    let boundary = registry.boundary(COUNTRY_BOUNDARY_DATASET).ok_or_else(|| {
-        Failure::bad_input(format!(
-            "country boundary `{COUNTRY_BOUNDARY_DATASET}` is not registered"
-        ))
+    let population = query_population_source(combination, &registry)?;
+    let boundary = query_boundary_source(combination, &registry)?;
+    let boundary_sha256 = crate::prepared::fingerprint_file(&boundary.path).map_err(|error| {
+        Failure {
+            code: EXIT_MISSING_DATA,
+            message: format!(
+                "selected boundary source at {} could not be read: {error}; fetch the registered boundary data or provide the configured local file",
+                boundary.path.display()
+            ),
+        }
     })?;
-    let source_id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
-        Failure::bad_input(format!(
-            "country boundary `{COUNTRY_BOUNDARY_DATASET}` has no source identifier field"
-        ))
-    })?;
-    let features = boundaries::load(&boundary.path, source_id_field).map_err(|error| {
+    if boundary
+        .registered_sha256
+        .as_deref()
+        .is_some_and(|expected| expected != boundary_sha256)
+    {
+        return Err(Failure::bad_input(format!(
+            "selected boundary source at {} does not match its registered SHA-256",
+            boundary.path.display()
+        )));
+    }
+    let features = boundaries::load(&boundary.path, &boundary.id_field).map_err(|error| {
         if boundary.path.exists() {
             Failure::bad_input(error.to_string())
         } else {
             Failure {
                 code: EXIT_MISSING_DATA,
                 message: format!(
-                    "{error}; run `mise run data:get` to fetch the registered country boundary"
+                    "{error}; fetch the registered boundary data or provide the configured local file"
                 ),
             }
         }
@@ -65,8 +86,25 @@ pub(crate) fn list() -> Result<String, Failure> {
         .collect();
     countries.sort_by(|left, right| left.0.as_str().cmp(right.0.as_str()));
 
+    let selection = CountrySelectionReport::new(
+        combination.id.clone(),
+        resolution,
+        CountrySourceReport::new(
+            &source_name(&combination.population_source),
+            population.sha256.as_deref(),
+            combination
+                .attribution
+                .as_deref()
+                .or(population.attribution.as_deref()),
+        ),
+        CountrySourceReport::new(
+            &source_name(&combination.boundary_source),
+            Some(&boundary_sha256),
+            boundary.attribution.as_deref(),
+        ),
+    );
     serialised(serde_json::to_string(&Envelope::new(
-        CountryListDocument::new(countries),
+        CountryListDocument::new(selection, countries),
     )))
 }
 
@@ -420,6 +458,9 @@ struct SelectedPrepared {
     loaded: Loaded,
     features: Vec<crate::boundaries::BoundaryFeature>,
     revision: String,
+    population_name: String,
+    boundary_name: String,
+    boundary_digest: String,
 }
 
 struct QueryPopulation {
@@ -427,6 +468,7 @@ struct QueryPopulation {
     epsg: u16,
     nodata: f32,
     sha256: Option<String>,
+    attribution: Option<String>,
 }
 
 struct QueryBoundary {
@@ -434,6 +476,7 @@ struct QueryBoundary {
     id_field: String,
     registered_sha256: Option<String>,
     revision: String,
+    attribution: Option<String>,
 }
 
 impl SelectedPrepared {
@@ -447,33 +490,33 @@ impl SelectedPrepared {
             .map_err(|error| Failure::bad_input(error.to_string()))
     }
 
-    fn boundary_identity(&self) -> (&str, &str, &str) {
+    fn boundary_identity(&self) -> (&str, Option<&str>, &str) {
         (
-            self.loaded
-                .manifest
-                .boundary_source
-                .name
-                .strip_prefix("dataset:")
-                .unwrap_or(&self.loaded.manifest.boundary_source.name),
-            &self.revision,
-            self.loaded
-                .manifest
-                .boundary_source
-                .sha256
-                .as_deref()
-                .unwrap_or_default(),
+            &self.boundary_name,
+            (!self.revision.is_empty()).then_some(self.revision.as_str()),
+            &self.boundary_digest,
         )
     }
 
     fn population_source(&self) -> (&str, u32) {
-        (
-            self.loaded
-                .manifest
-                .population_source
-                .name
-                .strip_prefix("dataset:")
-                .unwrap_or(&self.loaded.manifest.population_source.name),
-            self.loaded.manifest.resolution,
+        (&self.population_name, self.loaded.manifest.resolution)
+    }
+
+    fn selection(&self) -> CountrySelectionReport {
+        let manifest = &self.loaded.manifest;
+        CountrySelectionReport::new(
+            manifest.combination_id.clone(),
+            manifest.resolution,
+            CountrySourceReport::new(
+                &self.population_name,
+                manifest.population_source.sha256.as_deref(),
+                manifest.population_source.attribution.as_deref(),
+            ),
+            CountrySourceReport::new(
+                &self.boundary_name,
+                manifest.boundary_source.sha256.as_deref(),
+                manifest.boundary_source.attribution.as_deref(),
+            ),
         )
     }
 }
@@ -491,6 +534,7 @@ fn query_population_source(
             epsg: dataset.epsg,
             nodata: dataset.nodata,
             sha256: dataset.sha256,
+            attribution: dataset.attribution,
         })
     } else {
         let spec = combination
@@ -501,6 +545,7 @@ fn query_population_source(
             epsg: spec.epsg,
             nodata: spec.nodata,
             sha256: None,
+            attribution: combination.attribution.clone(),
         })
     }
 }
@@ -521,6 +566,10 @@ fn query_boundary_source(
             id_field: id_field.to_owned(),
             registered_sha256: boundary.sha256.clone(),
             revision: boundary.revision.clone().unwrap_or_default(),
+            attribution: boundary
+                .attribution
+                .clone()
+                .or_else(|| combination.attribution.clone()),
         })
     } else {
         let path = combination
@@ -537,7 +586,21 @@ fn query_boundary_source(
             id_field,
             registered_sha256: None,
             revision: String::new(),
+            attribution: combination.attribution.clone(),
         })
+    }
+}
+
+fn source_name(name: &str) -> String {
+    if let Some(name) = name.strip_prefix("dataset:") {
+        name.to_owned()
+    } else if let Some(path) = name.strip_prefix("file:") {
+        Path::new(path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .map_or_else(|| "local-file".to_owned(), |name| format!("file:{name}"))
+    } else {
+        name.to_owned()
     }
 }
 
@@ -620,7 +683,29 @@ fn load_selected_prepared(
             message: format!("prepared data at {} is missing, invalid or mismatched: {error}{guidance}", directory.display()),
         }
     })?;
-    let features = crate::boundaries::load(&boundary.path, &boundary.id_field).map_err(|error| {
+    let boundary_digest = loaded
+        .manifest
+        .boundary_source
+        .sha256
+        .clone()
+        .ok_or_else(|| Failure::bad_input("prepared boundary source has no fingerprint"))?;
+    let features = load_query_boundary(&boundary)?;
+    let population_name = source_name(&combination.population_source);
+    let boundary_name = source_name(&combination.boundary_source);
+    Ok(SelectedPrepared {
+        loaded,
+        features,
+        revision: boundary.revision,
+        population_name,
+        boundary_name,
+        boundary_digest,
+    })
+}
+
+fn load_query_boundary(
+    boundary: &QueryBoundary,
+) -> Result<Vec<crate::boundaries::BoundaryFeature>, Failure> {
+    crate::boundaries::load(&boundary.path, &boundary.id_field).map_err(|error| {
         if boundary.path.exists() {
             Failure::bad_input(error.to_string())
         } else {
@@ -632,11 +717,6 @@ fn load_selected_prepared(
                 ),
             }
         }
-    })?;
-    Ok(SelectedPrepared {
-        loaded,
-        features,
-        revision: boundary.revision,
     })
 }
 
@@ -680,10 +760,12 @@ pub(crate) fn smallest(
     let circle = SmallestReport::new(&found, table.effective_grid())
         .map_err(|error| Failure::grid_index(&error))?
         .with_nearest_settlement(context.as_ref());
+    let selection = prepared.selection();
     let boundary_identity = prepared.boundary_identity();
     let population_source = prepared.population_source();
     serialised(serde_json::to_string(&Envelope::new(
         CountrySmallestDocument::new(
+            selection,
             &feature.id,
             &feature.name,
             boundary_identity,
@@ -711,9 +793,10 @@ pub(crate) fn sweep(
     features.sort_by(|left, right| left.id.as_str().cmp(right.id.as_str()));
     features.dedup_by(|left, right| left.id == right.id);
 
+    let selection = prepared.selection();
     let (boundary_dataset, boundary_revision, boundary_digest) = prepared.boundary_identity();
     let boundary_dataset = boundary_dataset.to_owned();
-    let boundary_revision = boundary_revision.to_owned();
+    let boundary_revision = boundary_revision.map(str::to_owned);
     let boundary_digest = boundary_digest.to_owned();
     let mut countries = Vec::with_capacity(features.len());
     for feature in features {
@@ -765,7 +848,7 @@ pub(crate) fn sweep(
             &feature.id,
             &feature.name,
             &boundary_dataset,
-            &boundary_revision,
+            boundary_revision.as_deref(),
             &boundary_digest,
             LedgerReport::new(&path, ledger.len()),
             records,
@@ -774,6 +857,7 @@ pub(crate) fn sweep(
 
     serialised(serde_json::to_string(&Envelope::new(
         CountrySweepDocument::new(
+            selection,
             SweepShares::new(range.from, range.to, range.step),
             countries,
         ),

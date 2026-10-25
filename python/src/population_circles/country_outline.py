@@ -47,8 +47,10 @@ def _registered_boundary(
             f"country boundary dataset {country.boundary_dataset!r} has no registered identity",
             BoundaryIdentityError,
         )
-    if dataset.revision != country.boundary_revision or dataset.sha256.casefold() != (
-        country.boundary_digest.casefold()
+    if (
+        country.boundary_revision is None
+        or dataset.revision != country.boundary_revision
+        or dataset.sha256.casefold() != country.boundary_digest.casefold()
     ):
         refuse(
             f"country boundary identity for {country.id!r} does not match the registry",
@@ -90,7 +92,14 @@ def _feature_geometry(
     return shape(cast(dict[str, Any], geometry))
 
 
-def load_outline(answer: Answer, registry: Registry, root: Path = REPO_ROOT) -> BaseGeometry:
+def load_outline(answer: Answer, registry: Registry, root: Path = REPO_ROOT) -> BaseGeometry | None:
+    if (
+        answer.country is not None
+        and answer.selection is not None
+        and answer.selection.boundary_source.name.startswith("file:")
+        and answer.country.boundary_dataset not in registry.datasets
+    ):
+        return None
     country, dataset, source_id_field = _registered_boundary(answer, registry)
 
     path = dataset.file(root)

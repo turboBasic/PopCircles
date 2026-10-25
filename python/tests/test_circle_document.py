@@ -88,6 +88,20 @@ def country_searched() -> dict[str, Any]:
         },
         "population_dataset": DATASET,
         "decimation": 10,
+        "selection": {
+            "combination_id": "gpw-2020-gisco-2024",
+            "resolution": 10,
+            "population_source": {
+                "name": DATASET,
+                "sha256": "b" * 64,
+                "attribution": "Configured population credit",
+            },
+            "boundary_source": {
+                "name": "gisco-countries-2024-1m",
+                "sha256": "a" * 64,
+                "attribution": "Configured boundary credit",
+            },
+        },
         **searched(),
     }
 
@@ -182,6 +196,10 @@ def test_a_country_smallest_document_retains_its_boundary_identity() -> None:
     assert answer.country.boundary_dataset == "gisco-countries-2024-1m"
     assert answer.country.boundary_revision == "Countries 2024 snapshot"
     assert answer.country.boundary_digest == "a" * 64
+    assert answer.selection is not None
+    assert answer.selection.combination_id == "gpw-2020-gisco-2024"
+    assert answer.selection.population_source.attribution == "Configured population credit"
+    assert answer.selection.boundary_source.attribution == "Configured boundary credit"
     assert answer.provenance.dataset == DATASET
     assert answer.provenance.table is None
     assert answer.provenance.decimation == 10  # noqa: PLR2004 — fixture decimation

@@ -46,6 +46,7 @@ struct CountryInputs {
     population_path: std::path::PathBuf,
     raster_spec: popcircles::raster::RasterSpec,
     population_digest: String,
+    population_attribution: Option<String>,
     boundary_path: std::path::PathBuf,
     boundary_id_field: String,
     boundary_digest: String,
@@ -94,7 +95,10 @@ impl Prepared {
             population_source: Source {
                 name: combination.population_source.clone(),
                 sha256: Some(inputs.population_digest.clone()),
-                attribution: combination.attribution.clone(),
+                attribution: combination
+                    .attribution
+                    .clone()
+                    .or_else(|| inputs.population_attribution.clone()),
                 epsg: Some(inputs.raster_spec.epsg),
                 nodata: Some(inputs.raster_spec.nodata),
                 id_field: None,
@@ -387,7 +391,7 @@ fn resolve_country_inputs(
     combination: &Combination,
     registry: &Registry,
 ) -> Result<CountryInputs, Failure> {
-    let (population_path, raster_spec, expected_population_digest) =
+    let (population_path, raster_spec, expected_population_digest, population_attribution) =
         if let Some(name) = combination.population_source.strip_prefix("dataset:") {
             let dataset = registry
                 .raster(name)
@@ -402,6 +406,7 @@ fn resolve_country_inputs(
                     nodata: dataset.nodata,
                 },
                 dataset.sha256,
+                dataset.attribution,
             )
         } else {
             let path = combination
@@ -412,7 +417,7 @@ fn resolve_country_inputs(
             let spec = combination
                 .population
                 .ok_or_else(|| Failure::bad_input("local population source metadata is missing"))?;
-            (Path::new(path).to_path_buf(), spec, None)
+            (Path::new(path).to_path_buf(), spec, None, None)
         };
     let (boundary_path, boundary_id_field, expected_boundary_digest, boundary_attribution) =
         if let Some(name) = combination.boundary_source.strip_prefix("dataset:") {
@@ -469,6 +474,7 @@ fn resolve_country_inputs(
         population_path,
         raster_spec,
         population_digest,
+        population_attribution,
         boundary_path,
         boundary_id_field,
         boundary_digest,

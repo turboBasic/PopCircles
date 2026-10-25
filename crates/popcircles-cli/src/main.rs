@@ -139,8 +139,15 @@ enum GridCommand {
 
 #[derive(Subcommand, Debug, Clone)]
 enum CountryCommand {
-    /// List available countries from the registered boundary dataset.
-    List,
+    /// List available countries from the selected combination's boundary source.
+    List {
+        /// Combination ID; defaults to the configured country combination.
+        #[arg(long)]
+        combination: Option<String>,
+        /// Prepared resolution; defaults to that combination's default resolution.
+        #[arg(long)]
+        resolution: Option<u32>,
+    },
     /// List configured population and boundary source combinations.
     Combinations,
     /// Prepare one configured country combination for local use.
@@ -313,7 +320,10 @@ fn dispatch_country(
     config_path: Option<&std::path::Path>,
 ) -> Result<String, Failure> {
     match command {
-        CountryCommand::List => commands::country::list(),
+        CountryCommand::List {
+            combination,
+            resolution,
+        } => commands::country::list(config_path, combination.as_deref(), resolution),
         CountryCommand::Combinations => commands::country::list_combinations(config_path),
         CountryCommand::Prepare {
             combination,
