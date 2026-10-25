@@ -67,6 +67,7 @@ impl Prepared {
             Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
         let inputs = resolve_country_inputs(combination, &registry)?;
         let data = load_country_data(&inputs, resolution)?;
+        verify_country_sources_unchanged(&inputs)?;
 
         let destination = combination
             .resolutions
@@ -529,6 +530,34 @@ fn fingerprint_source(field: &str, path: &Path) -> Result<String, Failure> {
     })
 }
 
+fn verify_country_sources_unchanged(inputs: &CountryInputs) -> Result<(), Failure> {
+    for (field, path, expected) in [
+        (
+            "population_source",
+            &inputs.population_path,
+            &inputs.population_digest,
+        ),
+        (
+            "boundary_source",
+            &inputs.boundary_path,
+            &inputs.boundary_digest,
+        ),
+    ] {
+        verify_source_unchanged(field, path, expected)?;
+    }
+    Ok(())
+}
+
+fn verify_source_unchanged(field: &str, path: &Path, expected: &str) -> Result<(), Failure> {
+    if fingerprint_source(field, path)? != expected {
+        return Err(Failure::bad_input(format!(
+            "{field} at {} changed while preparation was reading it; retry with stable source files",
+            path.display()
+        )));
+    }
+    Ok(())
+}
+
 fn circle_intersects_domain(
     domain: &Domain,
     kernel: &Kernel,
@@ -605,6 +634,21 @@ mod tests {
     use popcircles::report::CountryBreakdownReport;
 
     use super::*;
+
+    #[test]
+    fn changed_input_bytes_are_refused_before_prepared_output_is_created() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("source.tif");
+        std::fs::write(&path, b"before").unwrap();
+        let expected = prepared::fingerprint_file(&path).unwrap();
+        std::fs::write(&path, b"after").unwrap();
+        let error = verify_source_unchanged("population_source", &path, &expected).unwrap_err();
+        assert!(
+            error
+                .message
+                .contains("changed while preparation was reading it")
+        );
+    }
 
     fn country(id: &str, west: f64, east: f64) -> BoundaryFeature {
         BoundaryFeature {
