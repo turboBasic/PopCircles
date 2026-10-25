@@ -155,6 +155,18 @@ enum CountryCommand {
         #[arg(long)]
         replace: bool,
     },
+    /// Fetch one configured prepared country combination from its remote location.
+    Fetch {
+        /// Combination ID; defaults to the configured country combination.
+        #[arg(long)]
+        combination: Option<String>,
+        /// Prepared resolution; defaults to that combination's default resolution.
+        #[arg(long)]
+        resolution: Option<u32>,
+        /// Replace an existing prepared bundle after the fetched bundle is verified.
+        #[arg(long)]
+        replace: bool,
+    },
     /// Find the smallest population circle for one registered country.
     Smallest {
         /// Exact country feature identifier or unique English name.
@@ -262,6 +274,14 @@ fn run(command: Command, config_path: Option<&std::path::Path>) -> Result<String
                     replace,
                 },
         } => commands::country::prepare(config_path, combination.as_deref(), resolution, replace),
+        Command::Country {
+            command:
+                CountryCommand::Fetch {
+                    combination,
+                    resolution,
+                    replace,
+                },
+        } => commands::country::fetch(config_path, combination.as_deref(), resolution, replace),
         Command::Country {
             command:
                 CountryCommand::Smallest {

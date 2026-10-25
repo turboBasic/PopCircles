@@ -139,6 +139,37 @@ pub(crate) fn prepare(
     prepared_document(combination, resolution, directory)
 }
 
+pub(crate) fn fetch(
+    config_path: Option<&Path>,
+    combination_id: Option<&str>,
+    resolution: Option<u32>,
+    replace: bool,
+) -> Result<String, Failure> {
+    let config =
+        Configuration::load(config_path).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let (combination, resolution) = config
+        .combination(combination_id, resolution)
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    let location = &combination.resolutions[&resolution];
+    let remote = location.remote.as_deref().ok_or_else(|| {
+        Failure::bad_input(format!(
+            "combination `{}` resolution {resolution} has no remote URL",
+            combination.id
+        ))
+    })?;
+    let directory = location.local.as_deref().ok_or_else(|| {
+        Failure::bad_input(format!(
+            "combination `{}` resolution {resolution} has no local install directory",
+            combination.id
+        ))
+    })?;
+    let _ = replace;
+    Err(Failure::bad_input(format!(
+        "country fetch from `{remote}` to {} is not available yet",
+        directory.display()
+    )))
+}
+
 fn prepared_document(
     combination: &Combination,
     resolution: u32,
