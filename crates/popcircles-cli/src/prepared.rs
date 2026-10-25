@@ -75,7 +75,10 @@ pub(crate) enum PreparedError {
     },
     #[error("prepared artifact already exists at {}", path.display())]
     Existing { path: PathBuf },
-    #[error("another prepared-data publisher holds {}", path.display())]
+    #[error(
+        "prepared publisher lock exists at {}; if no preparation is active, remove it to clear an interrupted run",
+        path.display()
+    )]
     PublisherHeld { path: PathBuf },
     #[error("publisher lock at {} could not be created", path.display())]
     LockWrite {
@@ -187,8 +190,8 @@ pub(crate) struct Request<'a> {
 }
 
 pub(crate) struct Loaded {
-    directory: PathBuf,
     pub(crate) manifest: PreparedManifest,
+    payloads: Vec<Option<File>>,
 }
 
 impl Loaded {
@@ -199,12 +202,13 @@ impl Loaded {
             .map(|feature| feature.id.as_str())
     }
 
-    pub(crate) fn load_table(&self, id: &str) -> Result<Option<CountryTable>, PreparedError> {
-        let feature = self
+    pub(crate) fn load_table(&mut self, id: &str) -> Result<Option<CountryTable>, PreparedError> {
+        let (index, feature) = self
             .manifest
             .features
             .iter()
-            .find(|feature| feature.id == id)
+            .enumerate()
+            .find(|(_, feature)| feature.id == id)
             .ok_or_else(|| PreparedError::UnknownFeature { id: id.to_owned() })?;
         let Some(payload) = &feature.table else {
             return Ok(None);
@@ -214,7 +218,12 @@ impl Loaded {
                 id: feature.id.clone(),
                 source,
             })?;
-        load_country(&self.directory, &self.manifest, &feature_id, payload).map(Some)
+        let file = self.payloads[index]
+            .as_mut()
+            .ok_or(PreparedError::Mismatch {
+                ground: "open country payload",
+            })?;
+        load_country(file, &self.manifest, &feature_id, payload).map(Some)
     }
 }
 
@@ -450,6 +459,7 @@ impl PreparedManifest {
         validate_manifest(&manifest, request)?;
         let mut feature_ids = BTreeSet::new();
         let mut payload_files = BTreeSet::new();
+        let mut payloads = Vec::with_capacity(manifest.features.len());
         for feature in &manifest.features {
             require(
                 feature_ids.insert(feature.id.as_str()),
@@ -475,12 +485,12 @@ impl PreparedManifest {
                     "payload length alignment",
                 )?;
                 require(payload.grid.grid().is_ok(), "country crop grid")?;
+                payloads.push(Some(open_payload(directory, payload)?));
+            } else {
+                payloads.push(None);
             }
         }
-        Ok(Loaded {
-            directory: directory.to_path_buf(),
-            manifest,
-        })
+        Ok(Loaded { manifest, payloads })
     }
 }
 
@@ -698,12 +708,12 @@ fn safe_payload_path(value: &str) -> bool {
 }
 
 fn load_country(
-    directory: &Path,
+    file: &mut File,
     manifest: &PreparedManifest,
     feature_id: &FeatureId,
     payload: &CountryPayload,
 ) -> Result<CountryTable, PreparedError> {
-    let cells = load_payload_cells(directory, payload)?;
+    let cells = load_payload_cells(file, payload)?;
     let source_grid = manifest
         .source_grid
         .grid()
@@ -748,20 +758,58 @@ fn load_country(
 }
 
 fn load_payload_cells(
-    directory: &Path,
+    file: &mut File,
     payload: &CountryPayload,
 ) -> Result<Vec<f64>, PreparedError> {
-    let relative = Path::new(&payload.file);
-    if relative
-        .components()
-        .any(|part| !matches!(part, Component::Normal(_)))
-    {
-        return Err(PreparedError::UnsafePayloadPath {
+    file.seek(SeekFrom::Start(0))
+        .map_err(|source| PreparedError::PayloadRead {
+            path: PathBuf::from(&payload.file),
+            source,
+        })?;
+    let mut buffer = vec![0; 64 * 1024].into_boxed_slice();
+    let mut digest = Sha256::new();
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|source| PreparedError::PayloadRead {
+                path: PathBuf::from(&payload.file),
+                source,
+            })?;
+        if read == 0 {
+            break;
+        }
+        digest.update(&buffer[..read]);
+    }
+    if format!("{:x}", digest.finalize()) != payload.payload_sha256 {
+        return Err(PreparedError::PayloadDigest {
             path: payload.file.clone(),
         });
     }
-    let path = directory.join(relative);
-    let mut file = File::open(&path).map_err(|source| PreparedError::PayloadRead {
+    file.seek(SeekFrom::Start(0))
+        .map_err(|source| PreparedError::PayloadRead {
+            path: PathBuf::from(&payload.file),
+            source,
+        })?;
+    let count =
+        usize::try_from(payload.payload_length / 8).map_err(|_| PreparedError::Mismatch {
+            ground: "payload addressable length",
+        })?;
+    let mut cells = Vec::with_capacity(count);
+    for _ in 0..count {
+        let mut value = [0; 8];
+        file.read_exact(&mut value)
+            .map_err(|source| PreparedError::PayloadRead {
+                path: PathBuf::from(&payload.file),
+                source,
+            })?;
+        cells.push(f64::from_le_bytes(value));
+    }
+    Ok(cells)
+}
+
+fn open_payload(directory: &Path, payload: &CountryPayload) -> Result<File, PreparedError> {
+    let path = directory.join(&payload.file);
+    let file = File::open(&path).map_err(|source| PreparedError::PayloadRead {
         path: path.clone(),
         source,
     })?;
@@ -779,45 +827,7 @@ fn load_payload_cells(
             found,
         });
     }
-    let mut buffer = vec![0; 64 * 1024].into_boxed_slice();
-    let mut digest = Sha256::new();
-    loop {
-        let read = file
-            .read(&mut buffer)
-            .map_err(|source| PreparedError::PayloadRead {
-                path: path.clone(),
-                source,
-            })?;
-        if read == 0 {
-            break;
-        }
-        digest.update(&buffer[..read]);
-    }
-    if format!("{:x}", digest.finalize()) != payload.payload_sha256 {
-        return Err(PreparedError::PayloadDigest {
-            path: payload.file.clone(),
-        });
-    }
-    file.seek(SeekFrom::Start(0))
-        .map_err(|source| PreparedError::PayloadRead {
-            path: path.clone(),
-            source,
-        })?;
-    let count =
-        usize::try_from(payload.payload_length / 8).map_err(|_| PreparedError::Mismatch {
-            ground: "payload addressable length",
-        })?;
-    let mut cells = Vec::with_capacity(count);
-    for _ in 0..count {
-        let mut value = [0; 8];
-        file.read_exact(&mut value)
-            .map_err(|source| PreparedError::PayloadRead {
-                path: path.clone(),
-                source,
-            })?;
-        cells.push(f64::from_le_bytes(value));
-    }
-    Ok(cells)
+    Ok(file)
 }
 
 pub(crate) fn sha256(bytes: &[u8]) -> String {
@@ -971,7 +981,7 @@ mod tests {
     #[test]
     fn reads_portable_prefixes_without_provenance_and_keeps_empty_features() {
         let (directory, grid) = fixture();
-        let loaded = PreparedManifest::load(directory.path(), &request(grid))
+        let mut loaded = PreparedManifest::load(directory.path(), &request(grid))
             .expect("a provenance-free format-compatible bundle loads");
         assert_eq!(loaded.feature_ids().count(), 2);
         assert_eq!(
@@ -1006,11 +1016,35 @@ mod tests {
         let mut bytes = fs::read(&payload).expect("fixture payload is readable");
         bytes[0] ^= 1;
         fs::write(payload, bytes).expect("corrupt fixture payload is written");
-        let loaded = PreparedManifest::load(directory.path(), &request(grid))
+        let mut loaded = PreparedManifest::load(directory.path(), &request(grid))
             .expect("manifest checks do not load all country tables");
         assert!(matches!(
             loaded.load_table("A"),
             Err(PreparedError::PayloadDigest { .. })
+        ));
+    }
+
+    #[test]
+    fn refuses_a_payload_length_that_differs_from_the_manifest() {
+        let (directory, grid) = fixture();
+        let manifest_path = directory.path().join(MANIFEST_NAME);
+        let mut manifest: PreparedManifest = serde_json::from_slice(
+            &fs::read(&manifest_path).expect("fixture manifest is readable"),
+        )
+        .expect("fixture manifest parses");
+        manifest.features[0]
+            .table
+            .as_mut()
+            .expect("fixture feature has a table")
+            .payload_length += 8;
+        fs::write(
+            manifest_path,
+            serde_json::to_vec(&manifest).expect("changed manifest serializes"),
+        )
+        .expect("changed manifest is written");
+        assert!(matches!(
+            PreparedManifest::load(directory.path(), &request(grid)),
+            Err(PreparedError::PayloadLength { .. })
         ));
     }
 
@@ -1054,7 +1088,7 @@ mod tests {
     #[test]
     fn publishes_new_generations_and_preserves_the_current_manifest_on_refusal_or_failure() {
         let (fixture_directory, grid) = fixture();
-        let loaded = PreparedManifest::load(fixture_directory.path(), &request(grid))
+        let mut loaded = PreparedManifest::load(fixture_directory.path(), &request(grid))
             .expect("source fixture loads");
         let table_a = loaded
             .load_table("A")
@@ -1071,7 +1105,7 @@ mod tests {
         let manifest = loaded.manifest.clone();
         PreparedManifest::publish(directory.path(), manifest.clone(), &features, false)
             .expect("first generation is published");
-        let first = PreparedManifest::load(directory.path(), &request(grid))
+        let mut first = PreparedManifest::load(directory.path(), &request(grid))
             .expect("first generation loads");
 
         assert!(matches!(
@@ -1095,7 +1129,7 @@ mod tests {
 
         PreparedManifest::publish(directory.path(), manifest.clone(), &features, true)
             .expect("explicit replacement is published");
-        let replaced = PreparedManifest::load(directory.path(), &request(grid))
+        let mut replaced = PreparedManifest::load(directory.path(), &request(grid))
             .expect("replacement generation loads");
         assert_eq!(
             replaced
@@ -1108,6 +1142,14 @@ mod tests {
         assert_ne!(
             replaced.manifest.features[0].table,
             first.manifest.features[0].table
+        );
+        assert_eq!(
+            first
+                .load_table("A")
+                .expect("the old generation's open payload remains readable")
+                .expect("country has a table")
+                .total(),
+            10.0
         );
 
         let concurrent_directory =
