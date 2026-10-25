@@ -36,9 +36,10 @@ mise run cli -- grid describe --dataset population-count-2020-30arcsec
 # {"schema_version":1,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
 ```
 
-Grid-taking commands accept `--dataset` for registry defaults. Each explicit grid flag overrides its
-own default, including zero; the resolved geometry is checked before use. Without `--dataset`, supply
-all six flags; no registry is read. For an explicit-only grid:
+Grid-taking commands accept `--dataset` for registry defaults. World calculations use the population
+dataset selected by the effective configuration unless `--dataset` is supplied. Each explicit grid
+flag overrides its own default, including zero; the resolved geometry is checked before use. For an
+explicit-only grid, supply all six flags:
 
 ```sh
 mise run cli -- grid describe --width 36 --height 18 \
@@ -168,21 +169,32 @@ share that work.
 
 ## Countries
 
-`country list` prints country IDs and English names from the registered border dataset. It does not read
-the population data. For a search, `--country` accepts an exact ID or a name that matches one country.
-If the ID or name is unknown or ambiguous, the command lists possible matches. Fetch the population data
-and country borders with `mise run data:get` first.
+`country list` prints country IDs and English names from the selected combination's boundary source.
+It accepts `--combination` and `--resolution`, which default to the configured combination and that
+combination's default resolution. For a search, `--country` accepts an exact ID or a name that matches
+one country in the selected boundary source. If the ID or name is unknown or ambiguous, the command
+lists possible matches.
 
 ```sh
-mise run cli -- country list
-# {…,"document":"country-list","result":{"countries":[{"id":"AD","name":"Andorra"},…]}}
+mise run cli -- country list --config my-data.toml
+# {…,"document":"country-list","result":{"selection":{"combination_id":"local-gpw",
+#  "resolution":10,"population_source":{"name":"population.tif",…},
+#  "boundary_source":{"name":"gisco-countries-2024-1m",…}},"countries":[…]}}
 ```
 
-One country uses the same share search, restricted to its uniquely owned population cells:
+Country searches read only the prepared tables for the selected combination and resolution. They never
+prepare or fetch data implicitly. If prepared data is missing or invalid, follow the command's guidance
+to run `country prepare` when the raw sources are local, or `country fetch` when a remote prepared
+bundle is configured. Known source and resolution mismatches are refused. The result's `selection`
+names the combination, resolution, population and boundary sources, and fingerprints when available;
+supplied attribution is carried to rendered maps.
+
+One country uses the same share search, restricted to its uniquely owned population cells. Override the
+configured choices with `--combination` and `--resolution`:
 
 ```sh
 mise run cli -- country smallest --country DE --share 50 \
-  --dataset population-count-2020-30arcsec --decimate 10
+  --combination gpw-2020-gisco-2024 --resolution 10
 # {…,"document":"country-smallest","result":{"country":{"id":"DE","name":"Germany",
 #  "boundary_dataset":"gisco-countries-2024-1m",…},"ledger":{"path":"out/countries/4445.json",…},
 #  "circle":{"radius_km":…,"target":{"share":0.5,…},…}}}
@@ -193,16 +205,16 @@ countries by canonical ID and each country's records by requested share:
 
 ```sh
 mise run cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
-  --dataset population-count-2020-30arcsec --decimate 10
+  --combination gpw-2020-gisco-2024 --resolution 10
 # {…,"schema_version":1,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
 #  "countries":[{"country":{"id":"DE","name":"Germany",…},"ledger":{"path":"out/countries/4445.json",…},
 #  "records":[{"share":0.1,"circle":{"target":{"share":0.1,…},…}},…]},…]}}
 ```
 
 Each country keeps its own resumable ledger under `out/countries`; pass `--ledger-dir` to choose another
-directory. Repeating a run resumes that country's saved radii. Progress and diagnostics go to stderr, while
-stdout contains one JSON document. Sweep at an affordable decimation such as `--decimate 10`; use
-`country smallest` at full resolution for a selected answer when needed.
+directory. Repeating a run resumes that country's saved radii. Progress and diagnostics go to stderr,
+while stdout contains one JSON document. Choose an affordable prepared resolution for sweeps; use a finer
+prepared resolution for a more precise selected answer when needed.
 
 A sweep skips features with no uniquely owned population cells at that resolution, reports each ID and
 reason on stderr, and measures the elapsed time and cropped grid for every completed feature.
