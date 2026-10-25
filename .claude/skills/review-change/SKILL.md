@@ -25,8 +25,8 @@ the large-file and registry checks, and commitizen on the message. `.pre-commit-
 **A commit implies nothing about typecheck or tests.** No hook runs either; only `mise run ci` does. Those
 are the two facts a caller has to state, and absent a statement they are unknown.
 
-**A phase run by `run-plan` implies both**, because its step 7 runs `prek run --all-files` and
-`mise run ci` before every commit in the range.
+**A phase run by `run-plan` implies both**, because its tasks' commits run staged hooks and its step 7
+runs `mise run ci` on the phase's final tree.
 
 **A pushed ref needs no claim at all.** `gh api repos/:owner/:repo/commits/<sha>/check-runs` is
 authoritative in one call, and it outranks anything a brief says.
