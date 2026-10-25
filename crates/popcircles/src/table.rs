@@ -545,6 +545,21 @@ impl CountryTable {
                 }
             }
         }
+        for row in 1..=height as usize {
+            for col in 1..=width as usize {
+                let index = row * stride + col;
+                let northwest = cells[index - stride - 1];
+                let northeast = cells[index - stride];
+                let southwest = cells[index - 1];
+                let southeast = cells[index];
+                let population = (southeast + northwest) - (northeast + southwest);
+                let rounding_bound =
+                    8.0 * f64::EPSILON * southeast.max(northwest).max(northeast).max(southwest);
+                if population < -rounding_bound {
+                    return Err(PreparedCountryTableError::NegativeCell);
+                }
+            }
+        }
         Ok(Self {
             source_grid,
             effective_grid,
@@ -1395,6 +1410,23 @@ mod tests {
         });
         assert!(matches!(
             invalid,
+            Err(PreparedCountryTableError::NegativeCell)
+        ));
+        let crop = country_crop_grid(*table_a.effective_grid(), 0, 2, 0, 2)
+            .expect("the 2 by 2 fixture crop is valid");
+        let invalid_2d = CountryTable::from_prepared(PreparedCountryTable {
+            source_grid: *table_a.source_grid(),
+            effective_grid: *table_a.effective_grid(),
+            grid: crop,
+            north_row: 0,
+            west_col: 0,
+            total: 22.0,
+            unassigned: table_a.unassigned(),
+            identity: table_a.identity().clone(),
+            cells: vec![0.0, 0.0, 0.0, 0.0, 10.0, 20.0, 0.0, 15.0, 22.0],
+        });
+        assert!(matches!(
+            invalid_2d,
             Err(PreparedCountryTableError::NegativeCell)
         ));
         let table = table_a.table();
