@@ -90,6 +90,14 @@ This project derives the raster directly from [`population-count-2020-30arcsec`]
 
 The source is GPWv4.11's adjusted 2020 population count described above, with the same CC BY 4.0 terms and attribution. The derived GeoTIFF is published as [`population-count-2020-10arcmin.tif`][coarse-population-asset]. It is not resampled from another derived raster.
 
+This is the built-in world-calculation default. Select the native 30 arc-second source explicitly with
+`--dataset population-count-2020-30arcsec`. On an Apple M2 Pro, the GH-223 comparison built equal
+2160 × 1080 tables from the coarse raster and from the native source at decimation 20. The coarse
+table build plus three circle searches averaged 1.872 seconds, compared with 16.305 seconds from the
+native source; all three measured radii and centres matched at 10%, 50% and 90% population shares.
+This result describes those measured shares; the [issue records the timing method and full
+comparison][coarse-comparison].
+
 ## coastline-1to110m
 
 | Property | Value |
@@ -191,6 +199,7 @@ serves them.
 [adr-gisco]: ../docs/decisions/0015-country-identities-follow-gisco-country-features.md
 [cc-by]: https://creativecommons.org/licenses/by/4.0/
 [coarse-population-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v4/population-count-2020-10arcmin.tif
+[coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
 [contributing-data]: ../CONTRIBUTING.md#verifying-a-published-dataset
 [gisco-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson
 [gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
