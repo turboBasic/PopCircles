@@ -621,8 +621,8 @@ fn load_selected_prepared(
         crate::prepared::fingerprint_file(&boundary.path).map_err(|error| Failure {
             code: EXIT_MISSING_DATA,
             message: format!(
-                "selected boundary source at {} could not be read: {error}; fetch the registered boundary data or provide the configured local file",
-                boundary.path.display()
+                "{} could not be read: {error}",
+                boundary_source_guidance(&boundary)
             ),
         })?;
     if boundary
@@ -711,13 +711,24 @@ fn load_query_boundary(
         } else {
             Failure {
                 code: EXIT_MISSING_DATA,
-                message: format!(
-                    "selected boundary source at {} is missing; fetch the registered boundary data before querying",
-                    boundary.path.display()
-                ),
+                message: boundary_source_guidance(boundary),
             }
         }
     })
+}
+
+fn boundary_source_guidance(boundary: &QueryBoundary) -> String {
+    if boundary.registered_sha256.is_some() {
+        format!(
+            "selected boundary source at {} could not be read; fetch the registered boundary data before querying",
+            boundary.path.display()
+        )
+    } else {
+        format!(
+            "selected local boundary source at {} could not be read; provide or fix the configured file before querying",
+            boundary.path.display()
+        )
+    }
 }
 
 pub(crate) fn smallest(

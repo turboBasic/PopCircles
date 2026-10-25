@@ -865,6 +865,30 @@ fn configured_country_combination_uses_prepared_identity_and_refuses_missing_or_
         "{default:?}"
     );
     assert_eq!(default["result"]["decimation"], 2);
+
+    let local_boundary = fixture
+        .directory
+        .path()
+        .join("data/boundaries/gisco-countries-2024-1m.geojson");
+    let missing_boundary = fixture.directory.path().join("missing-boundary.geojson");
+    let config = fixture.directory.path().join("missing-boundary.toml");
+    std::fs::write(
+        &config,
+        std::fs::read_to_string(fixture.directory.path().join("local-preview.toml"))
+            .unwrap()
+            .replace(
+                &local_boundary.display().to_string(),
+                &missing_boundary.display().to_string(),
+            ),
+    )
+    .unwrap();
+    let flags = vec!["--config".to_owned(), config.display().to_string()];
+    let missing = run_with(fixture.directory.path(), &flags, "country smallest", &query);
+    assert_eq!(missing.status.code(), Some(3), "{missing:?}");
+    assert!(
+        String::from_utf8_lossy(&missing.stderr).contains("provide or fix the configured file"),
+        "{missing:?}"
+    );
 }
 
 #[test]
