@@ -16,7 +16,7 @@
 
 use std::process::Command;
 
-/// The eleven surfaces, each named by the snapshot it writes. `help` itself is clap's own and takes no
+/// The help surfaces, each named by the snapshot it writes. `help` itself is clap's own and takes no
 /// arguments of ours, so it is not among them.
 const SURFACES: [(&str, &[&str]); 17] = [
     ("binary", &[]),
