@@ -137,6 +137,10 @@ pub(crate) struct Source {
     pub(crate) name: String,
     pub(crate) sha256: Option<String>,
     pub(crate) attribution: Option<String>,
+    pub(crate) epsg: Option<u16>,
+    pub(crate) nodata: Option<f32>,
+    #[serde(rename = "source_id_field")]
+    pub(crate) id_field: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -186,6 +190,9 @@ pub(crate) struct Request<'a> {
     pub(crate) population_sha256: Option<&'a str>,
     pub(crate) boundary_source: &'a str,
     pub(crate) boundary_sha256: Option<&'a str>,
+    pub(crate) population_epsg: u16,
+    pub(crate) population_nodata: f32,
+    pub(crate) boundary_source_id_field: &'a str,
     pub(crate) source_grid: Grid,
 }
 
@@ -529,6 +536,21 @@ fn validate_manifest(
         manifest.boundary_source.name == request.boundary_source,
         "boundary source name",
     )?;
+    require(
+        manifest.population_source.epsg == Some(request.population_epsg)
+            && manifest
+                .population_source
+                .nodata
+                .is_some_and(|nodata| nodata.to_bits() == request.population_nodata.to_bits())
+            && manifest.population_source.id_field.is_none(),
+        "population source interpretation",
+    )?;
+    require(
+        manifest.boundary_source.id_field.as_deref() == Some(request.boundary_source_id_field)
+            && manifest.boundary_source.epsg.is_none()
+            && manifest.boundary_source.nodata.is_none(),
+        "boundary source interpretation",
+    )?;
     for (expected, found, ground) in [
         (
             request.population_sha256,
@@ -850,7 +872,10 @@ fn require(matches: bool, ground: &'static str) -> Result<(), PreparedError> {
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used, clippy::unwrap_used)]
+#[expect(
+    clippy::expect_used,
+    reason = "fixture failures should identify the operation that failed"
+)]
 mod tests {
     use super::*;
     use popcircles::domain::{Geometry, Polygon};
@@ -923,11 +948,17 @@ mod tests {
                 name: "file:population.tif".to_owned(),
                 sha256: None,
                 attribution: None,
+                epsg: Some(4326),
+                nodata: Some(-9999.0),
+                id_field: None,
             },
             boundary_source: Source {
                 name: "file:boundaries.geojson".to_owned(),
                 sha256: None,
                 attribution: None,
+                epsg: None,
+                nodata: None,
+                id_field: Some("CNTR_ID".to_owned()),
             },
             source_grid: GridDocument::from_grid(grid),
             effective_grid: GridDocument::from_grid(grid),
@@ -974,6 +1005,9 @@ mod tests {
             population_sha256: None,
             boundary_source: "file:boundaries.geojson",
             boundary_sha256: None,
+            population_epsg: 4326,
+            population_nodata: -9999.0,
+            boundary_source_id_field: "CNTR_ID",
             source_grid: grid,
         }
     }
@@ -1021,6 +1055,37 @@ mod tests {
         assert!(matches!(
             loaded.load_table("A"),
             Err(PreparedError::PayloadDigest { .. })
+        ));
+    }
+
+    #[test]
+    fn refuses_changed_source_interpretation() {
+        let (directory, grid) = fixture();
+        let mut changed = request(grid);
+        changed.population_epsg = 3857;
+        assert!(matches!(
+            PreparedManifest::load(directory.path(), &changed),
+            Err(PreparedError::Mismatch {
+                ground: "population source interpretation"
+            })
+        ));
+
+        let mut changed = request(grid);
+        changed.population_nodata = -1.0;
+        assert!(matches!(
+            PreparedManifest::load(directory.path(), &changed),
+            Err(PreparedError::Mismatch {
+                ground: "population source interpretation"
+            })
+        ));
+
+        let mut changed = request(grid);
+        changed.boundary_source_id_field = "OTHER_ID";
+        assert!(matches!(
+            PreparedManifest::load(directory.path(), &changed),
+            Err(PreparedError::Mismatch {
+                ground: "boundary source interpretation"
+            })
         ));
     }
 
