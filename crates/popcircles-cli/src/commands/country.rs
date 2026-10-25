@@ -168,16 +168,7 @@ pub(crate) fn fetch(
             combination.id
         ))
     })?;
-    if !remote.starts_with("https://") {
-        return Err(Failure::bad_input(format!(
-            "refusing to fetch prepared data from a non-HTTPS URL: {remote}"
-        )));
-    }
-    if remote.contains(['?', '#']) {
-        return Err(Failure::bad_input(
-            "prepared bundle URL must not include a query or fragment",
-        ));
-    }
+    validate_remote(remote)?;
     let registry =
         Registry::load(Path::new(REGISTRY_PATH)).map_err(|error| Failure::registry(&error))?;
     let population = if let Some(name) = combination.population_source.strip_prefix("dataset:") {
@@ -308,6 +299,24 @@ fn load_verified_bundle(directory: &Path, request: &Request<'_>) -> Result<(), S
     let ids: Vec<_> = loaded.feature_ids().map(str::to_owned).collect();
     for id in ids {
         loaded.load_table(&id).map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn validate_remote(remote: &str) -> Result<(), Failure> {
+    if !remote
+        .strip_prefix("https://")
+        .and_then(|url| url.split('/').next())
+        .is_some_and(|authority| !authority.is_empty() && !authority.contains('@'))
+    {
+        return Err(Failure::bad_input(format!(
+            "prepared bundle location must be a direct HTTPS URL without credentials: {remote}"
+        )));
+    }
+    if remote.contains(['?', '#']) {
+        return Err(Failure::bad_input(
+            "prepared bundle URL must not include a query or fragment",
+        ));
     }
     Ok(())
 }
@@ -655,6 +664,14 @@ mod tests {
             &local_agent(),
         )
         .expect("valid installed bundle is reused without a request");
+    }
+
+    #[test]
+    fn country_fetch_rejects_non_https_and_credential_bearing_locations() {
+        assert!(validate_remote("http://example.com/prepared").is_err());
+        assert!(validate_remote("https://user@example.com/prepared").is_err());
+        assert!(validate_remote("https://example.com/prepared?token=value").is_err());
+        assert!(validate_remote("https://example.com/prepared").is_ok());
     }
 
     #[test]
