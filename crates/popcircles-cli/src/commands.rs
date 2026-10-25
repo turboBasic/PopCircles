@@ -55,12 +55,20 @@ impl CachedTable {
         let (mapped, identity) = cache
             .open_resolved(decimation, args.digest)
             .map_err(|error| Failure::cache(&error))?;
-        if let (Some(expected), Some(actual)) = (args.grid.dataset.as_deref(), mapped.dataset())
-            && expected != actual
-        {
-            return Err(Failure::bad_input(format!(
-                "cached table names population dataset `{actual}`, but `{expected}` was selected"
-            )));
+        if let Some(expected) = args.grid.dataset.as_deref() {
+            match mapped.dataset() {
+                Some(actual) if actual != expected => {
+                    return Err(Failure::bad_input(format!(
+                        "cached table names population dataset `{actual}`, but `{expected}` was selected"
+                    )));
+                }
+                None => {
+                    return Err(Failure::bad_input(format!(
+                        "cached table has no population dataset identity; rebuild it with `table build --dataset {expected}`"
+                    )));
+                }
+                Some(_) => {}
+            }
         }
 
         // Box 6's resolved input, here because this is already the one place a cache is opened. It names
@@ -94,12 +102,12 @@ impl CachedTable {
         Table::new(self.grid, cells).map_err(|error| Failure::table(&error))
     }
 
-    pub(crate) fn provenance(&self, selected_dataset: Option<&str>) -> Provenance {
+    pub(crate) fn provenance(&self) -> Provenance {
         // The name comes off the header rather than off a flag, which is what lets a command that takes no
         // `--dataset` publish one.
         Provenance::new(
             &self.identity,
-            self.mapped.dataset().or(selected_dataset),
+            self.mapped.dataset(),
             &self.header,
             &self.payload,
         )

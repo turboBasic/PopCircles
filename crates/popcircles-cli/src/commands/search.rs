@@ -105,7 +105,7 @@ pub(crate) fn population_at(
             .map_err(|error| Failure::grid_index(&error))?
             .with_nearest_settlement(context.as_ref())
             .with_country_breakdown(Some(&country.for_circle(cell, radius, population, total)?)),
-        cached.provenance(args.grid.dataset.as_deref()),
+        cached.provenance(),
     )))
 }
 
@@ -154,7 +154,7 @@ pub(crate) fn most_populous(
                 found.centre.population,
                 total,
             )?)),
-        cached.provenance(args.grid.dataset.as_deref()),
+        cached.provenance(),
     )))
 }
 
@@ -268,7 +268,7 @@ pub(crate) fn sweep(
             SweepShares::new(range.from, range.to, range.step),
             records,
         ),
-        cached.provenance(args.grid.dataset.as_deref()),
+        cached.provenance(),
     )))
 }
 
@@ -322,7 +322,7 @@ pub(crate) fn smallest_for_share(
                     found.target.total,
                 )?)),
         ),
-        cached.provenance(args.grid.dataset.as_deref()),
+        cached.provenance(),
     )))
 }
 

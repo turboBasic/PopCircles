@@ -64,7 +64,7 @@ impl Fixture {
     }
 
     fn build() -> Self {
-        Self::over(dense, None)
+        Self::named("population-count-2020-30arcsec")
     }
 
     /// The same cache, published under a dataset name — which is what `table build --dataset` writes and
@@ -86,7 +86,7 @@ impl Fixture {
                 let inside = (8..=9).contains(&row) && (15..=16).contains(&col);
                 if inside { 100.0 } else { NODATA }
             },
-            None,
+            Some("population-count-2020-30arcsec"),
         )
     }
 
@@ -493,7 +493,7 @@ fn all_four_commands_match_the_country_breakdown_oracle() {
             (4, 25 | 30) => 35.0,
             _ => NODATA,
         },
-        None,
+        Some("population-count-2020-30arcsec"),
     );
     let boundary = fixture
         .directory
@@ -1427,7 +1427,7 @@ fn assert_fields_unchanged(before: &serde_json::Value, after: &serde_json::Value
 
 #[test]
 fn missing_or_remote_settlements_do_not_affect_non_circle_commands() {
-    let fixture = Fixture::build();
+    let fixture = Fixture::named("tiny");
     register_fixture(&fixture);
     std::fs::write(
         fixture.directory.path().join("data/tiny.tif"),
@@ -1528,43 +1528,41 @@ fn successful_document(output: &Output) -> serde_json::Value {
 
 #[test]
 fn every_cache_reader_infers_the_same_digest_and_answers() {
-    for dataset in [None, Some("population-count-2020-30arcsec")] {
-        let fixture = Fixture::over(dense, dataset);
-        for command in CACHE_READERS {
-            let inferred_path = fixture.ledger(&format!("{command}-inferred.json"));
-            let explicit_path = fixture.ledger(&format!("{command}-explicit.json"));
-            let inferred_path = inferred_path.to_string_lossy();
-            let explicit_path = explicit_path.to_string_lossy();
-            let parameters = cached_parameters(command, &inferred_path);
-            let mut inferred = successful_document(&fixture.run_inferred(command, &parameters));
-            let mut explicit = successful_document(
-                &fixture.run_ok(command, &cached_parameters(command, &explicit_path)),
+    let fixture = Fixture::named("population-count-2020-30arcsec");
+    for command in CACHE_READERS {
+        let inferred_path = fixture.ledger(&format!("{command}-inferred.json"));
+        let explicit_path = fixture.ledger(&format!("{command}-explicit.json"));
+        let inferred_path = inferred_path.to_string_lossy();
+        let explicit_path = explicit_path.to_string_lossy();
+        let parameters = cached_parameters(command, &inferred_path);
+        let mut inferred = successful_document(&fixture.run_inferred(command, &parameters));
+        let mut explicit = successful_document(
+            &fixture.run_ok(command, &cached_parameters(command, &explicit_path)),
+        );
+        if command == "table query" {
+            assert_eq!(inferred["result"]["digest"], hexadecimal(fixture.digest));
+        } else {
+            assert_eq!(
+                inferred["provenance"]["digest"],
+                hexadecimal(fixture.digest)
             );
-            if command == "table query" {
-                assert_eq!(inferred["result"]["digest"], hexadecimal(fixture.digest));
-            } else {
-                assert_eq!(
-                    inferred["provenance"]["digest"],
-                    hexadecimal(fixture.digest)
-                );
-                assert_eq!(
-                    inferred["provenance"]["dataset"],
-                    serde_json::json!(dataset.unwrap_or("population-count-2020-30arcsec"))
-                );
-            }
-
-            if matches!(command, "smallest-for-share" | "sweep") {
-                let warm = successful_document(&fixture.run_inferred(command, &parameters));
-                assert_same_answers(&warm, &inferred);
-                for answer in answers(&warm) {
-                    assert_eq!(answer["stats"]["radii_evaluated"], 0);
-                    assert!(answer["stats"]["radii_reused"].as_u64().unwrap() > 0);
-                }
-                inferred["result"]["ledger"]["path"] = serde_json::Value::Null;
-                explicit["result"]["ledger"]["path"] = serde_json::Value::Null;
-            }
-            assert_same_bits(&inferred, &explicit);
+            assert_eq!(
+                inferred["provenance"]["dataset"],
+                "population-count-2020-30arcsec"
+            );
         }
+
+        if matches!(command, "smallest-for-share" | "sweep") {
+            let warm = successful_document(&fixture.run_inferred(command, &parameters));
+            assert_same_answers(&warm, &inferred);
+            for answer in answers(&warm) {
+                assert_eq!(answer["stats"]["radii_evaluated"], 0);
+                assert!(answer["stats"]["radii_reused"].as_u64().unwrap() > 0);
+            }
+            inferred["result"]["ledger"]["path"] = serde_json::Value::Null;
+            explicit["result"]["ledger"]["path"] = serde_json::Value::Null;
+        }
+        assert_same_bits(&inferred, &explicit);
     }
 }
 
@@ -1876,15 +1874,28 @@ fn a_document_answered_from_a_named_table_names_that_dataset() {
 #[test]
 fn configured_world_dataset_is_published_in_result_provenance() {
     let dataset = "population-count-2020-30arcsec";
-    for source_dataset in [None, Some(dataset)] {
-        let fixture = Fixture::over(dense, source_dataset);
-        let output = fixture.run_ok(
-            "population-at",
-            &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
-        );
-        let document = successful_document(&output);
-        assert_eq!(document["provenance"]["dataset"], dataset);
-    }
+    let fixture = Fixture::named(dataset);
+    let output = fixture.run_ok(
+        "population-at",
+        &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
+    );
+    let document = successful_document(&output);
+    assert_eq!(document["provenance"]["dataset"], dataset);
+}
+
+#[test]
+fn configured_world_dataset_refuses_a_cache_without_source_identity() {
+    let fixture = Fixture::over(dense, None);
+    let output = fixture.run_ok(
+        "population-at",
+        &["--lat", "48", "--lon", "11", "--radius-km", "1200"],
+    );
+    assert_eq!(output.status.code(), Some(2), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("cached table has no population dataset identity; rebuild it with `table build --dataset population-count-2020-30arcsec`"),
+        "{output:?}"
+    );
 }
 
 #[test]
@@ -2141,7 +2152,7 @@ fn named_command(fixture: &Fixture, command: &str, rest: &[&str]) -> Output {
 
 #[test]
 fn circle_commands_use_registered_country_inputs_alongside_dataset_grid_defaults() {
-    let fixture = Fixture::build();
+    let fixture = Fixture::named("tiny");
     register_fixture(&fixture);
     std::fs::write(
         fixture.directory.path().join("data/tiny.tif"),
@@ -2330,7 +2341,7 @@ fn each_bad_registry_value_is_refused_and_corrected_alone(
 
 #[test]
 fn dataset_build_and_all_cached_commands_agree_with_explicit_inputs() {
-    let fixture = Fixture::build();
+    let fixture = Fixture::named("tiny");
     register_fixture(&fixture);
     let registry = fixture.directory.path().join("data/registry.toml");
     let text = std::fs::read_to_string(&registry).unwrap();
@@ -2381,7 +2392,7 @@ fn dataset_build_and_all_cached_commands_agree_with_explicit_inputs() {
 
 #[test]
 fn table_build_uses_registered_defaults_and_explicit_raster_overrides() {
-    let fixture = Fixture::build();
+    let fixture = Fixture::named("tiny");
     register_fixture(&fixture);
     std::fs::write(
         fixture.directory.path().join("data/tiny.tif"),
