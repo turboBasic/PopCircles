@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::fs::{self, File, OpenOptions};
-use std::io::{self, BufWriter, Read, Write};
+use std::io::{self, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -55,7 +55,7 @@ pub(crate) enum PreparedError {
     PayloadLength {
         path: String,
         expected: u64,
-        found: usize,
+        found: u64,
     },
     #[error("prepared payload {path} SHA-256 differs from its manifest")]
     PayloadDigest { path: String },
@@ -75,6 +75,14 @@ pub(crate) enum PreparedError {
     },
     #[error("prepared artifact already exists at {}", path.display())]
     Existing { path: PathBuf },
+    #[error("another prepared-data publisher holds {}", path.display())]
+    PublisherHeld { path: PathBuf },
+    #[error("publisher lock at {} could not be created", path.display())]
+    LockWrite {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
     #[error("prepared directory at {} could not be created", path.display())]
     DirectoryCreate {
         path: PathBuf,
@@ -99,6 +107,8 @@ pub(crate) enum PreparedError {
         #[source]
         source: io::Error,
     },
+    #[error("prepared feature `{id}` is not in the manifest")]
+    UnknownFeature { id: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -177,8 +187,35 @@ pub(crate) struct Request<'a> {
 }
 
 pub(crate) struct Loaded {
+    directory: PathBuf,
     pub(crate) manifest: PreparedManifest,
-    pub(crate) tables: Vec<(FeatureId, Option<CountryTable>)>,
+}
+
+impl Loaded {
+    pub(crate) fn feature_ids(&self) -> impl Iterator<Item = &str> {
+        self.manifest
+            .features
+            .iter()
+            .map(|feature| feature.id.as_str())
+    }
+
+    pub(crate) fn load_table(&self, id: &str) -> Result<Option<CountryTable>, PreparedError> {
+        let feature = self
+            .manifest
+            .features
+            .iter()
+            .find(|feature| feature.id == id)
+            .ok_or_else(|| PreparedError::UnknownFeature { id: id.to_owned() })?;
+        let Some(payload) = &feature.table else {
+            return Ok(None);
+        };
+        let feature_id =
+            FeatureId::new(feature.id.clone()).map_err(|source| PreparedError::FeatureId {
+                id: feature.id.clone(),
+                source,
+            })?;
+        load_country(&self.directory, &self.manifest, &feature_id, payload).map(Some)
+    }
 }
 
 impl GridDocument {
@@ -208,110 +245,195 @@ impl GridDocument {
     }
 }
 
-impl PreparedManifest {
-    pub(crate) fn publish(
-        directory: &Path,
-        mut manifest: Self,
-        features: &[(FeatureId, Option<&CountryTable>)],
-        replace: bool,
-    ) -> Result<(), PreparedError> {
-        Self::publish_with(directory, &mut manifest, features, replace, |from, to| {
-            fs::rename(from, to)
-        })
-    }
+pub(crate) struct PreparedWriter {
+    directory: PathBuf,
+    manifest_path: PathBuf,
+    lock_path: PathBuf,
+    _lock: File,
+    generation: String,
+    manifest: PreparedManifest,
+    previous: Option<PreparedManifest>,
+    features: Vec<Feature>,
+    created: Vec<PathBuf>,
+    published: bool,
+}
 
-    fn publish_with(
+impl PreparedWriter {
+    pub(crate) fn new(
         directory: &Path,
-        manifest: &mut Self,
-        features: &[(FeatureId, Option<&CountryTable>)],
+        manifest: PreparedManifest,
         replace: bool,
-        publish_manifest: impl FnOnce(&Path, &Path) -> io::Result<()>,
-    ) -> Result<(), PreparedError> {
+    ) -> Result<Self, PreparedError> {
         fs::create_dir_all(directory).map_err(|source| PreparedError::DirectoryCreate {
             path: directory.to_path_buf(),
             source,
         })?;
         let manifest_path = directory.join(MANIFEST_NAME);
+        // shortcut: a crashed publisher leaves this lock behind; remove it to resume preparation.
+        let lock_path = directory.join(".prepare.lock");
+        let lock = match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&lock_path)
+        {
+            Ok(lock) => lock,
+            Err(source) if source.kind() == io::ErrorKind::AlreadyExists => {
+                return Err(PreparedError::PublisherHeld { path: lock_path });
+            }
+            Err(source) => {
+                return Err(PreparedError::LockWrite {
+                    path: lock_path,
+                    source,
+                });
+            }
+        };
+        let mut writer = Self {
+            directory: directory.to_path_buf(),
+            manifest_path: manifest_path.clone(),
+            lock_path,
+            _lock: lock,
+            generation: generation_name(),
+            manifest,
+            previous: None,
+            features: Vec::new(),
+            created: Vec::new(),
+            published: false,
+        };
         if manifest_path.exists() && !replace {
             return Err(PreparedError::Existing {
                 path: manifest_path,
             });
         }
-        let previous = fs::read(&manifest_path)
+        writer.previous = fs::read(&manifest_path)
             .ok()
-            .and_then(|bytes| serde_json::from_slice::<Self>(&bytes).ok());
-        let generation = generation_name();
-        let mut created = Vec::new();
-        let result = (|| {
-            let mut entries = Vec::with_capacity(features.len());
-            for (index, (feature_id, table)) in features.iter().enumerate() {
-                let payload = table
-                    .map(|table| {
-                        write_country(
-                            directory,
-                            &generation,
-                            index,
-                            feature_id,
-                            table,
-                            manifest,
-                            &mut created,
-                        )
-                    })
-                    .transpose()?;
-                entries.push(Feature {
-                    id: feature_id.as_str().to_owned(),
-                    table: payload,
-                });
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok());
+        Ok(writer)
+    }
+
+    pub(crate) fn write_feature(
+        &mut self,
+        feature_id: &FeatureId,
+        table: Option<&CountryTable>,
+    ) -> Result<(), PreparedError> {
+        require(
+            !self
+                .features
+                .iter()
+                .any(|feature| feature.id == feature_id.as_str()),
+            "unique feature identity",
+        )?;
+        let payload = table
+            .map(|table| {
+                write_country(
+                    &self.directory,
+                    &self.generation,
+                    self.features.len(),
+                    feature_id,
+                    table,
+                    &self.manifest,
+                    &mut self.created,
+                )
+            })
+            .transpose()?;
+        self.features.push(Feature {
+            id: feature_id.as_str().to_owned(),
+            table: payload,
+        });
+        Ok(())
+    }
+
+    pub(crate) fn publish(self) -> Result<(), PreparedError> {
+        self.publish_with(|from, to| fs::rename(from, to))
+    }
+
+    fn publish_with(
+        mut self,
+        publish_manifest: impl FnOnce(&Path, &Path) -> io::Result<()>,
+    ) -> Result<(), PreparedError> {
+        self.manifest.format_version = FORMAT_VERSION;
+        self.manifest.byte_order = ByteOrder::Little;
+        self.manifest.features = std::mem::take(&mut self.features);
+        let bytes = serde_json::to_vec_pretty(&self.manifest).map_err(|source| {
+            PreparedError::ManifestSerialize {
+                path: self.manifest_path.clone(),
+                source,
             }
-            manifest.format_version = FORMAT_VERSION;
-            manifest.byte_order = ByteOrder::Little;
-            manifest.features = entries;
-            let bytes = serde_json::to_vec_pretty(manifest).map_err(|source| {
-                PreparedError::ManifestSerialize {
-                    path: manifest_path.clone(),
-                    source,
-                }
+        })?;
+        let temporary = self
+            .directory
+            .join(format!("manifest-{}.json.tmp", self.generation));
+        self.created.push(temporary.clone());
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|source| PreparedError::ManifestWrite {
+                path: temporary.clone(),
+                source,
             })?;
-            let temporary = directory.join(format!("manifest-{generation}.json.tmp"));
-            created.push(temporary.clone());
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&temporary)
-                .map_err(|source| PreparedError::ManifestWrite {
-                    path: temporary.clone(),
-                    source,
-                })?;
-            file.write_all(&bytes)
-                .and_then(|()| file.sync_all())
-                .map_err(|source| PreparedError::ManifestWrite {
-                    path: temporary.clone(),
-                    source,
-                })?;
-            publish_manifest(&temporary, &manifest_path).map_err(|source| {
-                PreparedError::ManifestPublish {
-                    path: manifest_path.clone(),
-                    source,
-                }
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|source| PreparedError::ManifestWrite {
+                path: temporary.clone(),
+                source,
             })?;
-            Ok(())
-        })();
-        if let Err(error) = result {
-            for path in created {
-                let _ = fs::remove_file(path);
+        publish_manifest(&temporary, &self.manifest_path).map_err(|source| {
+            PreparedError::ManifestPublish {
+                path: self.manifest_path.clone(),
+                source,
             }
-            return Err(error);
-        }
-        if let Some(previous) = previous {
+        })?;
+        self.published = true;
+        if let Some(previous) = self.previous.take() {
             for feature in previous.features {
                 if let Some(payload) = feature.table
                     && safe_payload_path(&payload.file)
                 {
-                    let _ = fs::remove_file(directory.join(payload.file));
+                    let _ = fs::remove_file(self.directory.join(payload.file));
                 }
             }
         }
         Ok(())
+    }
+}
+
+impl Drop for PreparedWriter {
+    fn drop(&mut self) {
+        if !self.published {
+            for path in &self.created {
+                let _ = fs::remove_file(path);
+            }
+        }
+        let _ = fs::remove_file(&self.lock_path);
+    }
+}
+
+impl PreparedManifest {
+    pub(crate) fn publish(
+        directory: &Path,
+        manifest: Self,
+        features: &[(FeatureId, Option<&CountryTable>)],
+        replace: bool,
+    ) -> Result<(), PreparedError> {
+        let mut writer = PreparedWriter::new(directory, manifest, replace)?;
+        for (feature_id, table) in features {
+            writer.write_feature(feature_id, *table)?;
+        }
+        writer.publish()
+    }
+
+    fn publish_with(
+        directory: &Path,
+        manifest: Self,
+        features: &[(FeatureId, Option<&CountryTable>)],
+        replace: bool,
+        publish_manifest: impl FnOnce(&Path, &Path) -> io::Result<()>,
+    ) -> Result<(), PreparedError> {
+        let mut writer = PreparedWriter::new(directory, manifest, replace)?;
+        for (feature_id, table) in features {
+            writer.write_feature(feature_id, *table)?;
+        }
+        writer.publish_with(publish_manifest)
     }
 
     pub(crate) fn load(directory: &Path, request: &Request<'_>) -> Result<Loaded, PreparedError> {
@@ -326,8 +448,6 @@ impl PreparedManifest {
                 source,
             })?;
         validate_manifest(&manifest, request)?;
-
-        let mut tables = Vec::with_capacity(manifest.features.len());
         let mut feature_ids = BTreeSet::new();
         let mut payload_files = BTreeSet::new();
         for feature in &manifest.features {
@@ -335,29 +455,32 @@ impl PreparedManifest {
                 feature_ids.insert(feature.id.as_str()),
                 "unique feature identity",
             )?;
-            let feature_id =
-                FeatureId::new(feature.id.clone()).map_err(|source| PreparedError::FeatureId {
-                    id: feature.id.clone(),
-                    source,
-                })?;
-            let table = feature
-                .table
-                .as_ref()
-                .map(|payload| {
-                    require(
-                        payload_files.insert(payload.file.as_str()),
-                        "unique payload path",
-                    )?;
-                    require(
-                        valid_sha256(&payload.payload_sha256),
-                        "payload SHA-256 spelling",
-                    )?;
-                    load_country(directory, &manifest, &feature_id, payload)
-                })
-                .transpose()?;
-            tables.push((feature_id, table));
+            FeatureId::new(feature.id.clone()).map_err(|source| PreparedError::FeatureId {
+                id: feature.id.clone(),
+                source,
+            })?;
+            if let Some(payload) = &feature.table {
+                require(
+                    payload_files.insert(payload.file.as_str()),
+                    "unique payload path",
+                )?;
+                require(safe_payload_path(&payload.file), "safe payload path")?;
+                require(
+                    valid_sha256(&payload.payload_sha256),
+                    "payload SHA-256 spelling",
+                )?;
+                let cell_bytes = u64::try_from(size_of::<f64>()).unwrap_or(u64::MAX);
+                require(
+                    payload.payload_length.is_multiple_of(cell_bytes),
+                    "payload length alignment",
+                )?;
+                require(payload.grid.grid().is_ok(), "country crop grid")?;
+            }
         }
-        Ok(Loaded { manifest, tables })
+        Ok(Loaded {
+            directory: directory.to_path_buf(),
+            manifest,
+        })
     }
 }
 
@@ -580,43 +703,7 @@ fn load_country(
     feature_id: &FeatureId,
     payload: &CountryPayload,
 ) -> Result<CountryTable, PreparedError> {
-    let relative = Path::new(&payload.file);
-    if relative
-        .components()
-        .any(|part| !matches!(part, Component::Normal(_)))
-    {
-        return Err(PreparedError::UnsafePayloadPath {
-            path: payload.file.clone(),
-        });
-    }
-    let path = directory.join(relative);
-    let bytes = fs::read(&path).map_err(|source| PreparedError::PayloadRead {
-        path: path.clone(),
-        source,
-    })?;
-    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) != payload.payload_length {
-        return Err(PreparedError::PayloadLength {
-            path: payload.file.clone(),
-            expected: payload.payload_length,
-            found: bytes.len(),
-        });
-    }
-    if sha256(&bytes) != payload.payload_sha256 {
-        return Err(PreparedError::PayloadDigest {
-            path: payload.file.clone(),
-        });
-    }
-    if !bytes.len().is_multiple_of(size_of::<f64>()) {
-        return Err(PreparedError::PayloadAlignment {
-            path: payload.file.clone(),
-        });
-    }
-    let cells = bytes
-        .as_chunks::<8>()
-        .0
-        .iter()
-        .map(|value| f64::from_le_bytes(*value))
-        .collect();
+    let cells = load_payload_cells(directory, payload)?;
     let source_grid = manifest
         .source_grid
         .grid()
@@ -658,6 +745,79 @@ fn load_country(
         id: feature_id.as_str().to_owned(),
         source,
     })
+}
+
+fn load_payload_cells(
+    directory: &Path,
+    payload: &CountryPayload,
+) -> Result<Vec<f64>, PreparedError> {
+    let relative = Path::new(&payload.file);
+    if relative
+        .components()
+        .any(|part| !matches!(part, Component::Normal(_)))
+    {
+        return Err(PreparedError::UnsafePayloadPath {
+            path: payload.file.clone(),
+        });
+    }
+    let path = directory.join(relative);
+    let mut file = File::open(&path).map_err(|source| PreparedError::PayloadRead {
+        path: path.clone(),
+        source,
+    })?;
+    let found = file
+        .metadata()
+        .map_err(|source| PreparedError::PayloadRead {
+            path: path.clone(),
+            source,
+        })?
+        .len();
+    if found != payload.payload_length {
+        return Err(PreparedError::PayloadLength {
+            path: payload.file.clone(),
+            expected: payload.payload_length,
+            found,
+        });
+    }
+    let mut buffer = vec![0; 64 * 1024].into_boxed_slice();
+    let mut digest = Sha256::new();
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|source| PreparedError::PayloadRead {
+                path: path.clone(),
+                source,
+            })?;
+        if read == 0 {
+            break;
+        }
+        digest.update(&buffer[..read]);
+    }
+    if format!("{:x}", digest.finalize()) != payload.payload_sha256 {
+        return Err(PreparedError::PayloadDigest {
+            path: payload.file.clone(),
+        });
+    }
+    file.seek(SeekFrom::Start(0))
+        .map_err(|source| PreparedError::PayloadRead {
+            path: path.clone(),
+            source,
+        })?;
+    let count =
+        usize::try_from(payload.payload_length / 8).map_err(|_| PreparedError::Mismatch {
+            ground: "payload addressable length",
+        })?;
+    let mut cells = Vec::with_capacity(count);
+    for _ in 0..count {
+        let mut value = [0; 8];
+        file.read_exact(&mut value)
+            .map_err(|source| PreparedError::PayloadRead {
+                path: path.clone(),
+                source,
+            })?;
+        cells.push(f64::from_le_bytes(value));
+    }
+    Ok(cells)
 }
 
 pub(crate) fn sha256(bytes: &[u8]) -> String {
@@ -813,14 +973,21 @@ mod tests {
         let (directory, grid) = fixture();
         let loaded = PreparedManifest::load(directory.path(), &request(grid))
             .expect("a provenance-free format-compatible bundle loads");
-        assert_eq!(loaded.tables.len(), 2);
-        assert_eq!(loaded.tables[0].0.as_str(), "A");
+        assert_eq!(loaded.feature_ids().count(), 2);
         assert_eq!(
-            loaded.tables[0].1.as_ref().expect("A has a table").total(),
+            loaded
+                .load_table("A")
+                .expect("A loads on demand")
+                .expect("A has a table")
+                .total(),
             10.0
         );
-        assert_eq!(loaded.tables[1].0.as_str(), "EMPTY");
-        assert!(loaded.tables[1].1.is_none());
+        assert!(
+            loaded
+                .load_table("EMPTY")
+                .expect("empty feature resolves")
+                .is_none()
+        );
     }
 
     #[test]
@@ -839,8 +1006,10 @@ mod tests {
         let mut bytes = fs::read(&payload).expect("fixture payload is readable");
         bytes[0] ^= 1;
         fs::write(payload, bytes).expect("corrupt fixture payload is written");
+        let loaded = PreparedManifest::load(directory.path(), &request(grid))
+            .expect("manifest checks do not load all country tables");
         assert!(matches!(
-            PreparedManifest::load(directory.path(), &request(grid)),
+            loaded.load_table("A"),
             Err(PreparedError::PayloadDigest { .. })
         ));
     }
@@ -887,13 +1056,19 @@ mod tests {
         let (fixture_directory, grid) = fixture();
         let loaded = PreparedManifest::load(fixture_directory.path(), &request(grid))
             .expect("source fixture loads");
-        let features: Vec<_> = loaded
-            .tables
-            .iter()
-            .map(|(id, table)| (id.clone(), table.as_ref()))
-            .collect();
+        let table_a = loaded
+            .load_table("A")
+            .expect("country table loads on demand")
+            .expect("country has a table");
+        let features = vec![
+            (
+                FeatureId::new("A").expect("feature ID is valid"),
+                Some(&table_a),
+            ),
+            (FeatureId::new("EMPTY").expect("feature ID is valid"), None),
+        ];
         let directory = tempfile::tempdir().expect("output directory is available");
-        let mut manifest = loaded.manifest.clone();
+        let manifest = loaded.manifest.clone();
         PreparedManifest::publish(directory.path(), manifest.clone(), &features, false)
             .expect("first generation is published");
         let first = PreparedManifest::load(directory.path(), &request(grid))
@@ -905,7 +1080,7 @@ mod tests {
         ));
         let failure = PreparedManifest::publish_with(
             directory.path(),
-            &mut manifest,
+            manifest.clone(),
             &features,
             true,
             |_, _| Err(io::Error::other("injected publication failure")),
@@ -918,14 +1093,14 @@ mod tests {
             .expect("failed replacement leaves the old manifest and payloads usable");
         assert_eq!(still_current.manifest, first.manifest);
 
-        PreparedManifest::publish(directory.path(), manifest, &features, true)
+        PreparedManifest::publish(directory.path(), manifest.clone(), &features, true)
             .expect("explicit replacement is published");
         let replaced = PreparedManifest::load(directory.path(), &request(grid))
             .expect("replacement generation loads");
         assert_eq!(
-            replaced.tables[0]
-                .1
-                .as_ref()
+            replaced
+                .load_table("A")
+                .expect("replacement country loads")
                 .expect("country has a table")
                 .total(),
             10.0
@@ -934,5 +1109,23 @@ mod tests {
             replaced.manifest.features[0].table,
             first.manifest.features[0].table
         );
+
+        let concurrent_directory =
+            tempfile::tempdir().expect("concurrent output directory is available");
+        let mut publisher =
+            PreparedWriter::new(concurrent_directory.path(), manifest.clone(), false)
+                .expect("first publisher acquires the lock");
+        assert!(matches!(
+            PreparedWriter::new(concurrent_directory.path(), manifest, false),
+            Err(PreparedError::PublisherHeld { .. })
+        ));
+        for (feature_id, table) in &features {
+            publisher
+                .write_feature(feature_id, *table)
+                .expect("first publisher writes its feature");
+        }
+        publisher.publish().expect("first publisher completes");
+        PreparedManifest::load(concurrent_directory.path(), &request(grid))
+            .expect("serialized publisher output loads");
     }
 }

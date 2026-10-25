@@ -852,36 +852,37 @@ mod tests {
         }
     }
 
+    const LOCAL_SOURCES: &str = r#"
+        [defaults]
+        population_dataset = "population-count-2020-30arcsec"
+        country_combination = "local"
+
+        [combinations.local]
+        population_source = "file:population.tif"
+        boundary_source = "file:boundaries.geojson"
+        default_resolution = 1
+
+        [combinations.local.population_metadata]
+        width = 2
+        height = 2
+        origin_lat = 1.0
+        origin_lon = 0.0
+        lon_step = 1.0
+        lat_step = -1.0
+        epsg = 4326
+        nodata = -9999.0
+
+        [combinations.local.boundary_metadata]
+        source_id_field = "CNTR_ID"
+
+        [combinations.local.resolutions.1]
+        local = "prepared"
+    "#;
+
     #[test]
-    fn local_sources_require_complete_valid_metadata_and_datasets_reject_it() {
+    fn local_sources_require_valid_population_metadata() {
         let registry = registry();
-        let valid = r#"
-            [defaults]
-            population_dataset = "population-count-2020-30arcsec"
-            country_combination = "local"
-
-            [combinations.local]
-            population_source = "file:population.tif"
-            boundary_source = "file:boundaries.geojson"
-            default_resolution = 1
-
-            [combinations.local.population_metadata]
-            width = 2
-            height = 2
-            origin_lat = 1.0
-            origin_lon = 0.0
-            lon_step = 1.0
-            lat_step = -1.0
-            epsg = 4326
-            nodata = -9999.0
-
-            [combinations.local.boundary_metadata]
-            source_id_field = "CNTR_ID"
-
-            [combinations.local.resolutions.1]
-            local = "prepared"
-        "#;
-        let parsed = document(valid);
+        let parsed = document(LOCAL_SOURCES);
         validate_complete(&parsed, Path::new("user.toml"), &registry)
             .expect("a complete local source pair is valid");
 
@@ -895,7 +896,7 @@ mod tests {
             "epsg",
             "nodata",
         ] {
-            let missing = valid
+            let missing = LOCAL_SOURCES
                 .lines()
                 .filter(|line| !line.trim_start().starts_with(&format!("{field} =")))
                 .collect::<Vec<_>>()
@@ -911,19 +912,19 @@ mod tests {
 
         for (text, field) in [
             (
-                valid.replace("width = 2", "width = 0"),
+                LOCAL_SOURCES.replace("width = 2", "width = 0"),
                 "population_metadata grid",
             ),
             (
-                valid.replace("epsg = 4326", "epsg = 0"),
+                LOCAL_SOURCES.replace("epsg = 4326", "epsg = 0"),
                 "population_metadata.epsg",
             ),
             (
-                valid.replace("nodata = -9999.0", "nodata = inf"),
+                LOCAL_SOURCES.replace("nodata = -9999.0", "nodata = inf"),
                 "population_metadata.nodata",
             ),
             (
-                valid.replace("source_id_field = \"CNTR_ID\"", "source_id_field = \"\""),
+                LOCAL_SOURCES.replace("source_id_field = \"CNTR_ID\"", "source_id_field = \"\""),
                 "boundary_metadata.source_id_field",
             ),
         ] {
@@ -932,20 +933,55 @@ mod tests {
                 .expect_err("invalid local metadata is refused");
             assert!(error.to_string().contains(field), "{error}");
         }
+    }
 
-        let dataset_metadata = valid
-            .replace(
-                "file:population.tif",
-                "dataset:population-count-2020-30arcsec",
-            )
-            .replace("file:boundaries.geojson", "dataset:gisco-countries-2024-1m");
+    #[test]
+    fn local_boundary_requires_an_id_field_and_dataset_sources_reject_local_metadata() {
+        let registry = registry();
+        let missing_id = LOCAL_SOURCES.replace("source_id_field = \"CNTR_ID\"\n", "");
+        let error = validate_complete(&document(&missing_id), Path::new("user.toml"), &registry)
+            .expect_err("a local boundary must declare its identifier property");
+        assert!(
+            error
+                .to_string()
+                .contains("boundary_metadata.source_id_field"),
+            "{error}"
+        );
+
+        let boundary_metadata_on_dataset =
+            LOCAL_SOURCES.replace("file:boundaries.geojson", "dataset:gisco-countries-2024-1m");
         let error = validate_complete(
-            &document(&dataset_metadata),
+            &document(&boundary_metadata_on_dataset),
             Path::new("user.toml"),
             &registry,
         )
-        .expect_err("metadata on registered sources is refused");
+        .expect_err("metadata on a declared boundary dataset is refused");
+        assert!(error.to_string().contains("boundary_metadata"));
+
+        let population_metadata_on_dataset = LOCAL_SOURCES.replace(
+            "file:population.tif",
+            "dataset:population-count-2020-30arcsec",
+        );
+        let error = validate_complete(
+            &document(&population_metadata_on_dataset),
+            Path::new("user.toml"),
+            &registry,
+        )
+        .expect_err("metadata on a declared population dataset is refused");
         assert!(error.to_string().contains("population_metadata"));
+    }
+
+    #[test]
+    fn local_source_paths_must_not_be_empty() {
+        let registry = registry();
+        let malformed_source = LOCAL_SOURCES.replace("file:population.tif", "file:");
+        let error = validate_complete(
+            &document(&malformed_source),
+            Path::new("user.toml"),
+            &registry,
+        )
+        .expect_err("an empty local source path is refused");
+        assert!(error.to_string().contains("population_source"));
     }
 
     #[test]
