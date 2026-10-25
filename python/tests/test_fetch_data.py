@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from population_circles.dataset_registry import parse
+from population_circles.dataset_registry import PopulationRaster, Registry, load, parse
 from repo_tools.fetch_data import FetchError, acquire
 
 PAYLOAD = b"hello"
@@ -66,6 +66,26 @@ def test_a_matching_payload_is_placed(tmp_path: Path, monkeypatch: pytest.Monkey
     acquire(parse(registry_text()), tmp_path)
     assert target(tmp_path).read_bytes() == PAYLOAD
     assert siblings(tmp_path) == [target(tmp_path).name]
+
+
+def test_the_registered_coarse_dataset_uses_verified_fetch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    key = "population-count-2020-10arcmin"
+    dataset = load().datasets[key]
+    assert isinstance(dataset, PopulationRaster)
+    # The isolated fetch fixture has no native source row.
+    synthetic = dataset.model_copy(
+        update={
+            "bytes": len(PAYLOAD),
+            "sha256": PAYLOAD_SHA,
+            "derived_from_dataset": None,
+            "derived_from_sha256": None,
+        }
+    )
+    monkeypatch.setattr("urllib.request.urlopen", serving(PAYLOAD))
+    acquire(Registry(datasets={key: synthetic}), tmp_path)
+    assert synthetic.file(tmp_path).read_bytes() == PAYLOAD
 
 
 def test_a_wrong_payload_places_nothing_and_leaves_no_part(

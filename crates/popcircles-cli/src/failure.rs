@@ -243,6 +243,7 @@ fn exit_code_for_registry_error(error: &RegistryError) -> u8 {
         RegistryError::Read { .. } => EXIT_MISSING_DATA,
         RegistryError::Syntax { .. }
         | RegistryError::KeyIsNotTheStem { .. }
+        | RegistryError::InvalidDerivedIdentity { .. }
         | RegistryError::InvalidBoundaryMetadata { .. } => EXIT_FAILURE,
     }
 }

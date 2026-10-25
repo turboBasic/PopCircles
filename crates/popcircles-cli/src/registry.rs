@@ -47,6 +47,9 @@ pub(crate) enum RegistryError {
     #[error("dataset `{name}` has path {path}, whose stem is not `{name}`")]
     KeyIsNotTheStem { name: String, path: String },
 
+    #[error("population dataset `{name}` has an invalid direct source identity")]
+    InvalidDerivedIdentity { name: String },
+
     #[error("country boundary `{name}` has incomplete or invalid vector metadata")]
     InvalidBoundaryMetadata { name: String },
 }
@@ -98,6 +101,8 @@ struct PopulationRaster {
     /// one conversion in this file and the reason `the_sentinel_narrows_to_the_f32_a_raster_is_held_to`
     /// exists.
     nodata: f32,
+    derived_from_dataset: Option<String>,
+    derived_from_sha256: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -148,6 +153,31 @@ impl Registry {
                     name: name.clone(),
                     path: row.path().display().to_string(),
                 });
+            }
+            if let Some(Row::PopulationRaster(dataset)) = registry.datasets.get(name) {
+                let valid_identity = match (
+                    dataset.derived_from_dataset.as_deref(),
+                    dataset.derived_from_sha256.as_deref(),
+                ) {
+                    (None, None) => true,
+                    (Some(source_name), Some(source_digest)) => {
+                        let valid_digest = source_digest.len() == 64
+                            && source_digest
+                                .bytes()
+                                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
+                        let is_direct_source = matches!(
+                            registry.datasets.get(source_name),
+                            Some(Row::PopulationRaster(source))
+                                if source.derived_from_dataset.is_none()
+                                    && source.sha256.as_deref() == Some(source_digest)
+                        );
+                        valid_digest && is_direct_source
+                    }
+                    _ => false,
+                };
+                if !valid_identity {
+                    return Err(RegistryError::InvalidDerivedIdentity { name: name.clone() });
+                }
             }
             if let Some(boundary) = registry.boundary(name) {
                 let fields = [
@@ -321,6 +351,19 @@ mod tests {
             dataset.raster,
             PathBuf::from("data/population/population-count-2020-30arcsec.tif")
         );
+    }
+
+    #[test]
+    fn the_coarse_raster_names_its_direct_source_identity() {
+        let registry = committed();
+        let coarse = registry
+            .raster("population-count-2020-10arcmin")
+            .expect("the coarse population dataset is registered with its source identity");
+        let native = registry
+            .raster("population-count-2020-30arcsec")
+            .expect("the native population dataset remains registered");
+        assert_eq!((coarse.grid.width, coarse.grid.height), (2160, 1080));
+        assert_ne!(coarse.sha256, native.sha256);
     }
 
     #[test]

@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # the package. FU-20 covers both of these together.
 REPO_ROOT = Path(__file__).resolve().parents[3]
 REGISTRY = REPO_ROOT / "data" / "registry.toml"
+SHA256_HEX_LENGTH = 64
 
 # `extra="forbid"` where `circle_document.py` uses `extra="ignore"`, and the difference is which
 # side of a boundary the producer sits on. That file consumes a format Rust writes and grows
@@ -51,6 +52,23 @@ class PopulationRaster(_Dataset):
     lon_step: float
     epsg: int
     nodata: float
+    derived_from_dataset: str | None = None
+    derived_from_sha256: str | None = None
+
+    @model_validator(mode="after")
+    def _derived_source_is_complete(self) -> Self:
+        if (self.derived_from_dataset is None) != (self.derived_from_sha256 is None):
+            message = "derived population source must name both its dataset and SHA-256"
+            raise ValueError(message)
+        if self.derived_from_sha256 is not None and (
+            len(self.derived_from_sha256) != SHA256_HEX_LENGTH
+            or any(char not in "0123456789abcdef" for char in self.derived_from_sha256)
+        ):
+            message = (
+                "derived population source SHA-256 must be 64 lowercase hexadecimal characters"
+            )
+            raise ValueError(message)
+        return self
 
 
 class BoundaryVector(_Dataset):
@@ -107,6 +125,14 @@ class Registry(BaseModel):
             if stem != key:
                 message = f"dataset {key!r} has path {dataset.path!r}, whose stem is {stem!r}"
                 raise ValueError(message)
+            if isinstance(dataset, PopulationRaster) and dataset.derived_from_dataset is not None:
+                source = self.datasets.get(dataset.derived_from_dataset)
+                if not isinstance(source, PopulationRaster) or (
+                    source.sha256 != dataset.derived_from_sha256
+                    or source.derived_from_dataset is not None
+                ):
+                    message = f"dataset {key!r} does not match its registered source identity"
+                    raise ValueError(message)
         return self
 
 

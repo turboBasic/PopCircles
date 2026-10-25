@@ -2102,6 +2102,52 @@ fn configured_world_dataset_is_published_in_result_provenance() {
 }
 
 #[test]
+fn configured_world_dataset_selects_coarse_and_names_results() {
+    let dataset = "population-count-2020-10arcmin";
+    let fixture = Fixture::named(dataset);
+    let registry = fixture.directory.path().join("data/registry.toml");
+    let contents = std::fs::read_to_string(&registry).unwrap();
+    let row = r#"
+[datasets.population-count-2020-10arcmin]
+kind = "population-raster"
+path = "data/population/population-count-2020-10arcmin.tif"
+width = 36
+height = 18
+origin_lat = 90.0
+origin_lon = -180.0
+lon_step = 10.0
+lat_step = -10.0
+epsg = 4326
+nodata = -3.402823e38
+"#;
+    std::fs::write(registry, format!("{contents}\n{row}")).unwrap();
+    std::fs::write(
+        fixture
+            .directory
+            .path()
+            .join("data/population/population-count-2020-10arcmin.tif"),
+        synthetic_tiff_with(dense),
+    )
+    .unwrap();
+
+    let output = fixture.run_ok(
+        "population-at",
+        &[
+            "--dataset",
+            dataset,
+            "--lat",
+            "48",
+            "--lon",
+            "11",
+            "--radius-km",
+            "1200",
+        ],
+    );
+    let document = successful_document(&output);
+    assert_eq!(document["provenance"]["dataset"], dataset);
+}
+
+#[test]
 fn configured_world_dataset_refuses_a_cache_without_source_identity() {
     let fixture = Fixture::over(dense, None);
     let output = fixture.run_ok(

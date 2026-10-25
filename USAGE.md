@@ -37,9 +37,10 @@ mise run cli -- grid describe --dataset population-count-2020-30arcsec
 ```
 
 Grid-taking commands accept `--dataset` for registry defaults. World calculations use the population
-dataset selected by the effective configuration unless `--dataset` is supplied. Each explicit grid
-flag overrides its own default, including zero; the resolved geometry is checked before use. For an
-explicit-only grid, supply all six flags:
+dataset selected by the effective configuration unless `--dataset` is supplied. The built-in world
+default is `population-count-2020-10arcmin`; pass `--dataset population-count-2020-30arcsec` to use the
+native 30 arc-second raster. Each explicit grid flag overrides its own default, including zero; the
+resolved geometry is checked before use. For an explicit-only grid, supply all six flags:
 
 ```sh
 mise run cli -- grid describe --width 36 --height 18 \
@@ -325,9 +326,13 @@ stdout stays exactly one JSON document at every level.
 ### Population datasets and country combinations
 
 `data/registry.toml` names the declared input datasets. The built-in `data/config.toml` selects the
-world population default and the `gpw-2020-gisco-2024` country combination. Use `--config PATH` to
-layer a user TOML file over those built-in choices; relative file sources and prepared-data locations
-in that file resolve beside it.
+10-arcminute world population dataset and the `gpw-2020-gisco-2024` country combination. The native
+30 arc-second raster remains available with `--dataset population-count-2020-30arcsec`. In the GH-223
+comparison on an Apple M2 Pro, the coarse dataset matched native radius and centre answers at 10%, 50%
+and 90%, and average table-build-plus-search time was 8.71× faster (1.872 s vs 16.305 s). These are
+three measured shares, not a guarantee for every query; the [issue records the method and full
+comparison][coarse-comparison]. Use `--config PATH` to layer a user TOML file over the built-in
+choices; relative file sources and prepared-data locations in that file resolve beside it.
 
 For example, save this as `my-data.toml` to add a combination using a local population file and the
 declared GISCO boundary dataset:
@@ -433,6 +438,7 @@ See [How resolution affects precision][performance-precision] for the explanatio
 [data-population]: data/README.md#population-count-2020-30arcsec
 [data-readme]: data/README.md
 [inputs]: #choosing-the-inputs
+[coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
 [performance]: PERFORMANCE.md
 [performance-ledger]: PERFORMANCE.md#how-the-ledger-avoids-repeated-searches
 [performance-precision]: PERFORMANCE.md#how-resolution-affects-precision

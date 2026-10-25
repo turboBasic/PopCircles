@@ -654,13 +654,16 @@ mod tests {
         .expect("the committed configuration is valid");
         assert_eq!(
             config.default_population_dataset,
-            "population-count-2020-30arcsec"
+            "population-count-2020-10arcmin"
         );
         assert_eq!(
             config.population_dataset(None),
+            "population-count-2020-10arcmin"
+        );
+        assert_eq!(
+            config.population_dataset(Some("population-count-2020-30arcsec")),
             "population-count-2020-30arcsec"
         );
-        assert_eq!(config.population_dataset(Some("other")), "other");
         assert_eq!(config.default_country_combination, "gpw-2020-gisco-2024");
         let (combination, resolution) = config
             .combination(None, None)

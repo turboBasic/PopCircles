@@ -73,6 +73,34 @@ published map or figure derived from this raster carries the citation:
 > Revision of UN WPP Country Totals, Revision 11.* Palisades, NY: NASA Socioeconomic Data and
 > Applications Center (SEDAC). <https://doi.org/10.7927/H4PN93PB>
 
+## population-count-2020-10arcmin
+
+| Property | Value |
+| --- | --- |
+| Grid | 2160 × 1080 (10 arc-minute, 1/6°) |
+| Extent | whole globe, origin (−180°, 90°) |
+| CRS | EPSG:4326 (WGS 84) |
+| Pixel type | Float32, single band, LZW compressed |
+| Nodata | −3.40282306073709653e+38 (Float32, two ulps above −max) |
+| Size | 2,332,874 bytes |
+| SHA-256 | `cf38289019a887369663ca18003bd4b39aa21e9ed574b0d66a61b3626ce9a767` |
+| Measured world total | 7 757 982 599.77 persons |
+
+This project derives the raster directly from [`population-count-2020-30arcsec`](#population-count-2020-30arcsec), whose exact SHA-256 is recorded beside the derived identity in [`registry.toml`][registry]. Each output cell sums its 20 × 20 source-cell block, retaining partial blocks at grid edges. Nodata and negative source values contribute zero. Aggregates are stored as Float32; the measured total differs from the source by 0.446 persons, within the conservative bound for per-cell Float32 rounding and f64 block summation.
+
+The source is GPWv4.11's adjusted 2020 population count described above, with the same CC BY 4.0 terms and attribution. The derived GeoTIFF is published as [`population-count-2020-10arcmin.tif`][coarse-population-asset]. It is not resampled from another derived raster.
+
+This is the built-in world-calculation default. Select the native 30 arc-second source explicitly with
+`--dataset population-count-2020-30arcsec`. On an Apple M2 Pro, the GH-223 comparison built equal
+2160 × 1080 tables from the coarse raster and from the native source at decimation 20. The coarse
+table build plus three circle searches averaged 1.872 seconds, compared with 16.305 seconds from the
+native source; all three measured radii and centres matched at 10%, 50% and 90% population shares.
+This result describes those measured shares; the [issue records the timing method and full
+comparison][coarse-comparison].
+
+The measurements pass the pre-recorded default-adoption bar in #223; no answer-change condition
+remains open for this default.
+
 ## coastline-1to110m
 
 | Property | Value |
@@ -173,6 +201,8 @@ serves them.
 
 [adr-gisco]: ../docs/decisions/0015-country-identities-follow-gisco-country-features.md
 [cc-by]: https://creativecommons.org/licenses/by/4.0/
+[coarse-population-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v4/population-count-2020-10arcmin.tif
+[coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
 [contributing-data]: ../CONTRIBUTING.md#verifying-a-published-dataset
 [gisco-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson
 [gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
