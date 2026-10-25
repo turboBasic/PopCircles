@@ -1,0 +1,15 @@
+---
+source: crates/popcircles-cli/tests/help.rs
+expression: help_for(path)
+---
+Prepare one configured country combination for local use
+
+Usage: popcircles country prepare [OPTIONS]
+
+Options:
+      --combination <COMBINATION>  Combination ID; defaults to the configured country combination
+      --log-level <LEVEL>          How much to report on stderr: `error`, `warn`, `info` or `debug`. It does not govern the progress meter, which answers how far a run has got rather than what happened [default: info]
+      --config <PATH>              Optional configuration file layered over data/config.toml
+      --resolution <RESOLUTION>    Prepared resolution; defaults to that combination's default resolution
+      --replace                    Replace the currently published prepared generation
+  -h, --help                       Print help
