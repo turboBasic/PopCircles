@@ -1,37 +1,34 @@
 # Code
 
-"Rust" and "Python" below are what is specific to each language. "Comments and docs" is not — it
-governs a comment anywhere in the repository: a `.toml`, `.yaml` or `.jsonc` file is still code once
-it drives a build, a hook or a workflow, and owns its own comments exactly as a function does. The
-lint levels that back the language-specific rules are declared once in the root `Cargo.toml` and in
-`pyproject.toml`; this file holds the judgment those levels cannot express, and loosening one to clear
-an error is a non-negotiable.
+The Rust and Python sections cover language-specific rules. The comments and documentation rules
+apply throughout the repository. A `.toml`, `.yaml`, or `.jsonc` file that configures a build, hook, or
+workflow is code, and its comments need the same care as comments in a function. `Cargo.toml` and
+`pyproject.toml` define the lint levels. This file covers judgments those lints cannot express. Do not
+loosen a lint just to clear an error.
 
 ## Rust
 
-- **If a problem seems to need `unsafe`, raise it as a design question** rather than reaching for the
-  escape hatch.
-- **`unwrap()` and `expect()`** are acceptable in tests, and in a `main` that is documenting an
-  invariant. Not in library paths: return `Result` and propagate with `?`.
-- **A lint exemption names only the lints the code under it actually trips.** Not the set a
-  neighbouring module needed: a test module reaching for `expect_err` alone takes
-  `clippy::expect_used` and stops there. An exemption listing a lint nothing beneath it triggers
-  reads as a policy about the module rather than a fact about its code, and it stops being
-  reviewable — nobody can tell which entries are load-bearing. The count of exemptions is not the
-  measure and never was; a module gaining tests of its own gains one legitimately.
-- **Errors:** a concrete error enum per crate boundary (`thiserror` when it earns its place),
-  `anyhow`-style context only at the binary edge. Never `panic!` for an expected failure.
-- **Numeric casts are the sharpest edge in this codebase.** Make every conversion explicit and state
-  in a comment why it is safe when that is not obvious;
-  [`application.md`](application.md) "Correctness invariants" owns what "safe" means for the summation
-  table and the geodesy.
+- **Raise `unsafe` as a design question.** When a change appears to need `unsafe`, discuss the design
+  before using it.
+- **Use `unwrap()` and `expect()` only in tests or in `main` to document an invariant.** In library
+  code, return `Result` and propagate errors with `?`.
+- **Exempt only lints that the code actually triggers.** For example, a test module that uses
+  `expect_err` needs only `clippy::expect_used`; do not copy exemptions from a neighbouring module.
+  Unneeded exemptions hide which rules matter. The number of exemptions is not a goal: add one when
+  new tests in a module require it.
+- **Use concrete errors at crate boundaries.** Define an error enum for each boundary and use
+  `thiserror` when it helps. Add `anyhow` context only at the binary edge. Return errors for expected
+  failures; do not `panic!`.
+- **Make numeric conversions explicit.** Add a comment when the reason a conversion is safe is not
+  obvious. [`application.md`](application.md) "Correctness invariants" defines the safety requirements
+  for summation and geodesy.
 - Prefer iterators and slices over index arithmetic. Where index arithmetic is the clearer
   expression of a raster traversal, keep it local and named.
-- No `mod.rs`: a module is `foo.rs` plus `foo/`.
+- Keep modules in `foo.rs` with child modules in `foo/`; do not create `mod.rs` files.
 
 ## Python
 
-Python 3.14. No compatibility shims or version guards for earlier releases.
+Use Python 3.14. Do not add compatibility shims or version guards for earlier releases.
 
 - `X | None`, not `typing.Optional`. Built-in `dict`/`list`/`tuple`, not `typing.Dict`.
 - No `from __future__ import annotations`.
@@ -40,12 +37,10 @@ Python 3.14. No compatibility shims or version guards for earlier releases.
 
 ## Comments and docs
 
-- No docstrings in Python. In Rust, `///` only where the WHY is non-obvious.
-- Comments only where the reasoning is non-obvious, never restating what the code does.
-- No multi-line comment blocks.
-- Match surrounding comment density, naming and idiom.
-- A comment explaining why a task, hook or lint is configured the way it is belongs beside that
-  configuration, which is what makes the configuration the owner of that fact.
-- Every change ends by checking the documentation it affects — the instruction layer, the human
-  layer, and any doc naming a file, task or convention that moved — and correcting it in the same
-  change.
+- Do not add Python docstrings. In Rust, use `///` only to explain a non-obvious reason.
+- Comment on non-obvious reasoning; do not restate what the code does.
+- Keep comments to one line.
+- Match the surrounding comment density, names, and style.
+- Put comments about task, hook, or lint configuration beside that configuration.
+- For each change, check the affected instruction and user documentation, plus any docs naming a
+  changed file, task, or convention. Update those docs in the same change.
