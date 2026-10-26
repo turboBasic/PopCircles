@@ -90,7 +90,6 @@ class BoundaryVector(_Dataset):
             self.crs,
             self.axis_order,
             self.feature_count,
-            self.revision,
             self.source_id_field,
             self.identity_policy,
         )

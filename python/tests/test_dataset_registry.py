@@ -25,6 +25,8 @@ COUNTRY_FEATURE_COUNT = 263
 # figure happens to credit is the renderer's business.
 RASTER_KEY = "population-count-2020-30arcsec"
 COARSE_RASTER_KEY = "population-count-2020-10arcmin"
+GISCO_COASTLINE_KEY = "CNTR_BN_01M_2024_4326_COASTL"
+GISCO_COASTLINE_ATTRIBUTION = "© EuroGeographics for the administrative boundaries"
 SETTLEMENT_ROW = """
 [datasets.example-places]
 kind = "settlement-vector"
@@ -143,6 +145,18 @@ def test_an_attribution_is_present_even_when_nothing_is_owed() -> None:
     attributions = {key: d.attribution for key, d in load().datasets.items()}
     assert attributions["coastline-1to110m"] == ""
     assert "CIESIN" in attributions[RASTER_KEY]
+
+
+def test_gisco_coastline_is_registered_once_with_its_required_credit() -> None:
+    matches = [key for key in load().datasets if key == GISCO_COASTLINE_KEY]
+    dataset = load().datasets[GISCO_COASTLINE_KEY]
+
+    assert matches == [GISCO_COASTLINE_KEY]
+    assert isinstance(dataset, BoundaryVector)
+    assert dataset.path == f"data/boundaries/{GISCO_COASTLINE_KEY}.geojson"
+    assert dataset.revision == "Countries 2024 snapshot downloaded 2026-10-26"
+    assert dataset.attribution == GISCO_COASTLINE_ATTRIBUTION
+    assert GISCO_COASTLINE_ATTRIBUTION in (REPO_ROOT / "data/README.md").read_text()
 
 
 def test_an_unknown_kind_is_refused_rather_than_read_as_a_bare_dataset() -> None:
