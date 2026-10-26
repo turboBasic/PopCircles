@@ -1,9 +1,12 @@
 [project]
-name = "population-circles-tools"
+name = "popcircles-tools"
 version = "0.0.0"
 description = "Data preparation and map rendering tooling for PopCircles"
 requires-python = ">=3.14"
 dependencies = []
+
+[project.urls]
+Repository = "https://github.com/turboBasic/PopCircles"
 
 # The three repository tools reach their subjects through REPO_ROOT rather than an argument, so an
 # entry point is what lets a hook and a mise task call one without naming where its file sits.
