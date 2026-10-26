@@ -467,7 +467,7 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
     let fixture = Fixture::build();
     let population_at = successful_document(&fixture.run_ok(
         "population-at",
-        &["--lat", "45", "--lon", "15", "--radius-km", "0"],
+        &["--lat", "45", "--lon", "15", "--radius-km", "1"],
     ));
     assert_eq!(
         population_at["result"]["country_breakdown"]["entries"][0]["id"],

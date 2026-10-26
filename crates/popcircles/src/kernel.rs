@@ -2,11 +2,11 @@
 // each row of a grid. A span is an offset from a centre column rather than a pair of column indices,
 // which is what makes one kernel serve every centre on its row and leaves the seam to one place.
 //
-// A cell is in the cap when its centre is within the cap's angular radius of the cap centre, measured
-// through geodesy. That is the definition, and the spherical law of cosines below is an estimate the
-// definition corrects rather than the answer: arccos loses precision exactly at the cap boundary, where
-// its derivative is unbounded, and what the search needs is a membership rule a brute-force distance
-// test reproduces — application.md "Correctness invariants".
+// For a positive radius, a cell is in the cap when its centre is within the cap's angular radius of the
+// cap centre, measured through geodesy. A zero-radius point has no area and contains no cells. The
+// spherical law of cosines below is an estimate the definition corrects rather than the answer: arccos
+// loses precision exactly at the cap boundary, where its derivative is unbounded, and what the search
+// needs is a membership rule a brute-force distance test reproduces — application.md "Correctness invariants".
 
 use crate::geodesy::{LatLon, RadiusKm, angular_distance_rad, central_angle_rad};
 use crate::grid::{Col, Grid, GridIndexError, Row};
@@ -68,7 +68,12 @@ impl Cap {
     /// of two [`Grid::centre_of`] longitudes, which is a whole multiple of that step only to within a
     /// rounding. Taking the offset is what makes a kernel exactly longitude-invariant rather than
     /// invariant to within the rounding that decides a boundary cell.
+    ///
+    /// A zero-radius point has no area and therefore contains no population cells.
     fn contains(&self, lat: f64, cells: u32) -> bool {
+        if self.angle_rad == 0.0 {
+            return false;
+        }
         let centre = LatLon {
             lat: self.centre_lat,
             lon: 0.0,
@@ -163,13 +168,22 @@ pub struct Kernel {
 impl Kernel {
     /// # Errors
     /// [`KernelError::ColumnsDoNotClose`] when the grid's columns do not close on themselves, which is
-    /// the whole of what a caller holding a [`RadiusKm`] can be wrong about here. Zero is a radius: the
-    /// cap is the centre cell alone. Returns [`KernelError::GridIndex`] if `centre` is outside the grid.
+    /// the whole of what a caller holding a [`RadiusKm`] can be wrong about here. A zero-radius point
+    /// contains no cells. Returns [`KernelError::GridIndex`] if `centre` is outside the grid.
     pub fn new(grid: Grid, centre: Row, radius: RadiusKm) -> Result<Self, KernelError> {
         let centre_lat = grid.centre_lat(centre)?;
         if !grid.spans_full_turn() {
             return Err(KernelError::ColumnsDoNotClose {
                 lon_span: f64::from(grid.width()) * grid.lon_step().abs(),
+            });
+        }
+        if radius.km() == 0.0 {
+            return Ok(Self {
+                grid,
+                centre,
+                radius,
+                north: centre,
+                spans: Vec::new(),
             });
         }
 
@@ -478,15 +492,11 @@ mod tests {
     }
 
     #[test]
-    fn a_zero_radius_is_the_centre_cell_alone() {
-        // Degenerate and legal: the centre's own cell is within zero of itself and no other cell is.
+    fn a_zero_radius_contains_no_cells() {
+        // A point has no area, so the population assigned to a cell centre is outside its cap.
         let grid = globe(1);
-        let centre = row(&grid, 100);
-        let kernel = Kernel::new(grid, centre, radius(0.0)).expect("zero is a radius");
-        assert_eq!(
-            kernel.rows().collect::<Vec<(Row, Span)>>(),
-            vec![(centre, Span::Around { half_width: 0 })]
-        );
+        let kernel = Kernel::new(grid, row(&grid, 100), radius(0.0)).expect("zero is a radius");
+        assert!(kernel.rows().next().is_none());
     }
 
     #[test]

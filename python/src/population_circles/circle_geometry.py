@@ -117,9 +117,9 @@ def polygons(geometry: BaseGeometry) -> tuple[Polygon, ...]:
     # A cut answers with a Polygon, a MultiPolygon or nothing at all depending on where it fell, and
     # whoever draws the result wants the same tuple of parts from each of the three.
     if isinstance(geometry, Polygon):
-        return (geometry,)
+        return (geometry,) if not geometry.is_empty else ()
     if isinstance(geometry, MultiPolygon):
-        return tuple(geometry.geoms)
+        return tuple(polygon for polygon in geometry.geoms if not polygon.is_empty)
     return ()
 
 

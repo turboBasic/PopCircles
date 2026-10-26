@@ -239,11 +239,12 @@ mod tests {
         grid.rows()
             .flat_map(|row| grid.cols().map(move |col| (row, col)))
             .filter(|(row, col)| {
-                great_circle_km(
-                    from,
-                    grid.centre_of(*row, *col)
-                        .expect("indices belong to the fixture grid"),
-                ) <= radius_km
+                radius_km > 0.0
+                    && great_circle_km(
+                        from,
+                        grid.centre_of(*row, *col)
+                            .expect("indices belong to the fixture grid"),
+                    ) <= radius_km
             })
             .map(|(row, col)| f64::from(cell(row.get(), col.get())))
             .sum()
@@ -277,11 +278,15 @@ mod tests {
                         .rows()
                         .flat_map(|row| grid.cols().map(move |col| (row, col)))
                         .filter(|(row, col)| {
-                            ownership
-                                .owner_at(&grid, row.get(), col.get())
-                                .is_ok_and(|owner| {
-                                    owner == &crate::ownership::CellOwner::Feature(feature.clone())
-                                })
+                            radius_km > 0.0
+                                && ownership.owner_at(&grid, row.get(), col.get()).is_ok_and(
+                                    |owner| {
+                                        owner
+                                            == &crate::ownership::CellOwner::Feature(
+                                                feature.clone(),
+                                            )
+                                    },
+                                )
                                 && great_circle_km(
                                     centre,
                                     grid.centre_of(*row, *col)
@@ -581,8 +586,8 @@ mod tests {
     }
 
     #[test]
-    fn a_zero_radius_is_the_centre_cell() {
-        // Degenerate and legal: the centre cell is within zero of itself and no other cell is.
+    fn a_zero_radius_has_no_population() {
+        // A point has no area, so no raster cell contributes to its population.
         let (grid, payload) = fixture();
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
         let row = grid.row(4).expect("a row of the fixture");
@@ -591,7 +596,7 @@ mod tests {
 
         assert_eq!(
             population(&table, &kernel, centre).expect("fixture centre belongs to the kernel grid"),
-            f64::from(cell(row.get(), centre.get()))
+            0.0
         );
     }
 

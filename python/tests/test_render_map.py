@@ -274,6 +274,38 @@ def test_a_country_result_is_not_rendered_without_its_outline() -> None:
     assert plt.get_fignums() == before
 
 
+@pytest.mark.parametrize(("radius_km", "expected_patches"), [(0.0, 2), (200.0, 3)])
+def test_country_figure_renders_zero_radius_as_only_its_centre_marker(
+    radius_km: float,
+    expected_patches: int,
+    tmp_path: Path,
+) -> None:
+    answer, registry, _ = country_fixture(
+        tmp_path,
+        [boundary_feature("DE", "Germany", 9)],
+    )
+    answer = answer.model_copy(
+        update={"circle": answer.circle.model_copy(update={"radius_km": radius_km})},
+    )
+    assert answer.country is not None
+    country = load_outline(answer, registry, tmp_path)
+    assert country is not None
+    figure = render(
+        answer,
+        ORTHOGRAPHIC,
+        MARKER,
+        coastline=None,
+        outline_and_credit=(country, citation(registry, answer.country.boundary_dataset)),
+    )
+    try:
+        axes = figure.axes[0]
+        assert len(axes.patches) == expected_patches
+        assert len(axes.lines) == 1
+        assert axes.lines[0].get_marker() == "+"
+    finally:
+        plt.close(figure)
+
+
 @pytest.mark.parametrize(
     ("name", "centre", "coordinates"),
     [

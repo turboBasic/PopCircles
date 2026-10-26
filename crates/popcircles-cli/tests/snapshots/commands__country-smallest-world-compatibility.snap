@@ -1,6 +1,5 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
-assertion_line: 1287
 expression: document
 ---
 {
@@ -37,16 +36,7 @@ expression: document
     },
     "col": 19,
     "country_breakdown": {
-      "entries": [
-        {
-          "country_total_population": 34620.0,
-          "fraction_of_circle_population": 1.0,
-          "fraction_of_country_population": 0.0047371461582900055,
-          "id": "XX",
-          "name": "Fixture",
-          "population_inside": 164.0
-        }
-      ],
+      "entries": [],
       "provenance": {
         "accounting_route": "unique-native-cell ownership; one cropped prefix at a time; parallel prefix build and source scan",
         "aggregation_order_version": 1,
@@ -71,7 +61,7 @@ expression: document
         "ownership_rule_version": 1
       },
       "reconciliation": {
-        "bound_persons": 0.00000000852080450641779,
+        "bound_persons": 0.000000008520768091102582,
         "unassigned_population": 0.0
       }
     },
@@ -81,14 +71,14 @@ expression: document
       "name": "Resolved centre",
       "short_form": true
     },
-    "population": 164.0,
+    "population": 0.0,
     "radius_km": 0.0,
     "requested": {
       "lat": 45.0,
       "lon": 15.0
     },
     "row": 4,
-    "share_of_total": 0.00077992733359965,
+    "share_of_total": 0.0,
     "total_population": 210276.0
   },
   "schema_version": 1,
