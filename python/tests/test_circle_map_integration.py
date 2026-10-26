@@ -60,6 +60,7 @@ def test_real_build_reuse_and_missing_raster(
         output=tmp_path / "map.png",
         document=tmp_path / "map.json",
         ledger=tmp_path / "map.radii.json",
+        no_coastlines=True,
     )
     calls: list[list[str]] = []
     results: list[subprocess.CompletedProcess[bytes]] = []

@@ -286,12 +286,13 @@ def test_success_uses_the_documents_credit_and_earth_model(
     seen: list[tuple[float, str]] = []
     original = render_map.render
 
-    def capture(
+    def capture(  # noqa: PLR0913 — mirror the renderer call to assert its earth model
         answer: Answer,
         projection: str,
         attribution: str,
         *,
         coastline: BaseGeometry | None,
+        coastline_attribution: str | None = None,
         outline_and_credit: tuple[BaseGeometry, str] | None = None,
     ) -> Figure:
         seen.append((answer.circle.earth_radius_km, attribution))
@@ -300,6 +301,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
             projection,
             attribution,
             coastline=coastline,
+            coastline_attribution=coastline_attribution,
             outline_and_credit=outline_and_credit,
         )
 
