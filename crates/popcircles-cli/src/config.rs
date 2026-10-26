@@ -669,7 +669,42 @@ mod tests {
             .combination(None, None)
             .expect("built-in combination resolves");
         assert_eq!(combination.id, "gpw-2020-gisco-2024");
-        assert_eq!(resolution, 10);
+        assert_eq!(resolution, 2);
+        assert_eq!(
+            combination.resolutions.keys().copied().collect::<Vec<_>>(),
+            [1, 2]
+        );
+        let (gadm, resolution) = config
+            .combination(Some("gpw-2020-gadm-4.1"), None)
+            .expect("GADM combination resolves");
+        assert_eq!(gadm.boundary_source, "file:boundaries/gadm41-adm0.geojson");
+        assert_eq!(gadm.boundary_source_id_field.as_deref(), Some("GID_0"));
+        assert_eq!(gadm.resolutions.keys().copied().collect::<Vec<_>>(), [1, 2]);
+        assert_eq!(resolution, 2);
+    }
+
+    #[test]
+    fn builtin_pairings_reject_source_rebinding() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let path = root.join(BUILTIN_CONFIG_PATH);
+        let registry = registry();
+        let mut base = read_document(&path).expect("the committed configuration parses");
+        let overlay = document(
+            r#"
+            [combinations."gpw-2020-gisco-2024"]
+            boundary_source = "dataset:coastline-1to110m"
+        "#,
+        );
+        assert!(merge(&mut base, overlay, Path::new("user.toml"), &registry).is_err());
+
+        let mut base = read_document(&path).expect("the committed configuration parses");
+        let overlay = document(
+            r#"
+            [combinations."gpw-2020-gadm-4.1"]
+            boundary_source = "dataset:gisco-countries-2024-1m"
+        "#,
+        );
+        assert!(merge(&mut base, overlay, Path::new("user.toml"), &registry).is_err());
     }
 
     #[test]
