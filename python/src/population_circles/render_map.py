@@ -23,7 +23,13 @@ from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
 from population_circles.country_outline import load_outline
-from population_circles.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.dataset_registry import (
+    REPO_ROOT,
+    BoundaryVector,
+    Registry,
+    coastline_dataset_key,
+    load,
+)
 from population_circles.map_frame import (
     PLATE_CARREE,
     PROJECTIONS,
@@ -38,7 +44,7 @@ from population_circles.map_frame import (
 # for one is what fails on a machine with no display, rather than falling back.
 mpl.use("Agg")
 
-COASTLINE_DATASET = "CNTR_BN_01M_2024_4326_COASTL"
+COASTLINE_DATASET = coastline_dataset_key()
 
 
 class UnregisteredDatasetError(ValueError):
@@ -81,7 +87,9 @@ def basemap(path: Path) -> BaseGeometry:
 
 
 def registered_coastline(registry: Registry) -> tuple[BaseGeometry, str]:
-    dataset = registry.datasets[COASTLINE_DATASET]
+    dataset = registry.datasets.get(coastline_dataset_key())
+    if not isinstance(dataset, BoundaryVector):
+        raise UnregisteredDatasetError(coastline_dataset_key())
     return basemap(dataset.file(REPO_ROOT)), dataset.attribution
 
 

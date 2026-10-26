@@ -271,12 +271,13 @@ the top or bottom edge. Drawing circles directly on a flat map can shade the wro
 case, so the project checks these cases. A circle that covers both poles appears as the whole map, with
 the area outside the circle cut out.
 
-**Rendered maps use GISCO's Countries 2024 1:1,000,000 coastline.** Fetch it with
-`mise run data:get -- --dataset CNTR_BN_01M_2024_4326_COASTL`. The command checks its registered byte
-count and SHA-256 before placing the file. Maps that draw the coastline show GISCO's required notice,
-**© EuroGeographics for the administrative boundaries**; GISCO permits non-commercial use only. The
-gallery workflow fetches this one registered input before drawing. Once it is present, rendering works
-offline. `--no-coastlines` skips the coastline file and its credit.
+Rendered maps use the registered boundary dataset named by `defaults.coastline_dataset` in
+`data/config.toml`; the built-in choice is Natural Earth's `coastline-1to110m`. Change that key to
+another registered boundary dataset to switch coastlines. Fetch the selected dataset with
+`mise run data:get -- --dataset <dataset-key>`. The command checks its registered byte count and
+SHA-256 before placing the file. Maps show the selected dataset's attribution. GISCO's coastline
+permits non-commercial use only. The gallery workflow fetches the built-in selection before drawing.
+Once it is present, rendering works offline. `--no-coastlines` skips the coastline file and its credit.
 
 When a world document includes a country breakdown, the caption lists each country with its population
 inside and percentages of both country and circle populations, followed by accounting details and
