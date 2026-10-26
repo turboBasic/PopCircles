@@ -113,6 +113,26 @@ revision = "Countries 2024 snapshot downloaded 2026-10-22"
 source_id_field = "CNTR_ID"
 identity_policy = "ADR 0015"
 
+[datasets.gadm41-adm0]
+kind = "boundary-vector"
+path = "data/boundaries/gadm41-adm0.geojson"
+bytes = 1155550194
+sha256 = "4d005953e25108f475bcedb00f2ad4409f5d61d3c8d4ae7fd6e523d593c6c4b9"
+fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v7/gadm41-adm0.geojson"
+source_url = "https://geodata.ucdavis.edu/gadm/gadm4.1/gadm_410-levels.zip"
+
+licence = "GADM 4.1 terms; redistribution permission confirmed by the maintainer"
+licence_url = "https://gadm.org/license.html"
+attribution = "GADM database, version 4.1; Austria data © Government of Austria, CC BY-SA 2.0."
+
+format = "GeoJSON"
+crs = "EPSG:4326"
+axis_order = "longitude-latitude"
+feature_count = 263
+revision = "GADM 4.1"
+source_id_field = "GID_0"
+identity_policy = "Retain the source's unique ADM0 GID_0 identifiers."
+
 [datasets.populated-places-1to10m]
 kind = "settlement-vector"
 path = "data/settlements/populated-places-1to10m.geojson"

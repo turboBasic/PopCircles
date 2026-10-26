@@ -134,6 +134,7 @@ pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>,
             let name = properties
                 .get("NAME_ENGL")
                 .or_else(|| properties.get("CNTR_NAME"))
+                .or_else(|| properties.get("COUNTRY"))
                 .and_then(Value::as_str)
                 .filter(|name| !name.trim().is_empty())
                 .unwrap_or(id.as_str())
@@ -323,6 +324,22 @@ mod tests {
             panic!("source MultiPolygon is retained");
         };
         assert_eq!(polygons[0].rings[0][0].lon, 180.000_000_000_000_1);
+    }
+
+    #[test]
+    fn decodes_gadm_country_name() {
+        let document = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "properties": {"GID_0": "AND", "COUNTRY": "Andorra"},
+                "geometry": {"type": "Polygon", "coordinates": []},
+            }],
+        });
+
+        let features = decode(&document.to_string(), "GID_0").expect("GADM feature decodes");
+
+        assert_eq!(features[0].name, "Andorra");
     }
 
     #[test]

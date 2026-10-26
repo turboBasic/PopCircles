@@ -160,10 +160,22 @@ impl Configuration {
             }
             let population =
                 local_population_spec(source_path, &id, row.population_metadata.as_ref())?;
-            let boundary_source_id_field = row
-                .boundary_metadata
-                .as_ref()
-                .and_then(|metadata| metadata.source_id_field.clone());
+            let boundary_source = row.boundary_source.ok_or_else(|| {
+                invalid(
+                    source_path,
+                    format!("combination `{id}` is missing boundary_source"),
+                )
+            })?;
+            let boundary_source_id_field =
+                if let Some(name) = boundary_source.strip_prefix("dataset:") {
+                    registry
+                        .boundary(name)
+                        .and_then(|boundary| boundary.source_id_field.clone())
+                } else {
+                    row.boundary_metadata
+                        .as_ref()
+                        .and_then(|metadata| metadata.source_id_field.clone())
+                };
             combinations.insert(
                 id.clone(),
                 Combination {
@@ -173,12 +185,7 @@ impl Configuration {
                             format!("combination `{id}` is missing population_source"),
                         )
                     })?,
-                    boundary_source: row.boundary_source.ok_or_else(|| {
-                        invalid(
-                            source_path,
-                            format!("combination `{id}` is missing boundary_source"),
-                        )
-                    })?,
+                    boundary_source,
                     resolutions: row.resolutions,
                     default_resolution,
                     provenance: row.provenance,
@@ -677,7 +684,7 @@ mod tests {
         let (gadm, resolution) = config
             .combination(Some("gpw-2020-gadm-4.1"), None)
             .expect("GADM combination resolves");
-        assert_eq!(gadm.boundary_source, "file:boundaries/gadm41-adm0.geojson");
+        assert_eq!(gadm.boundary_source, "dataset:gadm41-adm0");
         assert_eq!(gadm.boundary_source_id_field.as_deref(), Some("GID_0"));
         assert_eq!(gadm.resolutions.keys().copied().collect::<Vec<_>>(), [1, 2]);
         assert_eq!(resolution, 2);

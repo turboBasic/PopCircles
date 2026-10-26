@@ -19,13 +19,10 @@ local = "out/countries/gpw-2020-gisco-2024/2"
 
 [combinations."gpw-2020-gadm-4.1"]
 population_source = "dataset:population-count-2020-30arcsec"
-boundary_source = "file:boundaries/gadm41-adm0.geojson"
+boundary_source = "dataset:gadm41-adm0"
 default_resolution = 2
 provenance = "GADM 4.1 ADM0"
 attribution = "GPWv4.11 population count; GADM database, version 4.1; Austria data © Government of Austria, CC BY-SA 2.0."
-
-[combinations."gpw-2020-gadm-4.1".boundary_metadata]
-source_id_field = "GID_0"
 
 [combinations."gpw-2020-gadm-4.1".resolutions.1]
 local = "out/countries/gpw-2020-gadm-4.1/1"

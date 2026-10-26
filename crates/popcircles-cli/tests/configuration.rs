@@ -55,12 +55,7 @@ fn combination_listing_uses_builtin_and_user_configuration_without_opening_sourc
         .unwrap();
     assert_eq!(gadm["is_default"], false);
     assert_eq!(gadm["default_resolution"], 2);
-    assert!(
-        gadm["boundary_source"]
-            .as_str()
-            .unwrap()
-            .ends_with("boundaries/gadm41-adm0.geojson")
-    );
+    assert_eq!(gadm["boundary_source"], "dataset:gadm41-adm0");
     assert_eq!(gadm["available_resolutions"], serde_json::json!([1, 2]));
 
     let directory = TempDir::new().unwrap();
