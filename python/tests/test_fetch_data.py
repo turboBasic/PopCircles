@@ -1,10 +1,12 @@
 import io
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
 from population_circles.dataset_registry import PopulationRaster, Registry, load, parse
+from repo_tools import fetch_data
 from repo_tools.fetch_data import FetchError, acquire
 
 PAYLOAD = b"hello"
@@ -17,16 +19,18 @@ SOURCE = "https://example.invalid/upstream/thing"
 
 def registry_text(
     *,
+    key: str = KEY,
     fetch_url: str | None = "https://example.invalid/thing.geojson",
     sha256: str = PAYLOAD_SHA,
     size: int = len(PAYLOAD),
     attribution: str = "",
 ) -> str:
     fetch = "" if fetch_url is None else f'fetch_url = "{fetch_url}"\n'
+    relative = f"data/settlements/{key}.geojson"
     return (
-        f"[datasets.{KEY}]\n"
+        f"[datasets.{key}]\n"
         f'kind = "settlement-vector"\n'
-        f'path = "{RELATIVE}"\n'
+        f'path = "{relative}"\n'
         f"bytes = {size}\n"
         f'sha256 = "{sha256}"\n'
         f"{fetch}"
@@ -158,6 +162,65 @@ def test_a_non_empty_attribution_is_returned_to_be_printed(
     owed = acquire(parse(registry_text(attribution="Credit where it is due.")), tmp_path)
     assert len(owed) == 1
     assert "Credit where it is due." in owed[0]
+
+
+def test_fetch_data_defaults_to_every_dataset(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    registry = parse("\n".join(registry_text(key=key) for key in ("first", "second")))
+    requested: list[str] = []
+
+    def opener(url: str, *_args: object, **_kwargs: object) -> io.BytesIO:
+        requested.append(url)
+        return io.BytesIO(PAYLOAD)
+
+    monkeypatch.setattr("urllib.request.urlopen", opener)
+    monkeypatch.setattr(fetch_data, "load", lambda: registry)
+    monkeypatch.setattr(fetch_data, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["fetch-data"])
+    assert fetch_data.main() == 0
+    assert requested == ["https://example.invalid/thing.geojson"] * 2
+
+
+def test_fetch_data_selects_one_dataset(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    registry = parse("\n".join(registry_text(key=key) for key in ("first", "second")))
+    requested: list[str] = []
+
+    def opener(url: str, *_args: object, **_kwargs: object) -> io.BytesIO:
+        requested.append(url)
+        return io.BytesIO(PAYLOAD)
+
+    monkeypatch.setattr("urllib.request.urlopen", opener)
+    monkeypatch.setattr(fetch_data, "load", lambda: registry)
+    monkeypatch.setattr(fetch_data, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["fetch-data", "--dataset", "second"])
+    assert fetch_data.main() == 0
+    assert requested == ["https://example.invalid/thing.geojson"]
+    assert (tmp_path / "data/settlements/second.geojson").is_file()
+    assert not (tmp_path / "data/settlements/first.geojson").exists()
+
+
+def test_fetch_data_refuses_an_unknown_dataset_before_request(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    registry = parse(registry_text())
+    monkeypatch.setattr("urllib.request.urlopen", refusing())
+    monkeypatch.setattr(fetch_data, "load", lambda: registry)
+    monkeypatch.setattr(fetch_data, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["fetch-data", "--dataset", "missing"])
+    assert fetch_data.main() == 1
+    assert "unknown dataset 'missing'" in capsys.readouterr().err
+    assert not target(tmp_path).exists()
+
+
+def test_bad_selected_download_leaves_no_target_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("urllib.request.urlopen", serving(b"wrong"))
+    with pytest.raises(FetchError, match="hashed to"):
+        acquire(parse(registry_text()), tmp_path, KEY)
+    assert not target(tmp_path).exists()
+    assert siblings(tmp_path) == []
 
 
 def test_a_synthetic_registry_never_resolves_into_this_checkout(tmp_path: Path) -> None:
