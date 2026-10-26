@@ -40,11 +40,23 @@ fn combination_listing_uses_builtin_and_user_configuration_without_opening_sourc
     );
     let builtin: Value = serde_json::from_slice(&builtin.stdout).unwrap();
     assert_eq!(builtin["document"], "country-combinations");
-    assert_eq!(
-        builtin["result"]["combinations"][0]["id"],
-        "gpw-2020-gisco-2024"
-    );
-    assert_eq!(builtin["result"]["combinations"][0]["is_default"], true);
+    let builtin_combinations = builtin["result"]["combinations"].as_array().unwrap();
+    assert_eq!(builtin_combinations.len(), 2);
+    let gisco = builtin_combinations
+        .iter()
+        .find(|combination| combination["id"] == "gpw-2020-gisco-2024")
+        .unwrap();
+    assert_eq!(gisco["is_default"], true);
+    assert_eq!(gisco["default_resolution"], 2);
+    assert_eq!(gisco["available_resolutions"], serde_json::json!([1, 2]));
+    let gadm = builtin_combinations
+        .iter()
+        .find(|combination| combination["id"] == "gpw-2020-gadm-4.1")
+        .unwrap();
+    assert_eq!(gadm["is_default"], false);
+    assert_eq!(gadm["default_resolution"], 2);
+    assert_eq!(gadm["boundary_source"], "dataset:gadm41-adm0");
+    assert_eq!(gadm["available_resolutions"], serde_json::json!([1, 2]));
 
     let directory = TempDir::new().unwrap();
     let config = write_config(
@@ -84,17 +96,23 @@ fn combination_listing_uses_builtin_and_user_configuration_without_opening_sourc
     );
     let output: Value = serde_json::from_slice(&output.stdout).unwrap();
     let combinations = output["result"]["combinations"].as_array().unwrap();
-    assert_eq!(combinations.len(), 2);
-    assert_eq!(combinations[0]["id"], "gpw-2020-gisco-2024");
-    assert_eq!(combinations[0]["is_default"], false);
-    assert_eq!(combinations[1]["id"], "local-preview");
+    assert_eq!(combinations.len(), 3);
+    let gisco = combinations
+        .iter()
+        .find(|combination| combination["id"] == "gpw-2020-gisco-2024")
+        .unwrap();
+    assert_eq!(gisco["is_default"], false);
+    let preview = combinations
+        .iter()
+        .find(|combination| combination["id"] == "local-preview")
+        .unwrap();
     let expected_source = format!(
         "file:{}",
         directory.path().join("missing-population.tif").display()
     );
-    assert_eq!(combinations[1]["population_source"], expected_source);
-    assert_eq!(combinations[1]["default_resolution"], 5);
-    assert_eq!(combinations[1]["is_default"], true);
+    assert_eq!(preview["population_source"], expected_source);
+    assert_eq!(preview["default_resolution"], 5);
+    assert_eq!(preview["is_default"], true);
 }
 
 #[test]

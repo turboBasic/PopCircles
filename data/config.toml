@@ -7,12 +7,29 @@ country_combination = "gpw-2020-gisco-2024"
 [combinations.gpw-2020-gisco-2024]
 population_source = "dataset:population-count-2020-30arcsec"
 boundary_source = "dataset:gisco-countries-2024-1m"
-default_resolution = 10
+default_resolution = 2
 provenance = "Project baseline combination"
 attribution = "GPWv4.11 population count; GISCO Countries 2024 boundaries."
 
 [combinations.gpw-2020-gisco-2024.resolutions.1]
 local = "out/countries/gpw-2020-gisco-2024/1"
+remote = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v5"
 
-[combinations.gpw-2020-gisco-2024.resolutions.10]
-local = "out/countries/gpw-2020-gisco-2024/10"
+[combinations.gpw-2020-gisco-2024.resolutions.2]
+local = "out/countries/gpw-2020-gisco-2024/2"
+remote = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v6"
+
+[combinations."gpw-2020-gadm-4.1"]
+population_source = "dataset:population-count-2020-30arcsec"
+boundary_source = "dataset:gadm41-adm0"
+default_resolution = 2
+provenance = "GADM 4.1 ADM0"
+attribution = "GPWv4.11 population count; GADM database, version 4.1; Austria data © Government of Austria, CC BY-SA 2.0."
+
+[combinations."gpw-2020-gadm-4.1".resolutions.1]
+local = "out/countries/gpw-2020-gadm-4.1/1"
+remote = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v7"
+
+[combinations."gpw-2020-gadm-4.1".resolutions.2]
+local = "out/countries/gpw-2020-gadm-4.1/2"
+remote = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v8"

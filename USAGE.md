@@ -415,6 +415,21 @@ Fetch never runs implicitly during a search. Use `country prepare` when the raw 
 sources are available locally; use `country fetch` when the configured prepared bundle is published
 at its remote location.
 
+The built-in country combinations use GPW 2020 with either GISCO Countries 2024 (`gpw-2020-gisco-2024`)
+or GADM 4.1 (`gpw-2020-gadm-4.1`). GISCO is the default. Both offer factor 1 (30 arc-seconds) and
+factor 2 (1 arcminute); factor 2 is the default. Fetch the selected default bundle with
+`mise run cli -- country fetch`, or choose GADM with
+`mise run cli -- country fetch --combination gpw-2020-gadm-4.1`. Each source and resolution has its
+own prepared release, and the selected bundle keeps its source-specific country identifiers.
+
+The release comparison measured the same world radii at both factors (1,227 km at 20%, 3,360 km at
+50%, and 9,510 km at 90%). The required France, United States, Chile, Greenland, and Philippines
+GISCO cases also had matching radii across factors, with small shifts in centres and achieved shares.
+This is evidence about these inputs and cases, not a general accuracy guarantee; the finer GADM
+microstate geometries do not by themselves establish greater accuracy. Source attributions and
+bundle details are in [`data/README.md`](data/README.md), and the full acceptance evidence is recorded
+on [issue #213](https://github.com/turboBasic/PopulationCircles2026/issues/213).
+
 **Choose the detail level with `--decimate`.** Use `10` for quick exploration, as in the examples above,
 or `2` for a practical balance between detail and speed. Use `1` for full resolution. Build and search
 with the same value. Country sweeps default to `10`; the other searches default to `1`.

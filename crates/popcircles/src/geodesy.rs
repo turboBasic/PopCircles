@@ -14,7 +14,11 @@ pub struct LatLon {
 /// the far side of the globe.
 #[must_use]
 pub fn wrap_lon(lon: f64) -> f64 {
-    (lon + 180.0).rem_euclid(360.0) - 180.0
+    if (-180.0..180.0).contains(&lon) {
+        lon
+    } else {
+        (lon + 180.0).rem_euclid(360.0) - 180.0
+    }
 }
 
 /// The central angle between two points, by the haversine formula (Sinnott, "Virtues of the
@@ -209,9 +213,27 @@ mod tests {
 
     #[test]
     fn longitudes_already_in_range_are_untouched() {
-        for lon in [-180.0, -179.5, -0.5, 0.0, 0.5, 179.5] {
-            assert!((wrap_lon(lon) - lon).abs() < 1e-12, "wrap_lon({lon})");
+        for lon in [
+            -180.0,
+            -179.5,
+            -109.458_333_333_333_33,
+            -0.5,
+            0.0,
+            0.5,
+            179.5,
+        ] {
+            assert_eq!(wrap_lon(lon), lon, "wrap_lon({lon})");
         }
+    }
+
+    #[test]
+    fn canonical_longitude_survives_json_round_trip_and_wrapping() {
+        let longitude = -109.458_333_333_333_33;
+        let encoded = serde_json::to_string(&longitude).unwrap();
+        let decoded: f64 = serde_json::from_str(&encoded).unwrap();
+
+        assert_eq!(decoded, longitude);
+        assert_eq!(wrap_lon(decoded), longitude);
     }
 
     fn at(lat: f64, lon: f64) -> LatLon {

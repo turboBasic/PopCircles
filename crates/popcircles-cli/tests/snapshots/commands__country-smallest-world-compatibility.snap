@@ -1,6 +1,6 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
-assertion_line: 1068
+assertion_line: 1287
 expression: document
 ---
 {
@@ -71,7 +71,7 @@ expression: document
         "ownership_rule_version": 1
       },
       "reconciliation": {
-        "bound_persons": 0.000000008520804506417791,
+        "bound_persons": 0.00000000852080450641779,
         "unassigned_population": 0.0
       }
     },

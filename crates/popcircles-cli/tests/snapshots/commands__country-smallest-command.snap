@@ -1,5 +1,6 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
+assertion_line: 1147
 expression: document
 ---
 {
@@ -17,7 +18,7 @@ expression: document
       "col": 9,
       "covers_whole_grid": false,
       "population": 10574.0,
-      "predicate_slack_persons": 0.000000001456299081326051,
+      "predicate_slack_persons": 0.0000000014562990813260512,
       "radius_km": 715,
       "row": 17,
       "share_achieved": 0.1034415292207157,

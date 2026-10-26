@@ -197,6 +197,65 @@ extraction, simplification or reprojection is performed. Compare the resulting d
 the publisher URL above is provenance and a way to reproduce the selected bytes while it still
 serves them.
 
+## Prepared country combinations
+
+The built-in combinations pair the 30 arc-second GPW population source with either GISCO Countries
+2024 (`gpw-2020-gisco-2024`, the default) or GADM 4.1 (`gpw-2020-gadm-4.1`). Each pairing provides
+factor 1 (30 arc-seconds) and factor 2 (1 arcminute); factor 2 is the default. `country fetch` installs
+the selected prepared bundle. The manifests retain all 263 source feature IDs, including Vatican City,
+which has no owned population cells in these bundles.
+
+| Pairing and factor | Release assets | Bundle directory bytes |
+| --- | --- | ---: |
+| GISCO, factor 1 | [`data-v5`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v5) | 7,596,273,923 |
+| GISCO, factor 2 | [`data-v6`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v6) | 1,901,567,393 |
+| GADM, factor 1 | [`data-v7`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v7) | 7,177,194,888 |
+| GADM, factor 2 | [`data-v8`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v8) | 1,796,924,439 |
+
+The #213 release comparison found matching world radii at factors 1 and 2 for the tested 20%, 50%,
+and 90% shares, and matching radii for the required GISCO country cases. Centres and achieved shares
+shift slightly with resolution. GADM has more vertices for several microstates, but that geometry
+count is not evidence of greater accuracy. The full case results, timings, input digests, and bundle
+integrity evidence are recorded in the [#213 acceptance record](https://github.com/turboBasic/PopulationCircles2026/issues/213#issuecomment-6413726620).
+
+## gadm41-adm0
+
+| Property | Value |
+| --- | --- |
+| Geometry | 263 ADM0 MultiPolygon features |
+| Coordinates | longitude, latitude (WGS 84) |
+| CRS | EPSG:4326 |
+| Feature identifier | `GID_0`, unique and retained from the GADM 4.1 source |
+| Size | 1,155,550,194 bytes |
+| SHA-256 | `4d005953e25108f475bcedb00f2ad4409f5d61d3c8d4ae7fd6e523d593c6c4b9` |
+
+This is layer `ADM_0` from the [GADM 4.1 global levels archive][gadm-source], exported to GeoJSON
+with only `GID_0` and `COUNTRY` properties. Coordinates are kept at 15 decimal places; no geometry
+simplification or reprojection is performed. `GID_0` remains the source identity; it is not mapped to
+GISCO identifiers.
+
+GADM's [terms][gadm-license] permit academic and other non-commercial use; redistribution or
+commercial use requires prior permission. The maintainer confirmed permission for this project's
+redistribution of the source snapshot and derived prepared bundles on 2026-10-26. Austria's source
+data is under CC BY-SA 2.0. The required attribution is **GADM database, version 4.1; Austria data
+© Government of Austria, CC BY-SA 2.0.** This data is not covered by the repository's MIT software
+licence.
+
+### Obtaining and reproducing it
+
+`mise run data:get` downloads the exact GeoJSON snapshot from this project's [data-only release][gadm-asset].
+To reproduce the export from the publisher's global archive, extract `gadm_410-levels.gpkg` from
+the ZIP, then run:
+
+```sh
+ogr2ogr -f GeoJSON -select GID_0,COUNTRY -lco COORDINATE_PRECISION=15 \
+  /tmp/gadm41-adm0.geojson /tmp/gadm_410-levels.gpkg ADM_0
+shasum -a 256 /tmp/gadm41-adm0.geojson
+```
+
+The digest above identifies the exact export. The registry's `fetch_url` is the stable project
+asset; the publisher URL is the source archive used to reproduce it.
+
 <!-- Links -->
 
 [adr-gisco]: ../docs/decisions/0015-country-identities-follow-gisco-country-features.md
@@ -204,6 +263,9 @@ serves them.
 [coarse-population-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v4/population-count-2020-10arcmin.tif
 [coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
 [contributing-data]: ../CONTRIBUTING.md#verifying-a-published-dataset
+[gadm-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v7/gadm41-adm0.geojson
+[gadm-license]: https://gadm.org/license.html
+[gadm-source]: https://geodata.ucdavis.edu/gadm/gadm4.1/gadm_410-levels.zip
 [gisco-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson
 [gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
 [gpw-adj]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
