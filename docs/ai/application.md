@@ -189,12 +189,11 @@ as its radius grows. [`platform.md`](platform.md) "Testing" explains how to orga
 
 ### Country query requirements
 
-Issues #13 and #14 use the same country membership rule for totals and circle queries. The country
-total is the denominator for share targets, and circle queries count only cells owned by that country,
-even when the circle centre lies outside it. A derived country table's identity includes the decoded
-population values and grid, the resolution and order of source-cell aggregation, the GISCO snapshot and
-feature identifier, and the membership rule. Any change to these inputs requires a new identity and a
-rebuild.
+Country totals and circle queries use the same membership rule. The country total is the denominator
+for share targets, and circle queries count only cells owned by that country, even when the circle
+centre lies outside it. A derived country table's identity includes the decoded population values and
+grid, the resolution and order of source-cell aggregation, the GISCO snapshot and feature identifier,
+and the membership rule. Any change to these inputs requires a new identity and a rebuild.
 
 Set an arithmetic error budget for each route from its operations and population magnitudes. Candidate
 bounds include query error. Smallest-circle comparisons also include total error and predicate slack.
@@ -208,16 +207,14 @@ reconcile the sum against the circle's world population. Calculate the remainder
 source-wide unassigned totals cannot replace it. Bound row queries using the world and country table
 totals, then include the error from reducing country results.
 
-The k=10 centre-point masks in #72 were provisional. Their country totals did not reconcile with the
-reconstructed world total. The k=1 gap was smaller but still material ([measurements and
-reconciliation](https://github.com/turboBasic/PopCircles/issues/72#issuecomment-6340314761)). GISCO
-membership is now classified independently from each effective-grid cell centre at k=1 and k=10. A
-centre on a boundary belongs to every matching feature. Subtract holes, combine multipart components,
-handle antimeridian crossings, and use even-odd membership for self-intersecting rings without changing
+Classify GISCO membership independently from each effective-grid cell centre at k=1 and k=10. A centre
+on a boundary belongs to every matching feature. Subtract holes, combine multipart components, handle
+antimeridian crossings, and use even-odd membership for self-intersecting rings without changing
 coordinates. Degenerate components contribute no cells and produce a feature-specific diagnostic.
+Classify source-cell ownership at k=1 before aggregating to coarser grids. Reconcile assigned population
+and the explicit unassigned residual against the world total. Report unassigned population separately
+from arithmetic error.
 Preserve source feature identities and geometric overlaps; GISCO features are not a disjoint partition.
-Issue #14 still defines source-cell aggregation order, positive-population reconciliation, and the
-difference between unassigned population and arithmetic error.
 
 ## Language split
 
