@@ -61,3 +61,5 @@ tmp/
 /data/boundaries/gisco-countries-2024-1m.geojson
 # The fetched GISCO 2024 coastline, verified against its registry entry.
 /data/boundaries/CNTR_BN_01M_2024_4326_COASTL.geojson
+# The published GADM snapshot, fetched and verified through the data registry.
+/data/boundaries/gadm41-adm0.geojson
