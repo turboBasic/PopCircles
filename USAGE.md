@@ -272,11 +272,11 @@ case, so the project checks these cases. A circle that covers both poles appears
 the area outside the circle cut out.
 
 Rendered maps use the registered boundary dataset named by `defaults.coastline_dataset` in
-`data/config.toml`; the built-in choice is Natural Earth's `coastline-1to110m`. Change that key to
-another registered boundary dataset to switch coastlines. Fetch the selected dataset with
+`data/config.toml`; the built-in choice is GISCO's Countries 2024 1:1,000,000 coastline. Change that
+key to another registered boundary dataset to switch coastlines. Fetch the selected dataset with
 `mise run data:get -- --dataset <dataset-key>`. The command checks its registered byte count and
 SHA-256 before placing the file. Maps show the selected dataset's attribution. GISCO's coastline
-permits non-commercial use only. The gallery workflow fetches the built-in selection before drawing.
+permits non-commercial use only. The gallery workflow fetches the configured selection before drawing.
 Once it is present, rendering works offline. `--no-coastlines` skips the coastline file and its credit.
 
 When a world document includes a country breakdown, the caption lists each country with its population
