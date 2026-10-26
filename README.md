@@ -1,4 +1,4 @@
-# PopCircles
+# PopCircles 👫🌍
 
 [![CI][ci-badge]][ci] [![Rust 1.99+][rust-badge]][rust] [![License: MIT][license-badge]][license]
 
