@@ -2,7 +2,7 @@
 
 [![CI][ci-badge]][ci] [![Rust 1.99+][rust-badge]][rust] [![License: MIT][license-badge]][license]
 
-PopulationCircles answers questions about population inside circles: how many people live within a
+PopCircles answers questions about population inside circles: how many people live within a
 chosen circle, which circle of a given size contains the most people, and the smallest circle that
 contains a chosen share of the population. These searches work for the whole world and for individual
 countries. The project also draws maps of the results. It uses a population map with cells about 1 km
