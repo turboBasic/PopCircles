@@ -79,9 +79,9 @@ Earlier published results include Danny Quah's roughly 3 300 km circle and the
 - the search checks the centre of each data cell. At full resolution, cell centres are about 926 m apart.
 
 What the search spends its time on was measured on the same run: at full resolution it is **6.5% CPU** and
-the rest is page faults against a 7.5 GB table, which `FU-17` in
-[`docs/follow-ups.md`][follow-ups] holds. `mise run test:validate` is the end-to-end run against the real
-raster, and it skips with a message when the raster has not been fetched.
+the rest is page faults against a 7.5 GB table, which `FU-17` in [`docs/follow-ups.md`][follow-ups] holds.
+`mise run test:validate` is the end-to-end run against the real raster, and it skips with a message when
+the raster has not been fetched.
 
 ## The maps
 
@@ -92,16 +92,14 @@ Nothing there is committed; a figure is deployed rather than carried.
 
 ## Data
 
-The population raster is [GPWv4.11 UN WPP-adjusted population count for 2020][gpw] at 30
-arc-second resolution — CIESIN / Columbia University, distributed by NASA SEDAC, DOI
-[10.7927/H4PN93PB][gpw-doi], [CC BY 4.0][cc-by]. Attribution is required of anything published from
-it; [`data/README.md`][data-population] holds the citation and the grid
-details.
+The population raster is [GPWv4.11 UN WPP-adjusted population count for 2020][gpw] at 30 arc-second
+resolution — CIESIN / Columbia University, distributed by NASA SEDAC, DOI [10.7927/H4PN93PB][gpw-doi],
+[CC BY 4.0][cc-by]. Attribution is required of anything published from it;
+[`data/README.md`][data-population] holds the citation and the grid details.
 
 **It is not in a plain clone.** The [`data-v1` release][data-tag] carries it, `mise run data:get` fetches
 from there, and that copy needs no account. Obtaining an *independent* copy from NASA Earthdata instead —
-which is what makes the published checksum worth checking — is
-[`CONTRIBUTING.md`][contributing-data].
+which is what makes the published checksum worth checking — is [`CONTRIBUTING.md`][contributing-data].
 
 ## Layout
 
@@ -124,9 +122,9 @@ priorities and limitations. [`CONTRIBUTING.md`][contributing] covers setup and t
 ## Inspiration
 
 The problem, and the demonstration that it is tractable at full raster resolution, come from
-[alexmijo/PopulationCircles][alexmijo-project] — a C++ project that produced the published maps of these circles.
-This is an independent implementation: the approach is reused, the code is not. That repository
-carries no licence, so none of its source is copied or ported here;
+[alexmijo/PopulationCircles][alexmijo-project] — a C++ project that produced the published maps of
+these circles. This is an independent implementation: the approach is reused, the code is not.
+That repository carries no licence, so none of its source is copied or ported here;
 see [the application doc][application-copying].
 
 Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepieris].
