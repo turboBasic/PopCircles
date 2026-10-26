@@ -60,8 +60,8 @@ reproducible bugs or work ready to be scoped in [Issues][issues].
 ## Validation
 
 The 2020 raster counts 7 757 982 599 people. In that dataset, the smallest circle containing half the
-population has a radius of **3 360 km** and is centred at [28.84 N, 100.66 E][map-centre], 192 km from
-Xichang, China. The full-resolution result was recorded on 2026-08-19 in
+population has a radius of **3 360 km** and is centred at [28.84 N, 100.66 E][map-centre] (192 km from Xichang, China).
+The full-resolution result was recorded on 2026-08-19 in
 [`results/world-half-30arcsec.json`][results-world-half]. We tested whole-kilometre radii: the 3 360 km
 circle contains 655 480 people more than half the total; the 3 359 km circle contains 75 397 fewer.
 
