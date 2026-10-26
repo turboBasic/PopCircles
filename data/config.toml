@@ -3,6 +3,8 @@
 [defaults]
 population_dataset = "population-count-2020-10arcmin"
 country_combination = "gpw-2020-gisco-2024"
+coastline_dataset = "CNTR_BN_01M_2024_4326_COASTL"
+# coastline_dataset = "coastline-1to110m"
 
 [combinations.gpw-2020-gisco-2024]
 population_source = "dataset:population-count-2020-30arcsec"

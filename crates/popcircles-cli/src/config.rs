@@ -43,6 +43,7 @@ struct Document {
 struct Defaults {
     population_dataset: Option<String>,
     country_combination: Option<String>,
+    coastline_dataset: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -260,6 +261,7 @@ fn validate_complete(
     if document.defaults.country_combination.is_none() {
         return Err(invalid(path, "missing defaults.country_combination"));
     }
+    validate_coastline(path, &document.defaults, registry)?;
     for (id, row) in &document.combinations {
         let population = row.population_source.as_deref().ok_or_else(|| {
             invalid(
@@ -482,18 +484,31 @@ fn validate_source(
     Ok(())
 }
 
+fn validate_coastline(
+    path: &Path,
+    defaults: &Defaults,
+    registry: &Registry,
+) -> Result<(), ConfigError> {
+    if let Some(dataset) = &defaults.coastline_dataset {
+        validate_source(
+            path,
+            "defaults",
+            "coastline_dataset",
+            &format!("dataset:{dataset}"),
+            registry,
+            false,
+        )?;
+    }
+    Ok(())
+}
+
 fn merge(
     base: &mut Document,
     overlay: Document,
     overlay_path: &Path,
     registry: &Registry,
 ) -> Result<(), ConfigError> {
-    if let Some(value) = overlay.defaults.population_dataset {
-        base.defaults.population_dataset = Some(value);
-    }
-    if let Some(value) = overlay.defaults.country_combination {
-        base.defaults.country_combination = Some(value);
-    }
+    merge_defaults(&mut base.defaults, overlay.defaults);
     for (id, mut user) in overlay.combinations {
         if let Some(builtin) = base.combinations.get_mut(&id) {
             if user.provenance.is_some() {
@@ -586,6 +601,18 @@ fn merge(
         }
     }
     validate_complete(base, overlay_path, registry)
+}
+
+fn merge_defaults(base: &mut Defaults, overlay: Defaults) {
+    if let Some(value) = overlay.population_dataset {
+        base.population_dataset = Some(value);
+    }
+    if let Some(value) = overlay.country_combination {
+        base.country_combination = Some(value);
+    }
+    if let Some(value) = overlay.coastline_dataset {
+        base.coastline_dataset = Some(value);
+    }
 }
 
 fn resolve(config_path: &Path, path: &Path) -> PathBuf {

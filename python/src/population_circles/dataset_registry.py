@@ -2,7 +2,7 @@ import functools
 import tomllib
 from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Self, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -142,3 +142,17 @@ def parse(text: str) -> Registry:
 @functools.cache
 def load() -> Registry:
     return parse(REGISTRY.read_text(encoding="utf-8"))
+
+
+@functools.cache
+def coastline_dataset_key() -> str:
+    config = tomllib.loads((REPO_ROOT / "data" / "config.toml").read_text(encoding="utf-8"))
+    defaults = config.get("defaults")
+    if not isinstance(defaults, dict):
+        message = "data/config.toml must set defaults.coastline_dataset"
+        raise TypeError(message)
+    key = cast(dict[str, object], defaults).get("coastline_dataset")
+    if not isinstance(key, str) or not key:
+        message = "data/config.toml must set defaults.coastline_dataset"
+        raise ValueError(message)
+    return key

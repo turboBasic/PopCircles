@@ -38,9 +38,12 @@ jobs:
       - name: Sync Python tooling
         run: uv sync --locked
 
-      # Fetch only the registered coastline; rendering the committed documents needs no raster or
+      # Fetch only the configured coastline; rendering the committed documents needs no raster or
       # unrelated boundary input.
-      - run: mise run data:get -- --dataset CNTR_BN_01M_2024_4326_COASTL
+      - name: Fetch configured coastline
+        run: |
+          dataset="$(uv run python -c 'import tomllib; print(tomllib.load(open("data/config.toml", "rb"))["defaults"]["coastline_dataset"])')"
+          mise run data:get -- --dataset "$dataset"
 
       - run: mise run gallery -- --input results --output build/gallery
 
