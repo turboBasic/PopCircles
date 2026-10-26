@@ -1,4 +1,4 @@
-# PopulationCircles2026
+# PopCircles
 
 [![CI][ci-badge]][ci] [![Rust 1.99+][rust-badge]][rust] [![License: MIT][license-badge]][license]
 
@@ -142,8 +142,8 @@ Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepier
 [application]: docs/ai/application.md
 [application-copying]: docs/ai/application.md#provenance-and-the-copying-rule
 [cc-by]: https://creativecommons.org/licenses/by/4.0/
-[ci]: https://github.com/turboBasic/PopulationCircles2026/actions/workflows/ci.yml?query=branch%3Amain
-[ci-badge]: https://github.com/turboBasic/PopulationCircles2026/actions/workflows/ci.yml/badge.svg?branch=main
+[ci]: https://github.com/turboBasic/PopCircles/actions/workflows/ci.yml?query=branch%3Amain
+[ci-badge]: https://github.com/turboBasic/PopCircles/actions/workflows/ci.yml/badge.svg?branch=main
 [code]: docs/ai/code.md
 [contributing]: CONTRIBUTING.md
 [contributing-data]: CONTRIBUTING.md#verifying-a-published-dataset
@@ -151,19 +151,19 @@ Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepier
 [data-getting-it]: data/README.md#getting-it
 [data-population]: data/README.md#population-count-2020-30arcsec
 [data-registry]: data/registry.toml
-[data-tag]: https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v1
-[discussions]: https://github.com/turboBasic/PopulationCircles2026/discussions
+[data-tag]: https://github.com/turboBasic/PopCircles/releases/tag/data-v1
+[discussions]: https://github.com/turboBasic/PopCircles/discussions
 [follow-ups]: docs/follow-ups.md
-[gallery]: https://turbobasic.github.io/PopulationCircles2026/
+[gallery]: https://turbobasic.github.io/PopCircles/
 [gpw]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
 [gpw-doi]: https://doi.org/10.7927/H4PN93PB
-[issues]: https://github.com/turboBasic/PopulationCircles2026/issues
+[issues]: https://github.com/turboBasic/PopCircles/issues
 [license]: LICENSE
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [map-centre]: https://www.openstreetmap.org/?mlat=28.8375&mlon=100.66250000000002
 [platform]: docs/ai/platform.md
 [release-verification]: CONTRIBUTING.md#verifying-a-downloaded-release
-[releases]: https://github.com/turboBasic/PopulationCircles2026/releases
+[releases]: https://github.com/turboBasic/PopCircles/releases
 [results-world-half]: results/world-half-30arcsec.json
 [rust]: https://www.rust-lang.org/
 [rust-badge]: https://img.shields.io/badge/rust-1.99%2B-orange.svg

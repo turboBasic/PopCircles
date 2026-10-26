@@ -43,7 +43,7 @@ version = "0.3.0"
 edition = "2024"
 rust-version = "1.99"
 license = "MIT"
-repository = "https://github.com/turboBasic/PopulationCircles2026"
+repository = "https://github.com/turboBasic/PopCircles"
 authors = ["turboBasic"]
 
 [workspace.lints.rust]

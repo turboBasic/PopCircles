@@ -1,7 +1,7 @@
 [project]
 name = "population-circles-tools"
 version = "0.0.0"
-description = "Data preparation and map rendering tooling for PopulationCircles2026"
+description = "Data preparation and map rendering tooling for PopCircles"
 requires-python = ">=3.14"
 dependencies = []
 

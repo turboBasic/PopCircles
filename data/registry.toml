@@ -17,7 +17,7 @@ bytes = 428465215
 sha256 = "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
 # Republished by this project under CC BY 4.0's redistribution terms (ADR 0009). Upstream cannot be this
 # URL: NASA's archive is behind an OAuth login that answers an anonymous request with a 401.
-fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v1/population-count-2020-30arcsec.tif"
+fetch_url = "https://github.com/turboBasic/PopCircles/releases/download/data-v1/population-count-2020-30arcsec.tif"
 # Which GPW product, which variant of it, and how this copy was tied to that entry is this dataset's
 # heading in `data/README.md`.
 source_url = "https://doi.org/10.7927/H4PN93PB"
@@ -51,7 +51,7 @@ kind = "population-raster"
 path = "data/population/population-count-2020-10arcmin.tif"
 bytes = 2332874
 sha256 = "cf38289019a887369663ca18003bd4b39aa21e9ed574b0d66a61b3626ce9a767"
-fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v4/population-count-2020-10arcmin.tif"
+fetch_url = "https://github.com/turboBasic/PopCircles/releases/download/data-v4/population-count-2020-10arcmin.tif"
 source_url = "https://doi.org/10.7927/H4PN93PB"
 
 width = 2160
@@ -97,7 +97,7 @@ bytes = 58878461
 sha256 = "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
 # The upstream URL is mutable and its release notes record geometry corrections. Fetch the pinned
 # bytes from this project's data-only release; checksum verification still rejects a bad asset.
-fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson"
+fetch_url = "https://github.com/turboBasic/PopCircles/releases/download/data-v3/gisco-countries-2024-1m.geojson"
 source_url = "https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html"
 
 licence = "GISCO non-commercial terms"
@@ -118,7 +118,7 @@ kind = "boundary-vector"
 path = "data/boundaries/gadm41-adm0.geojson"
 bytes = 1155550194
 sha256 = "4d005953e25108f475bcedb00f2ad4409f5d61d3c8d4ae7fd6e523d593c6c4b9"
-fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v7/gadm41-adm0.geojson"
+fetch_url = "https://github.com/turboBasic/PopCircles/releases/download/data-v7/gadm41-adm0.geojson"
 source_url = "https://geodata.ucdavis.edu/gadm/gadm4.1/gadm_410-levels.zip"
 
 licence = "GADM 4.1 terms; redistribution permission confirmed by the maintainer"
@@ -139,7 +139,7 @@ path = "data/settlements/populated-places-1to10m.geojson"
 bytes = 19359003
 sha256 = "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b"
 # Natural Earth serves the source anonymously; this project's data-only release gives `data:get` a stable URL.
-fetch_url = "https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v2/populated-places-1to10m.geojson"
+fetch_url = "https://github.com/turboBasic/PopCircles/releases/download/data-v2/populated-places-1to10m.geojson"
 # GeoJSON published with Natural Earth vector data at v5.1.2.
 source_url = "https://github.com/nvkelso/natural-earth-vector/raw/v5.1.2/geojson/ne_10m_populated_places.geojson"
 

@@ -40,8 +40,8 @@ format because prek reads it.
 
 ## Questions and ideas
 
-Use [Discussions](https://github.com/turboBasic/PopulationCircles2026/discussions) for usage questions,
-feedback on results, and ideas that are still being explored. Open an [issue](https://github.com/turboBasic/PopulationCircles2026/issues)
+Use [Discussions](https://github.com/turboBasic/PopCircles/discussions) for usage questions,
+feedback on results, and ideas that are still being explored. Open an [issue](https://github.com/turboBasic/PopCircles/issues)
 for a reproducible bug or work ready to be scoped; link the discussion when an idea moves into an issue.
 Use a pull request to discuss a proposed code change.
 
@@ -221,7 +221,7 @@ declares.
    the expected tag
    and source commit. Run `mise run release:trust -- assets --directory DIR --bundle
    DIR/provenance.sigstore.json --tag vX.Y.Z --commit SHA` with
-   `GH_REPO=turboBasic/PopulationCircles2026`. Publish only a draft whose run passed `authorize`
+   `GH_REPO=turboBasic/PopCircles`. Publish only a draft whose run passed `authorize`
    and attestation, then `gh release edit vX.Y.Z --draft=false`.
 
 When a run fails, inspect release state before retrying; a lookup error does not establish absence.
@@ -246,7 +246,7 @@ Set `TAG` to the release tag and `COMMIT` to its source commit. To find the comm
 commit target, for example with `git ls-remote` and the annotated tag's peeled ref:
 
 ```sh
-git ls-remote https://github.com/turboBasic/PopulationCircles2026.git \
+git ls-remote https://github.com/turboBasic/PopCircles.git \
   "refs/tags/$TAG" "refs/tags/$TAG^{}"
 ```
 
@@ -255,8 +255,8 @@ from the release, then verify them:
 
 ```sh
 gh attestation verify ./popcircles-aarch64-apple-darwin \
-  --repo turboBasic/PopulationCircles2026 \
-  --signer-workflow turboBasic/PopulationCircles2026/.github/workflows/release.yml \
+  --repo turboBasic/PopCircles \
+  --signer-workflow turboBasic/PopCircles/.github/workflows/release.yml \
   --source-ref "refs/tags/$TAG" \
   --source-digest "$COMMIT" \
   --bundle ./provenance.sigstore.json
