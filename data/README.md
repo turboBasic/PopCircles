@@ -216,7 +216,7 @@ The #213 release comparison found matching world radii at factors 1 and 2 for th
 and 90% shares, and matching radii for the required GISCO country cases. Centres and achieved shares
 shift slightly with resolution. GADM has more vertices for several microstates, but that geometry
 count is not evidence of greater accuracy. The full case results, timings, input digests, and bundle
-integrity evidence are recorded on [issue #213](https://github.com/turboBasic/PopulationCircles2026/issues/213).
+integrity evidence are recorded in the [#213 acceptance record](https://github.com/turboBasic/PopulationCircles2026/issues/213#issuecomment-6413726620).
 
 ## gadm41-adm0
 
