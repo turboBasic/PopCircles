@@ -213,8 +213,7 @@ def test_the_wrappers_and_shared_build_cannot_delegate_write_permissions() -> No
 
 def test_the_attester_is_the_release_workflow_itself() -> None:
     assert (
-        rt.signer("turboBasic/PopulationCircles2026")
-        == "turboBasic/PopulationCircles2026/.github/workflows/release.yml"
+        rt.signer("turboBasic/PopCircles") == "turboBasic/PopCircles/.github/workflows/release.yml"
     )
     attest = jobs_of(workflow("release.yml"))["attest"]
     assert "uses:" not in attest.split("    steps:\n")[0]

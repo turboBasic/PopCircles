@@ -1,6 +1,6 @@
 # Accessibility
 
-PopulationCircles2026 provides command-line tools, numerical result documents, and a static gallery of
+PopCircles provides command-line tools, numerical result documents, and a static gallery of
 map images. People should be able to use the tools and understand their results without relying on the
 maps alone. This page describes current priorities, known barriers, and how to report one.
 
@@ -26,7 +26,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution process.
 
 ## Reporting accessibility issues
 
-Report a barrier in a [GitHub issue](https://github.com/turboBasic/PopulationCircles2026/issues/new).
+Report a barrier in a [GitHub issue](https://github.com/turboBasic/PopCircles/issues/new).
 Include the affected task and page URL or command, what happened, and what you expected. Browser,
 operating system, and assistive technology details can help reproduce the issue. You do not need to
 disclose a disability, and screenshots or recordings are optional.
@@ -65,6 +65,6 @@ no other barriers exist.
 
 ## Feedback and improvements
 
-Use a [GitHub issue](https://github.com/turboBasic/PopulationCircles2026/issues/new) to suggest an
+Use a [GitHub issue](https://github.com/turboBasic/PopCircles/issues/new) to suggest an
 improvement to this statement or the project's accessibility practices. Report an active barrier using
 the process above.

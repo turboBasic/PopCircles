@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from repo_tools import release_trust as rt
 
-REPO = "turboBasic/PopulationCircles2026"
+REPO = "turboBasic/PopCircles"
 TAG = "v1.2.3"
 REF_ENDPOINT = f"repos/{REPO}/git/ref/tags/{TAG}"
 KEY_ENDPOINT = f"users/{rt.AUTHORITY}/ssh_signing_keys?per_page=100"
@@ -142,7 +142,7 @@ def test_trusted_tag_performs_real_git_ssh_verification(repository: Repository) 
         "-f",
         "owner=turboBasic",
         "-f",
-        "name=PopulationCircles2026",
+        "name=PopCircles",
         "-f",
         f"tag={TAG}",
     )
@@ -372,11 +372,11 @@ def test_read_only_draft_error_is_refused_by_the_tag_cli(
         ('{"data":null}', 0),
         ('{"data":{"repository":null}}', 0),
         ('{"data":{"repository":{"name":"other/repo","release":null}}}', 0),
-        ('{"data":{"repository":{"name":"turboBasic/PopulationCircles2026"}}}', 0),
+        ('{"data":{"repository":{"name":"turboBasic/PopCircles"}}}', 0),
         ('{"errors":[{"message":"Resource not accessible by integration"}]}', 0),
         (
             (
-                '{"data":{"repository":{"name":"turboBasic/PopulationCircles2026",'
+                '{"data":{"repository":{"name":"turboBasic/PopCircles",'
                 '"release":null}},"errors":[{"message":"rate limit"}]}'
             ),
             0,

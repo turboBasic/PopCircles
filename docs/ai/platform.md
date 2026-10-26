@@ -1,12 +1,12 @@
 # Platform
 
-Read this when changing tooling, dependencies, input data, quality gates, git conventions or CI, when
-working a GitHub issue, when deciding whether a change warrants a record under `docs/decisions/` or
-writing the plan that carries it, or when the structure tree moves.
+Read this when you change tooling, dependencies, input data, quality gates, Git conventions, or CI;
+work on a GitHub issue; decide whether a change needs a record under `docs/decisions/`; write its
+plan; or move the structure tree.
 
-Committed configuration is authoritative for what it declares — read `mise.toml`, `Cargo.toml`,
-`pyproject.toml` and `.pre-commit-config.yaml` rather than assuming. Extend those
-files; never regenerate them. What follows is the judgment around them, not a second copy of them.
+Committed configuration defines its declared behavior. Read `mise.toml`, `Cargo.toml`, `pyproject.toml`,
+and `.pre-commit-config.yaml`; do not guess. Extend these files; never regenerate them. This document
+adds the judgments they cannot express.
 
 ## Tooling hierarchy
 
@@ -16,346 +16,327 @@ files; never regenerate them. What follows is the judgment around them, not a se
 3. **`cargo <cmd>` / `uv run <tool>`** — the language-local tools.
 4. **`mise exec -- <tool>`** — system tools mise manages.
 
-`mise.toml` is the roster of both the pinned tools and the tasks: what `lint`, `typecheck`, `test`
-and `ci` actually run is declared there, and prose repeating a task's command line is a drift site.
-`mise run ci` reproduces CI locally and is the check to run before reporting work done.
+`mise.toml` lists pinned tools and tasks. It declares what `lint`, `typecheck`, `test`, and `ci` run;
+repeating a task's command in prose can make the documentation go stale. Run `mise run ci` to reproduce
+CI locally before reporting work complete.
 
-Nothing is installed globally. A new runtime or CLI is pinned in `mise.toml`. Never `pip install`,
-never activate a venv by hand, never install a Rust toolchain outside mise.
+Install nothing globally. Pin new runtimes and CLIs in `mise.toml`. Do not use `pip install`, activate a
+virtual environment by hand, or install a Rust toolchain outside mise.
 
-A task deliberately not yet wired into `lint` or `ci` carries a comment saying why. Believe the
-comment and satisfy its stated condition before wiring the task in — the two Python tasks are
-waiting on sources and tests to exist, not on someone noticing them.
+If a task is not yet part of `lint` or `ci`, its comment explains why. Meet the stated condition before
+adding it. The two Python tasks are waiting for source files and tests to exist.
 
 ## AI harnesses
 
-Resolve reused skills' and personas' relative paths from their real source files. Follow their
-workflows with the current harness's tools; Claude Code frontmatter, hooks and permission settings
-do not configure another harness. A persona's editing limits remain instructions in Codex, whose
-custom agents inherit the parent's permissions rather than Claude Code's withheld tools.
+Resolve relative paths in reused skills and personas from their source files. Follow their workflows
+with the current harness's tools. Claude Code frontmatter, hooks, and permission settings do not
+configure other harnesses. Follow a persona's editing limits in Codex; its custom agents inherit the
+parent's permissions, not Claude Code's withheld tools.
 
-When a workflow requests a persona, use its custom agent. Where the harness cannot select a named
-agent, use a fresh subagent instructed to read the source persona and the workflow's brief.
+When a workflow requests a persona, use its custom agent. If the harness cannot select a named agent,
+start a fresh subagent and tell it to read the source persona and the workflow brief.
 
 ## Dependencies
 
-- Rust: workspace-level settings live in the root `Cargo.toml` (`[workspace.package]`,
-  `[workspace.lints]`); a crate inherits with `field.workspace = true`. Commit `Cargo.lock`.
+- Rust: workspace settings live in the root `Cargo.toml` (`[workspace.package]`, `[workspace.lints]`).
+  Crates inherit them with `field.workspace = true`. Commit `Cargo.lock`.
 - Python: dev tooling in `[dependency-groups].dev`. No `setup.py`, `setup.cfg` or
   `requirements.txt`. Run `uv lock` after editing dependencies and commit the result in the same
   change.
-- Node: a CLI host only, never an application dependency. Pin `node` and the tool itself in
+- Node: use it only to host CLIs, never as an application dependency. Pin `node` and each tool in
   `mise.toml`'s `[tools]` via the `npm:` backend (e.g. `"npm:markdownlint-cli2" = "0.23.2"`);
   never `npm install -g`. Its prek hook calls the pinned binary directly (`language: system`),
-  the same shape `cargo-fmt`/`taplo-fmt` use, rather than letting the hook manage its own runtime.
-- Before adding a dependency, check whether one already in the tree covers the need. Prefer the
-  standard library for anything small.
+  as `cargo-fmt` and `taplo-fmt`; do not let the hook manage its own runtime.
+- Before adding a dependency, check whether the tree already has one that covers the need. Prefer the
+  standard library for small tasks.
 - Introducing a new file type or framework updates `.editorconfig`, `.gitattributes` and
   `.gitignore` in the same change.
 
 ## Large input data
 
-Input datasets live in `data/`, one directory per kind. A large one is published and fetched rather
-than carried in the repository, a small one is committed.
-[`data/registry.toml`](../../data/registry.toml) is the registry and owns each dataset's grid, CRS,
-nodata value, byte length, checksum, fetch URL, licence and the attribution a figure owes — it is what
-`mise run data:get`, the CLI and the renderer read, and naming a row is how a build says what to open. [`data/README.md`](../../data/README.md) is the same datasets
-described for a person, and owns the provenance that identifies each one, plus the mechanics of fetching
-them ([Getting it](../../data/README.md#getting-it)). A dataset gets its row in both, in the same change
-that adds it.
+Store input datasets in `data/`, one directory per kind. Publish large datasets for fetching. Commit a
+small dataset only when every clone and CI job needs it and fetching costs more than storing it.
+[`data/registry.toml`](../../data/registry.toml) records each dataset's grid, CRS, nodata value,
+byte length, checksum, fetch URL, licence, and figure attribution. `mise run data:get`, the CLI, and the
+renderer use this registry; builds name the row they need. [`data/README.md`](../../data/README.md)
+describes the datasets for readers, records their provenance, and explains how to fetch them ([Getting
+it](../../data/README.md#getting-it)). Add a dataset to both files in the same change.
 
 The judgment around that mechanism:
 
-- A new **input** dataset goes to `data/<kind>/` with a registry entry, and only deliberately.
+- Add a new **input** dataset to `data/<kind>/` with a registry entry. Do so only deliberately.
   Generated products are neither committed nor placed there.
-- **Publishing is the answer for a raster, not for `data/` by location**
-  ([ADR 0009](../decisions/0009-input-data-is-published-not-versioned.md)). A dataset every clone and
-  every CI job needs, small enough that fetching it would cost more than carrying it, is a Git blob —
-  the registry states that trade for each row, and `check-added-large-files` is what still bounds it.
-- Code that reads a raster fails with a clear message naming `mise run data:get` when the file is
-  absent, rather than reporting it as a format error.
+- **Publish rasters based on their needs, not just because they live in `data/`**
+  ([ADR 0009](../decisions/0009-input-data-is-published-not-versioned.md)). Commit a dataset as a Git
+  blob if every clone and CI job needs it and fetching it costs more than storing it. The registry
+  records this choice for each dataset, and `check-added-large-files` limits its size.
+- If a raster is missing, code that reads it reports the missing file and names `mise run data:get`;
+  it must not report a format error.
 
 ## Quality gates
 
 ### Linting
 
-- prek is the entry point for hooks; `cargo clippy` also runs through its own mise task. Never call
-  `ruff` directly.
-- clippy warnings are errors. Never silence one with a blanket `#[allow]`; a narrow, commented
-  `#[allow]` on a single item is acceptable when the lint is genuinely wrong.
+- Run hooks through prek. Run `cargo clippy` through its mise task. Do not call `ruff` directly.
+- Treat clippy warnings as errors. Do not silence them with a blanket `#[allow]`. A narrow, commented
+  `#[allow]` on one item is acceptable when the lint is wrong.
 - ruff for Python lint and format. Never add black, isort, flake8 or pylint.
 - TOML is formatted with taplo.
-- When a hook reformats files, re-stage and re-run. That is expected behaviour, not an error to
-  investigate.
-- cspell checks every tracked file. A legitimate term it flags goes in `.cspell/project.txt`, in the
-  section it belongs to — never an inline ignore.
-- Markdown is linted with markdownlint-cli2, `docs/decisions/` included; `.markdownlint-cli2.jsonc`
-  owns which rules are disabled globally versus scoped to one path, and why.
+- If a hook reformats files, stage them again and rerun the hook.
+- cspell checks every tracked file. Add legitimate flagged terms to the relevant section of
+  `.cspell/project.txt`; do not use inline ignores.
+- markdownlint-cli2 checks Markdown, including `docs/decisions/`. `.markdownlint-cli2.jsonc` records
+  which rules are disabled globally or for a specific path, and why.
 
 ### Type checking
 
-Never use a blanket ignore or loosen a mode to clear an error. Narrow per-line ignores are
-acceptable only at a library boundary, with the reason stated. Python type checking is pyright in
-strict mode.
+Do not use blanket ignores or loosen a mode to clear an error. Use a narrow per-line ignore only at a
+library boundary, and state the reason. Pyright checks Python in strict mode.
 
 ### Testing
 
-- Rust: unit tests in the module under `#[cfg(test)]`, integration tests in `tests/`. Property tests
-  are welcome for the geometry and summation invariants.
+- Rust: put unit tests in the module under `#[cfg(test)]` and integration tests in `tests/`. Property
+  tests are welcome for geometry and summation invariants.
 - Python: pytest. Never `unittest.TestCase` classes.
-- What the numeric code's tests must pin, as against merely exercise, is
-  [`application.md`](application.md) "Correctness invariants".
-- **Never make a test depend on a fetched raster.** The suite runs on a clone with no raster in it, so
-  a test that needs raster bytes to pass is a test CI cannot run. Build the fixture in code, or
-  decimate one small enough to commit.
-- Tests needing network, real credentials or fetched rasters are marked, deselected by default, and
-  given their own task. They never run in CI.
-- Do not run the suite after every edit — run it when asked or when verifying a fix. A test failing
-  after a change is fixed before the work is reported done.
+- Numeric tests must assert the invariants in [`application.md`](application.md) "Correctness
+  invariants"; merely exercising the code is not enough.
+- **Do not make tests depend on fetched rasters.** The test suite runs on clones without raster files,
+  so CI cannot run tests that need them. Build fixtures in code or commit a small, reduced raster.
+- Mark tests that need network access, real credentials, or fetched rasters. Deselect them by default
+  and give them a separate task. Do not run them in CI.
+- Run the suite when asked or when verifying a fix, not after every edit. Fix any test that fails after
+  a change before reporting the work complete.
 
 ## Architecture decisions
 
-Consulting accepted ADRs before an architecture choice is a project invariant, stated in
-`docs/ai-instructions.md`. This section governs when one is warranted and how it is scoped; the
-record's own shape is the `write-adr` skill's.
+Read accepted ADRs before making architecture choices, as required by `docs/ai-instructions.md`. This
+section explains when to write an ADR and how to scope it. The `write-adr` skill defines its format.
 
-**The trigger is a question, not a work package.** Working an issue forces dozens of choices at every
-level of impact, and recording them because an issue was worked is what
-[ADR 0001](../decisions/0001-a-record-carries-one-ruling.md) was written against. Most issues warrant
-no record; one may warrant two, having raised two independent questions; and a question raised in
-conversation with no issue behind it warrants one just the same.
+**Write an ADR to answer a question, not to document a work package.** An issue requires choices at
+many levels, but completing it does not mean every choice needs a record. That is the rule in
+[ADR 0001](../decisions/0001-a-record-carries-one-ruling.md). Most issues need no ADR. One issue may
+raise two independent questions and need two. A question raised in conversation may also need an ADR.
 
 ### The bar
 
 A change needs a record only when all three hold:
 
 1. **Reversing it costs more than a PR.** It crosses a crate or language boundary, changes a published
-   format, or changes a project-wide policy.
-2. **A competent person would have chosen differently.** There was a real option, not a preference.
-3. **Someone will ask "why is it like this?" and not be able to answer from the code.**
+   format, or changes project-wide policy.
+2. **A competent person could have chosen differently.** The choice had real alternatives, not just
+   different preferences.
+3. **The code cannot answer "why is it like this?"** Someone will need the reason later.
 
 Two corollaries do most of the work in practice:
 
-- **A choice a gate already pins does not need a record.** If a test asserts the tolerance or a
-  manifest confines the dependency, the gate is the record.
-- **A record whose own Consequences say it is cheap to reverse has failed test 1**, and the draft
-  admitting that is the signal to stop rather than a paragraph to soften.
+- **Do not record a choice that a gate already pins.** A test that asserts a tolerance or a manifest
+  that confines a dependency already records the choice.
+- **If the Consequences say a decision is cheap to reverse, it fails test 1.** Stop the draft instead
+  of softening that statement.
 
 ### Scope
 
-1. **One record, one ruling, one `scope:`.** A numbered list of decisions is the symptom that the
-   record is more than one record.
-2. **Rule the constraint, not the implementation of it.** "The build takes no non-Rust prerequisite"
-   survives a crate swap; the crate and its feature flags do not, and protect the same thing.
-3. **Never enumerate a schema, a field list or a file layout.** State the property the artefact must
-   have; the fields belong to the code and its version constant. A record that lists them guarantees a
-   record when the list changes.
-4. **The record holds the why; the instruction layer holds the rule.** `docs/ai/` says what is true
-   now, in present tense and editable. The record says what was chosen, what lost and when, frozen.
-   Neither restates the other at length, and the link between them is one line.
-5. **One page — 80 lines including frontmatter, hard.** Not a style preference: it is the forcing
-   function for the four rules above. What will not fit is the implementation, which is the PR, the
-   evidence, which is the issue, or a second record.
+1. **One record, one ruling, one `scope:`.** A numbered list of decisions means the record covers
+   more than one ruling.
+2. **Record the constraint, not its implementation.** "The build takes no non-Rust prerequisite"
+   remains true if the crate changes. The crate and its feature flags do not; they enforce the same
+   constraint.
+3. **Do not list schemas, fields, or file layouts.** State the property the artefact must have. Keep
+   its fields in code and its version constant. Otherwise, each list change would require an ADR edit.
+4. **Put the reason in the ADR and the current rule in the instruction layer.** `docs/ai/` describes
+   what is true now, in editable present tense. The ADR records what was chosen, what was rejected, and
+   when. Keep each concise and link them with one line.
+5. **Limit each ADR to 80 lines, including frontmatter.** This limit enforces the four rules above.
+   Put implementation details in the PR, evidence in the issue, and independent decisions in separate
+   ADRs.
 
-A measured figure belongs to whatever measured it — the issue thread and the PR are already dated and
-frozen. The record cites inline the one number that decided it, and carries no tables.
+Keep measured figures in their dated source, such as the issue thread or PR. Cite the deciding number
+inline in the ADR; do not add tables.
 
 ### Mechanics
 
-- A record is `docs/decisions/NNNN-<kebab-slug>.md`, taking the lowest unused prefix.
-- An accepted record is superseded by a new one, never edited. Its `status:`, its `superseded_by:` and
-  one line under its title are the only sanctioned edits.
-- A record records a decision **made**. A ruling that cannot carry a date is a proposal, and belongs in
-  the issue thread or in conversation until it is settled.
-- **Every record in the directory satisfies this section**, so any of them reads as the shape a new one
-  takes and none is exempt from the ceiling.
+- Name records `docs/decisions/NNNN-<kebab-slug>.md`, using the lowest unused number.
+- Supersede accepted records with a new one; do not edit them. The only allowed edits are `status:`,
+  `superseded_by:`, and one line under the title.
+- Record decisions that have been **made**. A ruling without a date is still a proposal; keep it in the
+  issue thread or conversation until it is settled.
+- Apply this section to every record in the directory. Each record should show the format for new ones
+  and meet the 80-line limit.
 
 ## Implementation plans
 
-**Work decomposition is GitHub issues**, one issue per deliverable, tracked from the roadmap issue that
-is its milestone's epic. That is the only durable home it has, and a committed task list anywhere in
-this tree — beside a record included — is the drift to avoid
+**Track work in GitHub issues**, one issue per deliverable, under the roadmap issue that serves as its
+milestone's epic. Issues are the durable record of the work. Do not commit task lists elsewhere in the
+repository, including beside an ADR; they will drift
 ([ADR 0001](../decisions/0001-a-record-carries-one-ruling.md)).
 
-A **plan file** is the executable form of one issue's work: the same steps rewritten as tasks a skill
-can run, each with a verification that can fail. It is scratch — written under the gitignored `tmp/`,
-executed, and never committed. What outlives it is the issue's ticked boxes and the commits it
-produced. Two skills read one, `write-plan` and `run-plan`, so its shape is fixed here rather than in
-either.
+A **plan file** turns one issue's steps into executable tasks, each with a check that can fail. Store it
+in the gitignored `tmp/`, run it, and never commit it. The issue's checked boxes and resulting commits
+remain after the plan is gone. The `write-plan` and `run-plan` skills both use this format, which is
+defined here.
 
-- **No frontmatter.** Nothing indexes a file that is never committed.
-- **Status line** is the paragraph directly under the title, opening
-  `**Status: in progress (YYYY-MM-DD).**` or `**Status: complete (YYYY-MM-DD).**`. Those two values are
-  all there are, and a plan marked complete is never executed or ticked off again.
-- **Ground rules** constrain how every task in that plan is done. They add to the executing skill's
-  loop and never replace it.
-- **Out of scope** records what was weighed and deliberately left out, so a later reader does not
-  mistake an omission for an oversight.
-- **Phases** group tasks and may carry a `Model:` note naming the model the phase expects.
-- **Tasks** are checkboxes numbered `<phase>.<task>`, each ending in a `Verify:` line stating what
-  proves it done. The task is the unit of execution and the unit of commit.
-- **Follow-ups** hold identifiers only: the obligations the work produced are entries in
-  [`../follow-ups.md`](../follow-ups.md), which owns their format, statuses and the bar their
-  conditions must meet.
+- **Omit frontmatter.** The repository does not index uncommitted files.
+- **Put a status line** directly below the title. Use `**Status: in progress (YYYY-MM-DD).**` or
+  `**Status: complete (YYYY-MM-DD).**`. These are the only valid values. Do not run or check off a
+  completed plan again.
+- **Use ground rules** to constrain every task in the plan. They supplement the executing skill's loop;
+  they do not replace it.
+- **List out-of-scope work** that was considered and deliberately excluded. This helps readers
+  distinguish deliberate omissions from oversights.
+- **Group tasks into phases.** A phase may include a `Model:` note naming the expected model.
+- **Number tasks as checkboxes** using `<phase>.<task>`. End each with a `Verify:` line that states
+  what proves the task is done. Each task is one unit of execution and one commit.
+- **List follow-up identifiers only.** Record resulting obligations in [`../follow-ups.md`](../follow-ups.md),
+  which defines their format, statuses, and acceptance criteria.
 
 ## Issues
 
-An issue is worked from its whole thread, never its body alone. The body is the opening position; the
-comments are where scope was cut, a figure settled or a step reordered, and none of that gets folded
-back up into the body. Read them, and the roadmap issue this one hangs from, before starting — else the
-requirement implemented may be one withdrawn three comments in.
+Read the whole issue thread, not just its body. The body states the initial position; comments may cut
+scope, settle a figure, or reorder steps. Those decisions stay in the comments. Before starting, read
+the comments and the parent roadmap issue so you do not implement a requirement that was later
+withdrawn.
 
-The agent working this repository from Actions has no `gh` at all — `opencode.json` denies it wholesale,
-reads included. Read an issue and its thread there through `WebFetch` against
+The agent running this repository from Actions cannot use `gh`; `opencode.json` denies all access,
+including reads. Use `WebFetch` to read issues and comments from
 `api.github.com/repos/:owner/:repo/issues/<n>` and `.../issues/<n>/comments`, rather than retrying
 `gh issue view`.
 
-**Proposing a change of scope or requirements is always in bounds** — for the issue in hand and for any
-other open issue a discovery affects. Executing a step is what exposes that a later one is unnecessary,
-misordered or resting on something untrue, and whoever hits that is the only one positioned to say so.
-Raising it needs no permission asked for first and is never overstepping. Sitting on it costs the
-discovery, which is then re-found later without the context that made it visible.
+**You may propose scope or requirement changes at any time**, for the current issue or another open
+issue affected by a discovery. Work may reveal that a later step is unnecessary, misordered, or based on
+a false assumption. Raise the finding without asking permission first; otherwise, the context may be
+lost and someone will have to rediscover it.
 
-The licence covers the proposal, not the change. It lands as a comment on the issue whose scope would
-move — for a downstream discovery that is that issue, not the one in hand — and the scope moves once the
-proposal is agreed. Quietly building something other than what the issue asks for is the failure this
-permission exists to make unnecessary, not the one it grants.
+This permission covers proposing a change, not making it. Comment on the issue whose scope would
+change. For a downstream discovery, comment on that downstream issue, not the one you are working. Make
+the change after the proposal is agreed. Do not silently build something the issue does not request.
 
-**A proposal comment whose proposals have all landed is edited to open with `**Discharged YYYY-MM-DD** —`
-and what landed**, naming each finding where it carried several. That is the whole of the marker: a
-reader skipping the comment knows why, and nobody adds a fourth comment to report on the third. It is
-dated and says what happened rather than tagging a status, because a status has to be maintained and a
-reverted change would leave `[resolved]` lying where a dated sentence stays true. **Only a comment that
-is wholly a proposal takes one** — a scope review, a structural finding, a "this should move". A comment
-carrying a decision or a measured figure is never discharged, and marking one tells a reader to skip the
-context they most need.
+**When all proposals in a proposal-only comment land, edit it to start with
+`**Discharged YYYY-MM-DD** — <what landed>`.** Name each finding if the comment raised several. This
+dated sentence tells readers what happened without requiring another status update. If a change is
+reverted, the sentence remains historically accurate. Mark only comments that contain proposals and
+nothing else, such as a scope review or a structural finding. Never mark a comment that includes a
+decision or measured figure; readers need that context.
 
 ### Relationships are structural, never prose
 
-**A relationship GitHub models is set through its API, not written into a body.** Containment is the
-sub-issue link, and blocking is the dependency —
+**Set relationships that GitHub models through its API; do not write them into issue bodies.** Use a
+sub-issue link for containment and a dependency for blocking:
 `gh api repos/:owner/:repo/issues/<n>/dependencies/blocked_by -F issue_id=<id>`, read back from either end
-with that path or `dependencies/blocking`. A `- Blocked by: #57` line under a `## Relationship` heading is
-the same fact in a second place, and the copy that rots: the panel updates when an issue closes, is
-renamed or is superseded, and the sentence does not.
+with that path or `dependencies/blocking`. A `- Blocked by: #57` line under `## Relationship` duplicates
+the API relationship and can go stale. GitHub updates its panel when an issue closes, is renamed, or
+is superseded; the sentence does not.
 
-`- Relates to:` stays prose, because GitHub models nothing for it. That is the whole of what the heading
-is for, so a `## Relationship` section holding only blocking lines goes when they become links.
+Keep `- Relates to:` in prose because GitHub has no structured relationship for it. Remove a
+`## Relationship` section when its only contents are blocking links.
 
 ### Milestones, epics and labels
 
-A milestone is one release increment, and it holds exactly one roadmap issue's sub-issues. That issue is the
-milestone's epic and its body describes what the milestone contains — an epic still describing what it used
-to contain is how a milestone acquires a second theme and twice the size without anyone deciding to. A
-sub-issue is one deliverable: its `## Goal` is the story, its `## Done when` the acceptance criteria.
+A milestone is one release increment and contains the sub-issues of exactly one roadmap issue. That
+roadmap issue is the epic; its body describes the milestone's contents. Update the body when the scope
+changes. Otherwise, the milestone can accumulate themes and work without an explicit decision. Each
+sub-issue describes one deliverable: `## Goal` states the user story and `## Done when` lists acceptance
+criteria.
 
-Every issue carries an area label, a `type:` and a `size:`. The types are `feature`, `enabler`, `debt`,
-`bug` and `decision`; the sizes are `S`, `M` and `L`, read as about half a day, one to two days, three to
-five. An epic is the exception and carries `roadmap` alone: it is the container the sizes are balanced
-inside, so an area and a size on it are a sum of its children rather than a fact about it.
-**The sizes exist to balance milestones against each other and for nothing else.** They are bands, and a
-date derived from summing them is arithmetic on guesses.
+Every issue has an area label, a `type:`, and a `size:`. Valid types are `feature`, `enabler`, `debt`,
+`bug`, and `decision`. Valid sizes are `S`, `M`, and `L`, meaning about half a day, one to two days,
+and three to five days. An epic is the exception: it carries only `roadmap`. Use sizes to balance
+milestones against each other; an epic's area and size would only summarize its children.
+**Use sizes only to balance milestones.** They are estimates, so summing them does not produce a
+reliable date.
 
 ## Prose published to GitHub
 
-**One paragraph is one line.** An issue body, a comment, a PR body and a release body are rendered as GFM
-with hard breaks on, so every newline inside a paragraph becomes a `<br>` and the wrapping habit of a
-committed file arrives as ragged short lines. Blank lines separate paragraphs; nothing else wraps. Tables,
-lists and fenced blocks are structure rather than wrapping and are unaffected — but one list item is still
-one line however long it runs, and consecutive blockquote lines join the same way, because a hard break
-reads no better inside a quote. Committed Markdown is the
-opposite — MD013 is off, so wrapping there costs nothing — which is why this crosses over unnoticed.
-`gh api -X POST /markdown -f mode=gfm -f text=…` renders the difference against `mode=markdown`.
+**Keep each paragraph on one line.** GitHub renders issue, comment, PR, and release text as GFM with
+hard breaks enabled. Each newline inside a paragraph becomes a `<br>`, so wrapped source text appears
+as ragged short lines. Use blank lines to separate paragraphs. Tables, lists, and fenced blocks keep
+their structure, but each list item stays on one line regardless of length. Consecutive blockquote
+lines join too, and hard breaks make quotes harder to read. Repository Markdown does not have this
+problem because MD013 is off. To compare the renderings, call `gh api -X POST /markdown -f mode=gfm -f text=…`
+and compare it with `mode=markdown`.
 
 ## Git
 
-- Conventional Commits, commitizen's default types; the PR title is held to the same format. Both
-  are checked — locally by the commit-msg hook, in CI by the shared workflow.
-- Commit or push only when asked. Branch first if on the default branch, unless the owner asks for a
-  direct commit and the change touches no code — a documentation edit, a comment, a task description.
-  Anything else branches even when asked, because the reason to branch is review rather than the ruleset.
-- **No merge commits.** History is linear, so a branch is rebased onto `main` rather than merged into
-  it. The gate is server-side: a ruleset requires linear history on `main`, and the merge-commit
-  button is off, so a PR lands as a squash or a rebase. `mise run git:ff-only` configures the clone to
-  refuse the accidental case, but `git merge --no-ff` overrides it — it is a guardrail, not a second
-  gate, and describing it as one would promise something nobody is holding. Never resolve a divergence
-  by merging `main` in.
-- **A red check blocks the merge for everyone but the owner.** The same ruleset requires three checks to
-  pass — `CI`, `commits / PR title` and `commits / Commit messages` — and carries exactly one bypass
-  actor, the `Repository admin` role in mode `always`. A contributor with write or maintain access never
-  qualifies; an admin collaborator would, which is the one thing to weigh before granting that access.
-  Three consequences, none of them visible from a green PR:
-  - **The owner may push straight to `main`, and it is for small changes that touch no code.** That
-    restriction is a convention and cannot be otherwise: `required_status_checks` takes no path
-    conditions, and a push ruleset that would take them applies to every push including a PR merge.
-    Anyone else still branches, because for them the push is refused — two of the three checks run on
-    `pull_request` only, so on a directly pushed commit they never report.
-  - **The bypass cannot be narrowed to pushes.** GitHub offers `always` or pull-requests-only, so the
-    same actor that may push to `main` may also merge a red PR. Nothing enforces that they do not, and
-    the `guard-direct-push` hook in `.pre-commit-config.yaml` is what partly replaces the gate a direct
-    push skips — it runs `mise run ci` before the push, and like `git:ff-only` it is a guardrail rather
-    than a second gate.
-  - **A renamed job locks the branch.** A required check is matched by name, so if the shared
-    `turboBasic/github-actions` workflow renames a job, the old context never reports and every PR
-    blocks until the ruleset is updated. Bumping that dependency means checking the job names with it.
-    The branch is not up-to-date-enforced, deliberately: that would force a rebase every time `main`
-    moved under an open PR, for a staleness CI on the merge result already catches.
-- **A second actor may write here, and it is not a person.** A GitHub App authors the agent's branches and
-  pull requests ([ADR 0010](../decisions/0010-automation-brings-its-own-provider.md)). It holds contents,
-  issues and pull requests write and nothing else — never `Workflows`, which would let it rewrite the
-  checks it has to pass. **It is no bypass actor, and that is what refuses it `main`**, exactly as it
-  refuses any contributor: not the workflow's step list, which bounds nothing once the agent's own shell
-  holds a credential. What the workflow's scope does still leave is repository-wide `contents: write`, so
-  any branch but `main` is force-pushable by it.
+- Use Conventional Commits with commitizen's default types. PR titles follow the same format. The
+  commit-msg hook checks commits locally, and the shared workflow checks them in CI.
+- Commit or push only when asked. If you are on the default branch, create a branch first. The owner
+  may request a direct commit for documentation-only changes, including comments and task descriptions.
+  Branch all other changes so they can be reviewed.
+- **Do not create merge commits.** Keep history linear by rebasing branches onto `main`. A server-side
+  ruleset requires linear history on `main` and disables the merge-commit button, so PRs use squash or
+  rebase. `mise run git:ff-only` configures the local clone to reject accidental merge commits, but
+  `git merge --no-ff` can override it. Treat this as a guardrail, not an enforced gate. Never resolve a
+  divergence by merging `main` into the branch.
+- **A failed check blocks a merge for everyone except the owner.** The ruleset requires `CI`,
+  `commits / PR title`, and `commits / Commit messages` to pass. Its only bypass actor is the
+  `Repository admin` role in `always` mode. Write or maintain access does not qualify, but an admin
+  collaborator does. Consider this before granting admin access. The rule has three consequences:
+  - **The owner may push directly to `main`, for small changes that touch no code.** This is a
+    convention: `required_status_checks` cannot set path conditions, and a push ruleset would apply to
+    every push, including PR merges. Everyone else must branch because direct pushes fail; two checks
+    run only on `pull_request` and would not report on a direct push.
+  - **The bypass also allows merging failed PRs.** GitHub offers `always` or pull-requests-only bypass
+    modes, so an actor who can push directly to `main` can also merge a red PR. The
+    `guard-direct-push` hook in `.pre-commit-config.yaml` partly covers checks skipped by a direct push:
+    it runs `mise run ci` before pushing. Like `git:ff-only`, it is a guardrail, not an enforced gate.
+  - **Renaming a job can block every PR.** GitHub matches required checks by name. If the shared
+    `turboBasic/github-actions` workflow renames a job, the old check never reports. Update the ruleset
+    when changing that dependency, and verify the job names. Branches do not have to be up to date with
+    `main`: requiring that would force rebases whenever `main` changes, while CI already catches stale
+    results on the merge commit.
+- **A GitHub App writes branches and PRs for the agent.** It has write access to contents, issues, and
+  pull requests ([ADR 0010](../decisions/0010-automation-brings-its-own-provider.md)). It has no other
+  permissions and cannot modify workflows, which could change the checks it must pass. The app is not a
+  bypass actor, so GitHub blocks it from pushing to `main`, just as it blocks other contributors. The
+  workflow's step list does not provide this protection because the agent's shell has the credential.
+  Its repository-wide `contents: write` permission does let it force-push other branches.
 - Never commit a secret, a generated artefact, or a raster.
-- An issue this work closes is closed by the PR that carries it — a `Closes #N` (or `Fixes`/
-  `Resolves`) line in the PR body, merged into the default branch — not by a direct close run before
-  the PR exists. GitHub links and closes an issue against its state at merge time, so closing it by
-  hand first leaves nothing for the PR to attach to.
+- Close issues through the PR that delivers the work. Add `Closes #N` (or `Fixes` or `Resolves`) to
+  the PR body and merge it into the default branch. Do not close the issue directly before the PR
+  exists. GitHub links and closes it at merge time; closing it earlier leaves nothing for the PR to
+  close.
 
 ## CI
 
 - Release authorization trusts `turboBasic`'s current GitHub SSH signing identity
   ([ADR 0013](../decisions/0013-release-authorization-trusts-a-github-account.md)).
-- **Pin every action to a full SHA**, with the version in a trailing comment, never `@main`. A reusable
-  workflow call into `turboBasic/github-actions` may pin a version tag instead: Dependabot tracks that
-  repository (`.github/dependabot.yml`, `github-actions` ecosystem), so a tag costs no more than the SHA
-  it would bump to. Every other action, first- or third-party, takes the SHA.
-- **Call a `turboBasic/github-actions` workflow wherever one fits**, and never fork one to fit this
-  repository. `ci.yml` calls `project-ci`, which is bounded by the component rather than the language and
-  runs this repository's own `lint`, `typecheck` and `test`.
-- **Declare `depends = ["deps"]` on any task a called workflow reaches that needs dependencies
-  installed.** A called workflow prepares nothing on a caller's behalf. Declare it on the leaf tasks and
-  never on the `lint`, `typecheck` or `test` aggregators, because `depends` runs in parallel.
-- **Name a calling job after the component it judges.** The job id is the first half of the required
-  context, so `ci.yml`'s `popcircles` composes `popcircles / project-ci`, and renaming the job means
-  editing the ruleset in the same change.
-- **Name a workflow after its own file, behind a marker**: `🧩` where it is reachable only by a call,
-  `🌜` where it has triggers of its own. A call-only workflow's sidebar entry is permanently empty, and
-  the marker is what keeps that from reading as broken.
-- **Write job ids and job names in lowercase kebab-case**, and give a job no `name:` where the name
-  would only repeat its id. GitHub appends a matrix leg's values to the id on its own.
-- **One workflow is one scenario.** Work two scenarios share is a local `workflow_call` workflow both
-  call, not a condition on the event.
-- **Drive CI through mise tasks**, so what CI runs and what `mise run ci` runs cannot drift apart.
+- **Pin every action to a full SHA** and add its version in a trailing comment. Never use `@main`. A
+  reusable workflow from `turboBasic/github-actions` may use a version tag because Dependabot tracks
+  that repository (`.github/dependabot.yml`, `github-actions` ecosystem). The tag gets updated with the
+  same dependency updates as a SHA. Pin all other actions, first- or third-party, to a SHA.
+- **Use a `turboBasic/github-actions` workflow when one fits.** Do not fork one for this repository.
+  `ci.yml` calls `project-ci`, which runs this repository's `lint`, `typecheck`, and `test` tasks for
+  the component, regardless of language.
+- **Add `depends = ["deps"]` to each called task that needs installed dependencies.** A called workflow
+  does not install them for the caller. Add the dependency to leaf tasks, not the `lint`, `typecheck`, or
+  `test` aggregators, because `depends` runs in parallel.
+- **Name each calling job after the component it checks.** The job id starts the required context, so
+  `ci.yml`'s `popcircles` produces `popcircles / project-ci`. If you rename the job, update the ruleset
+  in the same change.
+- **Name workflows after their files and add a marker:** `🧩` for workflows used only through calls,
+  `🌜` for workflows with their own triggers. The marker explains why a call-only workflow has an empty
+  sidebar entry.
+- **Use lowercase kebab-case for job ids and names.** Omit `name:` when it would repeat the job id.
+  GitHub appends matrix values to the id automatically.
+- **Give each workflow one scenario.** Put steps shared by two scenarios in a local `workflow_call`
+  workflow that both call; do not condition the workflow on the event.
+- **Run CI through mise tasks** so CI and `mise run ci` stay in sync.
 - **Lint, typecheck and test only.**
 - **Take secrets from CI environment secrets or OIDC.**
-- **Keep a workflow comment to [`code.md`](code.md) "Comments and docs"**, plus one restriction that
-  section does not carry: no ADR, issue or follow-up citation, no account of what the file used to be,
-  and no sentence a reader has to unpack before it parses. `docs/decisions/` owns the reasoning, and a
-  citation in a YAML file is a second place it goes stale.
+- **Follow [`code.md`](code.md) "Comments and docs" for workflow comments**, with these extra limits:
+  do not cite ADRs, issues, or follow-ups; do not describe the file's history; and write sentences that
+  readers can understand on first read. `docs/decisions/` holds the reasoning. Citations in YAML would
+  duplicate links that can go stale.
 
 ## Structure
 
-Hand-maintained. Update it in the change that adds or removes a root. A new file under `docs/ai/` gets
-its `@` import line in `CLAUDE.md` in the same change too — without one it never loads, and nothing at
-commit time says so.
+Maintain this tree by hand. Update it whenever a root is added or removed. When adding a file under
+`docs/ai/`, also add its `@` import to `CLAUDE.md`; otherwise, the file will not load, and no commit
+check will catch the omission.
 
-**Roots only**, so that an omission is not read as drift: where a kind of thing lives, never an
-inventory of files. Committed configuration sits at the repository root and documents itself, and the
-layering table in `docs/ai-instructions.md` names the files that own an enforced fact. A path here and
-absent on disk is drift and a finding; a path on disk and absent here is a finding only when it is a
-new root.
+**List roots only, not every file**, so omissions are not mistaken for drift. Committed configuration
+at the repository root documents itself. The layering table in `docs/ai-instructions.md` names files
+that own enforced rules. Flag a listed path that is missing on disk as drift. Flag an unlisted path only
+if it is a new root.
 
 ```text
 CLAUDE.md                        Claude entry point — imports only

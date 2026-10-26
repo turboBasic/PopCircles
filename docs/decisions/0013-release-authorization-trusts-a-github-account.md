@@ -45,4 +45,4 @@ independently of GitHub's identity service.
 
 ## Links
 
-- [Issue #63](https://github.com/turboBasic/PopulationCircles2026/issues/63) — policy and release proof.
+- [Issue #63](https://github.com/turboBasic/PopCircles/issues/63) — policy and release proof.

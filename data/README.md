@@ -207,16 +207,16 @@ which has no owned population cells in these bundles.
 
 | Pairing and factor | Release assets | Bundle directory bytes |
 | --- | --- | ---: |
-| GISCO, factor 1 | [`data-v5`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v5) | 7,596,273,923 |
-| GISCO, factor 2 | [`data-v6`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v6) | 1,901,567,393 |
-| GADM, factor 1 | [`data-v7`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v7) | 7,177,194,888 |
-| GADM, factor 2 | [`data-v8`](https://github.com/turboBasic/PopulationCircles2026/releases/tag/data-v8) | 1,796,924,439 |
+| GISCO, factor 1 | [`data-v5`](https://github.com/turboBasic/PopCircles/releases/tag/data-v5) | 7,596,273,923 |
+| GISCO, factor 2 | [`data-v6`](https://github.com/turboBasic/PopCircles/releases/tag/data-v6) | 1,901,567,393 |
+| GADM, factor 1 | [`data-v7`](https://github.com/turboBasic/PopCircles/releases/tag/data-v7) | 7,177,194,888 |
+| GADM, factor 2 | [`data-v8`](https://github.com/turboBasic/PopCircles/releases/tag/data-v8) | 1,796,924,439 |
 
 The #213 release comparison found matching world radii at factors 1 and 2 for the tested 20%, 50%,
 and 90% shares, and matching radii for the required GISCO country cases. Centres and achieved shares
 shift slightly with resolution. GADM has more vertices for several microstates, but that geometry
 count is not evidence of greater accuracy. The full case results, timings, input digests, and bundle
-integrity evidence are recorded in the [#213 acceptance record](https://github.com/turboBasic/PopulationCircles2026/issues/213#issuecomment-6413726620).
+integrity evidence are recorded in the [#213 acceptance record](https://github.com/turboBasic/PopCircles/issues/213#issuecomment-6413726620).
 
 ## gadm41-adm0
 
@@ -260,13 +260,13 @@ asset; the publisher URL is the source archive used to reproduce it.
 
 [adr-gisco]: ../docs/decisions/0015-country-identities-follow-gisco-country-features.md
 [cc-by]: https://creativecommons.org/licenses/by/4.0/
-[coarse-population-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v4/population-count-2020-10arcmin.tif
-[coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
+[coarse-population-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v4/population-count-2020-10arcmin.tif
+[coarse-comparison]: https://github.com/turboBasic/PopCircles/issues/223#issuecomment-6404921257
 [contributing-data]: ../CONTRIBUTING.md#verifying-a-published-dataset
-[gadm-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v7/gadm41-adm0.geojson
+[gadm-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v7/gadm41-adm0.geojson
 [gadm-license]: https://gadm.org/license.html
 [gadm-source]: https://geodata.ucdavis.edu/gadm/gadm4.1/gadm_410-levels.zip
-[gisco-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v3/gisco-countries-2024-1m.geojson
+[gisco-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v3/gisco-countries-2024-1m.geojson
 [gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
 [gpw-adj]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
 [gpw-doi]: https://doi.org/10.7927/H4PN93PB
@@ -274,5 +274,5 @@ asset; the publisher URL is the source archive used to reproduce it.
 [ne]: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
 [ne-tag]: https://github.com/nvkelso/natural-earth-vector/releases/tag/v5.1.2
 [ne-terms]: https://www.naturalearthdata.com/about/terms-of-use/
-[populated-places-asset]: https://github.com/turboBasic/PopulationCircles2026/releases/download/data-v2/populated-places-1to10m.geojson
+[populated-places-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v2/populated-places-1to10m.geojson
 [registry]: registry.toml
