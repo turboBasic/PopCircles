@@ -668,6 +668,7 @@ mod tests {
         BoundaryFeature {
             id: FeatureId::new(id).unwrap(),
             name: id.to_owned(),
+            iso_alpha2: None,
             geometry: Geometry::Polygon(Polygon {
                 rings: vec![vec![
                     LatLon {
