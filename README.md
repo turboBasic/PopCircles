@@ -124,8 +124,7 @@ priorities and limitations. [`CONTRIBUTING.md`][contributing] covers setup and t
 The problem, and the demonstration that it is tractable at full raster resolution, come from
 [alexmijo/PopulationCircles][alexmijo-project] — a C++ project that produced the published maps of
 these circles. This is an independent implementation: the approach is reused, the code is not.
-That repository carries no licence, so none of its source is copied or ported here;
-see [the application doc][application-copying].
+That repository carries no licence, so none of its source is copied or ported here.
 
 Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepieris].
 
@@ -138,7 +137,6 @@ Prior art on the 50% circle specifically: the [Valeriepieris circle][valeriepier
 [accessibility]: ACCESSIBILITY.md
 [alexmijo-project]: https://github.com/alexmijo/PopulationCircles
 [application]: docs/ai/application.md
-[application-copying]: docs/ai/application.md#provenance-and-the-copying-rule
 [cc-by]: https://creativecommons.org/licenses/by/4.0/
 [ci]: https://github.com/turboBasic/PopCircles/actions/workflows/ci.yml?query=branch%3Amain
 [ci-badge]: https://github.com/turboBasic/PopCircles/actions/workflows/ci.yml/badge.svg?branch=main
