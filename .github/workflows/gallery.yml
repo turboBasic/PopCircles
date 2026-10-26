@@ -38,8 +38,10 @@ jobs:
       - name: Sync Python tooling
         run: uv sync --locked
 
-      # No raster and no network beyond this checkout: the documents are committed and so is the
-      # basemap, which is the whole reason this job can exist.
+      # Fetch only the registered coastline; rendering the committed documents needs no raster or
+      # unrelated boundary input.
+      - run: mise run data:get -- --dataset CNTR_BN_01M_2024_4326_COASTL
+
       - run: mise run gallery -- --input results --output build/gallery
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

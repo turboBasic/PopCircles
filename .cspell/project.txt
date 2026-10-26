@@ -193,6 +193,7 @@ Spratly
 # --- Config keys and CLI ---
 addopts
 CNTR
+COASTL
 codegen
 gpgsign
 keygen

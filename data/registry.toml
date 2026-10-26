@@ -113,6 +113,19 @@ revision = "Countries 2024 snapshot downloaded 2026-10-22"
 source_id_field = "CNTR_ID"
 identity_policy = "ADR 0015"
 
+[datasets.CNTR_BN_01M_2024_4326_COASTL]
+kind = "boundary-vector"
+path = "data/boundaries/CNTR_BN_01M_2024_4326_COASTL.geojson"
+bytes = 45779839
+sha256 = "64c6c77885ef52384a3a9f2f8228d092eaf10068e00ac223b4000007b2b5af1f"
+fetch_url = "https://gisco-services.ec.europa.eu/distribution/v2/countries/geojson/CNTR_BN_01M_2024_4326_COASTL.geojson"
+source_url = "https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html"
+
+licence = "GISCO non-commercial terms"
+licence_url = "https://ec.europa.eu/eurostat/en/web/gisco/geodata/administrative-units"
+attribution = "© EuroGeographics for the administrative boundaries"
+revision = "Countries 2024 snapshot downloaded 2026-10-26"
+
 [datasets.gadm41-adm0]
 kind = "boundary-vector"
 path = "data/boundaries/gadm41-adm0.geojson"

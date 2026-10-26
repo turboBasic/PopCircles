@@ -271,10 +271,12 @@ the top or bottom edge. Drawing circles directly on a flat map can shade the wro
 case, so the project checks these cases. A circle that covers both poles appears as the whole map, with
 the area outside the circle cut out.
 
-**Nothing here reaches the network.** The coastlines are Natural Earth 110m, committed under
-[`data/boundaries/`][data-readme], so a figure is the same on a fresh clone as on a warm one and CI
-draws complete ones on every pull request. `--no-coastlines` draws the cap over a bare graticule, which is
-a choice about the figure rather than a way to avoid a download.
+**Rendered maps use GISCO's Countries 2024 1:1,000,000 coastline.** Fetch it with
+`mise run data:get -- --dataset CNTR_BN_01M_2024_4326_COASTL`. The command checks its registered byte
+count and SHA-256 before placing the file. Maps that draw the coastline show GISCO's required notice,
+**© EuroGeographics for the administrative boundaries**; GISCO permits non-commercial use only. The
+gallery workflow fetches this one registered input before drawing. Once it is present, rendering works
+offline. `--no-coastlines` skips the coastline file and its credit.
 
 When a world document includes a country breakdown, the caption lists each country with its population
 inside and percentages of both country and circle populations, followed by accounting details and

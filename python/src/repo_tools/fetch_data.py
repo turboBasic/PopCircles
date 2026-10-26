@@ -1,3 +1,4 @@
+import argparse
 import hashlib
 import os
 import shutil
@@ -75,34 +76,44 @@ def fetch(url: str, target: Path, size: int, sha256: str) -> None:
         part.unlink(missing_ok=True)
 
 
-def acquire(registry: Registry, root: Path) -> list[str]:
+def acquire(registry: Registry, root: Path, dataset: str | None = None) -> list[str]:
     owed: list[str] = []
+    if dataset is not None and dataset not in registry.datasets:
+        choices = ", ".join(sorted(registry.datasets))
+        message = f"unknown dataset {dataset!r}; choose from {choices}"
+        raise FetchError(message)
     # Sorted, so two runs over one registry print the same lines in the same order.
-    for key, dataset in sorted(registry.datasets.items()):
-        target = dataset.file(root)
-        if matches(target, dataset.bytes, dataset.sha256):
-            print(f"{key}: verified, {dataset.bytes} bytes")
-        elif dataset.fetch_url is None:
+    selected = (
+        registry.datasets.items() if dataset is None else [(dataset, registry.datasets[dataset])]
+    )
+    for key, entry in sorted(selected):
+        target = entry.file(root)
+        if matches(target, entry.bytes, entry.sha256):
+            print(f"{key}: verified, {entry.bytes} bytes")
+        elif entry.fetch_url is None:
             # Committed rather than fetched, so a missing one is a damaged checkout and not
             # something this command can repair.
             message = (
-                f"{key} is committed to this repository and {dataset.path} does not match it. "
-                f"Restore it with `git checkout -- {dataset.path}`, or obtain it from "
-                f"{dataset.source_url}"
+                f"{key} is committed to this repository and {entry.path} does not match it. "
+                f"Restore it with `git checkout -- {entry.path}`, or obtain it from "
+                f"{entry.source_url}"
             )
             raise FetchError(message)
         else:
-            print(f"{key}: fetching {dataset.bytes} bytes")
-            fetch(dataset.fetch_url, target, dataset.bytes, dataset.sha256)
-            print(f"{key}: verified, {dataset.bytes} bytes")
-        if dataset.attribution.strip():
-            owed.append(f"{key} — {dataset.licence}:\n{dataset.attribution.strip()}")
+            print(f"{key}: fetching {entry.bytes} bytes")
+            fetch(entry.fetch_url, target, entry.bytes, entry.sha256)
+            print(f"{key}: verified, {entry.bytes} bytes")
+        if entry.attribution.strip():
+            owed.append(f"{key} — {entry.licence}:\n{entry.attribution.strip()}")
     return owed
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", metavar="KEY")
+    args = parser.parse_args()
     try:
-        owed = acquire(load(), REPO_ROOT)
+        owed = acquire(load(), REPO_ROOT, args.dataset)
     # URLError subclasses OSError, so one clause covers a failed request and a failed write.
     except (FetchError, OSError) as error:
         print(f"{error}", file=sys.stderr)

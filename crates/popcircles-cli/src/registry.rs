@@ -50,7 +50,7 @@ pub(crate) enum RegistryError {
     #[error("population dataset `{name}` has an invalid direct source identity")]
     InvalidDerivedIdentity { name: String },
 
-    #[error("country boundary `{name}` has incomplete or invalid vector metadata")]
+    #[error("boundary dataset `{name}` has incomplete or invalid vector metadata")]
     InvalidBoundaryMetadata { name: String },
 }
 
@@ -184,7 +184,6 @@ impl Registry {
                     boundary.format.as_deref(),
                     boundary.crs.as_deref(),
                     boundary.axis_order.as_deref(),
-                    boundary.revision.as_deref(),
                     boundary.source_id_field.as_deref(),
                     boundary.identity_policy.as_deref(),
                 ];
@@ -469,6 +468,26 @@ identity_policy = "ADR 0015"
         assert_eq!(boundary.crs.as_deref(), Some("EPSG:4326"));
         assert_eq!(boundary.feature_count, Some(263));
         assert!(registry.raster("countries-2024").is_err());
+    }
+
+    #[test]
+    fn a_boundary_revision_can_be_recorded_without_country_identity_metadata() {
+        let text = r#"
+[datasets.coastline]
+kind = "boundary-vector"
+path = "data/boundaries/coastline.geojson"
+sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+revision = "Countries 2024 snapshot"
+"#;
+        let registry = Registry::parse(Path::new("fixture.toml"), text)
+            .expect("a coastline can pin its source revision without country metadata");
+
+        assert_eq!(
+            registry
+                .boundary("coastline")
+                .and_then(|boundary| boundary.revision.as_deref()),
+            Some("Countries 2024 snapshot")
+        );
     }
 
     #[test]

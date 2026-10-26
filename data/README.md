@@ -178,6 +178,25 @@ of EuroGeographics and UN-FAO, and require the source geometry to remain at 1:1,
 This input is unchanged at 1:1,000,000. It is not covered by this repository's MIT software licence.
 The required English publication notice is **© EuroGeographics for the administrative boundaries**.
 
+## CNTR_BN_01M_2024_4326_COASTL
+
+| Property | Value |
+| --- | --- |
+| Geometry | 212 MultiLineStrings, 1,103,873 vertices |
+| Extent | −180° to 180.0000000000001°, −90° to 83.66551412700005° |
+| CRS | `urn:ogc:def:crs:EPSG::4326` (longitude, latitude) |
+| Size | 45,779,839 bytes |
+| SHA-256 | `64c6c77885ef52384a3a9f2f8228d092eaf10068e00ac223b4000007b2b5af1f` |
+
+**GISCO Countries 2024, 1:1,000,000 coastline**, the publisher's
+[`CNTR_BN_01M_2024_4326_COASTL.geojson`][gisco-coastline-source] snapshot. Its revision is pinned
+by the SHA-256 above; the source catalogue and exact downloaded date are recorded in
+[`registry.toml`][registry]. It remains at 1:1,000,000 and is fetched from the publisher through
+`mise run data:get -- --dataset CNTR_BN_01M_2024_4326_COASTL`, which verifies the byte count and
+checksum before placing it. Maps using this data must show **© EuroGeographics for the administrative
+boundaries**. GISCO permits use only for non-commercial purposes; the data is not covered by this
+repository's MIT software licence.
+
 ### Obtaining it
 
 `mise run data:get` downloads the verified snapshot without an account from this project's
@@ -267,6 +286,7 @@ asset; the publisher URL is the source archive used to reproduce it.
 [gadm-license]: https://gadm.org/license.html
 [gadm-source]: https://geodata.ucdavis.edu/gadm/gadm4.1/gadm_410-levels.zip
 [gisco-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v3/gisco-countries-2024-1m.geojson
+[gisco-coastline-source]: https://gisco-services.ec.europa.eu/distribution/v2/countries/geojson/CNTR_BN_01M_2024_4326_COASTL.geojson
 [gisco-countries]: https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-files.html
 [gpw-adj]: https://www.earthdata.nasa.gov/data/catalog/sedac-ciesin-sedac-gpwv4-apct-wpp-2015-r11-4.11
 [gpw-doi]: https://doi.org/10.7927/H4PN93PB
