@@ -231,8 +231,8 @@ pub struct Smallest {
     /// `centre.population / target.total`, and zero for a table holding nobody — where every circle
     /// achieves the same nothing and a quotient would be a `NaN` standing for it.
     pub share_achieved: f64,
-    /// The radius one kilometre short of the answer and the population it held, or `None` when the answer
-    /// is 0 km and there is nothing below it.
+    /// The radius one kilometre short of the answer and the population it held, or `None` when no shorter
+    /// radius was proved short.
     ///
     /// This is the **bracket the search proved**, and it is a stronger statement than the answer alone:
     /// the pair says this radius reaches the target and the one below it does not, both measured. That the
@@ -966,7 +966,9 @@ mod tests {
                         .expect("candidate belongs to the whole grid");
                     let population = populated
                         .iter()
-                        .filter(|(source, _)| great_circle_km(centre, *source) <= f64::from(km))
+                        .filter(|(source, _)| {
+                            km > 0 && great_circle_km(centre, *source) <= f64::from(km)
+                        })
                         .map(|(_, population)| population)
                         .sum();
                     let candidate = Candidate {
@@ -1653,28 +1655,25 @@ mod tests {
     }
 
     #[test]
-    fn a_share_one_cell_holds_is_answered_at_zero_kilometres() {
-        // Zero is inside the bracket rather than a case beside it: the climb's first reaching radius is
-        // 1 km, the bisection over [0, 1] probes zero, and a circle that is its own centre cell is the
-        // answer. `short_below` is `None` because there is no radius below it to have proved short.
+    fn a_share_one_cell_holds_is_answered_at_one_kilometre() {
+        // A point has no area, so radius zero is short and the first positive whole-kilometre radius wins.
         let grid = grid();
         let payload = payload_over(&grid, planted(vec![((4, 4), (7, 7))], 50.0));
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
 
         let single = found(&table, 1.0, 4);
-        assert_eq!(single.radius_km, 0);
-        assert_eq!(single.radius.km(), 0.0);
-        assert_eq!(single.short_below, None);
+        assert_eq!(single.radius_km, 1);
+        assert_eq!(single.radius.km(), 1.0);
+        assert_eq!(single.short_below, Some((0, 0.0)));
         assert_eq!((single.centre.row.get(), single.centre.col.get()), (4, 7));
         assert_eq!(single.centre.population, 50.0);
-        // The degenerate span, and the case that says an answer of 0 km is scanned like any other: both
-        // probed radii hold the one cell, so both margins are zero.
+        // Radius 1 reaches; radius 0 is the single short probe.
         assert_eq!(
             single.ambiguity,
             Some(Ambiguity {
-                lowest_km: 0,
+                lowest_km: 1,
                 highest_km: 1,
-                radii: 2,
+                radii: 1,
             })
         );
     }
@@ -1890,8 +1889,7 @@ mod tests {
                 // The witness is a probe, not a claim: the same radius searched again is short too.
                 prop_assert!(maximum_at(&table, km, 6).population < answer.target.persons);
             } else {
-                // Nothing below zero to have proved short, which is the only way the witness is absent.
-                prop_assert_eq!(answer.radius_km, 0);
+                prop_assert!(answer.radius_km >= 1);
             }
         }
     }

@@ -741,7 +741,7 @@ mod tests {
         let table = prepared.country_table(selected).unwrap().unwrap();
         assert_eq!(table.total(), 9.0 * 18.0);
 
-        let kernel = Kernel::new(grid, grid.row(4).unwrap(), RadiusKm::new(0.0).unwrap()).unwrap();
+        let kernel = Kernel::new(grid, grid.row(4).unwrap(), RadiusKm::new(1.0).unwrap()).unwrap();
         assert_eq!(
             circle::country_population(&table, &kernel, grid.col(2).unwrap()).unwrap(),
             1.0
@@ -750,7 +750,7 @@ mod tests {
             circle::country_population(&table, &kernel, grid.col(22).unwrap()).unwrap(),
             0.0
         );
-        let south = Kernel::new(grid, grid.row(14).unwrap(), RadiusKm::new(0.0).unwrap()).unwrap();
+        let south = Kernel::new(grid, grid.row(14).unwrap(), RadiusKm::new(1.0).unwrap()).unwrap();
         assert_eq!(
             circle::country_population(&table, &south, grid.col(2).unwrap()).unwrap(),
             0.0

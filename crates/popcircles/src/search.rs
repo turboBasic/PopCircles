@@ -11,7 +11,7 @@ use std::thread;
 
 use crate::bracket::Bracket;
 use crate::circle::{self, CountryPopulationError};
-use crate::geodesy::{RadiusKm, arc_km};
+use crate::geodesy::{RadiusKm, arc_km, central_angle_rad};
 use crate::grid::{Col, Grid, GridIndexError, Row};
 use crate::kernel::{Kernel, KernelError};
 use crate::progress::Progress;
@@ -117,26 +117,118 @@ impl Block {
     /// the panic is `row_of`'s.
     #[must_use]
     pub fn tile(grid: &Grid, spacing: NonZeroU32) -> Vec<Self> {
+        Self::tile_ranges(
+            grid,
+            0,
+            grid.height() - 1,
+            &[(0, grid.width() - 1)],
+            spacing,
+        )
+    }
+
+    fn tile_ranges(
+        grid: &Grid,
+        north: u32,
+        south: u32,
+        columns: &[(u32, u32)],
+        spacing: NonZeroU32,
+    ) -> Vec<Self> {
         // Saturating, because a spacing larger than the grid is a legal way to ask for one block and
         // `north + step` would otherwise wrap on a spacing near u32::MAX.
         let step = spacing.get();
         let mut blocks = Vec::new();
-        let mut north = 0u32;
-        while north < grid.height() {
-            let south = north.saturating_add(step - 1).min(grid.height() - 1);
-            let mut first = 0u32;
-            while first < grid.width() {
-                let last = first.saturating_add(step - 1).min(grid.width() - 1);
-                blocks.push(Self::new(
-                    RowBand::new(row_of(grid, north), row_of(grid, south)),
-                    col_of(grid, first),
-                    col_of(grid, last),
-                ));
-                first = last + 1;
+        let mut row = north;
+        while row <= south {
+            let last_row = row.saturating_add(step - 1).min(south);
+            for &(first, last) in columns {
+                let mut col = first;
+                while col <= last {
+                    let last_col = col.saturating_add(step - 1).min(last);
+                    blocks.push(Self::new(
+                        RowBand::new(row_of(grid, row), row_of(grid, last_row)),
+                        col_of(grid, col),
+                        col_of(grid, last_col),
+                    ));
+                    col = last_col + 1;
+                }
             }
-            north = south + 1;
+            row = last_row + 1;
         }
         blocks
+    }
+
+    fn tile_country_domain(
+        grid: &Grid,
+        table: &CountryTable,
+        radius: RadiusKm,
+        spacing: NonZeroU32,
+    ) -> Result<Vec<Self>, SearchError> {
+        if table.total() == 0.0 {
+            // Keep the global north-west tie-break when every centre holds zero.
+            return Ok(Self::tile(grid, spacing));
+        }
+        let crop = table.grid();
+        let crop_north = grid.centre_lat(row_of(grid, table.north_row()))?;
+        let crop_south = grid.centre_lat(row_of(grid, table.north_row() + crop.height() - 1))?;
+        // Widen before converting to indices; a cell on the cap boundary must stay in the search.
+        let angle =
+            (central_angle_rad(radius.km()) + 64.0 * f64::EPSILON).min(std::f64::consts::PI);
+        let latitude_margin = angle.to_degrees() + grid.lat_step().abs();
+        let low_lat = (crop_north.min(crop_south) - latitude_margin).max(-90.0);
+        let high_lat = (crop_north.max(crop_south) + latitude_margin).min(90.0);
+        let mut north = grid.height();
+        let mut south = 0;
+        for row in 0..grid.height() {
+            let latitude = grid.centre_lat(row_of(grid, row))?;
+            if (low_lat..=high_lat).contains(&latitude) {
+                north = north.min(row);
+                south = south.max(row);
+            }
+        }
+
+        // Haversine bounds the longitude difference by sin(δ/2) / cos(latitude), using the least
+        // cosine anywhere in the latitude band. Near a pole, or beyond a hemisphere, every longitude
+        // is possible. One extra cell on each axis covers rounding at the bound.
+        let max_abs_lat = low_lat.abs().max(high_lat.abs());
+        let cosine = max_abs_lat.to_radians().cos();
+        let ratio = if angle >= std::f64::consts::FRAC_PI_2 {
+            1.0
+        } else {
+            (angle / 2.0).sin() / cosine
+        };
+        let column_margin = if ratio >= 1.0 || !ratio.is_finite() {
+            grid.width()
+        } else {
+            let longitude_margin = (2.0 * ratio.asin()).to_degrees();
+            let cells = (longitude_margin / grid.lon_step().abs()).ceil();
+            if cells >= f64::from(grid.width()) {
+                grid.width()
+            } else {
+                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                {
+                    cells as u32 + 1
+                }
+            }
+        };
+        let crop_width = crop.width();
+        let columns = if column_margin.saturating_mul(2).saturating_add(crop_width) >= grid.width()
+        {
+            vec![(0, grid.width() - 1)]
+        } else {
+            let width = crop_width + column_margin * 2;
+            let first = if column_margin <= table.west_col() {
+                table.west_col() - column_margin
+            } else {
+                grid.width() - (column_margin - table.west_col())
+            };
+            let first_width = grid.width() - first;
+            if width <= first_width {
+                vec![(first, first + width - 1)]
+            } else {
+                vec![(first, grid.width() - 1), (0, width - first_width - 1)]
+            }
+        };
+        Ok(Self::tile_ranges(grid, north, south, &columns, spacing))
     }
 
     /// The cell whose circle stands for the block's: the floor midpoint of each extent.
@@ -362,6 +454,20 @@ pub struct MostPopulous {
     pub stats: SearchStats,
 }
 
+fn empty_circle(grid: &Grid, radius: RadiusKm) -> MostPopulous {
+    let (row, col) = (row_of(grid, 0), col_of(grid, 0));
+    MostPopulous {
+        centre: Candidate {
+            row,
+            col,
+            population: 0.0,
+        },
+        radius,
+        tolerance_persons: 0.0,
+        stats: SearchStats::default(),
+    }
+}
+
 /// One kernel, rebuilt only when the row or the radius changes.
 ///
 /// A single entry rather than a map: the search walks a level's blocks sorted by probe row, so every block
@@ -520,10 +626,15 @@ pub fn most_populous<P: Progress>(
     spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
+    let grid = *table.grid();
+    if radius.km() == 0.0 {
+        return Ok(empty_circle(&grid, radius));
+    }
+    let spacing = spacing.unwrap_or_else(|| initial_spacing(&grid, radius));
     most_populous_by(
-        *table.grid(),
+        grid,
+        Block::tile(&grid, spacing),
         radius,
-        spacing,
         4,
         progress,
         |kernel, col| Ok(circle::population(table, kernel, col)?),
@@ -532,9 +643,10 @@ pub fn most_populous<P: Progress>(
 
 /// The most populous circle of `radius` centred on any cell of the country's effective global grid.
 ///
-/// Candidate centres range over the whole grid, including cells outside the country crop. A block's
-/// widened probe circle is queried through the same cropped country prefix, so its country population
-/// remains an upper bound for every candidate centre in that block.
+/// Candidate centres may lie outside the country crop. The search excludes only centres whose circle
+/// cannot reach the crop, since those can hold no country population and cannot beat a positive result.
+/// A block's widened probe circle is queried through the cropped country prefix, so its country
+/// population remains an upper bound for every candidate centre in that block.
 ///
 /// # Errors
 /// Returns [`SearchError::Kernel`] when the grid's columns do not close, [`SearchError::GridIndex`] if a
@@ -546,10 +658,15 @@ pub fn country_most_populous<P: Progress>(
     spacing: Option<NonZeroU32>,
     progress: &mut P,
 ) -> Result<MostPopulous, SearchError> {
+    let grid = *table.effective_grid();
+    if radius.km() == 0.0 {
+        return Ok(empty_circle(&grid, radius));
+    }
+    let spacing = spacing.unwrap_or_else(|| initial_spacing(&grid, radius));
     most_populous_by(
-        *table.effective_grid(),
+        grid,
+        Block::tile_country_domain(&grid, table, radius, spacing)?,
         radius,
-        spacing,
         1,
         progress,
         |kernel, col| Ok(circle::country_population(table, kernel, col)?),
@@ -558,8 +675,8 @@ pub fn country_most_populous<P: Progress>(
 
 fn most_populous_by<P, F>(
     grid: Grid,
+    mut level: Vec<Block>,
     radius: RadiusKm,
-    spacing: Option<NonZeroU32>,
     workers: usize,
     progress: &mut P,
     measure: F,
@@ -568,10 +685,6 @@ where
     P: Progress,
     F: Fn(&Kernel, Col) -> Result<f64, SearchError> + Sync,
 {
-    let mut level = Block::tile(
-        &grid,
-        spacing.unwrap_or_else(|| initial_spacing(&grid, radius)),
-    );
     let mut best: Option<Candidate> = None;
     let mut stats = SearchStats::default();
     let seed = grid.middle_row();
@@ -780,10 +893,11 @@ mod tests {
                 let mut population = 0.0;
                 for row in grid.rows() {
                     for col in grid.cols() {
-                        if ownership
-                            .owner_at(grid, row.get(), col.get())
-                            .expect("source cell belongs to ownership grid")
-                            == &owner
+                        if radius_km > 0.0
+                            && ownership
+                                .owner_at(grid, row.get(), col.get())
+                                .expect("source cell belongs to ownership grid")
+                                == &owner
                             && great_circle_km(
                                 centre,
                                 grid.centre_of(row, col)
@@ -835,7 +949,7 @@ mod tests {
                 polar.centre.col.get(),
                 polar.centre.population
             ),
-            (0, 17, 120.0)
+            (0, 0, 0.0)
         );
 
         let seam = country_most_populous(&table, radius(1_500.0), Some(spacing(6)), &mut ())
@@ -864,6 +978,33 @@ mod tests {
             &CellOwner::Feature(feature),
             "the best centre may be outside the country"
         );
+    }
+
+    #[test]
+    fn country_search_limits_small_crops_to_centres_that_can_reach_them() {
+        let grid = grid();
+        let feature = FeatureId::new("small-country").expect("fixture ID is valid");
+        let geometry = Geometry::Polygon(rectangle(10.0, 0.0, 20.0, 10.0));
+        let (ownership, diagnostics) =
+            CellOwnership::rasterize_features(&[(feature.clone(), geometry)], grid)
+                .expect("synthetic country geometry is valid");
+        assert_eq!(diagnostics, []);
+        let mut cells = vec![vec![0.0_f32; grid.width() as usize]; grid.height() as usize];
+        cells[8][19] = 100.0;
+        cells[8][20] = 100.0;
+        let table = build_country(
+            Synthetic::new(grid, -9999.0, cells).expect("synthetic cells match the grid"),
+            &ownership,
+            &feature,
+            "fixture-boundary-v1",
+        )
+        .expect("country cells build");
+
+        let found = country_most_populous(&table, radius(1.0), Some(spacing(6)), &mut ())
+            .expect("country search succeeds");
+        let total_centres = u64::from(grid.width()) * u64::from(grid.height());
+        assert!(found.stats.blocks_examined < total_centres / 4);
+        assert_eq!(found.centre.population, 100.0);
     }
 
     fn spacing(cells: u32) -> NonZeroU32 {
@@ -1476,8 +1617,8 @@ mod tests {
             let run = |workers| {
                 most_populous_by(
                     grid,
+                    Block::tile(&grid, spacing(5)),
                     radius(radius_km),
-                    Some(spacing(5)),
                     workers,
                     &mut (),
                     |kernel, col| Ok(circle::population(&table, kernel, col)?),
@@ -1885,23 +2026,12 @@ mod tests {
     }
 
     #[test]
-    fn a_zero_radius_answers_the_single_most_populous_cell() {
-        // Degenerate and legal: each circle is its own centre cell, so the answer is the largest cell of
-        // the fixture. Checked against a direct scan of the cells rather than against another search.
+    fn a_zero_radius_has_zero_population_at_every_centre() {
+        // A point has no area, so no cell contributes. Ties still choose the global north-west centre.
         let grid = grid();
         let cell = distinct(&grid);
         let payload = payload_over(&grid, &cell);
         let table = Table::new(grid, &payload).expect("the build emits the padded product");
-
-        let mut heaviest = (0u32, 0u32, 0.0f64);
-        for row in 0..HEIGHT {
-            for col in 0..WIDTH {
-                let value = f64::from(cell(row, col));
-                if value > heaviest.2 {
-                    heaviest = (row, col, value);
-                }
-            }
-        }
 
         for cells in [Some(1u32), Some(4), Some(18), None] {
             let found = most_populous(&table, radius(0.0), cells.map(spacing), &mut ())
@@ -1909,7 +2039,7 @@ mod tests {
                 .centre;
             assert_eq!(
                 (found.row.get(), found.col.get(), found.population.to_bits()),
-                (heaviest.0, heaviest.1, heaviest.2.to_bits()),
+                (0, 0, 0.0f64.to_bits()),
                 "spacing {cells:?}"
             );
         }
