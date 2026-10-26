@@ -23,7 +23,7 @@ from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
 from population_circles.country_outline import load_outline
-from population_circles.dataset_registry import Registry, load
+from population_circles.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.map_frame import (
     PLATE_CARREE,
     PROJECTIONS,
@@ -38,11 +38,7 @@ from population_circles.map_frame import (
 # for one is what fails on a machine with no display, rather than falling back.
 mpl.use("Agg")
 
-# The committed basemap. Natural Earth 110m, public domain, committed and small enough to read on
-# every render — `data/registry.toml` holds its terms and `data/README.md` its provenance.
-COASTLINE = (
-    Path(__file__).resolve().parents[3] / "data" / "boundaries" / "coastline-1to110m.geojson"
-)
+COASTLINE_DATASET = "CNTR_BN_01M_2024_4326_COASTL"
 
 
 class UnregisteredDatasetError(ValueError):
@@ -82,6 +78,11 @@ def basemap(path: Path) -> BaseGeometry:
         path.read_text(encoding="utf-8"),
     )["features"]
     return unary_union([shape(feature["geometry"]) for feature in features])
+
+
+def registered_coastline(registry: Registry) -> tuple[BaseGeometry, str]:
+    dataset = registry.datasets[COASTLINE_DATASET]
+    return basemap(dataset.file(REPO_ROOT)), dataset.attribution
 
 
 def compound(polygon: Polygon) -> DrawPath:
@@ -179,7 +180,7 @@ def draw(axes: Axes, view: Frame, coastline: BaseGeometry | None) -> None:
     outline(axes, view.horizon)
 
 
-def render(
+def render(  # noqa: PLR0913 — distinct source credits must remain distinguishable
     answer: Answer,
     projection: str,
     attribution: str,
@@ -187,6 +188,7 @@ def render(
     # The basemap arrives drawn rather than named, so nothing under here reads a file and a caller
     # drawing several figures unions the coastlines once. `None` is a figure without them.
     coastline: BaseGeometry | None,
+    coastline_attribution: str | None = None,
     outline_and_credit: tuple[BaseGeometry | None, str] | None = None,
 ) -> Figure:
     if answer.country is not None and outline_and_credit is None:
@@ -217,6 +219,10 @@ def render(
             footer_parts = [*country_lines, f"Population credit: {attribution}"]
         else:
             footer_parts = [attribution]
+        if coastline_attribution and not any(
+            coastline_attribution in part for part in footer_parts
+        ):
+            footer_parts.append(f"Coastline credit: {coastline_attribution}")
         footer = "\n".join(textwrap.fill(part, width=118) for part in footer_parts)
         has_country_footer = answer.country is not None or bool(country_lines)
         # Room for the title above and the wrapped citation below, since both are placed at figure
@@ -296,11 +302,15 @@ def render_file(
     boundary_attribution = (
         answer.selection.boundary_source.attribution if answer.selection is not None else None
     )
+    coastline, coastline_attribution = (
+        (None, None) if no_coastlines else registered_coastline(registry)
+    )
     figure = render(
         answer,
         projection,
         population_attribution,
-        coastline=None if no_coastlines else basemap(COASTLINE),
+        coastline=coastline,
+        coastline_attribution=coastline_attribution,
         outline_and_credit=(
             (
                 load_outline(answer, registry),

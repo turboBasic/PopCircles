@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.dataset_registry import load
 from population_circles.map_frame import PLATE_CARREE
-from population_circles.render_map import COASTLINE, basemap, citation, render
+from population_circles.render_map import citation, registered_coastline, render
 
 TITLE = "The smallest circle on the globe holding a share of world population"
 
@@ -56,8 +56,8 @@ def page(drawn: list[Drawn], skipped: list[Skipped]) -> str:
 def build(corpus: Path, output: Path) -> tuple[list[Drawn], list[Skipped]]:
     # One basemap union and one registry read for the whole run, which is the only reason this is a
     # second caller of `render` rather than a loop over `render_map.main`.
-    coastline = basemap(COASTLINE)
     registry = load()
+    coastline, coastline_attribution = registered_coastline(registry)
     output.mkdir(parents=True, exist_ok=True)
 
     drawn: list[Drawn] = []
@@ -75,6 +75,7 @@ def build(corpus: Path, output: Path) -> tuple[list[Drawn], list[Skipped]]:
                 PLATE_CARREE,
                 citation(registry, answer.provenance.dataset),
                 coastline=coastline,
+                coastline_attribution=coastline_attribution,
             )
         except Exception as error:
             # The exception carries the document, because a traceback out of pydantic or

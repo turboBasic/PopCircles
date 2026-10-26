@@ -13,17 +13,17 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.render_map as render_map_module
 from population_circles.circle_document import Answer, circle_of
-from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT, cap
+from population_circles.circle_geometry import cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
 from population_circles.render_map import (
-    COASTLINE,
+    COASTLINE_DATASET,
     MissingCountryOutlineError,
     UnregisteredDatasetError,
-    basemap,
     citation,
     main,
+    registered_coastline,
     render,
     render_file,
     title_of,
@@ -40,6 +40,7 @@ RADIUS_KM = 1000.0
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MAX_LOCAL_EXTENT_METRES = 5_000_000
 NO_NETWORK = "a figure is drawn from the committed basemap and reaches no network"
+COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 # Handed to `render` in place of a citation, so the footer assertion is about what the caller passed
 # rather than about a value the test could also have read.
 MARKER = "attribution handed to render by its caller"
@@ -186,6 +187,33 @@ def country_fixture(
     return circle_of(document), registry, path
 
 
+def write_coastline_fixture(root: Path) -> Path:
+    path = root / REGISTRY.datasets[COASTLINE_DATASET].path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {"type": "LineString", "coordinates": [[-20, 0], [20, 0]]},
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setattr(render_map_module, "REPO_ROOT", root)
+    monkeypatch.setattr(render_map_module, "load", lambda: REGISTRY)
+    return write_coastline_fixture(root)
+
+
 def polygon_feature(identifier: str, coordinates: list[list[list[float]]]) -> dict[str, Any]:
     return {
         "type": "Feature",
@@ -313,8 +341,9 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
 
 
 def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
     answer, registry, _ = country_fixture(
         tmp_path,
         [boundary_feature("DE", "Germany", 9)],
@@ -332,11 +361,13 @@ def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
     assert boundary is not None
     population_credit = citation(REGISTRY, DATASET)
     boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
+    coastline, coastline_credit = registered_coastline(REGISTRY)
     figure = render(
         answer,
         ORTHOGRAPHIC,
         population_credit,
-        coastline=None,
+        coastline=coastline,
+        coastline_attribution=coastline_credit,
         outline_and_credit=(boundary, boundary_credit),
     )
     try:
@@ -348,6 +379,9 @@ def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
         assert "A country with an exceptionally long published name (DE)" in rendered_text
         assert normalised(boundary_credit) in normalised(rendered_text)
         assert normalised(population_credit) in normalised(rendered_text)
+        assert normalised(COASTLINE_CREDIT) in normalised(rendered_text)
+        assert normalised(rendered_text).count(normalised(COASTLINE_CREDIT)) == 1
+        assert "Coastline credit:" not in rendered_text
         assert citation(REGISTRY, "coastline-1to110m") == ""
         assert "Basemap credit:" not in rendered_text
         assert footer.x0 >= 0
@@ -456,14 +490,47 @@ def test_a_document_naming_a_dataset_the_registry_lacks_is_refused() -> None:
     assert "gpw-v4" in str(caught.value)
 
 
-def test_the_basemap_is_the_committed_one() -> None:
-    # data/README.md's entry is what a reader is sent to; this is the half a test can hold — the
-    # file is committed, and parses into coastlines spanning the world.
-    assert COASTLINE.is_file()
-    coastline = basemap(COASTLINE)
-    west, south, east, north = coastline.bounds
-    assert (west, east) == pytest.approx((-HALF_TURN_DEG, HALF_TURN_DEG), abs=1e-6)
-    assert -POLE_LAT < south < north < POLE_LAT
+def test_the_registered_coastline_uses_its_registry_path_and_credit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = use_coastline_fixture(tmp_path, monkeypatch)
+    coastline, credit = registered_coastline(REGISTRY)
+
+    assert path.is_file()
+    assert coastline.bounds == (-20, 0, 20, 0)
+    assert credit == citation(REGISTRY, COASTLINE_DATASET)
+
+
+def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
+    source = tmp_path / "circle.json"
+    source.write_text(json.dumps(document()), encoding="utf-8")
+    basemap_paths: list[Path] = []
+    annotations: list[str] = []
+    current_basemap = render_map_module.basemap
+    current_annotate = render_map_module.annotate
+
+    def capture_basemap(path: Path) -> BaseGeometry:
+        basemap_paths.append(path)
+        return current_basemap(path)
+
+    def capture_annotate(
+        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
+    ) -> None:
+        annotations.append(text)
+        current_annotate(figure, y, text, size, alignment)
+
+    monkeypatch.setattr(render_map_module, "basemap", capture_basemap)
+    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    render_file(source, tmp_path / "map.png")
+
+    footer = normalised(annotations[-1])
+    assert basemap_paths == [coastline_path]
+    assert normalised(citation(REGISTRY, DATASET)) in footer
+    assert "Coastline credit:" in footer
+    assert footer.count(normalised(COASTLINE_CREDIT)) == 1
 
 
 def test_the_footer_artist_carries_the_citation() -> None:
@@ -571,36 +638,32 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     source = tmp_path / "country.json"
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / "country.png"
-    captured: dict[str, object] = {}
-    current_render = render_map_module.render
+    annotations: list[str] = []
+    current_annotate = render_map_module.annotate
 
-    def capture(
-        answer: Answer,
-        projection: str,
-        attribution: str,
-        *,
-        coastline: BaseGeometry | None,
-        outline_and_credit: tuple[BaseGeometry | None, str] | None = None,
-    ) -> Figure:
-        captured["population_attribution"] = attribution
-        captured["outline_and_credit"] = outline_and_credit
-        return current_render(
-            answer,
-            projection,
-            attribution,
-            coastline=coastline,
-            outline_and_credit=outline_and_credit,
-        )
+    def capture_annotate(
+        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
+    ) -> None:
+        annotations.append(text)
+        current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(render_map_module, "render", capture)
+    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     def no_outline(_answer: Answer, _registry: Registry, _root: Path = Path()) -> None:
         return None
 
     monkeypatch.setattr(render_map_module, "load_outline", no_outline)
+
+    def refuse_coastline(_registry: Registry) -> tuple[BaseGeometry, str]:
+        message = "no-coastlines loaded coastline"
+        raise AssertionError(message)
+
+    monkeypatch.setattr(render_map_module, "registered_coastline", refuse_coastline)
     render_file(source, output, no_coastlines=True)
-    assert captured["population_attribution"] == "Selected population credit"
-    assert captured["outline_and_credit"] == (None, "Selected boundary credit")
+    footer = normalised(annotations[-1])
+    assert "Selected population credit" in footer
+    assert "Selected boundary credit" in footer
+    assert COASTLINE_CREDIT not in footer
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
@@ -618,12 +681,15 @@ def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:
 
 
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
-def test_a_complete_figure_is_written_where_it_is_told(projection: str, tmp_path: Path) -> None:
+def test_a_complete_figure_is_written_where_it_is_told(
+    projection: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # The figure a test writes goes to tmp_path: no rendered map enters the repository, which is the
     # first project invariant and the reason there is no baseline image to compare against.
     source = tmp_path / "circle.json"
     source.write_text(json.dumps(document()), encoding="utf-8")
     output = tmp_path / "figures" / "map.png"
+    use_coastline_fixture(tmp_path, monkeypatch)
 
     argv = ["--input", str(source), "--output", str(output), "--projection", projection]
     assert main(argv) == 0
@@ -655,7 +721,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     }
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / f"map-{projection}.png"
-    assert not (tmp_path / "data/boundaries/gisco-countries-2024-1m.geojson").exists()
+    use_coastline_fixture(tmp_path, monkeypatch)
     monkeypatch.chdir(tmp_path)
 
     assert main(["--input", str(source), "--output", str(output), "--projection", projection]) == 0
@@ -673,7 +739,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
-    def capture(_answer: Answer, _projection: str, attribution: str, **_options: bool) -> Figure:
+    def capture(_answer: Answer, _projection: str, attribution: str, **_options: object) -> Figure:
         drawn.append(attribution)
         return Figure()
 
@@ -684,5 +750,10 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     source = tmp_path / "circle.json"
     source.write_text(json.dumps(named), encoding="utf-8")
 
-    assert main(["--input", str(source), "--output", str(tmp_path / "map.png")]) == 0
+    assert (
+        main(
+            ["--input", str(source), "--output", str(tmp_path / "map.png"), "--no-coastlines"],
+        )
+        == 0
+    )
     assert drawn == ["the credit the second dataset requires"]
