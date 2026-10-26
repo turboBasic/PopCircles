@@ -33,7 +33,7 @@ pub struct BoundaryFeature {
     pub geometry: Geometry,
 }
 
-/// Resolves an exact canonical ID before an exact English name.
+/// Resolves an exact native ID, English name, or ISO alpha-2 alias.
 ///
 /// # Errors
 /// Returns a message with available candidates when the selector is unknown or ambiguous.
@@ -41,16 +41,16 @@ pub fn resolve<'a>(
     features: &'a [BoundaryFeature],
     selector: &str,
 ) -> Result<&'a BoundaryFeature, String> {
-    if let Some(feature) = features
-        .iter()
-        .find(|feature| feature.id.as_str() == selector)
-    {
-        return Ok(feature);
-    }
-
     let matches: Vec<_> = features
         .iter()
-        .filter(|feature| feature.name == selector)
+        .filter(|feature| {
+            feature.id.as_str() == selector
+                || feature.name == selector
+                || feature
+                    .iso_alpha2
+                    .as_deref()
+                    .is_some_and(|code| code.eq_ignore_ascii_case(selector))
+        })
         .collect();
     match matches.as_slice() {
         [feature] => Ok(feature),
@@ -59,7 +59,7 @@ pub fn resolve<'a>(
             candidates(features.iter())
         )),
         _ => Err(format!(
-            "ambiguous country name {selector:?}; matching countries: {}",
+            "ambiguous country selector {selector:?}; matching countries: {}",
             candidates(matches.iter().copied())
         )),
     }
@@ -561,13 +561,11 @@ mod tests {
     }
 
     #[test]
-    fn country_selector_prefers_exact_id_over_a_name_collision() {
+    fn country_selector_rejects_a_native_id_and_name_collision() {
         let features = countries(&[("AA", "Alpha"), ("BB", "AA")]);
 
-        assert_eq!(
-            resolve(&features, "AA").map(|feature| feature.id.as_str()),
-            Ok("AA")
-        );
+        let error = resolve(&features, "AA").expect_err("colliding aliases are ambiguous");
+        assert!(error.contains("AA (Alpha), BB (AA)"), "{error}");
     }
 
     #[test]
@@ -578,6 +576,40 @@ mod tests {
             resolve(&features, "Beta").map(|feature| feature.id.as_str()),
             Ok("BB")
         );
+    }
+
+    #[test]
+    fn country_selector_resolves_native_id_name_and_case_insensitive_iso_code() {
+        let document = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let features = decode(&document.to_string(), "GID_0").expect("fixture decodes");
+
+        for selector in ["FRA", "France", "FR", "fr"] {
+            assert_eq!(
+                resolve(&features, selector).map(|feature| feature.id.as_str()),
+                Ok("FRA"),
+                "selector {selector}"
+            );
+        }
+    }
+
+    #[test]
+    fn country_selector_reports_a_code_and_native_id_collision() {
+        let gadm = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let gisco = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"CNTR_ID": "FR", "NAME_ENGL": "Other"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let mut features = decode(&gadm.to_string(), "GID_0").expect("GADM fixture decodes");
+        features.extend(decode(&gisco.to_string(), "CNTR_ID").expect("GISCO fixture decodes"));
+
+        let error = resolve(&features, "FR").expect_err("different features match");
+        assert!(error.contains("FR (Other), FRA (France)"), "{error}");
     }
 
     #[test]
