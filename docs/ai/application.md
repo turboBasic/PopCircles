@@ -36,30 +36,6 @@ its answers.
 "On the globe" is the whole point. A circle drawn on an equirectangular image is not a circle on the
 Earth, and the well-known viral maps of the 50% circle got this wrong.
 
-## Provenance and the copying rule
-
-This project is inspired by [alexmijo/PopulationCircles](https://github.com/alexmijo/PopulationCircles),
-which solved the same problem in C++ and produced the published maps.
-
-**That repository has no licence.** Default copyright applies, so its source is not ours to reuse:
-
-- **Never copy, paste, transliterate, or line-by-line port** source from that project — or from any
-  local checkout of it — into this repo. Mechanical translation of its C++ into Rust is copying.
-- **Algorithms and mathematics are free to use.** Summed-area tables, per-latitude circular kernels,
-  and binary search over radius are well-known published techniques, and the problem itself has prior
-  art (the Valeriepieris circle; Danny Quah's 3300 km result). Implementing a documented technique
-  from its description is independent work.
-- Practical line: consulting that repo is allowed, and useful — it is the record of what the published
-  maps were actually computed with, and answers questions no description does. What may not cross over
-  is expression: take a fact, a constant or a convention from it, and write the code itself from the
-  reference or from a description of the technique.
-- Third-party files vendored upstream carry their own permissive licences and are irrelevant here —
-  pull such a dependency from its own origin through Cargo or uv, never from that repo.
-
-A port cannot be un-published, so this is non-negotiable by the test in
-`docs/ai-instructions.md` "Non-negotiables": a request to lift upstream code gets the protocol that
-section sets out, not a quiet workaround.
-
 ## Approach
 
 Steps 1 to 4 and the ground they stand on are one
