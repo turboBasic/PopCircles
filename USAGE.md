@@ -428,7 +428,7 @@ GISCO cases also had matching radii across factors, with small shifts in centres
 This is evidence about these inputs and cases, not a general accuracy guarantee; the finer GADM
 microstate geometries do not by themselves establish greater accuracy. Source attributions and
 bundle details are in [`data/README.md`](data/README.md), and the full acceptance evidence is recorded
-on [issue #213](https://github.com/turboBasic/PopulationCircles2026/issues/213).
+on [issue #213](https://github.com/turboBasic/PopCircles/issues/213).
 
 **Choose the detail level with `--decimate`.** Use `10` for quick exploration, as in the examples above,
 or `2` for a practical balance between detail and speed. Use `1` for full resolution. Build and search
@@ -453,7 +453,7 @@ See [How resolution affects precision][performance-precision] for the explanatio
 [data-population]: data/README.md#population-count-2020-30arcsec
 [data-readme]: data/README.md
 [inputs]: #choosing-the-inputs
-[coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
+[coarse-comparison]: https://github.com/turboBasic/PopCircles/issues/223#issuecomment-6404921257
 [performance]: PERFORMANCE.md
 [performance-ledger]: PERFORMANCE.md#how-the-ledger-avoids-repeated-searches
 [performance-precision]: PERFORMANCE.md#how-resolution-affects-precision

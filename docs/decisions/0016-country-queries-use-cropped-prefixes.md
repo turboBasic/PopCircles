@@ -24,7 +24,7 @@ The route must serve both #18's repeated country searches and #73's fixed-circle
 263 GISCO features. On the measured k=10 searches, cropped 100% runs took 5.076 seconds for Indonesia
 and 5.006 seconds for Chile, against 261.949 and 353.435 seconds direct; the k=1 #73 crop workload
 took 65.23 seconds per run, close to direct streaming's 66.21 seconds. The route comparison, storage
-counts and limits are recorded in [#72](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761).
+counts and limits are recorded in [#72](https://github.com/turboBasic/PopCircles/issues/72#issuecomment-6340314761).
 
 The k=1 cropped #73 run retained one 2.17 GB maximum prefix at a time, with 12.76 GB of padded
 prefixes across all features if retained. Counted source values, prefix and membership intervals

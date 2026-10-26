@@ -19,7 +19,7 @@ totals and circle queries.
 ## Context
 
 Issue #14 found 924,745 positive k=1 cells, totaling 26,859,928.94 population, outside all 263
-center-based GISCO masks ([#13 audit](https://github.com/turboBasic/PopulationCircles2026/issues/13#issuecomment-6344579983)).
+center-based GISCO masks ([#13 audit](https://github.com/turboBasic/PopCircles/issues/13#issuecomment-6344579983)).
 The issue required a rule for those cells; the selected one uses their footprint without changing
 the cell-center masks documented in #13. This supersedes ADR 0016's consequence that unclaimed cells
 are never assigned; its measured cropped-prefix route remains in force.

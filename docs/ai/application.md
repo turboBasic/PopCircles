@@ -258,7 +258,7 @@ for the row queries, then covers the reduction of country results.
 
 The k=10 center-point masks in #72 were provisional, and their all-country totals did not reconcile
 with the reconstructed world total; the k=1 gap was smaller but remained material ([measurements and
-reconciliation](https://github.com/turboBasic/PopulationCircles2026/issues/72#issuecomment-6340314761)).
+reconciliation](https://github.com/turboBasic/PopCircles/issues/72#issuecomment-6340314761)).
 GISCO membership is now classified from each effective-grid cell center, independently at k=1 and
 k=10. A center on a boundary belongs to every matching feature; holes are subtracted, multipart
 components are combined, antimeridian crossings are handled, and self-intersecting rings use even-odd

@@ -59,6 +59,6 @@ for installed users without a checkout would reopen the audience trade.
 
 ## Links
 
-- [Issue #62](https://github.com/turboBasic/PopulationCircles2026/issues/62) — the combined workflow and its acceptance evidence.
+- [Issue #62](https://github.com/turboBasic/PopCircles/issues/62) — the combined workflow and its acceptance evidence.
 - [ADR 0002](0002-rust-computes-python-presents.md) — the language boundary.
 - [ADR 0004](0004-the-published-document-is-the-only-contract.md) — the result contract.

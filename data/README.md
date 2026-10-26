@@ -216,7 +216,7 @@ The #213 release comparison found matching world radii at factors 1 and 2 for th
 and 90% shares, and matching radii for the required GISCO country cases. Centres and achieved shares
 shift slightly with resolution. GADM has more vertices for several microstates, but that geometry
 count is not evidence of greater accuracy. The full case results, timings, input digests, and bundle
-integrity evidence are recorded in the [#213 acceptance record](https://github.com/turboBasic/PopulationCircles2026/issues/213#issuecomment-6413726620).
+integrity evidence are recorded in the [#213 acceptance record](https://github.com/turboBasic/PopCircles/issues/213#issuecomment-6413726620).
 
 ## gadm41-adm0
 
@@ -261,7 +261,7 @@ asset; the publisher URL is the source archive used to reproduce it.
 [adr-gisco]: ../docs/decisions/0015-country-identities-follow-gisco-country-features.md
 [cc-by]: https://creativecommons.org/licenses/by/4.0/
 [coarse-population-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v4/population-count-2020-10arcmin.tif
-[coarse-comparison]: https://github.com/turboBasic/PopulationCircles2026/issues/223#issuecomment-6404921257
+[coarse-comparison]: https://github.com/turboBasic/PopCircles/issues/223#issuecomment-6404921257
 [contributing-data]: ../CONTRIBUTING.md#verifying-a-published-dataset
 [gadm-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v7/gadm41-adm0.geojson
 [gadm-license]: https://gadm.org/license.html
