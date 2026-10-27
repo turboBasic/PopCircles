@@ -170,11 +170,17 @@ share that work.
 
 ## Countries
 
-`country list` prints country IDs and English names from the selected combination's boundary source.
-It accepts `--combination` and `--resolution`, which default to the configured combination and that
-combination's default resolution. For a search, `--country` accepts an exact ID or a name that matches
-one country in the selected boundary source. If the ID or name is unknown or ambiguous, the command
-lists possible matches.
+`country list` prints native IDs and English names from the selected combination's boundary source,
+with `iso_alpha2` when that feature has a unique code. It accepts `--combination` and `--resolution`,
+which default to the configured combination and its default resolution. For `country smallest` and
+`country sweep`, `--country` accepts a case-insensitive ISO alpha-2 code, an exact English name, or
+the source's native ID. For example, `DE`, `Germany`, and GISCO's `DE` ID select Germany; GADM's
+native ID is `DEU`.
+
+If a selector matches different features through their IDs, names, or codes, the command refuses it
+and lists each candidate as `ID (Name)`. Custom boundary files do not receive inferred ISO codes, but
+remain selectable by their native IDs and names. Result identities keep the source ID, name and
+boundary provenance, and include `iso_alpha2` only when the code is unique.
 
 ```sh
 mise run cli -- country list --config my-data.toml
@@ -197,7 +203,8 @@ configured choices with `--combination` and `--resolution`:
 mise run cli -- country smallest --country DE --share 50 \
   --combination gpw-2020-gisco-2024 --resolution 10
 # {…,"document":"country-smallest","result":{"country":{"id":"DE","name":"Germany",
-#  "boundary_dataset":"gisco-countries-2024-1m",…},"ledger":{"path":"out/countries/4445.json",…},
+#  "iso_alpha2":"DE","boundary_dataset":"gisco-countries-2024-1m",…},
+#  "ledger":{"path":"out/countries/4445.json",…},
 #  "circle":{"radius_km":…,"target":{"share":0.5,…},…}}}
 ```
 
