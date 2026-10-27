@@ -33,6 +33,29 @@ pub struct BoundaryFeature {
     pub geometry: Geometry,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum IsoCodeSource {
+    Gisco,
+    Gadm,
+}
+
+impl IsoCodeSource {
+    pub(crate) fn registered_dataset(name: &str) -> Option<Self> {
+        match name {
+            "gisco-countries-2024-1m" => Some(Self::Gisco),
+            "gadm41-adm0" => Some(Self::Gadm),
+            _ => None,
+        }
+    }
+
+    const fn id_field(self) -> &'static str {
+        match self {
+            Self::Gisco => "CNTR_ID",
+            Self::Gadm => "GID_0",
+        }
+    }
+}
+
 /// Resolves an exact native ID, English name, or ISO alpha-2 alias.
 ///
 /// # Errors
@@ -80,11 +103,19 @@ fn candidates<'a>(features: impl Iterator<Item = &'a BoundaryFeature>) -> String
 /// # Errors
 /// Returns [`BoundaryError::Read`] for filesystem errors and a format or feature error for invalid data.
 pub fn load(path: &Path, source_id_field: &str) -> Result<Vec<BoundaryFeature>, BoundaryError> {
+    load_with_iso_source(path, source_id_field, None)
+}
+
+pub(crate) fn load_with_iso_source(
+    path: &Path,
+    source_id_field: &str,
+    iso_code_source: Option<IsoCodeSource>,
+) -> Result<Vec<BoundaryFeature>, BoundaryError> {
     let text = fs::read_to_string(path).map_err(|source| BoundaryError::Read {
         path: path.to_path_buf(),
         source,
     })?;
-    decode(&text, source_id_field)
+    decode_with_iso_source(&text, source_id_field, iso_code_source)
 }
 
 /// Decodes `GeoJSON` polygon features while retaining every source identity and coordinate.
@@ -93,6 +124,14 @@ pub fn load(path: &Path, source_id_field: &str) -> Result<Vec<BoundaryFeature>, 
 /// Returns a format error for malformed JSON or a feature error naming the identifier (or source
 /// index when no identifier exists) for invalid feature structure, identity, geometry or coordinates.
 pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>, BoundaryError> {
+    decode_with_iso_source(text, source_id_field, None)
+}
+
+pub(crate) fn decode_with_iso_source(
+    text: &str,
+    source_id_field: &str,
+    iso_code_source: Option<IsoCodeSource>,
+) -> Result<Vec<BoundaryFeature>, BoundaryError> {
     let document: Value = serde_json::from_str(text).map_err(BoundaryError::Format)?;
     let root = document
         .as_object()
@@ -170,7 +209,9 @@ pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>,
                     ));
                 }
             };
-            let iso_alpha2 = iso_alpha2(source_id_field, id.as_str(), properties);
+            let iso_alpha2 = iso_code_source
+                .filter(|source| source.id_field() == source_id_field)
+                .and_then(|source| iso_alpha2(source, id.as_str(), properties));
             Ok(BoundaryFeature {
                 id,
                 name,
@@ -182,24 +223,26 @@ pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>,
 }
 
 fn iso_alpha2(
-    source_id_field: &str,
+    source: IsoCodeSource,
     source_id: &str,
     properties: &serde_json::Map<String, Value>,
 ) -> Option<String> {
-    let code = match source_id_field {
-        "CNTR_ID" => match source_id {
-            "EL" => "GR",
-            "UK" => "GB",
-            _ => source_id,
-        },
-        "GID_0" => iso_alpha3_to_alpha2(source_id)?,
-        _ => return None,
-    };
     let code = properties
         .get("ISO_A2")
         .and_then(Value::as_str)
         .filter(|value| value.len() == 2 && value.bytes().all(|byte| byte.is_ascii_alphabetic()))
-        .map_or_else(|| code.to_owned(), str::to_ascii_uppercase);
+        .map(str::to_ascii_uppercase)
+        .or_else(|| match source {
+            IsoCodeSource::Gisco => Some(
+                match source_id {
+                    "EL" => "GR",
+                    "UK" => "GB",
+                    _ => source_id,
+                }
+                .to_owned(),
+            ),
+            IsoCodeSource::Gadm => iso_alpha3_to_alpha2(source_id).map(str::to_owned),
+        })?;
     ISO_ALPHA3_TO_ALPHA2
         .iter()
         .any(|(_, alpha2)| *alpha2 == code)
@@ -584,7 +627,9 @@ mod tests {
             "type": "FeatureCollection",
             "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
         });
-        let features = decode(&document.to_string(), "GID_0").expect("fixture decodes");
+        let features =
+            decode_with_iso_source(&document.to_string(), "GID_0", Some(IsoCodeSource::Gadm))
+                .expect("fixture decodes");
 
         for selector in ["FRA", "France", "FR", "fr"] {
             assert_eq!(
@@ -605,8 +650,13 @@ mod tests {
             "type": "FeatureCollection",
             "features": [{"type": "Feature", "properties": {"CNTR_ID": "FR", "NAME_ENGL": "Other"}, "geometry": {"type": "Polygon", "coordinates": []}}],
         });
-        let mut features = decode(&gadm.to_string(), "GID_0").expect("GADM fixture decodes");
-        features.extend(decode(&gisco.to_string(), "CNTR_ID").expect("GISCO fixture decodes"));
+        let mut features =
+            decode_with_iso_source(&gadm.to_string(), "GID_0", Some(IsoCodeSource::Gadm))
+                .expect("GADM fixture decodes");
+        features.extend(
+            decode_with_iso_source(&gisco.to_string(), "CNTR_ID", Some(IsoCodeSource::Gisco))
+                .expect("GISCO fixture decodes"),
+        );
 
         let error = resolve(&features, "FR").expect_err("different features match");
         assert!(error.contains("FR (Other), FRA (France)"), "{error}");
@@ -675,8 +725,11 @@ mod tests {
             "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
         });
 
-        let gisco = decode(&gisco.to_string(), "CNTR_ID").expect("GISCO fixture decodes");
-        let gadm = decode(&gadm.to_string(), "GID_0").expect("GADM fixture decodes");
+        let gisco =
+            decode_with_iso_source(&gisco.to_string(), "CNTR_ID", Some(IsoCodeSource::Gisco))
+                .expect("GISCO fixture decodes");
+        let gadm = decode_with_iso_source(&gadm.to_string(), "GID_0", Some(IsoCodeSource::Gadm))
+            .expect("GADM fixture decodes");
 
         assert_eq!(gisco[0].iso_alpha2.as_deref(), Some("FR"));
         assert_eq!(gadm[0].iso_alpha2.as_deref(), Some("FR"));
@@ -684,9 +737,10 @@ mod tests {
 
     #[test]
     fn gisco_source_exception_maps_greece_to_its_iso_alpha2_code() {
-        let features = decode(
+        let features = decode_with_iso_source(
             r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"EL","NAME_ENGL":"Greece"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
             "CNTR_ID",
+            Some(IsoCodeSource::Gisco),
         )
         .expect("GISCO fixture decodes");
 
@@ -696,14 +750,28 @@ mod tests {
 
     #[test]
     fn unknown_gadm_code_keeps_native_identity_without_an_alias() {
-        let features = decode(
+        let features = decode_with_iso_source(
             r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"GID_0":"XKS","COUNTRY":"Kosovo"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
             "GID_0",
+            Some(IsoCodeSource::Gadm),
         )
         .expect("unmapped feature remains valid");
 
         assert_eq!(features[0].id.as_str(), "XKS");
         assert_eq!(features[0].name, "Kosovo");
+        assert_eq!(features[0].iso_alpha2, None);
+    }
+
+    #[test]
+    fn a_custom_source_with_a_registered_field_name_gets_no_alias() {
+        let features = decode(
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"FR","NAME_ENGL":"Custom region"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
+            "CNTR_ID",
+        )
+        .expect("custom feature remains valid");
+
+        assert_eq!(features[0].id.as_str(), "FR");
+        assert_eq!(features[0].name, "Custom region");
         assert_eq!(features[0].iso_alpha2, None);
     }
 
