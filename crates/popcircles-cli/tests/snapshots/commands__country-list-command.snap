@@ -16,6 +16,7 @@ expression: document
       },
       {
         "id": "BB",
+        "iso_alpha2": "BB",
         "name": "Beta"
       }
     ],

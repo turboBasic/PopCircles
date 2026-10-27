@@ -359,6 +359,7 @@ impl Prepared {
                 contributions[index].push(CountryContribution {
                     id: feature.id.clone(),
                     name: feature.name.clone(),
+                    iso_alpha2: feature.iso_alpha2.clone(),
                     inside,
                     total,
                     intersects,

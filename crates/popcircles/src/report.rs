@@ -160,13 +160,28 @@ impl Document for CountryListDocument {
 impl CountryListDocument {
     #[must_use]
     pub fn new(selection: CountrySelectionReport, countries: Vec<(FeatureId, String)>) -> Self {
+        Self::new_with_iso_codes(
+            selection,
+            countries
+                .into_iter()
+                .map(|(id, name)| (id, name, None))
+                .collect(),
+        )
+    }
+
+    #[must_use]
+    pub fn new_with_iso_codes(
+        selection: CountrySelectionReport,
+        countries: Vec<(FeatureId, String, Option<String>)>,
+    ) -> Self {
         Self {
             selection,
             countries: countries
                 .into_iter()
-                .map(|(id, name)| CountryListEntry {
+                .map(|(id, name, iso_alpha2)| CountryListEntry {
                     id: id.as_str().to_owned(),
                     name,
+                    iso_alpha2,
                 })
                 .collect(),
         }
@@ -224,6 +239,8 @@ impl CountrySelectionReport {
 struct CountryListEntry {
     id: String,
     name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    iso_alpha2: Option<String>,
 }
 
 /// The earth model every distance in a document was measured on.
@@ -653,6 +670,8 @@ pub struct CountryBreakdownReport {
 struct CountryBreakdownEntryReport {
     id: String,
     name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    iso_alpha2: Option<String>,
     population_inside: f64,
     country_total_population: f64,
     fraction_of_country_population: Option<f64>,
@@ -709,6 +728,7 @@ impl From<&CountryBreakdownEntry> for CountryBreakdownEntryReport {
         Self {
             id: value.id.clone(),
             name: value.name.clone(),
+            iso_alpha2: value.iso_alpha2.clone(),
             population_inside: value.population_inside,
             country_total_population: value.country_total_population,
             fraction_of_country_population: value.fraction_of_country_population,
@@ -1007,6 +1027,8 @@ impl SmallestDocument {
 pub struct CountryIdentityReport {
     id: String,
     name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    iso_alpha2: Option<String>,
     boundary_dataset: String,
     boundary_revision: Option<String>,
     boundary_digest: String,
@@ -1043,6 +1065,7 @@ impl CountrySmallestDocument {
             country: CountryIdentityReport {
                 id: id.as_str().to_owned(),
                 name: name.to_owned(),
+                iso_alpha2: None,
                 boundary_dataset: boundary_identity.0.to_owned(),
                 boundary_revision: boundary_identity.1.map(str::to_owned),
                 boundary_digest: boundary_identity.2.to_owned(),
@@ -1052,6 +1075,12 @@ impl CountrySmallestDocument {
             ledger,
             circle,
         }
+    }
+
+    #[must_use]
+    pub fn with_iso_alpha2(mut self, iso_alpha2: Option<&str>) -> Self {
+        self.country.iso_alpha2 = iso_alpha2.map(str::to_owned);
+        self
     }
 }
 
@@ -1096,6 +1125,7 @@ impl CountrySweepCountry {
             country: CountryIdentityReport {
                 id: id.as_str().to_owned(),
                 name: name.to_owned(),
+                iso_alpha2: None,
                 boundary_dataset: boundary_dataset.to_owned(),
                 boundary_revision: boundary_revision.map(str::to_owned),
                 boundary_digest: boundary_digest.to_owned(),
@@ -1103,6 +1133,12 @@ impl CountrySweepCountry {
             ledger,
             records,
         }
+    }
+
+    #[must_use]
+    pub fn with_iso_alpha2(mut self, iso_alpha2: Option<&str>) -> Self {
+        self.country.iso_alpha2 = iso_alpha2.map(str::to_owned);
+        self
     }
 }
 
@@ -1521,6 +1557,7 @@ mod tests {
                 CountryBreakdownEntry {
                     id: "A".to_owned(),
                     name: "A".to_owned(),
+                    iso_alpha2: Some("FR".to_owned()),
                     population_inside: 30.0,
                     country_total_population: 100.0,
                     fraction_of_country_population: Some(0.3),
@@ -1529,6 +1566,7 @@ mod tests {
                 CountryBreakdownEntry {
                     id: "B".to_owned(),
                     name: "B".to_owned(),
+                    iso_alpha2: None,
                     population_inside: 10.0,
                     country_total_population: 20.0,
                     fraction_of_country_population: Some(0.5),
@@ -1537,6 +1575,7 @@ mod tests {
                 CountryBreakdownEntry {
                     id: "Z".to_owned(),
                     name: "Zero".to_owned(),
+                    iso_alpha2: None,
                     population_inside: 0.0,
                     country_total_population: 0.0,
                     fraction_of_country_population: None,
@@ -1841,19 +1880,22 @@ mod tests {
             SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
         )));
 
-        insta::assert_json_snapshot!(Envelope::new(CountrySmallestDocument::new(
-            fixture_country_selection(),
-            &FeatureId::new("AA").expect("fixture country ID"),
-            "Fixture country",
-            (
-                "gisco-countries-2024-1m",
-                Some("2024"),
-                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            ),
-            ("population-count-2020-30arcsec", 10),
-            LedgerReport::new(ledger_path(), ledger.entries.len()),
-            SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
-        )));
+        insta::assert_json_snapshot!(Envelope::new(
+            CountrySmallestDocument::new(
+                fixture_country_selection(),
+                &FeatureId::new("AA").expect("fixture country ID"),
+                "Fixture country",
+                (
+                    "gisco-countries-2024-1m",
+                    Some("2024"),
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                ),
+                ("population-count-2020-30arcsec", 10),
+                LedgerReport::new(ledger_path(), ledger.entries.len()),
+                SmallestReport::new(&found, &grid).expect("search centre belongs to the grid"),
+            )
+            .with_iso_alpha2(Some("FR"))
+        ));
     }
 
     #[test]
@@ -1975,16 +2017,18 @@ mod tests {
             CountrySourceReport::new("population-fixture", None, None),
             CountrySourceReport::new("boundary-fixture", None, None),
         );
-        let countries = CountryListDocument::new(
+        let countries = CountryListDocument::new_with_iso_codes(
             selection,
             vec![
                 (
                     FeatureId::new("AA").expect("valid country ID"),
                     "Alpha".to_owned(),
+                    Some("FR".to_owned()),
                 ),
                 (
                     FeatureId::new("BB").expect("valid country ID"),
                     "Beta".to_owned(),
+                    None,
                 ),
             ],
         );
@@ -2029,6 +2073,7 @@ mod tests {
                 LedgerReport::new(ledger_path(), ledger.entries.len()),
                 records.clone(),
             )
+            .with_iso_alpha2((id == "AA").then_some("FR"))
         };
 
         let document = Envelope::new(CountrySweepDocument::new(

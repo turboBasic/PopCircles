@@ -87,7 +87,7 @@ pub(crate) fn list(
     })?;
     let mut countries: Vec<_> = features
         .into_iter()
-        .map(|feature| (feature.id, feature.name))
+        .map(|feature| (feature.id, feature.name, feature.iso_alpha2))
         .collect();
     countries.sort_by(|left, right| left.0.as_str().cmp(right.0.as_str()));
 
@@ -109,7 +109,7 @@ pub(crate) fn list(
         ),
     );
     serialised(serde_json::to_string(&Envelope::new(
-        CountryListDocument::new(selection, countries),
+        CountryListDocument::new_with_iso_codes(selection, countries),
     )))
 }
 
@@ -793,7 +793,8 @@ pub(crate) fn smallest(
             population_source,
             LedgerReport::new(&path, ledger.len()),
             circle,
-        ),
+        )
+        .with_iso_alpha2(feature.iso_alpha2.as_deref()),
     )))
 }
 
@@ -865,15 +866,18 @@ pub(crate) fn sweep(
             table.grid().width(),
             table.grid().height()
         );
-        countries.push(CountrySweepCountry::new(
-            &feature.id,
-            &feature.name,
-            &boundary_dataset,
-            boundary_revision.as_deref(),
-            &boundary_digest,
-            LedgerReport::new(&path, ledger.len()),
-            records,
-        ));
+        countries.push(
+            CountrySweepCountry::new(
+                &feature.id,
+                &feature.name,
+                &boundary_dataset,
+                boundary_revision.as_deref(),
+                &boundary_digest,
+                LedgerReport::new(&path, ledger.len()),
+                records,
+            )
+            .with_iso_alpha2(feature.iso_alpha2.as_deref()),
+        );
     }
 
     serialised(serde_json::to_string(&Envelope::new(

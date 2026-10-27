@@ -9,6 +9,7 @@ use crate::table::COUNTRY_AGGREGATION_ORDER_VERSION;
 pub struct CountryContribution {
     pub id: FeatureId,
     pub name: String,
+    pub iso_alpha2: Option<String>,
     pub inside: f64,
     pub total: f64,
     pub intersects: bool,
@@ -29,6 +30,7 @@ pub struct CountryBreakdownProvenance {
 pub struct CountryBreakdownEntry {
     pub id: String,
     pub name: String,
+    pub iso_alpha2: Option<String>,
     pub population_inside: f64,
     pub country_total_population: f64,
     pub fraction_of_country_population: Option<f64>,
@@ -114,6 +116,7 @@ impl CountryBreakdown {
             entries.push(CountryBreakdownEntry {
                 id: country.id.as_str().to_owned(),
                 name: country.name,
+                iso_alpha2: country.iso_alpha2,
                 population_inside: country.inside,
                 country_total_population: country.total,
                 fraction_of_country_population: (country.total > 0.0)
@@ -221,6 +224,7 @@ mod tests {
         CountryContribution {
             id: FeatureId::new(id).expect("fixture ID is valid"),
             name: id.to_owned(),
+            iso_alpha2: None,
             inside,
             total,
             intersects,
@@ -476,6 +480,7 @@ mod tests {
                 contributions.push(CountryContribution {
                     id: id.clone(),
                     name: id.as_str().to_owned(),
+                    iso_alpha2: None,
                     inside,
                     total: table.total(),
                     intersects,

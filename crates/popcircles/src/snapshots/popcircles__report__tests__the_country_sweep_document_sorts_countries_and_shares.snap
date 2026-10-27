@@ -1,6 +1,5 @@
 ---
 source: crates/popcircles/src/report.rs
-assertion_line: 1950
 expression: document
 ---
 {
@@ -37,6 +36,7 @@ expression: document
         "country": {
           "id": "AA",
           "name": "Alpha",
+          "iso_alpha2": "FR",
           "boundary_dataset": "gisco-countries-2024-1m",
           "boundary_revision": "2024",
           "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
