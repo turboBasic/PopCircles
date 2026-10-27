@@ -644,6 +644,8 @@ impl CircleReport {
 pub struct NearestSettlementReport {
     name: String,
     country: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    country_iso_alpha2: Option<String>,
     distance_km: f64,
     short_form: bool,
 }
@@ -653,6 +655,7 @@ impl From<&Context> for NearestSettlementReport {
         Self {
             name: context.name().to_owned(),
             country: context.country().to_owned(),
+            country_iso_alpha2: context.country_iso_alpha2().map(str::to_owned),
             distance_km: context.distance_km(),
             short_form: context.short_form(),
         }
@@ -1699,7 +1702,9 @@ mod tests {
             .expect("search centre belongs to the grid");
 
         let places = [
-            Place::new("Circle", "Example", centre).unwrap(),
+            Place::new("Circle", "Example", centre)
+                .unwrap()
+                .with_country_iso_alpha2(Some("FR".to_owned())),
             Place::new("Most", "Example", most_centre).unwrap(),
             Place::new("Smallest", "Example", smallest_centre).unwrap(),
         ];

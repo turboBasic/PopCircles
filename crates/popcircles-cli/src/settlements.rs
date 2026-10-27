@@ -55,6 +55,8 @@ struct Properties<'a> {
     name: Option<&'a str>,
     #[serde(rename = "ADM0NAME", borrow)]
     country: Option<&'a str>,
+    #[serde(rename = "ISO_A2", borrow)]
+    country_iso_alpha2: Option<&'a str>,
 }
 
 /// Reads a `GeoJSON` file and decodes only populated-place identity and Point coordinates.
@@ -118,6 +120,14 @@ pub(crate) fn decode(text: &str) -> Result<Vec<Place>, SettlementsError> {
                 },
             )
             .map_err(|error| feature_error(index, &error.to_string()))
+            .map(|place| {
+                place.with_country_iso_alpha2(
+                    feature
+                        .properties
+                        .country_iso_alpha2
+                        .and_then(crate::boundaries::normalize_iso_alpha2),
+                )
+            })
         })
         .collect()
 }
@@ -150,6 +160,27 @@ mod tests {
                 lon: -170.0
             }
         );
+    }
+
+    #[test]
+    fn decodes_a_valid_iso_code_and_ignores_missing_or_sentinel_codes() {
+        let valid = VALID.replace(
+            "\"ADM0NAME\":\"Example\",",
+            "\"ADM0NAME\":\"Example\",\"ISO_A2\":\"fr\",",
+        );
+        let place = &decode(&valid).unwrap()[0];
+        assert_eq!(place.country(), "Example");
+        assert_eq!(place.country_iso_alpha2(), Some("FR"));
+
+        for text in [
+            VALID.to_owned(),
+            VALID.replace(
+                "\"ADM0NAME\":\"Example\",",
+                "\"ADM0NAME\":\"Example\",\"ISO_A2\":\"-99\",",
+            ),
+        ] {
+            assert_eq!(decode(&text).unwrap()[0].country_iso_alpha2(), None);
+        }
     }
 
     #[test]

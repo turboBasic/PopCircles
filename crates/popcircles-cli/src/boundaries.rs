@@ -243,6 +243,11 @@ fn iso_alpha2(
             ),
             IsoCodeSource::Gadm => iso_alpha3_to_alpha2(source_id).map(str::to_owned),
         })?;
+    normalize_iso_alpha2(&code)
+}
+
+pub(crate) fn normalize_iso_alpha2(code: &str) -> Option<String> {
+    let code = code.to_ascii_uppercase();
     ISO_ALPHA3_TO_ALPHA2
         .iter()
         .any(|(_, alpha2)| *alpha2 == code)

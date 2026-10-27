@@ -10,6 +10,7 @@ const MAX_LABEL_KM: f64 = 500.0;
 pub struct Place {
     name: String,
     country: String,
+    country_iso_alpha2: Option<String>,
     location: LatLon,
 }
 
@@ -35,8 +36,16 @@ impl Place {
         Ok(Self {
             name,
             country,
+            country_iso_alpha2: None,
             location: validate_location(location)?,
         })
+    }
+
+    /// Adds a source-validated ISO alpha-2 code while retaining the source country label.
+    #[must_use]
+    pub fn with_country_iso_alpha2(mut self, code: Option<String>) -> Self {
+        self.country_iso_alpha2 = code;
+        self
     }
 
     #[must_use]
@@ -47,6 +56,11 @@ impl Place {
     #[must_use]
     pub fn country(&self) -> &str {
         &self.country
+    }
+
+    #[must_use]
+    pub fn country_iso_alpha2(&self) -> Option<&str> {
+        self.country_iso_alpha2.as_deref()
     }
 
     #[must_use]
@@ -60,6 +74,7 @@ impl Place {
 pub struct Context {
     name: String,
     country: String,
+    country_iso_alpha2: Option<String>,
     distance_km: f64,
     short_form: bool,
 }
@@ -73,6 +88,11 @@ impl Context {
     #[must_use]
     pub fn country(&self) -> &str {
         &self.country
+    }
+
+    #[must_use]
+    pub fn country_iso_alpha2(&self) -> Option<&str> {
+        self.country_iso_alpha2.as_deref()
     }
 
     #[must_use]
@@ -142,6 +162,7 @@ pub fn nearest_context(
     Ok(Some(Context {
         name: nearest.name.clone(),
         country: nearest.country.clone(),
+        country_iso_alpha2: nearest.country_iso_alpha2.clone(),
         distance_km,
         short_form: distance_km <= SHORT_LABEL_KM,
     }))

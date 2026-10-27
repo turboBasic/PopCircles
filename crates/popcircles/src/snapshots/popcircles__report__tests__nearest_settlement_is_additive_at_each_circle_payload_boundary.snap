@@ -1,6 +1,5 @@
 ---
 source: crates/popcircles/src/report.rs
-assertion_line: 1628
 expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).unwrap(), \"most_populous\":\n    serde_json::to_value(most_populous).unwrap(), \"smallest\":\n    serde_json::to_value(smallest).unwrap(), \"sweep\":\n    serde_json::to_value(sweep).unwrap(), \"ocean\":\n    serde_json::to_value(ocean).unwrap(),\n})"
 ---
 {
@@ -18,6 +17,7 @@ expression: "serde_json::json!({\n    \"circle\": serde_json::to_value(circle).u
       "col": 19,
       "nearest_settlement": {
         "country": "Example",
+        "country_iso_alpha2": "FR",
         "distance_km": 0.0,
         "name": "Circle",
         "short_form": true
