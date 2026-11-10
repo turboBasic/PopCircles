@@ -42,6 +42,8 @@ class FakeGitHub:
         default_factory=lambda: cast(list[tuple[str, ...]], [])
     )
     watched: list[int] = field(default_factory=lambda: cast(list[int], []))
+    display_titles: dict[int, str] = field(default_factory=lambda: cast(dict[int, str], {}))
+    concurrent_dispatch: bool = False
 
     def __call__(self, *args: str, cwd: Path = pg.REPO_ROOT) -> subprocess.CompletedProcess[str]:  # noqa: C901, PLR0912
         del cwd
@@ -71,12 +73,25 @@ class FakeGitHub:
             if args[args.index("--json") + 1] == "databaseId":
                 output = "\n".join(str(identifier) for identifier, _ in self.runs)
             else:
-                output = "\n".join(f"{identifier}\t{url}" for identifier, url in self.runs)
+                output = "\n".join(
+                    f"{identifier}\t{url}\t{self.display_titles.get(identifier, 'Existing run')}"
+                    for identifier, url in self.runs
+                )
         elif args[:3] == ("gh", "workflow", "run"):
             if self.fail == "dispatch":
                 return self.failed(args, "dispatch denied")
+            if self.concurrent_dispatch:
+                identifier = max((run_id for run_id, _ in self.runs), default=0) + 1
+                self.runs.insert(0, (identifier, f"https://github.test/runs/{identifier}"))
+                self.display_titles[identifier] = "Unrelated concurrent dispatch"
             identifier = max((run_id for run_id, _ in self.runs), default=0) + 1
             self.runs.insert(0, (identifier, f"https://github.test/runs/{identifier}"))
+            asset_name = next(
+                value.removeprefix("asset_name=")
+                for value in args
+                if value.startswith("asset_name=")
+            )
+            self.display_titles[identifier] = f"Gallery {asset_name}"
         elif args[:3] == ("gh", "run", "watch"):
             identifier = int(args[3])
             self.watched.append(identifier)
@@ -143,6 +158,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     github = FakeGitHub(
         releases=[{"tagName": pg.RELEASE_TAG, "isDraft": True, "assets": ["old.zip"]}],
         runs=[(41, "https://github.test/runs/41")],
+        concurrent_dispatch=True,
     )
     seen: list[tuple[Path, bool]] = []
     monkeypatch.setattr(pg, "run", github)
@@ -170,7 +186,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert re.fullmatch(r"gallery-\d{8}T\d{6}Z-[0-9a-f]{32}\.zip", github.uploaded[0])
     assert ".nojekyll" in github.zip_files[0]
     assert "index.html" in github.zip_files[0]
-    assert github.watched == [42]
+    assert github.watched == [43]
     dispatch = next(
         command for command in github.commands if command[:3] == ("gh", "workflow", "run")
     )

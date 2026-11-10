@@ -229,7 +229,7 @@ def latest_run_id() -> int:
     return max((int(line) for line in output.splitlines()), default=0)
 
 
-def run_after(baseline: int) -> tuple[int, str]:
+def run_after(baseline: int, asset_name: str) -> tuple[int, str]:
     deadline = time.monotonic() + RUN_TIMEOUT_S
     while time.monotonic() < deadline:
         time.sleep(POLL_S)
@@ -246,13 +246,13 @@ def run_after(baseline: int) -> tuple[int, str]:
             "--limit",
             "100",
             "--json",
-            "databaseId,url",
+            "databaseId,url,displayTitle",
             "--jq",
-            r'.[] | "\(.databaseId)\t\(.url)"',
+            r'.[] | "\(.databaseId)\t\(.url)\t\(.displayTitle)"',
         )
         for line in output.splitlines():
-            identifier, url = line.split("\t", 1)
-            if int(identifier) > baseline:
+            identifier, url, title = line.split("\t", 2)
+            if int(identifier) > baseline and title == f"Gallery {asset_name}":
                 return int(identifier), url
     message = (
         f"no new {WORKFLOW} run appeared within {RUN_TIMEOUT_S}s; uploaded asset remains on "
@@ -313,7 +313,7 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
             )
             raise PublishGalleryError(message) from error
 
-        run_id, url = run_after(baseline)
+        run_id, url = run_after(baseline, asset.name)
         try:
             checked("gh", "run", "watch", str(run_id), "--exit-status")
         except PublishGalleryError as error:
