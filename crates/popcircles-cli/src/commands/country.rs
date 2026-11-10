@@ -822,7 +822,6 @@ pub(crate) fn sweep(
     let boundary_digest = boundary_digest.to_owned();
     let mut countries = Vec::with_capacity(features.len());
     for feature in features {
-        let started = std::time::Instant::now();
         let Some(table) = prepared.country_table(feature.id.as_str())? else {
             eprintln!(
                 "{}: no owned population cells at this resolution",
@@ -830,6 +829,14 @@ pub(crate) fn sweep(
             );
             continue;
         };
+        if table.total() == 0.0 {
+            eprintln!(
+                "{}: zero population total; skipping country",
+                feature.id.as_str()
+            );
+            continue;
+        }
+        let started = std::time::Instant::now();
         let path = country_ledger_path(ledger_dir, feature.id.as_str());
         make_room_for(&path)?;
         let mut ledger = CountryLedger::open_or_empty(&path, table.identity())

@@ -1376,6 +1376,98 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
 }
 
 #[test]
+fn country_sweep_skips_zero_total_before_search_and_keeps_other_country_resumable() {
+    let fixture = Fixture::over(
+        |row, col| {
+            if col < WIDTH / 2 {
+                0.0
+            } else {
+                dense(row, col)
+            }
+        },
+        Some("population-count-2020-30arcsec"),
+    );
+    fixture.register_two_countries();
+    fixture.prepare_country_data();
+
+    let listed = run_with(fixture.directory.path(), &[], "country list", &[]);
+    assert_eq!(listed.status.code(), Some(0), "{listed:?}");
+    let list: serde_json::Value = serde_json::from_slice(&listed.stdout).unwrap();
+    assert!(
+        list["result"]["countries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|country| country["id"] == "AA" && country["name"] == "Alpha")
+    );
+
+    let flags = vec!["--log-level".to_owned(), "info".to_owned()];
+    let sweep = || {
+        run_with(
+            fixture.directory.path(),
+            &flags,
+            "country sweep",
+            &[
+                "--country",
+                "AA",
+                "--country",
+                "BB",
+                "--from",
+                "10",
+                "--to",
+                "20",
+                "--step",
+                "10",
+                "--spacing",
+                "4",
+                "--ledger-dir",
+                "out/zero-total-ledgers",
+            ],
+        )
+    };
+
+    let cold = sweep();
+    assert_eq!(cold.status.code(), Some(0), "{cold:?}");
+    let cold_doc: serde_json::Value = serde_json::from_slice(&cold.stdout).unwrap();
+    let countries = cold_doc["result"]["countries"].as_array().unwrap();
+    assert_eq!(countries.len(), 1);
+    assert_eq!(countries[0]["country"]["id"], "BB");
+    let mut records = countries[0]["records"].clone();
+    let records_array = records.as_array().unwrap();
+    assert_eq!(records_array.len(), 2);
+    assert_eq!(records_array[0]["share"], 0.1);
+    assert_eq!(records_array[1]["share"], 0.2);
+    assert!(String::from_utf8_lossy(&cold.stderr).contains("AA: zero population total"));
+    assert!(
+        !fixture
+            .directory
+            .path()
+            .join("out/zero-total-ledgers/4141.json")
+            .exists()
+    );
+    assert!(
+        fixture
+            .directory
+            .path()
+            .join("out/zero-total-ledgers/4242.json")
+            .is_file()
+    );
+
+    let resumed = sweep();
+    assert_eq!(resumed.status.code(), Some(0), "{resumed:?}");
+    let resumed_doc: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
+    let mut resumed_records = resumed_doc["result"]["countries"][0]["records"].clone();
+    for record in records.as_array_mut().unwrap() {
+        record["circle"].as_object_mut().unwrap().remove("stats");
+    }
+    for record in resumed_records.as_array_mut().unwrap() {
+        record["circle"].as_object_mut().unwrap().remove("stats");
+    }
+    assert_eq!(resumed_records, records);
+    assert!(String::from_utf8_lossy(&resumed.stderr).contains("from the ledger"));
+}
+
+#[test]
 fn country_input_errors_are_clear_and_non_circle_commands_do_not_read_them() {
     let fixture = Fixture::build();
     let boundary = fixture
