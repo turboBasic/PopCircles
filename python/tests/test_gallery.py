@@ -425,8 +425,8 @@ def test_an_invalid_country_sweep_cache_runs_one_fresh_sweep(
 
     corpus = tmp_path / "corpus"
     corpus.mkdir()
-    path = corpus / "country-sweep-fixture-10-half.json"
-    path.write_text(raw if raw is not None else json.dumps(cache))
+    cache_path = corpus / "country-sweep-fixture-10-half.json"
+    cache_path.write_text(raw if raw is not None else json.dumps(cache))
     invoke, calls = country_cli(countries, swept)
 
     country_documents(invoke, corpus)

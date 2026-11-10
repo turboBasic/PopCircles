@@ -2,10 +2,12 @@ import json
 import re
 import stat
 import subprocess
+import time
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -23,15 +25,23 @@ def country_result(kind: str, combination: str = "fixture") -> dict[str, object]
     }
 
 
+def no_sleep(_seconds: float) -> None:
+    pass
+
+
 @dataclass
 class FakeGitHub:
-    releases: list[dict[str, object]] = field(default_factory=list)
-    runs: list[tuple[int, str]] = field(default_factory=list)
+    releases: list[dict[str, object]] = field(
+        default_factory=lambda: cast(list[dict[str, object]], [])
+    )
+    runs: list[tuple[int, str]] = field(default_factory=lambda: cast(list[tuple[int, str]], []))
     fail: str | None = None
-    commands: list[tuple[str, ...]] = field(default_factory=list)
-    uploaded: list[str] = field(default_factory=list)
-    zip_files: list[tuple[str, ...]] = field(default_factory=list)
-    watched: list[int] = field(default_factory=list)
+    commands: list[tuple[str, ...]] = field(default_factory=lambda: cast(list[tuple[str, ...]], []))
+    uploaded: list[str] = field(default_factory=lambda: cast(list[str], []))
+    zip_files: list[tuple[str, ...]] = field(
+        default_factory=lambda: cast(list[tuple[str, ...]], [])
+    )
+    watched: list[int] = field(default_factory=lambda: cast(list[int], []))
 
     def __call__(self, *args: str, cwd: Path = pg.REPO_ROOT) -> subprocess.CompletedProcess[str]:  # noqa: C901, PLR0912
         del cwd
@@ -55,7 +65,8 @@ class FakeGitHub:
             self.uploaded.append(archive.name)
             for release in self.releases:
                 if release["tagName"] == pg.RELEASE_TAG:
-                    release.setdefault("assets", []).append(archive.name)
+                    assets = cast(list[str], release.setdefault("assets", []))
+                    assets.append(archive.name)
         elif args[:3] == ("gh", "run", "list"):
             if args[args.index("--json") + 1] == "databaseId":
                 output = "\n".join(str(identifier) for identifier, _ in self.runs)
@@ -136,7 +147,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     seen: list[tuple[Path, bool]] = []
     monkeypatch.setattr(pg, "run", github)
     monkeypatch.setattr(pg, "build_gallery", successful_build(seen))
-    monkeypatch.setattr(pg.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(time, "sleep", no_sleep)
 
     pg.publish(refresh_country_sweep=True)
 
@@ -199,7 +210,7 @@ def test_publish_creates_the_single_draft_handoff_release(
     github = FakeGitHub(runs=[(5, "https://github.test/runs/5")])
     monkeypatch.setattr(pg, "run", github)
     monkeypatch.setattr(pg, "build_gallery", successful_build())
-    monkeypatch.setattr(pg.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(time, "sleep", no_sleep)
 
     pg.publish()
 
@@ -234,14 +245,13 @@ def test_remote_failures_keep_existing_release_assets(
     )
     monkeypatch.setattr(pg, "run", github)
     monkeypatch.setattr(pg, "build_gallery", successful_build())
-    monkeypatch.setattr(pg.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(time, "sleep", no_sleep)
 
     with pytest.raises(pg.PublishGalleryError):
         pg.publish()
 
     release = github.releases[0]
-    assets = release["assets"]
-    assert isinstance(assets, list)
+    assets = cast(list[str], release["assets"])
     assert "previous.zip" in assets
     if failure == "upload":
         assert assets == ["previous.zip"]
@@ -349,7 +359,7 @@ class StageGitHub:
     selected: str
     archive: Path
     assets: list[str] | None = None
-    commands: list[tuple[str, ...]] = field(default_factory=list)
+    commands: list[tuple[str, ...]] = field(default_factory=lambda: cast(list[tuple[str, ...]], []))
 
     def __call__(self, *args: str, cwd: Path = pg.REPO_ROOT) -> subprocess.CompletedProcess[str]:
         del cwd
