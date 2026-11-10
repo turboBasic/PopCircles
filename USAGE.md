@@ -297,10 +297,10 @@ vector at `data/boundaries/gisco-countries-2024-1m.geojson`. The renderer select
 ID from the document and checks its boundary revision and digest against the registry before drawing.
 It derives the orthographic frame from the selected outline and the result circle, then shows the country
 name and ID with population and boundary credits from their registry rows. Rendering still reads no
-population raster, table or ledger. For example, the committed Germany result renders with:
+population raster, table or ledger. For example, a committed country result renders with:
 
 ```sh
-mise run render -- --input results/germany-half-5arcmin.json --output out/germany-half.png
+mise run render -- --input results/country-gpw-2020-gisco-2024-2-AD-half.json --output out/andorra-half.png
 ```
 
 Fetch the boundary vector with `mise run data:get` when it is absent. Existing world documents need no
