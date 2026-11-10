@@ -495,9 +495,31 @@ pub fn smallest_country<L: CountryRadiusLedger, P: Progress>(
     ledger: &mut L,
     progress: &mut P,
 ) -> Result<Smallest, SmallestError<L::Error>> {
+    let grid = *table.effective_grid();
+    let total = table.total();
+    if total == 0.0 {
+        let (row, col) = north_west(&grid);
+        return Ok(Smallest {
+            radius_km: 0,
+            radius: RadiusKm::from(0),
+            centre: Candidate {
+                row,
+                col,
+                population: 0.0,
+            },
+            target: Target::of(share, total),
+            share_achieved: 0.0,
+            short_below: None,
+            covers_whole_grid: false,
+            predicate_slack_persons: predicate_slack_persons(&grid, total),
+            ambiguity: None,
+            tolerance_persons: 0.0,
+            stats: SmallestStats::default(),
+        });
+    }
     smallest_by(
-        *table.effective_grid(),
-        table.total(),
+        grid,
+        total,
         share,
         spacing,
         ledger,

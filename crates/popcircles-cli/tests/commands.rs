@@ -1376,7 +1376,7 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
 }
 
 #[test]
-fn country_sweep_skips_zero_total_before_search_and_keeps_other_country_resumable() {
+fn country_sweep_emits_zero_total_circles_without_search_and_keeps_other_country_resumable() {
     let fixture = Fixture::over(
         |row, col| {
             if col < WIDTH / 2 {
@@ -1430,14 +1430,19 @@ fn country_sweep_skips_zero_total_before_search_and_keeps_other_country_resumabl
     assert_eq!(cold.status.code(), Some(0), "{cold:?}");
     let cold_doc: serde_json::Value = serde_json::from_slice(&cold.stdout).unwrap();
     let countries = cold_doc["result"]["countries"].as_array().unwrap();
-    assert_eq!(countries.len(), 1);
-    assert_eq!(countries[0]["country"]["id"], "BB");
-    let mut records = countries[0]["records"].clone();
-    let records_array = records.as_array().unwrap();
-    assert_eq!(records_array.len(), 2);
-    assert_eq!(records_array[0]["share"], 0.1);
-    assert_eq!(records_array[1]["share"], 0.2);
-    assert!(String::from_utf8_lossy(&cold.stderr).contains("AA: zero population total"));
+    assert_eq!(countries.len(), 2);
+    assert_eq!(countries[0]["country"]["id"], "AA");
+    assert_eq!(countries[1]["country"]["id"], "BB");
+    let zero_records = countries[0]["records"].as_array().unwrap();
+    assert_eq!(zero_records.len(), 2);
+    for record in zero_records {
+        assert_eq!(record["circle"]["radius_km"], 0);
+        assert_eq!(record["circle"]["population"], 0.0);
+        assert_eq!(record["circle"]["target"]["total"], 0.0);
+        assert_eq!(record["circle"]["stats"]["radii_evaluated"], 0);
+        assert_eq!(record["circle"]["stats"]["radii_reused"], 0);
+    }
+    assert_eq!(countries[0]["ledger"]["radii"], 0);
     assert!(
         !fixture
             .directory
@@ -1445,6 +1450,12 @@ fn country_sweep_skips_zero_total_before_search_and_keeps_other_country_resumabl
             .join("out/zero-total-ledgers/4141.json")
             .exists()
     );
+
+    let mut records = countries[1]["records"].clone();
+    let records_array = records.as_array().unwrap();
+    assert_eq!(records_array.len(), 2);
+    assert_eq!(records_array[0]["share"], 0.1);
+    assert_eq!(records_array[1]["share"], 0.2);
     assert!(
         fixture
             .directory
@@ -1456,7 +1467,7 @@ fn country_sweep_skips_zero_total_before_search_and_keeps_other_country_resumabl
     let resumed = sweep();
     assert_eq!(resumed.status.code(), Some(0), "{resumed:?}");
     let resumed_doc: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
-    let mut resumed_records = resumed_doc["result"]["countries"][0]["records"].clone();
+    let mut resumed_records = resumed_doc["result"]["countries"][1]["records"].clone();
     for record in records.as_array_mut().unwrap() {
         record["circle"].as_object_mut().unwrap().remove("stats");
     }
