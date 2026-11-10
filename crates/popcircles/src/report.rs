@@ -1164,7 +1164,13 @@ impl CountrySweepDocument {
         shares: SweepShares,
         mut countries: Vec<CountrySweepCountry>,
     ) -> Self {
-        countries.sort_by(|left, right| left.country.id.cmp(&right.country.id));
+        countries.sort_by(|left, right| {
+            left.country
+                .name
+                .to_lowercase()
+                .cmp(&right.country.name.to_lowercase())
+                .then_with(|| left.country.id.cmp(&right.country.id))
+        });
         Self {
             selection,
             shares,
@@ -2084,7 +2090,12 @@ mod tests {
         let document = Envelope::new(CountrySweepDocument::new(
             fixture_country_selection(),
             SweepShares::new(10, 30, 10),
-            vec![country("BB", "Beta"), country("AA", "Alpha")],
+            vec![
+                country("BB", "Beta"),
+                country("ZZ", "Same"),
+                country("AA", "Alpha"),
+                country("YY", "same"),
+            ],
         ));
         insta::assert_json_snapshot!(document);
     }
