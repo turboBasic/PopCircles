@@ -370,6 +370,30 @@ def test_cleanup_removes_only_superseded_zip_assets(
     assert deletes == [("gh", "release", "delete-asset", pg.RELEASE_TAG, old, "--yes")]
 
 
+def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy() -> None:
+    workflow_path = Path(__file__).resolve().parents[2] / ".github/workflows/gallery.yml"
+    workflow = workflow_path.read_text(encoding="utf-8")
+    triggers = workflow.split("\npermissions:", 1)[0]
+
+    assert "run-name: Gallery ${{ inputs.asset_name }}" in triggers
+    assert "\non:\n  workflow_dispatch:\n    inputs:\n      asset_name:" in triggers
+    assert not any(f"\n  {event}:" in triggers for event in ("push", "pull_request", "schedule"))
+    assert 'run: mise run gallery:stage -- "$ASSET_NAME"' in workflow
+    assert "ASSET_NAME: ${{ inputs.asset_name }}" in workflow
+    assert re.search(
+        r"uses: actions/upload-pages-artifact@[^\n]+\n\s+with:\n\s+path: build/gallery",
+        workflow,
+    )
+    assert workflow.index("actions/deploy-pages@") < workflow.index(
+        "name: Clean superseded gallery assets"
+    )
+    assert 'run: mise run gallery:cleanup -- "$ASSET_NAME"' in workflow
+    assert not any(
+        forbidden in workflow
+        for forbidden in ("country sweep", "render-gallery", "mise run gallery --")
+    )
+
+
 @dataclass
 class StageGitHub:
     selected: str
