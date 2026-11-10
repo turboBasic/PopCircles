@@ -19,8 +19,16 @@
       "groupSlug": "non-major"
     },
     {
-      "description": "Development tools and pre-commit hooks are checked by CI, so passing minor and patch updates merge unattended.",
-      "matchManagers": ["mise", "pre-commit"],
+      "description": "Only Mise tools used by required CI are eligible for unattended updates; agent and data-fetch tools stay under review.",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["uv", "prek", "jactionlint", "shellcheck", "taplo", "node", "npm:markdownlint-cli2", "npm:cspell-cli"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "groupName": null
+    },
+    {
+      "description": "Pre-commit hooks run in required CI, so passing minor and patch updates merge unattended.",
+      "matchManagers": ["pre-commit"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "groupName": null
@@ -38,10 +46,10 @@
       "automerge": true
     },
     {
-      "description": "Third-party action patches are checked by CI; keep minor and major changes for review.",
+      "description": "Keep reusable workflow compatibility refs as tags so Renovate can track them; workflow changes remain under review.",
       "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["patch"],
-      "automerge": true
+      "matchDepTypes": ["workflow"],
+      "pinDigests": false
     }
   ],
   "lockFileMaintenance": {
