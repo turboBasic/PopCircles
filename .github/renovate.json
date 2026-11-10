@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["github-actions", "mise", "cargo", "pep621", "pre-commit"],
+  "reviewers": ["turboBasic"],
+  "assignees": ["turboBasic"],
+  "schedule": ["every weekend"],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "platformAutomerge": false,
+  "assignAutomerge": true,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "non-major updates",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "Only Mise tools used by required CI are eligible for unattended updates; agent and data-fetch tools stay under review.",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["uv", "prek", "jactionlint", "shellcheck", "taplo", "node", "npm:markdownlint-cli2", "npm:cspell-cli"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "groupName": null
+    },
+    {
+      "description": "Pre-commit hooks run in required CI, so passing minor and patch updates merge unattended.",
+      "matchManagers": ["pre-commit"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "groupName": null
+    },
+    {
+      "description": "The Rust and Python toolchains affect builds and runtime behavior, so keep their updates for review.",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["rust", "python"],
+      "automerge": false
+    },
+    {
+      "description": "Runtime dependency patches are covered by the Rust and Python CI suites.",
+      "matchManagers": ["cargo", "pep621"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Keep reusable workflow compatibility refs as tags so Renovate can track them; workflow changes remain under review.",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["workflow"],
+      "pinDigests": false
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": false
+  }
+}

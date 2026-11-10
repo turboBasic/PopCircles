@@ -38,6 +38,7 @@ start a fresh subagent and tell it to read the source persona and the workflow b
 
 ## Dependencies
 
+- Renovate owns routine version updates. Dependabot reports vulnerability and malware alerts and opens security update PRs; its version-update PRs are disabled.
 - Rust: workspace settings live in the root `Cargo.toml` (`[workspace.package]`, `[workspace.lints]`).
   Crates inherit them with `field.workspace = true`. Commit `Cargo.lock`.
 - Python: dev tooling in `[dependency-groups].dev`. No `setup.py`, `setup.cfg` or
@@ -300,9 +301,8 @@ and compare it with `mode=markdown`.
 - Release authorization trusts `turboBasic`'s current GitHub SSH signing identity
   ([ADR 0013](../decisions/0013-release-authorization-trusts-a-github-account.md)).
 - **Pin every action to a full SHA** and add its version in a trailing comment. Never use `@main`. A
-  reusable workflow from `turboBasic/github-actions` may use a version tag because Dependabot tracks
-  that repository (`.github/dependabot.yml`, `github-actions` ecosystem). The tag gets updated with the
-  same dependency updates as a SHA. Pin all other actions, first- or third-party, to a SHA.
+  reusable workflow from `turboBasic/github-actions` may use a version tag because Renovate tracks its
+  reference (`.github/renovate.json`). Pin all other actions, first- or third-party, to a SHA.
 - **Use a `turboBasic/github-actions` workflow when one fits.** Do not fork one for this repository.
   `ci.yml` calls `project-ci`, which runs this repository's `lint`, `typecheck`, and `test` tasks for
   the component, regardless of language.
