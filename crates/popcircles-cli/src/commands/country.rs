@@ -442,7 +442,7 @@ fn download_file(
         }
         digest.update(&buffer[..count]);
     }
-    Ok((length, format!("{:x}", digest.finalize())))
+    Ok((length, hex::encode(digest.finalize())))
 }
 
 fn prepared_document(

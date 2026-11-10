@@ -738,7 +738,7 @@ fn write_country(
             path: path.clone(),
             source,
         })?;
-    let payload_sha256 = format!("{:x}", digest.finalize());
+    let payload_sha256 = hex::encode(digest.finalize());
     let payload_length = u64::try_from(table.prefix_cells().len())
         .ok()
         .and_then(|count| count.checked_mul(size_of::<f64>() as u64))
@@ -785,7 +785,7 @@ fn verify_written_payload(
         length = length.saturating_add(u64::try_from(read).unwrap_or(u64::MAX));
         digest.update(&buffer[..read]);
     }
-    if length != expected_length || format!("{:x}", digest.finalize()) != expected_digest {
+    if length != expected_length || hex::encode(digest.finalize()) != expected_digest {
         return Err(PreparedError::Mismatch {
             ground: "written payload integrity",
         });
@@ -872,7 +872,7 @@ fn load_payload_cells(
         }
         digest.update(&buffer[..read]);
     }
-    if format!("{:x}", digest.finalize()) != payload.payload_sha256 {
+    if hex::encode(digest.finalize()) != payload.payload_sha256 {
         return Err(PreparedError::PayloadDigest {
             path: payload.file.clone(),
         });
@@ -923,7 +923,7 @@ fn open_payload(directory: &Path, payload: &CountryPayload) -> Result<File, Prep
 }
 
 pub(crate) fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex::encode(Sha256::digest(bytes))
 }
 
 pub(crate) fn fingerprint_file(path: &Path) -> io::Result<String> {
@@ -937,7 +937,7 @@ pub(crate) fn fingerprint_file(path: &Path) -> io::Result<String> {
         }
         digest.update(&buffer[..read]);
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(hex::encode(digest.finalize()))
 }
 
 fn valid_sha256(value: &str) -> bool {

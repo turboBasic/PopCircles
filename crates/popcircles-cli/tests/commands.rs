@@ -289,7 +289,7 @@ local = "out/countries/fixture/1"
             .directory
             .path()
             .join("data/boundaries/gisco-countries-2024-1m.geojson");
-        let digest = format!("{:x}", Sha256::digest(std::fs::read(boundary).unwrap()));
+        let digest = hex::encode(Sha256::digest(std::fs::read(boundary).unwrap()));
         let registry = self.directory.path().join("data/registry.toml");
         let contents = std::fs::read_to_string(&registry).unwrap();
         let old = contents
@@ -658,10 +658,7 @@ source_id_field = "CNTR_ID"
     assert_eq!(document["result"]["selection"]["resolution"], 1);
     assert_eq!(
         document["result"]["selection"]["boundary_source"]["sha256"],
-        format!(
-            "{:x}",
-            Sha256::digest(std::fs::read(boundary_path).unwrap())
-        )
+        hex::encode(Sha256::digest(std::fs::read(boundary_path).unwrap()))
     );
 }
 
@@ -689,7 +686,7 @@ local = "out/baseline/1"
     .unwrap();
     let population = data.join("population/population-count-2020-30arcsec.tif");
     let boundary = data.join("boundaries/gisco-countries-2024-1m.geojson");
-    let boundary_digest = format!("{:x}", Sha256::digest(std::fs::read(&boundary).unwrap()));
+    let boundary_digest = hex::encode(Sha256::digest(std::fs::read(&boundary).unwrap()));
     let registry_path = data.join("registry.toml");
     let registry = std::fs::read_to_string(&registry_path).unwrap();
     std::fs::write(
@@ -1057,7 +1054,7 @@ fn country_prepare_fingerprints_registered_sources_and_refuses_checksum_mismatch
         serde_json::from_slice(&registered_manifest).unwrap();
     assert_eq!(
         registered_manifest_json["population_source"]["sha256"],
-        format!("{:x}", Sha256::digest(std::fs::read(&population).unwrap()))
+        hex::encode(Sha256::digest(std::fs::read(&population).unwrap()))
     );
     assert_eq!(
         registered_manifest_json["boundary_source"]["sha256"],
@@ -1125,18 +1122,15 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
     );
     assert_eq!(
         document["result"]["country"]["boundary_digest"],
-        format!(
-            "{:x}",
-            Sha256::digest(
-                std::fs::read(
-                    fixture
-                        .directory
-                        .path()
-                        .join("data/boundaries/gisco-countries-2024-1m.geojson")
-                )
-                .unwrap()
+        hex::encode(Sha256::digest(
+            std::fs::read(
+                fixture
+                    .directory
+                    .path()
+                    .join("data/boundaries/gisco-countries-2024-1m.geojson")
             )
-        )
+            .unwrap(),
+        ))
     );
     assert_eq!(
         document["result"]["population_dataset"],
