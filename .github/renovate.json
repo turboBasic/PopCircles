@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["github-actions", "mise", "cargo", "pep621", "pre-commit"],
+  "reviewers": ["turboBasic"],
+  "assignees": ["turboBasic"],
+  "schedule": ["every weekend"],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "platformAutomerge": false,
+  "assignAutomerge": true,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "non-major updates",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "Development tools and pre-commit hooks are checked by CI, so passing minor and patch updates merge unattended.",
+      "matchManagers": ["mise", "pre-commit"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "groupName": null
+    },
+    {
+      "description": "The Rust and Python toolchains affect builds and runtime behavior, so keep their updates for review.",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["rust", "python"],
+      "automerge": false
+    },
+    {
+      "description": "Runtime dependency patches are covered by the Rust and Python CI suites.",
+      "matchManagers": ["cargo", "pep621"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Third-party action patches are checked by CI; keep minor and major changes for review.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": false
+  }
+}
