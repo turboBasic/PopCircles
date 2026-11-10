@@ -29,10 +29,34 @@ pub enum BoundaryError {
 pub struct BoundaryFeature {
     pub id: FeatureId,
     pub name: String,
+    pub iso_alpha2: Option<String>,
     pub geometry: Geometry,
 }
 
-/// Resolves an exact canonical ID before an exact English name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum IsoCodeSource {
+    Gisco,
+    Gadm,
+}
+
+impl IsoCodeSource {
+    pub(crate) fn registered_dataset(name: &str) -> Option<Self> {
+        match name {
+            "gisco-countries-2024-1m" => Some(Self::Gisco),
+            "gadm41-adm0" => Some(Self::Gadm),
+            _ => None,
+        }
+    }
+
+    const fn id_field(self) -> &'static str {
+        match self {
+            Self::Gisco => "CNTR_ID",
+            Self::Gadm => "GID_0",
+        }
+    }
+}
+
+/// Resolves an exact native ID, English name, or ISO alpha-2 alias.
 ///
 /// # Errors
 /// Returns a message with available candidates when the selector is unknown or ambiguous.
@@ -40,16 +64,16 @@ pub fn resolve<'a>(
     features: &'a [BoundaryFeature],
     selector: &str,
 ) -> Result<&'a BoundaryFeature, String> {
-    if let Some(feature) = features
-        .iter()
-        .find(|feature| feature.id.as_str() == selector)
-    {
-        return Ok(feature);
-    }
-
     let matches: Vec<_> = features
         .iter()
-        .filter(|feature| feature.name == selector)
+        .filter(|feature| {
+            feature.id.as_str() == selector
+                || feature.name == selector
+                || feature
+                    .iso_alpha2
+                    .as_deref()
+                    .is_some_and(|code| code.eq_ignore_ascii_case(selector))
+        })
         .collect();
     match matches.as_slice() {
         [feature] => Ok(feature),
@@ -58,7 +82,7 @@ pub fn resolve<'a>(
             candidates(features.iter())
         )),
         _ => Err(format!(
-            "ambiguous country name {selector:?}; matching countries: {}",
+            "ambiguous country selector {selector:?}; matching countries: {}",
             candidates(matches.iter().copied())
         )),
     }
@@ -79,11 +103,19 @@ fn candidates<'a>(features: impl Iterator<Item = &'a BoundaryFeature>) -> String
 /// # Errors
 /// Returns [`BoundaryError::Read`] for filesystem errors and a format or feature error for invalid data.
 pub fn load(path: &Path, source_id_field: &str) -> Result<Vec<BoundaryFeature>, BoundaryError> {
+    load_with_iso_source(path, source_id_field, None)
+}
+
+pub(crate) fn load_with_iso_source(
+    path: &Path,
+    source_id_field: &str,
+    iso_code_source: Option<IsoCodeSource>,
+) -> Result<Vec<BoundaryFeature>, BoundaryError> {
     let text = fs::read_to_string(path).map_err(|source| BoundaryError::Read {
         path: path.to_path_buf(),
         source,
     })?;
-    decode(&text, source_id_field)
+    decode_with_iso_source(&text, source_id_field, iso_code_source)
 }
 
 /// Decodes `GeoJSON` polygon features while retaining every source identity and coordinate.
@@ -92,6 +124,14 @@ pub fn load(path: &Path, source_id_field: &str) -> Result<Vec<BoundaryFeature>, 
 /// Returns a format error for malformed JSON or a feature error naming the identifier (or source
 /// index when no identifier exists) for invalid feature structure, identity, geometry or coordinates.
 pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>, BoundaryError> {
+    decode_with_iso_source(text, source_id_field, None)
+}
+
+pub(crate) fn decode_with_iso_source(
+    text: &str,
+    source_id_field: &str,
+    iso_code_source: Option<IsoCodeSource>,
+) -> Result<Vec<BoundaryFeature>, BoundaryError> {
     let document: Value = serde_json::from_str(text).map_err(BoundaryError::Format)?;
     let root = document
         .as_object()
@@ -169,10 +209,308 @@ pub fn decode(text: &str, source_id_field: &str) -> Result<Vec<BoundaryFeature>,
                     ));
                 }
             };
-            Ok(BoundaryFeature { id, name, geometry })
+            let iso_alpha2 = iso_code_source
+                .filter(|source| source.id_field() == source_id_field)
+                .and_then(|source| iso_alpha2(source, id.as_str(), properties));
+            Ok(BoundaryFeature {
+                id,
+                name,
+                iso_alpha2,
+                geometry,
+            })
         })
         .collect()
 }
+
+fn iso_alpha2(
+    source: IsoCodeSource,
+    source_id: &str,
+    properties: &serde_json::Map<String, Value>,
+) -> Option<String> {
+    let code = properties
+        .get("ISO_A2")
+        .and_then(Value::as_str)
+        .filter(|value| value.len() == 2 && value.bytes().all(|byte| byte.is_ascii_alphabetic()))
+        .map(str::to_ascii_uppercase)
+        .or_else(|| match source {
+            IsoCodeSource::Gisco => Some(
+                match source_id {
+                    "EL" => "GR",
+                    "UK" => "GB",
+                    _ => source_id,
+                }
+                .to_owned(),
+            ),
+            IsoCodeSource::Gadm => iso_alpha3_to_alpha2(source_id).map(str::to_owned),
+        })?;
+    normalize_iso_alpha2(&code)
+}
+
+pub(crate) fn normalize_iso_alpha2(code: &str) -> Option<String> {
+    let code = code.to_ascii_uppercase();
+    ISO_ALPHA3_TO_ALPHA2
+        .iter()
+        .any(|(_, alpha2)| *alpha2 == code)
+        .then_some(code)
+}
+
+fn iso_alpha3_to_alpha2(code: &str) -> Option<&'static str> {
+    ISO_ALPHA3_TO_ALPHA2
+        .iter()
+        .find_map(|(alpha3, alpha2)| (*alpha3 == code).then_some(*alpha2))
+}
+
+const ISO_ALPHA3_TO_ALPHA2: &[(&str, &str)] = &[
+    ("ABW", "AW"),
+    ("AFG", "AF"),
+    ("AGO", "AO"),
+    ("AIA", "AI"),
+    ("ALA", "AX"),
+    ("ALB", "AL"),
+    ("AND", "AD"),
+    ("ARE", "AE"),
+    ("ARG", "AR"),
+    ("ARM", "AM"),
+    ("ASM", "AS"),
+    ("ATA", "AQ"),
+    ("ATF", "TF"),
+    ("ATG", "AG"),
+    ("AUS", "AU"),
+    ("AUT", "AT"),
+    ("AZE", "AZ"),
+    ("BDI", "BI"),
+    ("BEL", "BE"),
+    ("BEN", "BJ"),
+    ("BES", "BQ"),
+    ("BFA", "BF"),
+    ("BGD", "BD"),
+    ("BGR", "BG"),
+    ("BHR", "BH"),
+    ("BHS", "BS"),
+    ("BIH", "BA"),
+    ("BLM", "BL"),
+    ("BLR", "BY"),
+    ("BLZ", "BZ"),
+    ("BMU", "BM"),
+    ("BOL", "BO"),
+    ("BRA", "BR"),
+    ("BRB", "BB"),
+    ("BRN", "BN"),
+    ("BTN", "BT"),
+    ("BVT", "BV"),
+    ("BWA", "BW"),
+    ("CAF", "CF"),
+    ("CAN", "CA"),
+    ("CCK", "CC"),
+    ("CHE", "CH"),
+    ("CHL", "CL"),
+    ("CHN", "CN"),
+    ("CIV", "CI"),
+    ("CMR", "CM"),
+    ("COD", "CD"),
+    ("COG", "CG"),
+    ("COK", "CK"),
+    ("COL", "CO"),
+    ("COM", "KM"),
+    ("CPV", "CV"),
+    ("CRI", "CR"),
+    ("CUB", "CU"),
+    ("CUW", "CW"),
+    ("CXR", "CX"),
+    ("CYM", "KY"),
+    ("CYP", "CY"),
+    ("CZE", "CZ"),
+    ("DEU", "DE"),
+    ("DJI", "DJ"),
+    ("DMA", "DM"),
+    ("DNK", "DK"),
+    ("DOM", "DO"),
+    ("DZA", "DZ"),
+    ("ECU", "EC"),
+    ("EGY", "EG"),
+    ("ERI", "ER"),
+    ("ESH", "EH"),
+    ("ESP", "ES"),
+    ("EST", "EE"),
+    ("ETH", "ET"),
+    ("FIN", "FI"),
+    ("FJI", "FJ"),
+    ("FLK", "FK"),
+    ("FRA", "FR"),
+    ("FRO", "FO"),
+    ("FSM", "FM"),
+    ("GAB", "GA"),
+    ("GBR", "GB"),
+    ("GEO", "GE"),
+    ("GGY", "GG"),
+    ("GHA", "GH"),
+    ("GIB", "GI"),
+    ("GIN", "GN"),
+    ("GLP", "GP"),
+    ("GMB", "GM"),
+    ("GNB", "GW"),
+    ("GNQ", "GQ"),
+    ("GRC", "GR"),
+    ("GRD", "GD"),
+    ("GRL", "GL"),
+    ("GTM", "GT"),
+    ("GUF", "GF"),
+    ("GUM", "GU"),
+    ("GUY", "GY"),
+    ("HKG", "HK"),
+    ("HMD", "HM"),
+    ("HND", "HN"),
+    ("HRV", "HR"),
+    ("HTI", "HT"),
+    ("HUN", "HU"),
+    ("IDN", "ID"),
+    ("IMN", "IM"),
+    ("IND", "IN"),
+    ("IOT", "IO"),
+    ("IRL", "IE"),
+    ("IRN", "IR"),
+    ("IRQ", "IQ"),
+    ("ISL", "IS"),
+    ("ISR", "IL"),
+    ("ITA", "IT"),
+    ("JAM", "JM"),
+    ("JEY", "JE"),
+    ("JOR", "JO"),
+    ("JPN", "JP"),
+    ("KAZ", "KZ"),
+    ("KEN", "KE"),
+    ("KGZ", "KG"),
+    ("KHM", "KH"),
+    ("KIR", "KI"),
+    ("KNA", "KN"),
+    ("KOR", "KR"),
+    ("KWT", "KW"),
+    ("LAO", "LA"),
+    ("LBN", "LB"),
+    ("LBR", "LR"),
+    ("LBY", "LY"),
+    ("LCA", "LC"),
+    ("LIE", "LI"),
+    ("LKA", "LK"),
+    ("LSO", "LS"),
+    ("LTU", "LT"),
+    ("LUX", "LU"),
+    ("LVA", "LV"),
+    ("MAC", "MO"),
+    ("MAF", "MF"),
+    ("MAR", "MA"),
+    ("MCO", "MC"),
+    ("MDA", "MD"),
+    ("MDG", "MG"),
+    ("MDV", "MV"),
+    ("MEX", "MX"),
+    ("MHL", "MH"),
+    ("MKD", "MK"),
+    ("MLI", "ML"),
+    ("MLT", "MT"),
+    ("MMR", "MM"),
+    ("MNE", "ME"),
+    ("MNG", "MN"),
+    ("MNP", "MP"),
+    ("MOZ", "MZ"),
+    ("MRT", "MR"),
+    ("MSR", "MS"),
+    ("MTQ", "MQ"),
+    ("MUS", "MU"),
+    ("MWI", "MW"),
+    ("MYS", "MY"),
+    ("MYT", "YT"),
+    ("NAM", "NA"),
+    ("NCL", "NC"),
+    ("NER", "NE"),
+    ("NFK", "NF"),
+    ("NGA", "NG"),
+    ("NIC", "NI"),
+    ("NIU", "NU"),
+    ("NLD", "NL"),
+    ("NOR", "NO"),
+    ("NPL", "NP"),
+    ("NRU", "NR"),
+    ("NZL", "NZ"),
+    ("OMN", "OM"),
+    ("PAK", "PK"),
+    ("PAN", "PA"),
+    ("PCN", "PN"),
+    ("PER", "PE"),
+    ("PHL", "PH"),
+    ("PLW", "PW"),
+    ("PNG", "PG"),
+    ("POL", "PL"),
+    ("PRI", "PR"),
+    ("PRK", "KP"),
+    ("PRT", "PT"),
+    ("PRY", "PY"),
+    ("PSE", "PS"),
+    ("PYF", "PF"),
+    ("QAT", "QA"),
+    ("REU", "RE"),
+    ("ROU", "RO"),
+    ("RUS", "RU"),
+    ("RWA", "RW"),
+    ("SAU", "SA"),
+    ("SDN", "SD"),
+    ("SEN", "SN"),
+    ("SGP", "SG"),
+    ("SGS", "GS"),
+    ("SHN", "SH"),
+    ("SJM", "SJ"),
+    ("SLB", "SB"),
+    ("SLE", "SL"),
+    ("SLV", "SV"),
+    ("SMR", "SM"),
+    ("SOM", "SO"),
+    ("SPM", "PM"),
+    ("SRB", "RS"),
+    ("SSD", "SS"),
+    ("STP", "ST"),
+    ("SUR", "SR"),
+    ("SVK", "SK"),
+    ("SVN", "SI"),
+    ("SWE", "SE"),
+    ("SWZ", "SZ"),
+    ("SXM", "SX"),
+    ("SYC", "SC"),
+    ("SYR", "SY"),
+    ("TCA", "TC"),
+    ("TCD", "TD"),
+    ("TGO", "TG"),
+    ("THA", "TH"),
+    ("TJK", "TJ"),
+    ("TKL", "TK"),
+    ("TKM", "TM"),
+    ("TLS", "TL"),
+    ("TON", "TO"),
+    ("TTO", "TT"),
+    ("TUN", "TN"),
+    ("TUR", "TR"),
+    ("TUV", "TV"),
+    ("TWN", "TW"),
+    ("TZA", "TZ"),
+    ("UGA", "UG"),
+    ("UKR", "UA"),
+    ("UMI", "UM"),
+    ("URY", "UY"),
+    ("USA", "US"),
+    ("UZB", "UZ"),
+    ("VAT", "VA"),
+    ("VCT", "VC"),
+    ("VEN", "VE"),
+    ("VGB", "VG"),
+    ("VIR", "VI"),
+    ("VNM", "VN"),
+    ("VUT", "VU"),
+    ("WLF", "WF"),
+    ("WSM", "WS"),
+    ("YEM", "YE"),
+    ("ZAF", "ZA"),
+    ("ZMB", "ZM"),
+    ("ZWE", "ZW"),
+];
 
 fn parse_polygon(value: &Value, feature: &str) -> Result<Polygon, BoundaryError> {
     let rings = value
@@ -271,13 +609,11 @@ mod tests {
     }
 
     #[test]
-    fn country_selector_prefers_exact_id_over_a_name_collision() {
+    fn country_selector_rejects_a_native_id_and_name_collision() {
         let features = countries(&[("AA", "Alpha"), ("BB", "AA")]);
 
-        assert_eq!(
-            resolve(&features, "AA").map(|feature| feature.id.as_str()),
-            Ok("AA")
-        );
+        let error = resolve(&features, "AA").expect_err("colliding aliases are ambiguous");
+        assert!(error.contains("AA (Alpha), BB (AA)"), "{error}");
     }
 
     #[test]
@@ -288,6 +624,47 @@ mod tests {
             resolve(&features, "Beta").map(|feature| feature.id.as_str()),
             Ok("BB")
         );
+    }
+
+    #[test]
+    fn country_selector_resolves_native_id_name_and_case_insensitive_iso_code() {
+        let document = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let features =
+            decode_with_iso_source(&document.to_string(), "GID_0", Some(IsoCodeSource::Gadm))
+                .expect("fixture decodes");
+
+        for selector in ["FRA", "France", "FR", "fr"] {
+            assert_eq!(
+                resolve(&features, selector).map(|feature| feature.id.as_str()),
+                Ok("FRA"),
+                "selector {selector}"
+            );
+        }
+    }
+
+    #[test]
+    fn country_selector_reports_a_code_and_native_id_collision() {
+        let gadm = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let gisco = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"CNTR_ID": "FR", "NAME_ENGL": "Other"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let mut features =
+            decode_with_iso_source(&gadm.to_string(), "GID_0", Some(IsoCodeSource::Gadm))
+                .expect("GADM fixture decodes");
+        features.extend(
+            decode_with_iso_source(&gisco.to_string(), "CNTR_ID", Some(IsoCodeSource::Gisco))
+                .expect("GISCO fixture decodes"),
+        );
+
+        let error = resolve(&features, "FR").expect_err("different features match");
+        assert!(error.contains("FR (Other), FRA (France)"), "{error}");
     }
 
     #[test]
@@ -340,6 +717,67 @@ mod tests {
         let features = decode(&document.to_string(), "GID_0").expect("GADM feature decodes");
 
         assert_eq!(features[0].name, "Andorra");
+    }
+
+    #[test]
+    fn gisco_and_gadm_assign_the_same_alpha2_code() {
+        let gisco = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"CNTR_ID": "FR", "NAME_ENGL": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+        let gadm = serde_json::json!({
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"GID_0": "FRA", "COUNTRY": "France"}, "geometry": {"type": "Polygon", "coordinates": []}}],
+        });
+
+        let gisco =
+            decode_with_iso_source(&gisco.to_string(), "CNTR_ID", Some(IsoCodeSource::Gisco))
+                .expect("GISCO fixture decodes");
+        let gadm = decode_with_iso_source(&gadm.to_string(), "GID_0", Some(IsoCodeSource::Gadm))
+            .expect("GADM fixture decodes");
+
+        assert_eq!(gisco[0].iso_alpha2.as_deref(), Some("FR"));
+        assert_eq!(gadm[0].iso_alpha2.as_deref(), Some("FR"));
+    }
+
+    #[test]
+    fn gisco_source_exception_maps_greece_to_its_iso_alpha2_code() {
+        let features = decode_with_iso_source(
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"EL","NAME_ENGL":"Greece"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
+            "CNTR_ID",
+            Some(IsoCodeSource::Gisco),
+        )
+        .expect("GISCO fixture decodes");
+
+        assert_eq!(features[0].iso_alpha2.as_deref(), Some("GR"));
+        assert_eq!(features[0].id.as_str(), "EL");
+    }
+
+    #[test]
+    fn unknown_gadm_code_keeps_native_identity_without_an_alias() {
+        let features = decode_with_iso_source(
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"GID_0":"XKS","COUNTRY":"Kosovo"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
+            "GID_0",
+            Some(IsoCodeSource::Gadm),
+        )
+        .expect("unmapped feature remains valid");
+
+        assert_eq!(features[0].id.as_str(), "XKS");
+        assert_eq!(features[0].name, "Kosovo");
+        assert_eq!(features[0].iso_alpha2, None);
+    }
+
+    #[test]
+    fn a_custom_source_with_a_registered_field_name_gets_no_alias() {
+        let features = decode(
+            r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"FR","NAME_ENGL":"Custom region"},"geometry":{"type":"Polygon","coordinates":[]}}]}"#,
+            "CNTR_ID",
+        )
+        .expect("custom feature remains valid");
+
+        assert_eq!(features[0].id.as_str(), "FR");
+        assert_eq!(features[0].name, "Custom region");
+        assert_eq!(features[0].iso_alpha2, None);
     }
 
     #[test]

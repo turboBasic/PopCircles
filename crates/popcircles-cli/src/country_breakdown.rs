@@ -49,6 +49,7 @@ struct CountryInputs {
     population_attribution: Option<String>,
     boundary_path: std::path::PathBuf,
     boundary_id_field: String,
+    boundary_iso_code_source: Option<boundaries::IsoCodeSource>,
     boundary_digest: String,
     boundary_attribution: Option<String>,
 }
@@ -184,7 +185,12 @@ impl Prepared {
                 "country boundary `{COUNTRY_BOUNDARY_DATASET}` has no source identifier field"
             ))
         })?;
-        let features = boundaries::load(path, source_id_field).map_err(|error| {
+        let features = boundaries::load_with_iso_source(
+            path,
+            source_id_field,
+            boundaries::IsoCodeSource::registered_dataset(COUNTRY_BOUNDARY_DATASET),
+        )
+        .map_err(|error| {
             if path.exists() {
                 Failure::bad_input(error.to_string())
             } else {
@@ -353,6 +359,7 @@ impl Prepared {
                 contributions[index].push(CountryContribution {
                     id: feature.id.clone(),
                     name: feature.name.clone(),
+                    iso_alpha2: feature.iso_alpha2.clone(),
                     inside,
                     total,
                     intersects,
@@ -419,37 +426,44 @@ fn resolve_country_inputs(
                 .ok_or_else(|| Failure::bad_input("local population source metadata is missing"))?;
             (Path::new(path).to_path_buf(), spec, None, None)
         };
-    let (boundary_path, boundary_id_field, expected_boundary_digest, boundary_attribution) =
-        if let Some(name) = combination.boundary_source.strip_prefix("dataset:") {
-            let boundary = registry.boundary(name).ok_or_else(|| {
-                Failure::bad_input(format!("`{name}` is not a registered boundary dataset"))
-            })?;
-            let id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
-                Failure::bad_input(format!("boundary dataset `{name}` has no source ID field"))
-            })?;
-            (
-                boundary.path.clone(),
-                id_field.to_owned(),
-                boundary.sha256.clone(),
-                boundary.attribution.clone(),
-            )
-        } else {
-            let path = combination
-                .boundary_source
-                .strip_prefix("file:")
-                .filter(|path| !path.is_empty())
-                .ok_or_else(|| Failure::bad_input("invalid boundary_source"))?;
-            let id_field = combination
-                .boundary_source_id_field
-                .as_deref()
-                .ok_or_else(|| Failure::bad_input("local boundary source ID field is missing"))?;
-            (
-                Path::new(path).to_path_buf(),
-                id_field.to_owned(),
-                None,
-                None,
-            )
-        };
+    let (
+        boundary_path,
+        boundary_id_field,
+        boundary_iso_code_source,
+        expected_boundary_digest,
+        boundary_attribution,
+    ) = if let Some(name) = combination.boundary_source.strip_prefix("dataset:") {
+        let boundary = registry.boundary(name).ok_or_else(|| {
+            Failure::bad_input(format!("`{name}` is not a registered boundary dataset"))
+        })?;
+        let id_field = boundary.source_id_field.as_deref().ok_or_else(|| {
+            Failure::bad_input(format!("boundary dataset `{name}` has no source ID field"))
+        })?;
+        (
+            boundary.path.clone(),
+            id_field.to_owned(),
+            boundaries::IsoCodeSource::registered_dataset(name),
+            boundary.sha256.clone(),
+            boundary.attribution.clone(),
+        )
+    } else {
+        let path = combination
+            .boundary_source
+            .strip_prefix("file:")
+            .filter(|path| !path.is_empty())
+            .ok_or_else(|| Failure::bad_input("invalid boundary_source"))?;
+        let id_field = combination
+            .boundary_source_id_field
+            .as_deref()
+            .ok_or_else(|| Failure::bad_input("local boundary source ID field is missing"))?;
+        (
+            Path::new(path).to_path_buf(),
+            id_field.to_owned(),
+            None,
+            None,
+            None,
+        )
+    };
     let population_digest = fingerprint_source("population_source", &population_path)?;
     if expected_population_digest
         .as_deref()
@@ -477,6 +491,7 @@ fn resolve_country_inputs(
         population_attribution,
         boundary_path,
         boundary_id_field,
+        boundary_iso_code_source,
         boundary_digest,
         boundary_attribution,
     })
@@ -486,21 +501,24 @@ fn load_country_data(inputs: &CountryInputs, resolution: u32) -> Result<CountryD
     let source = inputs.raster_spec.grid;
     let decimation = Decimation::new(source, resolution)
         .map_err(|error| Failure::bad_input(error.to_string()))?;
-    let features = boundaries::load(&inputs.boundary_path, &inputs.boundary_id_field).map_err(
-        |error| {
-            if inputs.boundary_path.exists() {
-                Failure::bad_input(error.to_string())
-            } else {
-                Failure {
-                    code: EXIT_MISSING_DATA,
-                    message: format!(
-                        "boundary_source at {} is missing; provide the declared local file or fetch the registered dataset",
-                        inputs.boundary_path.display()
-                    ),
-                }
+    let features = boundaries::load_with_iso_source(
+        &inputs.boundary_path,
+        &inputs.boundary_id_field,
+        inputs.boundary_iso_code_source,
+    )
+    .map_err(|error| {
+        if inputs.boundary_path.exists() {
+            Failure::bad_input(error.to_string())
+        } else {
+            Failure {
+                code: EXIT_MISSING_DATA,
+                message: format!(
+                    "boundary_source at {} is missing; provide the declared local file or fetch the registered dataset",
+                    inputs.boundary_path.display()
+                ),
             }
-        },
-    )?;
+        }
+    })?;
     let geometries: Vec<(FeatureId, Geometry)> = features
         .iter()
         .map(|feature| (feature.id.clone(), feature.geometry.clone()))
@@ -668,6 +686,7 @@ mod tests {
         BoundaryFeature {
             id: FeatureId::new(id).unwrap(),
             name: id.to_owned(),
+            iso_alpha2: None,
             geometry: Geometry::Polygon(Polygon {
                 rings: vec![vec![
                     LatLon {

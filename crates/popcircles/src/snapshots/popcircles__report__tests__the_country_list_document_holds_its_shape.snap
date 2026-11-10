@@ -29,7 +29,8 @@ expression: "Envelope::new(countries)"
     "countries": [
       {
         "id": "AA",
-        "name": "Alpha"
+        "name": "Alpha",
+        "iso_alpha2": "FR"
       },
       {
         "id": "BB",

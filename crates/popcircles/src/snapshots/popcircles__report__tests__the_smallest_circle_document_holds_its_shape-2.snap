@@ -1,7 +1,6 @@
 ---
 source: crates/popcircles/src/report.rs
-assertion_line: 1766
-expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").expect(\"fixture country ID\"),\n\"Fixture country\",\n(\"gisco-countries-2024-1m\", \"2024\",\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",),\n(\"population-count-2020-30arcsec\", 10),\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),))"
+expression: "Envelope::new(CountrySmallestDocument::new(fixture_country_selection(),\n&FeatureId::new(\"AA\").expect(\"fixture country ID\"), \"Fixture country\",\n(\"gisco-countries-2024-1m\", Some(\"2024\"),\n\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",),\n(\"population-count-2020-30arcsec\", 10),\nLedgerReport::new(ledger_path(), ledger.entries.len()),\nSmallestReport::new(&found,\n&grid).expect(\"search centre belongs to the grid\"),).with_iso_alpha2(Some(\"FR\")))"
 ---
 {
   "schema_version": 1,
@@ -30,6 +29,7 @@ expression: "Envelope::new(CountrySmallestDocument::new(&FeatureId::new(\"AA\").
     "country": {
       "id": "AA",
       "name": "Fixture country",
+      "iso_alpha2": "FR",
       "boundary_dataset": "gisco-countries-2024-1m",
       "boundary_revision": "2024",
       "boundary_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

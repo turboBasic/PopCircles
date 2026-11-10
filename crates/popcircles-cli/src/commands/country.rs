@@ -68,7 +68,12 @@ pub(crate) fn list(
             boundary.path.display()
         )));
     }
-    let features = boundaries::load(&boundary.path, &boundary.id_field).map_err(|error| {
+    let features = boundaries::load_with_iso_source(
+        &boundary.path,
+        &boundary.id_field,
+        boundary.iso_code_source,
+    )
+    .map_err(|error| {
         if boundary.path.exists() {
             Failure::bad_input(error.to_string())
         } else {
@@ -82,7 +87,7 @@ pub(crate) fn list(
     })?;
     let mut countries: Vec<_> = features
         .into_iter()
-        .map(|feature| (feature.id, feature.name))
+        .map(|feature| (feature.id, feature.name, feature.iso_alpha2))
         .collect();
     countries.sort_by(|left, right| left.0.as_str().cmp(right.0.as_str()));
 
@@ -104,7 +109,7 @@ pub(crate) fn list(
         ),
     );
     serialised(serde_json::to_string(&Envelope::new(
-        CountryListDocument::new(selection, countries),
+        CountryListDocument::new_with_iso_codes(selection, countries),
     )))
 }
 
@@ -474,6 +479,7 @@ struct QueryPopulation {
 struct QueryBoundary {
     path: PathBuf,
     id_field: String,
+    iso_code_source: Option<boundaries::IsoCodeSource>,
     registered_sha256: Option<String>,
     revision: String,
     attribution: Option<String>,
@@ -564,6 +570,7 @@ fn query_boundary_source(
         Ok(QueryBoundary {
             path: boundary.path.clone(),
             id_field: id_field.to_owned(),
+            iso_code_source: boundaries::IsoCodeSource::registered_dataset(name),
             registered_sha256: boundary.sha256.clone(),
             revision: boundary.revision.clone().unwrap_or_default(),
             attribution: boundary
@@ -584,6 +591,7 @@ fn query_boundary_source(
         Ok(QueryBoundary {
             path: Path::new(path).to_path_buf(),
             id_field,
+            iso_code_source: None,
             registered_sha256: None,
             revision: String::new(),
             attribution: combination.attribution.clone(),
@@ -702,7 +710,12 @@ fn load_selected_prepared(
 fn load_query_boundary(
     boundary: &QueryBoundary,
 ) -> Result<Vec<crate::boundaries::BoundaryFeature>, Failure> {
-    crate::boundaries::load(&boundary.path, &boundary.id_field).map_err(|error| {
+    crate::boundaries::load_with_iso_source(
+        &boundary.path,
+        &boundary.id_field,
+        boundary.iso_code_source,
+    )
+    .map_err(|error| {
         if boundary.path.exists() {
             Failure::bad_input(error.to_string())
         } else {
@@ -780,7 +793,8 @@ pub(crate) fn smallest(
             population_source,
             LedgerReport::new(&path, ledger.len()),
             circle,
-        ),
+        )
+        .with_iso_alpha2(feature.iso_alpha2.as_deref()),
     )))
 }
 
@@ -852,15 +866,18 @@ pub(crate) fn sweep(
             table.grid().width(),
             table.grid().height()
         );
-        countries.push(CountrySweepCountry::new(
-            &feature.id,
-            &feature.name,
-            &boundary_dataset,
-            boundary_revision.as_deref(),
-            &boundary_digest,
-            LedgerReport::new(&path, ledger.len()),
-            records,
-        ));
+        countries.push(
+            CountrySweepCountry::new(
+                &feature.id,
+                &feature.name,
+                &boundary_dataset,
+                boundary_revision.as_deref(),
+                &boundary_digest,
+                LedgerReport::new(&path, ledger.len()),
+                records,
+            )
+            .with_iso_alpha2(feature.iso_alpha2.as_deref()),
+        );
     }
 
     serialised(serde_json::to_string(&Envelope::new(

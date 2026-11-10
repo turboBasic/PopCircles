@@ -1,6 +1,5 @@
 ---
 source: crates/popcircles/src/report.rs
-assertion_line: 1500
 expression: reports
 ---
 {
@@ -23,6 +22,7 @@ expression: reports
             "fraction_of_circle_population": 0.6,
             "fraction_of_country_population": 0.3,
             "id": "A",
+            "iso_alpha2": "FR",
             "name": "A",
             "population_inside": 30.0
           },
@@ -186,6 +186,7 @@ expression: reports
             "fraction_of_circle_population": 0.6,
             "fraction_of_country_population": 0.3,
             "id": "A",
+            "iso_alpha2": "FR",
             "name": "A",
             "population_inside": 30.0
           },
@@ -272,6 +273,7 @@ expression: reports
               "fraction_of_circle_population": 0.6,
               "fraction_of_country_population": 0.3,
               "id": "A",
+              "iso_alpha2": "FR",
               "name": "A",
               "population_inside": 30.0
             },
@@ -376,6 +378,7 @@ expression: reports
             "fraction_of_circle_population": 0.6,
             "fraction_of_country_population": 0.3,
             "id": "A",
+            "iso_alpha2": "FR",
             "name": "A",
             "population_inside": 30.0
           },
@@ -481,6 +484,7 @@ expression: reports
                 "fraction_of_circle_population": 0.6,
                 "fraction_of_country_population": 0.3,
                 "id": "A",
+                "iso_alpha2": "FR",
                 "name": "A",
                 "population_inside": 30.0
               },
