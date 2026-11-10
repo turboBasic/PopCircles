@@ -1,12 +1,14 @@
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
 import time
 import zipfile
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from stat import S_ISLNK
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
@@ -23,6 +25,7 @@ WORKFLOW = "gallery.yml"
 WORKFLOW_REF = "main"
 RUN_TIMEOUT_S = 90
 POLL_S = 3
+ASSET_NAME = re.compile(r"gallery-\d{8}T\d{6}Z-[0-9a-f]{32}\.zip\Z")
 
 
 class PublishGalleryError(Exception):
@@ -101,6 +104,82 @@ def zip_site(site: Path, destination: Path) -> None:
         for source in sorted(site.rglob("*")):
             if source.is_file():
                 archive.write(source, source.relative_to(site).as_posix())
+
+
+def release_assets() -> list[str]:
+    output = checked("gh", "release", "view", RELEASE_TAG, "--json", "isDraft,assets")
+    release = json.loads(output)
+    if not release["isDraft"]:
+        raise PublishGalleryError(f"release {RELEASE_TAG!r} is not a draft")  # noqa: EM102, TRY003
+    return [asset["name"] for asset in release["assets"]]
+
+
+def safe_asset_name(name: str) -> None:
+    if not ASSET_NAME.fullmatch(name):
+        message = "asset name is not a gallery handoff ZIP"
+        raise PublishGalleryError(message)
+
+
+def stage(asset_name: str) -> None:
+    safe_asset_name(asset_name)
+    BUILD.mkdir(parents=True, exist_ok=True)
+    assets = release_assets()
+    if assets.count(asset_name) != 1:
+        raise PublishGalleryError(f"expected one {asset_name!r} asset on {RELEASE_TAG}")  # noqa: EM102, TRY003
+    with TemporaryDirectory(prefix=".gallery-stage-", dir=BUILD) as temporary:
+        workspace = Path(temporary)
+        checked(
+            "gh", "release", "download", RELEASE_TAG, "--pattern", asset_name, "--dir", temporary
+        )
+        archive_path = workspace / asset_name
+        if not archive_path.is_file():
+            message = "release download did not produce the requested asset"
+            raise PublishGalleryError(message)
+        extracted = workspace / "site"
+        extracted.mkdir()
+        try:
+            with zipfile.ZipFile(archive_path) as archive:
+                members = archive.infolist()
+                names: set[str] = set()
+                for member in members:
+                    name = member.filename
+                    path = PurePosixPath(name)
+                    mode = member.external_attr >> 16
+                    if (
+                        not name
+                        or "\\" in name
+                        or path.is_absolute()
+                        or ".." in path.parts
+                        or path.as_posix() != name.rstrip("/")
+                        or name in names
+                        or S_ISLNK(mode)
+                    ):
+                        raise PublishGalleryError(f"unsafe ZIP entry: {name!r}")  # noqa: EM102, TRY003
+                    names.add(name)
+                if "index.html" not in names:
+                    message = "gallery ZIP has no root index.html"
+                    raise PublishGalleryError(message)
+                for member in members:
+                    destination = extracted.joinpath(*PurePosixPath(member.filename).parts)
+                    if member.is_dir():
+                        destination.mkdir(parents=True, exist_ok=True)
+                    else:
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        destination.write_bytes(archive.read(member))
+        except (OSError, zipfile.BadZipFile) as error:
+            message = f"gallery ZIP could not be staged: {error}"
+            raise PublishGalleryError(message) from error
+        replace_site(extracted)
+
+
+def cleanup(asset_name: str) -> None:
+    safe_asset_name(asset_name)
+    assets = release_assets()
+    if assets.count(asset_name) != 1:
+        raise PublishGalleryError(f"expected one {asset_name!r} asset on {RELEASE_TAG}")  # noqa: EM102, TRY003
+    for name in assets:
+        if name != asset_name and name.endswith(".zip"):
+            checked("gh", "release", "delete-asset", RELEASE_TAG, name, "--yes")
 
 
 def new_asset_name() -> str:
@@ -251,6 +330,10 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
     commands = parser.add_subparsers(dest="command", required=True)
     publish_command = commands.add_parser("publish", help="build, upload and deploy the gallery")
     publish_command.add_argument("--refresh-country-sweep", action="store_true")
+    stage_command = commands.add_parser("stage", help="download and validate a gallery handoff ZIP")
+    stage_command.add_argument("asset_name")
+    cleanup_command = commands.add_parser("cleanup", help="remove superseded handoff ZIP assets")
+    cleanup_command.add_argument("asset_name")
     return parser.parse_args(argv)
 
 
@@ -259,6 +342,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "publish":
             publish(refresh_country_sweep=args.refresh_country_sweep)
+        elif args.command == "stage":
+            stage(args.asset_name)
+        elif args.command == "cleanup":
+            cleanup(args.asset_name)
     except PublishGalleryError as error:
         print(f"publish-gallery: {error}", file=sys.stderr)
         return 1

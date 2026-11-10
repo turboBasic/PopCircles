@@ -1,5 +1,6 @@
 import json
 import re
+import stat
 import subprocess
 import zipfile
 from collections.abc import Callable
@@ -252,3 +253,116 @@ def test_remote_failures_keep_existing_release_assets(
 
 def test_asset_names_are_unique() -> None:
     assert pg.new_asset_name() != pg.new_asset_name()
+
+
+@pytest.mark.parametrize("entry", ["../outside.txt", "/outside.txt", "folder/../../outside.txt"])
+def test_stage_rejects_unsafe_paths_before_writing_site(
+    layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path, entry: str
+) -> None:
+    _, site = layout
+    archive_path = tmp_path / "unsafe.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("index.html", "new")
+        archive.writestr(entry, "escape")
+    asset_name = pg.new_asset_name()
+    github = StageGitHub(asset_name, archive_path)
+    monkeypatch.setattr(pg, "run", github)
+    old_site = (site / "index.html").read_bytes()
+
+    with pytest.raises(pg.PublishGalleryError, match="unsafe ZIP entry"):
+        pg.stage(asset_name)
+
+    assert (site / "index.html").read_bytes() == old_site
+    assert not (tmp_path / "outside.txt").exists()
+
+
+def test_stage_rejects_symlink_entries(
+    layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    del layout
+    archive_path = tmp_path / "symlink.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("index.html", "new")
+        entry = zipfile.ZipInfo("link")
+        entry.external_attr = (stat.S_IFLNK | 0o777) << 16
+        archive.writestr(entry, "outside")
+    asset_name = pg.new_asset_name()
+    monkeypatch.setattr(pg, "run", StageGitHub(asset_name, archive_path))
+
+    with pytest.raises(pg.PublishGalleryError, match="unsafe ZIP entry"):
+        pg.stage(asset_name)
+
+
+def test_stage_requires_exact_asset_from_draft_release(
+    layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    del layout
+    asset_name = pg.new_asset_name()
+    archive_path = tmp_path / "site.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("index.html", "new")
+    github = StageGitHub(asset_name, archive_path, assets=[asset_name, asset_name])
+    monkeypatch.setattr(pg, "run", github)
+
+    with pytest.raises(pg.PublishGalleryError, match="expected one"):
+        pg.stage(asset_name)
+
+    assert not any(command[:3] == ("gh", "release", "download") for command in github.commands)
+
+
+def test_stage_rejects_wrong_asset_and_archive_without_root_index(
+    layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    del layout
+    asset_name = pg.new_asset_name()
+    archive_path = tmp_path / "site.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("nested/index.html", "new")
+    github = StageGitHub(asset_name, archive_path, assets=["other.zip"])
+    monkeypatch.setattr(pg, "run", github)
+    with pytest.raises(pg.PublishGalleryError, match="expected one"):
+        pg.stage(asset_name)
+
+    github.assets = [asset_name]
+    with pytest.raises(pg.PublishGalleryError, match=r"root index\.html"):
+        pg.stage(asset_name)
+
+
+def test_cleanup_removes_only_superseded_zip_assets(
+    layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    del layout
+    selected, old = pg.new_asset_name(), pg.new_asset_name()
+    github = StageGitHub(selected, tmp_path / "unused.zip", assets=[selected, old, "notes.txt"])
+    monkeypatch.setattr(pg, "run", github)
+
+    pg.cleanup(selected)
+
+    deletes = [
+        command for command in github.commands if command[:3] == ("gh", "release", "delete-asset")
+    ]
+    assert deletes == [("gh", "release", "delete-asset", pg.RELEASE_TAG, old, "--yes")]
+
+
+@dataclass
+class StageGitHub:
+    selected: str
+    archive: Path
+    assets: list[str] | None = None
+    commands: list[tuple[str, ...]] = field(default_factory=list)
+
+    def __call__(self, *args: str, cwd: Path = pg.REPO_ROOT) -> subprocess.CompletedProcess[str]:
+        del cwd
+        self.commands.append(args)
+        if args[:3] == ("gh", "release", "view"):
+            assets = self.assets if self.assets is not None else [self.selected]
+            output = json.dumps({"isDraft": True, "assets": [{"name": name} for name in assets]})
+        elif args[:3] == ("gh", "release", "download"):
+            destination = Path(args[args.index("--dir") + 1]) / self.selected
+            destination.write_bytes(self.archive.read_bytes())
+            output = ""
+        elif args[:3] == ("gh", "release", "delete-asset"):
+            output = ""
+        else:
+            raise AssertionError(args)
+        return subprocess.CompletedProcess(args, 0, stdout=output, stderr="")
