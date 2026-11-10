@@ -227,6 +227,10 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
 
     assert "unregistered.json" in " ".join(caught.value.__notes__)
     assert not (output / "index.html").exists()
+    assert {source.name for source in corpus.glob("*.json")} == {
+        "drawable.json",
+        "unregistered.json",
+    }
 
 
 def test_the_committed_corpus_draws_every_kind_this_reader_holds(

@@ -56,7 +56,7 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
     )
 
 
-def country_documents(corpus: Path, invoke: Invoke) -> list[str]:
+def country_documents(invoke: Invoke) -> tuple[list[str], dict[str, dict[str, Any]]]:
     listed = child("country list", ["country", "list"], invoke)
     require_success("country list", listed)
     listing: Any = json.loads(listed.stdout)
@@ -101,6 +101,7 @@ def country_documents(corpus: Path, invoke: Invoke) -> list[str]:
         raise ValueError(message)
     expected = {country["id"]: country for country in countries}
     result_ids: set[str] = set()
+    documents: dict[str, dict[str, Any]] = {}
     for swept_country in sweep["result"]["countries"]:
         country = swept_country["country"]
         country_id = country["id"]
@@ -131,16 +132,17 @@ def country_documents(corpus: Path, invoke: Invoke) -> list[str]:
             f"country-{quote(selection['combination_id'], safe='')}-"
             f"{selection['resolution']}-{quote(country_id, safe='')}-half.json"
         )
-        (corpus / filename).write_text(
-            json.dumps(document, separators=(",", ":")) + "\n", encoding="utf-8"
-        )
+        documents[filename] = document
 
     sweep_filename = (
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
-    (corpus / sweep_filename).write_bytes(swept.stdout)
-    return [country["name"] for country in countries if country["id"] not in result_ids]
+    documents[sweep_filename] = sweep
+    return (
+        [country["name"] for country in countries if country["id"] not in result_ids],
+        documents,
+    )
 
 
 def build(
@@ -152,15 +154,23 @@ def build(
     coastline, coastline_attribution = registered_coastline(registry)
     output.mkdir(parents=True, exist_ok=True)
     (output / "index.html").unlink(missing_ok=True)
-    missing = country_documents(corpus, invoke)
+    corpus.mkdir(parents=True, exist_ok=True)
+    missing, generated = country_documents(invoke)
 
     drawn: list[Drawn] = []
     skipped: list[Skipped] = []
-    for source in sorted(corpus.glob("*.json")):
-        payload: Any = json.loads(source.read_text(encoding="utf-8"))
+    sources = [
+        (source, json.loads(source.read_text(encoding="utf-8")))
+        for source in sorted(corpus.glob("*.json"))
+        if source.name not in generated
+    ]
+    sources.extend((corpus / name, payload) for name, payload in generated.items())
+    for source, payload in sorted(sources, key=lambda item: item[0].name):
         envelope = Envelope.model_validate(payload)
         if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
             skipped.append(Skipped(source, envelope.document))
+            if source.name in generated:
+                (output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
             continue
         try:
             answer = circle_of(payload)
@@ -202,6 +212,10 @@ def build(
         (output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         drawn.append(Drawn(source, target))
 
+    for name, payload in generated.items():
+        (corpus / name).write_text(
+            json.dumps(payload, separators=(",", ":")) + "\n", encoding="utf-8"
+        )
     (output / "index.html").write_text(page(drawn, missing), encoding="utf-8")
     return drawn, skipped
 
