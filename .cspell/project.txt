@@ -162,33 +162,33 @@ unrenderable
 widenings
 
 # --- Data sources ---
-CIESIN
-EuroGeographics
-GISCO
-GADM
+Borås
 Chamdo
+CIESIN
 Dibrugarh
 Earthdata
+EuroGeographics
+GADM
 GHSL
+GISCO
 GPWv
 JRC
 Karokh
 Lenger
+Mirzapur
 NASA
 Palisades
 SEDAC
-Mirzapur
-Borås
-Xichang
-WPP
 WCAG
+WPP
+Xichang
 
 # --- Geographic names in published result data ---
-Arunachal
 Aksai
-Senkaku
-Paracel
+Arunachal
 Liancourt
+Paracel
+Senkaku
 Spratly
 
 # --- Config keys and CLI ---
