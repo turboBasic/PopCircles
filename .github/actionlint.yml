@@ -1,4 +1,5 @@
-# actionlint's built-in runner list does not yet include GitHub's Ubuntu 26.04 image.
+# jactionlint reads actionlint's config format; this adds the GitHub runner image to its runner list.
+profile: correctness
 self-hosted-runner:
   labels:
     - ubuntu-26.04

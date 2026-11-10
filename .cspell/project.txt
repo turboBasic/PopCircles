@@ -9,6 +9,7 @@ alexmijo
 # --- Repository and tooling ---
 turboBasic
 actionlint
+jactionlint
 anomalyco
 binstall
 codesign

@@ -6,7 +6,7 @@ python = "3.14"
 uv = "latest"
 prek = "latest"
 "pipx:lizard" = "1.24.2"
-actionlint = "latest"
+jactionlint = "2.5.0"
 shellcheck = "latest"
 taplo = "latest"
 node = "24.19.0"
@@ -115,7 +115,7 @@ run = "uv run ruff check ."
 
 [tasks."lint:workflows"]
 description = "Lint GitHub Actions workflows"
-run = "actionlint"
+run = "jactionlint"
 
 # These repository-wide checks have no other lint task; the remaining hooks are selected below.
 [tasks."lint:precommit"]
