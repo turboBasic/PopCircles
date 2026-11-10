@@ -10,9 +10,9 @@ node = "26.13.0"
 # where most tools here take `latest` — this one decides what a workflow does, not whether a file is
 # formatted, so a moving version would produce a run nobody could reproduce.
 opencode = "2.2.6"
-"pipx:lizard" = "1.24.2"
+"pipx:lizard" = "1.25.1"
 prek = "0.5.10"
-python = "3.14"
+python = "3.15.2"
 # clippy and rustfmt are named explicitly because CI's default profile omits them; rust-src
 # gives rust-analyzer the standard library sources for the same pinned toolchain.
 rust = { version = "1.99.1", components = ["clippy", "rustfmt", "rust-src"] }
