@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "KY",
+      "name": "Cayman Islands",
+      "iso_alpha2": "KY",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4b59.json",
+      "radii": 6
+    },
+    "circle": {
+      "radius_km": 6,
+      "centre": {
+        "lat": 19.29166666666667,
+        "lon": -81.34166666666667
+      },
+      "row": 4242,
+      "col": 5919,
+      "population": 37673.43006467819,
+      "target": {
+        "share": 0.5,
+        "persons": 31540.278006694978,
+        "total": 63080.556013389956
+      },
+      "share_achieved": 0.5972272986414601,
+      "short_below": {
+        "radius_km": 5,
+        "population": 30466.92389678955
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 4.655936980279244e-07,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 6,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 48,
+          "blocks_examined": 1100,
+          "blocks_pruned": 759,
+          "circles_evaluated": 341,
+          "kernels_built": 796
+        }
+      }
+    }
+  }
+}

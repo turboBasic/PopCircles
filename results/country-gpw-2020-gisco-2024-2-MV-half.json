@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "MV",
+      "name": "Maldives",
+      "iso_alpha2": "MV",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4d56.json",
+      "radii": 14
+    },
+    "circle": {
+      "radius_km": 88,
+      "centre": {
+        "lat": 4.924999999999997,
+        "lon": 73.275
+      },
+      "row": 5104,
+      "col": 15196,
+      "population": 196117.3937214315,
+      "target": {
+        "share": 0.5,
+        "persons": 189304.543667818,
+        "total": 378609.087335636
+      },
+      "share_achieved": 0.5179944176764408,
+      "short_below": {
+        "radius_km": 87,
+        "population": 175661.097232908
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 3.422506487821246e-06,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 14,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 144,
+          "blocks_examined": 10264,
+          "blocks_pruned": 7376,
+          "circles_evaluated": 2888,
+          "kernels_built": 2462
+        }
+      }
+    }
+  }
+}

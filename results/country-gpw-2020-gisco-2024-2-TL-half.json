@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "TL",
+      "name": "Timor-Leste",
+      "iso_alpha2": "TL",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/544c.json",
+      "radii": 10
+    },
+    "circle": {
+      "radius_km": 29,
+      "centre": {
+        "lat": -8.775000000000006,
+        "lon": 125.49166666666667
+      },
+      "row": 5926,
+      "col": 18329,
+      "population": 664447.7220086139,
+      "target": {
+        "share": 0.5,
+        "persons": 653588.7975243264,
+        "total": 1307177.5950486527
+      },
+      "share_achieved": 0.5083071531560969,
+      "short_below": {
+        "radius_km": 28,
+        "population": 647169.9562300723
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 1.319300251856902e-05,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 10,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 90,
+          "blocks_examined": 4712,
+          "blocks_pruned": 3446,
+          "circles_evaluated": 1266,
+          "kernels_built": 2100
+        }
+      }
+    }
+  }
+}

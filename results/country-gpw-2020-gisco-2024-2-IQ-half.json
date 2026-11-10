@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "IQ",
+      "name": "Iraq",
+      "iso_alpha2": "IQ",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4951.json",
+      "radii": 16
+    },
+    "circle": {
+      "radius_km": 193,
+      "centre": {
+        "lat": 32.44166666666667,
+        "lon": 45.40833333333333
+      },
+      "row": 3453,
+      "col": 13524,
+      "population": 20950275.150440432,
+      "target": {
+        "share": 0.5,
+        "persons": 20890492.76870594,
+        "total": 41780985.53741188
+      },
+      "share_achieved": 0.5014308514020321,
+      "short_below": {
+        "radius_km": 192,
+        "population": 20881229.648006223
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 0.0004220592999990665,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 16,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 176,
+          "blocks_examined": 51998,
+          "blocks_pruned": 38359,
+          "circles_evaluated": 13639,
+          "kernels_built": 17282
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "PM",
+      "name": "Saint Pierre and Miquelon",
+      "iso_alpha2": "PM",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/504d.json",
+      "radii": 4
+    },
+    "circle": {
+      "radius_km": 3,
+      "centre": {
+        "lat": 46.775,
+        "lon": -56.19166666666666
+      },
+      "row": 2593,
+      "col": 7428,
+      "population": 3905.8079812526703,
+      "target": {
+        "share": 0.5,
+        "persons": 3182.2948336304835,
+        "total": 6364.589667260967
+      },
+      "share_achieved": 0.6136778936973567,
+      "short_below": {
+        "radius_km": 2,
+        "population": 2176.11327457428
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 5.4552977336901e-08,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 4,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 24,
+          "blocks_examined": 554,
+          "blocks_pruned": 402,
+          "circles_evaluated": 152,
+          "kernels_built": 312
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "SJ",
+      "name": "Svalbard and Jan Mayen",
+      "iso_alpha2": "SJ",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/534a.json",
+      "radii": 14
+    },
+    "circle": {
+      "radius_km": 111,
+      "centre": {
+        "lat": 78.70833333333333,
+        "lon": 15.708333333333343
+      },
+      "row": 677,
+      "col": 11742,
+      "population": 1521.430145069983,
+      "target": {
+        "share": 0.5,
+        "persons": 1511.6424195000175,
+        "total": 3023.284839000035
+      },
+      "share_achieved": 0.5032374473763453,
+      "short_below": {
+        "radius_km": 110,
+        "population": 1506.3291800518916
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 2.6895169704932524e-08,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 14,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 182,
+          "blocks_examined": 173078,
+          "blocks_pruned": 112259,
+          "circles_evaluated": 60819,
+          "kernels_built": 34654
+        }
+      }
+    }
+  }
+}

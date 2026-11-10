@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "OM",
+      "name": "Oman",
+      "iso_alpha2": "OM",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4f4d.json",
+      "radii": 14
+    },
+    "circle": {
+      "radius_km": 88,
+      "centre": {
+        "lat": 23.34166666666667,
+        "lon": 57.85833333333332
+      },
+      "row": 3999,
+      "col": 14271,
+      "population": 2464416.3309427164,
+      "target": {
+        "share": 0.5,
+        "persons": 2458484.8226293717,
+        "total": 4916969.645258743
+      },
+      "share_achieved": 0.5012063341328666,
+      "short_below": {
+        "radius_km": 87,
+        "population": 2450385.8265875243
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 5.202443031233504e-05,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 14,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 154,
+          "blocks_examined": 19748,
+          "blocks_pruned": 14556,
+          "circles_evaluated": 5192,
+          "kernels_built": 6987
+        }
+      }
+    }
+  }
+}

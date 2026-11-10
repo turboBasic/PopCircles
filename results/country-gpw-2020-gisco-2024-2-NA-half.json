@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "NA",
+      "name": "Namibia",
+      "iso_alpha2": "NA",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4e41.json",
+      "radii": 18
+    },
+    "circle": {
+      "radius_km": 286,
+      "centre": {
+        "lat": -20.058333333333337,
+        "lon": 16.491666666666674
+      },
+      "row": 6603,
+      "col": 11789,
+      "population": 1357800.9112635814,
+      "target": {
+        "share": 0.5,
+        "persons": 1351681.2981908217,
+        "total": 2703362.5963816433
+      },
+      "share_achieved": 0.5022637041294241,
+      "short_below": {
+        "radius_km": 285,
+        "population": 1333903.0120581565
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 2.659945207226716e-05,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 18,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 208,
+          "blocks_examined": 28726,
+          "blocks_pruned": 21391,
+          "circles_evaluated": 7335,
+          "kernels_built": 9718
+        }
+      }
+    }
+  }
+}

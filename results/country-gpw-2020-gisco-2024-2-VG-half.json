@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "VG",
+      "name": "British Virgin Islands",
+      "iso_alpha2": "VG",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/5647.json",
+      "radii": 6
+    },
+    "circle": {
+      "radius_km": 5,
+      "centre": {
+        "lat": 18.424999999999997,
+        "lon": -64.625
+      },
+      "row": 4294,
+      "col": 6922,
+      "population": 16457.401733636856,
+      "target": {
+        "share": 0.5,
+        "persons": 16242.910874255467,
+        "total": 32485.821748510934
+      },
+      "share_achieved": 0.5066025991597771,
+      "short_below": {
+        "radius_km": 4,
+        "population": 15683.8206615448
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 2.3506434018914347e-07,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 6,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 42,
+          "blocks_examined": 1018,
+          "blocks_pruned": 738,
+          "circles_evaluated": 280,
+          "kernels_built": 580
+        }
+      }
+    }
+  }
+}

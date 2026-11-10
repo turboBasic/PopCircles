@@ -172,6 +172,14 @@ def build(
             if source.name in generated:
                 (output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
             continue
+        if (
+            envelope.document == "country-smallest"
+            and payload["result"]["circle"]["target"]["total"] == 0
+        ):
+            skipped.append(Skipped(source, "zero-population country"))
+            (output / source.name).unlink(missing_ok=True)
+            (output / f"{source.stem}.png").unlink(missing_ok=True)
+            continue
         try:
             answer = circle_of(payload)
             population_attribution = (
@@ -213,9 +221,7 @@ def build(
         drawn.append(Drawn(source, target))
 
     for name, payload in generated.items():
-        (corpus / name).write_text(
-            json.dumps(payload, separators=(",", ":")) + "\n", encoding="utf-8"
-        )
+        (corpus / name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     (output / "index.html").write_text(page(drawn, missing), encoding="utf-8")
     return drawn, skipped
 
@@ -236,7 +242,10 @@ def main(argv: list[str] | None = None) -> int:
     for one in drawn:
         print(one.figure)
     for one in skipped:
-        print(f"{one.document}: skipped, kind {one.kind!r} carries no circle to draw")
+        if one.kind == "zero-population country":
+            print(f"{one.document}: skipped, country population is zero")
+        else:
+            print(f"{one.document}: skipped, kind {one.kind!r} carries no circle to draw")
     return 0
 
 

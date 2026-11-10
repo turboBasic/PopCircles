@@ -38,12 +38,30 @@ jobs:
       - name: Sync Python tooling
         run: uv sync --locked
 
-      # Fetch only the configured coastline; rendering the committed documents needs no raster or
-      # unrelated boundary input.
+      # Fetch the configured coastline for the world maps.
       - name: Fetch configured coastline
         run: |
           dataset="$(uv run python -c 'import tomllib; print(tomllib.load(open("data/config.toml", "rb"))["defaults"]["coastline_dataset"])')"
           mise run data:get -- --dataset "$dataset"
+
+      - name: Fetch configured country boundary
+        run: |
+          dataset="$(uv run python - <<'PY'
+          import tomllib
+
+          with open("data/config.toml", "rb") as source:
+              config = tomllib.load(source)
+          combination = config["combinations"][config["defaults"]["country_combination"]]
+          boundary = combination["boundary_source"]
+          if not boundary.startswith("dataset:"):
+              raise SystemExit(f"configured country boundary is not a registered dataset: {boundary}")
+          print(boundary.removeprefix("dataset:"))
+          PY
+          )"
+          mise run data:get -- --dataset "$dataset"
+
+      - name: Fetch configured prepared countries
+        run: mise run cli -- country fetch
 
       - run: mise run gallery -- --input results --output build/gallery
 

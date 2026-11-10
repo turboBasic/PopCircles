@@ -71,8 +71,10 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
     (directory / name).write_text(json.dumps(payload), encoding="utf-8")
 
 
-def fixture_outline(_answer: Answer, _registry: Registry) -> BaseGeometry:
-    return box(-10, -10, 10, 10)
+def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
+    longitude = answer.circle.centre.lon
+    latitude = answer.circle.centre.lat
+    return box(longitude - 5, latitude - 5, longitude + 5, latitude + 5)
 
 
 def country_cli(
@@ -251,6 +253,17 @@ def test_the_committed_corpus_draws_every_kind_this_reader_holds(
     committed = sorted(corpus.glob("*.json"))
     assert len(drawn) + len(skipped) == len(committed)
     assert drawn, "the committed corpus holds no document this gallery can draw"
+    zero_population = {
+        source.name
+        for source in committed
+        if (payload := json.loads(source.read_text(encoding="utf-8"))).get("document")
+        == "country-smallest"
+        and payload["result"]["circle"]["target"]["total"] == 0
+    }
+    assert {
+        one.document.name for one in skipped if one.kind == "zero-population country"
+    } == zero_population
+    assert not zero_population.intersection(one.document.name for one in drawn)
     for one in drawn:
         assert one.figure.read_bytes().startswith(PNG_MAGIC)
         assert (output / one.document.name).is_file()
@@ -270,13 +283,20 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         configured_country("BB", "Beta"),
         configured_country("CC", "No population <yet>"),
     ]
-    invoke, calls = country_cli(
-        countries, [swept_country("AA", "Alpha"), swept_country("BB", "Beta")]
-    )
+    zero_population = swept_country("BB", "Beta")
+    zero_population["records"][0]["circle"]["radius_km"] = 0
+    zero_population["records"][0]["circle"]["population"] = 0
+    zero_population["records"][0]["circle"]["target"]["persons"] = 0
+    zero_population["records"][0]["circle"]["target"]["total"] = 0
+    invoke, calls = country_cli(countries, [swept_country("AA", "Alpha"), zero_population])
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "world.json", document("most-populous"))
     output = tmp_path / "gallery"
+    zero_result_name = "country-fixture-10-BB-half.json"
+    output.mkdir()
+    (output / zero_result_name).write_text("stale", encoding="utf-8")
+    (output / zero_result_name.replace(".json", ".png")).write_bytes(b"stale")
     annotations: list[str] = []
     current_annotate = render_map_module.annotate
 
@@ -305,12 +325,13 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         "BB",
         "CC",
     ]
-    assert [one.document.name for one in drawn] == [*result_names, "world.json"]
+    assert [one.document.name for one in drawn] == [result_names[0], "world.json"]
     assert [one.figure.name for one in drawn] == [
-        *(name.replace(".json", ".png") for name in result_names),
+        result_names[0].replace(".json", ".png"),
         "world.png",
     ]
     assert [(one.document.name, one.kind) for one in skipped] == [
+        (result_names[1], "zero-population country"),
         ("country-sweep-fixture-10-half.json", "country-sweep"),
     ]
     assert (corpus / "country-sweep-fixture-10-half.json").is_file()
@@ -318,9 +339,13 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         result = json.loads((corpus / name).read_text(encoding="utf-8"))
         assert result["document"] == "country-smallest"
         assert result["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
-        assert (output / name).is_file()
+        assert (corpus / name).is_file()
+    assert (output / result_names[0]).is_file()
+    assert not (output / result_names[1]).exists()
+    assert not (output / result_names[1].replace(".json", ".png")).exists()
     page = (output / "index.html").read_text(encoding="utf-8")
-    assert all(f'href="{name}"' in page for name in result_names)
+    assert f'href="{result_names[0]}"' in page
+    assert result_names[1] not in page
     assert "No population &lt;yet&gt;" in page
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
@@ -341,5 +366,24 @@ def test_a_failed_country_command_leaves_no_gallery_index(
 
     with pytest.raises(WorkflowError):
         build(corpus, output, fail)
+
+    assert not (output / "index.html").exists()
+
+
+def test_a_country_without_a_unique_half_record_leaves_no_gallery_index(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    incomplete = swept_country("AA", "Alpha")
+    incomplete["records"] = []
+    invoke, _calls = country_cli([configured_country("AA", "Alpha")], [incomplete])
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    output = tmp_path / "gallery"
+    output.mkdir()
+    (output / "index.html").write_text("stale", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="has no unique 50% result"):
+        build(corpus, output, invoke)
 
     assert not (output / "index.html").exists()

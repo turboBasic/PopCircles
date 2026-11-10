@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "MT",
+      "name": "Malta",
+      "iso_alpha2": "MT",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4d54.json",
+      "radii": 6
+    },
+    "circle": {
+      "radius_km": 5,
+      "centre": {
+        "lat": 35.891666666666666,
+        "lon": 14.474999999999994
+      },
+      "row": 3246,
+      "col": 11668,
+      "population": 224758.8874206543,
+      "target": {
+        "share": 0.5,
+        "persons": 211270.8321774006,
+        "total": 422541.6643548012
+      },
+      "share_achieved": 0.531921243231361,
+      "short_below": {
+        "radius_km": 4,
+        "population": 182509.53302001953
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 3.5278603982628837e-06,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 6,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 37,
+          "blocks_examined": 858,
+          "blocks_pruned": 616,
+          "circles_evaluated": 242,
+          "kernels_built": 428
+        }
+      }
+    }
+  }
+}

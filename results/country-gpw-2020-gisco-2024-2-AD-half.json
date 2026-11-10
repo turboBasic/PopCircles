@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "AD",
+      "name": "Andorra",
+      "iso_alpha2": "AD",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4144.json",
+      "radii": 6
+    },
+    "circle": {
+      "radius_km": 6,
+      "centre": {
+        "lat": 42.50833333333333,
+        "lon": 1.5583333333333371
+      },
+      "row": 2849,
+      "col": 10893,
+      "population": 33892.065967559814,
+      "target": {
+        "share": 0.5,
+        "persons": 32226.3977060318,
+        "total": 64452.7954120636
+      },
+      "share_achieved": 0.5258432276036898,
+      "short_below": {
+        "radius_km": 5,
+        "population": 27919.642974853516
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 4.6888444026344775e-07,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 6,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 37,
+          "blocks_examined": 950,
+          "blocks_pruned": 679,
+          "circles_evaluated": 271,
+          "kernels_built": 531
+        }
+      }
+    }
+  }
+}
