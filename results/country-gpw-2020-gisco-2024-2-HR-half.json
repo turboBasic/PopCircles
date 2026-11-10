@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "HR",
+      "name": "Croatia",
+      "iso_alpha2": "HR",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4852.json",
+      "radii": 14
+    },
+    "circle": {
+      "radius_km": 87,
+      "centre": {
+        "lat": 45.708333333333336,
+        "lon": 16.525000000000006
+      },
+      "row": 2657,
+      "col": 11791,
+      "population": 2048724.9644069672,
+      "target": {
+        "share": 0.5,
+        "persons": 2048022.5067740702,
+        "total": 4096045.0135481404
+      },
+      "share_achieved": 0.5001714965608467,
+      "short_below": {
+        "radius_km": 86,
+        "population": 2039985.5963721275
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 2.9939218337009502e-05,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 14,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 141,
+          "blocks_examined": 19522,
+          "blocks_pruned": 14295,
+          "circles_evaluated": 5227,
+          "kernels_built": 8960
+        }
+      }
+    }
+  }
+}

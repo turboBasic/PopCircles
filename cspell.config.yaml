@@ -26,6 +26,7 @@ ignorePaths:
   - .git/**
   - .cspell/**
   - build/**
+  - results/country-*-half.json # Generated country names come from the boundary data.
   - "**/__pycache__/**"
   - "**/.venv/**"
   - uv.lock

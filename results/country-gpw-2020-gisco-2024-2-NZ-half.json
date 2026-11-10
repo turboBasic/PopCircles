@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "NZ",
+      "name": "New Zealand",
+      "iso_alpha2": "NZ",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/4e5a.json",
+      "radii": 16
+    },
+    "circle": {
+      "radius_km": 149,
+      "centre": {
+        "lat": -37.90833333333333,
+        "lon": 174.80833333333334
+      },
+      "row": 7674,
+      "col": 21288,
+      "population": 2359546.9327892177,
+      "target": {
+        "share": 0.5,
+        "persons": 2358813.7883305703,
+        "total": 4717627.576661141
+      },
+      "share_achieved": 0.5001554053275156,
+      "short_below": {
+        "radius_km": 148,
+        "population": 2347644.1762585323
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 5.154639173897475e-05,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 16,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 192,
+          "blocks_examined": 19156,
+          "blocks_pruned": 13994,
+          "circles_evaluated": 5162,
+          "kernels_built": 7808
+        }
+      }
+    }
+  }
+}

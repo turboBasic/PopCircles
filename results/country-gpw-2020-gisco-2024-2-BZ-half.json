@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "BZ",
+      "name": "Belize",
+      "iso_alpha2": "BZ",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/425a.json",
+      "radii": 12
+    },
+    "circle": {
+      "radius_km": 50,
+      "centre": {
+        "lat": 17.641666666666666,
+        "lon": -88.65833333333333
+      },
+      "row": 4341,
+      "col": 5480,
+      "population": 139339.46604812145,
+      "target": {
+        "share": 0.5,
+        "persons": 137047.58975778148,
+        "total": 274095.17951556295
+      },
+      "share_achieved": 0.5083616074328292,
+      "short_below": {
+        "radius_km": 49,
+        "population": 136579.97869448364
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 3.17187359461359e-06,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 12,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 106,
+          "blocks_examined": 26780,
+          "blocks_pruned": 19526,
+          "circles_evaluated": 7254,
+          "kernels_built": 7929
+        }
+      }
+    }
+  }
+}

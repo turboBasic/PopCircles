@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "document": "country-smallest",
+  "tool": "popcircles",
+  "tool_version": "0.3.0",
+  "earth_model": {
+    "model": "sphere",
+    "radius_km": 6371.0088
+  },
+  "result": {
+    "selection": {
+      "combination_id": "gpw-2020-gisco-2024",
+      "resolution": 2,
+      "population_source": {
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
+      },
+      "boundary_source": {
+        "name": "gisco-countries-2024-1m",
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+      }
+    },
+    "country": {
+      "id": "SH",
+      "name": "Saint Helena, Ascension and Tristan Da Cunha",
+      "iso_alpha2": "SH",
+      "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+    },
+    "population_dataset": "population-count-2020-30arcsec",
+    "decimation": 2,
+    "ledger": {
+      "path": "out/countries/5348.json",
+      "radii": 4
+    },
+    "circle": {
+      "radius_km": 4,
+      "centre": {
+        "lat": -15.941666666666663,
+        "lon": -5.708333333333343
+      },
+      "row": 6356,
+      "col": 10457,
+      "population": 2151.2868264615536,
+      "target": {
+        "share": 0.5,
+        "persons": 2025.579530797433,
+        "total": 4051.159061594866
+      },
+      "share_achieved": 0.5310299580324629,
+      "short_below": {
+        "radius_km": 3,
+        "population": 1841.8217601776123
+      },
+      "covers_whole_grid": false,
+      "predicate_slack_persons": 2.936009610215441e-08,
+      "tolerance_persons": 0.0,
+      "stats": {
+        "radii_evaluated": 4,
+        "radii_reused": 0,
+        "searched": {
+          "levels": 48,
+          "blocks_examined": 81272,
+          "blocks_pruned": 60923,
+          "circles_evaluated": 20349,
+          "kernels_built": 2398
+        }
+      }
+    }
+  }
+}

@@ -283,7 +283,9 @@ Rendered maps use the registered boundary dataset named by `defaults.coastline_d
 key to another registered boundary dataset to switch coastlines. Fetch the selected dataset with
 `mise run data:get -- --dataset <dataset-key>`. The command checks its registered byte count and
 SHA-256 before placing the file. Maps show the selected dataset's attribution. GISCO's coastline
-permits non-commercial use only. The gallery workflow fetches the configured selection before drawing.
+permits non-commercial use only. The gallery workflow fetches the configured coastline, country boundary
+and prepared country combination before drawing. It uses the prepared country tables for one batched 50%
+sweep and does not fetch the full-resolution population raster.
 Once it is present, rendering works offline. `--no-coastlines` skips the coastline file and its credit.
 
 When a world document includes a country breakdown, the caption lists each country with its population

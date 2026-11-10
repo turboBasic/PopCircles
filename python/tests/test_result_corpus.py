@@ -23,6 +23,8 @@ def test_a_committed_document_parses_and_names_its_dataset(document: Path) -> No
     envelope = Envelope.model_validate(payload)
     if envelope.document == "country-smallest":
         assert payload["result"]["population_dataset"]
+    elif envelope.document == "country-sweep":
+        assert payload["result"]["selection"]["population_source"]["name"]
     else:
         assert envelope.provenance is not None
         assert envelope.provenance.dataset is not None
