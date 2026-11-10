@@ -183,7 +183,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
         "country-smallest"
     )
     assert len(github.uploaded) == 1
-    assert re.fullmatch(r"gallery-\d{8}T\d{6}Z-[0-9a-f]{32}\.zip", github.uploaded[0])
+    assert re.fullmatch(r"gallery-\d{8}T\d{12}Z-[0-9a-f]{32}\.zip", github.uploaded[0])
     assert ".nojekyll" in github.zip_files[0]
     assert "index.html" in github.zip_files[0]
     assert github.watched == [43]
@@ -358,8 +358,12 @@ def test_cleanup_removes_only_superseded_zip_assets(
     layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     del layout
-    selected, old = pg.new_asset_name(), pg.new_asset_name()
-    github = StageGitHub(selected, tmp_path / "unused.zip", assets=[selected, old, "notes.txt"])
+    selected = "gallery-20261110T120001000000Z-" + "a" * 32 + ".zip"
+    older = "gallery-20261110T120000999999Z-" + "b" * 32 + ".zip"
+    newer = "gallery-20261110T120002000000Z-" + "c" * 32 + ".zip"
+    github = StageGitHub(
+        selected, tmp_path / "unused.zip", assets=[selected, older, newer, "notes.zip"]
+    )
     monkeypatch.setattr(pg, "run", github)
 
     pg.cleanup(selected)
@@ -367,7 +371,7 @@ def test_cleanup_removes_only_superseded_zip_assets(
     deletes = [
         command for command in github.commands if command[:3] == ("gh", "release", "delete-asset")
     ]
-    assert deletes == [("gh", "release", "delete-asset", pg.RELEASE_TAG, old, "--yes")]
+    assert deletes == [("gh", "release", "delete-asset", pg.RELEASE_TAG, older, "--yes")]
 
 
 def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy() -> None:

@@ -25,7 +25,7 @@ WORKFLOW = "gallery.yml"
 WORKFLOW_REF = "main"
 RUN_TIMEOUT_S = 90
 POLL_S = 3
-ASSET_NAME = re.compile(r"gallery-\d{8}T\d{6}Z-[0-9a-f]{32}\.zip\Z")
+ASSET_NAME = re.compile(r"gallery-(?P<created>\d{8}T\d{12}Z)-[0-9a-f]{32}\.zip\Z")
 
 
 class PublishGalleryError(Exception):
@@ -114,10 +114,12 @@ def release_assets() -> list[str]:
     return [asset["name"] for asset in release["assets"]]
 
 
-def safe_asset_name(name: str) -> None:
-    if not ASSET_NAME.fullmatch(name):
+def safe_asset_name(name: str) -> re.Match[str]:
+    match = ASSET_NAME.fullmatch(name)
+    if match is None:
         message = "asset name is not a gallery handoff ZIP"
         raise PublishGalleryError(message)
+    return match
 
 
 def stage(asset_name: str) -> None:
@@ -173,17 +175,19 @@ def stage(asset_name: str) -> None:
 
 
 def cleanup(asset_name: str) -> None:
-    safe_asset_name(asset_name)
+    selected = safe_asset_name(asset_name)
     assets = release_assets()
     if assets.count(asset_name) != 1:
         raise PublishGalleryError(f"expected one {asset_name!r} asset on {RELEASE_TAG}")  # noqa: EM102, TRY003
+    selected_time = selected["created"]
     for name in assets:
-        if name != asset_name and name.endswith(".zip"):
+        match = ASSET_NAME.fullmatch(name)
+        if name != asset_name and match is not None and match["created"] < selected_time:
             checked("gh", "release", "delete-asset", RELEASE_TAG, name, "--yes")
 
 
 def new_asset_name() -> str:
-    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
     return f"gallery-{timestamp}-{uuid4().hex}.zip"
 
 
