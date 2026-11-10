@@ -283,9 +283,9 @@ Rendered maps use the registered boundary dataset named by `defaults.coastline_d
 key to another registered boundary dataset to switch coastlines. Fetch the selected dataset with
 `mise run data:get -- --dataset <dataset-key>`. The command checks its registered byte count and
 SHA-256 before placing the file. Maps show the selected dataset's attribution. GISCO's coastline
-permits non-commercial use only. The gallery workflow fetches the configured coastline, country boundary
-and prepared country combination before drawing. It uses the prepared country tables for one batched 50%
-sweep and does not fetch the full-resolution population raster.
+permits non-commercial use only. The local gallery publish command uses the configured coastline,
+country boundary and prepared country combination. It reuses the matching saved 50% country sweep when
+available, and does not fetch the full-resolution population raster.
 Once it is present, rendering works offline. `--no-coastlines` skips the coastline file and its credit.
 
 When a world document includes a country breakdown, the caption lists each country with its population
@@ -297,10 +297,10 @@ vector at `data/boundaries/gisco-countries-2024-1m.geojson`. The renderer select
 ID from the document and checks its boundary revision and digest against the registry before drawing.
 It derives the orthographic frame from the selected outline and the result circle, then shows the country
 name and ID with population and boundary credits from their registry rows. Rendering still reads no
-population raster, table or ledger. For example, the committed Germany result renders with:
+population raster, table or ledger. For example, a committed country result renders with:
 
 ```sh
-mise run render -- --input results/germany-half-5arcmin.json --output out/germany-half.png
+mise run render -- --input results/country-gpw-2020-gisco-2024-2-AD-half.json --output out/andorra-half.png
 ```
 
 Fetch the boundary vector with `mise run data:get` when it is absent. Existing world documents need no
@@ -317,6 +317,51 @@ uv run python -m population_circles.centre_caption --input results/world-half-30
 
 Older documents and centres without a nearby settlement still produce a linked coordinate. Rendering
 and formatting need the document, basemap and dataset registry; they do not need the settlement file.
+
+## Publishing the gallery
+
+Run the local publisher from the repository root:
+
+```sh
+mise run gallery:publish
+```
+
+It needs the prepared country bundle selected in `data/config.toml`, that combination's boundary vector,
+and the configured coastline vector. Install the prepared bundle and fetch the registered vectors with:
+
+```sh
+mise run cli -- country fetch
+mise run data:get -- --dataset <country-boundary-dataset-key>
+mise run data:get -- --dataset <coastline-dataset-key>
+```
+
+The dataset keys are the `dataset:` values for `boundary_source` and `defaults.coastline_dataset` in
+`data/config.toml`. The publisher also needs the GitHub CLI authenticated with permission to upload to
+the `gallery-handoff` draft release and dispatch the Pages workflow. It uses prepared country data, so
+the full-resolution population raster is not required when the selected prepared bundle is available.
+
+By default, publishing reuses the saved 50% country sweep only when its full selection and country list
+still match the configuration. If the sweep is missing or stale, the command runs one batch sweep. To
+deliberately recalculate even a matching sweep, run:
+
+```sh
+mise run gallery:publish -- --refresh-country-sweep
+```
+
+The refreshed sweep and country results are saved under `results/` only after every map renders
+successfully. A failed render leaves the previous result documents and `build/gallery` in place. After a
+successful local build, the command leaves the site in `build/gallery`, uploads a uniquely named ZIP to
+the draft handoff release, dispatches Pages with that exact asset name, and waits for the deployment.
+The workflow stages only the selected ZIP and removes older handoff ZIPs after deployment succeeds;
+newer ZIPs remain available if another dispatch is waiting.
+
+If a deployment fails after upload, the error reports the asset name and run link, and the ZIP remains on
+the draft release. Retry the failed run with **Re-run jobs** in GitHub Actions, or dispatch the workflow
+with the exact asset name:
+
+```sh
+gh workflow run gallery.yml --ref main --field asset_name=gallery-<timestamp>-<unique-id>.zip
+```
 
 ## Watching a run
 

@@ -121,6 +121,7 @@ mangen
 markersize
 memmap
 miniz
+minmax
 mlat
 mlon
 ndarray
@@ -135,6 +136,7 @@ thiserror
 tmpg
 verticalalignment
 weezl
+wght
 xlim
 ylim
 zerocopy
@@ -199,6 +201,7 @@ codegen
 gpgsign
 keygen
 nextest
+nojekyll
 NOSYSTEM
 refspec
 RUSTDOCFLAGS

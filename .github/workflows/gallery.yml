@@ -1,28 +1,26 @@
-# One scenario: publish the gallery from what the default branch says. There is no pull-request leg
-# here and no condition standing in for one — the suite builds this same gallery, so a broken render
-# already fails a required check.
-
 name: 🌜 gallery
+run-name: Gallery ${{ inputs.asset_name }}
 
 on:
-  push:
-    branches: [main]
-  # So the deploy can be proved from a branch before the merge that would otherwise be its first run.
   workflow_dispatch:
+    inputs:
+      asset_name:
+        description: Exact gallery ZIP asset on the gallery-handoff draft release
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: gallery-pages
   cancel-in-progress: true
 
 jobs:
   gallery:
     runs-on: ubuntu-26.04
-    timeout-minutes: 15
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
     environment:
@@ -35,35 +33,11 @@ jobs:
 
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
 
-      - name: Sync Python tooling
-        run: uv sync --locked
-
-      # Fetch the configured coastline for the world maps.
-      - name: Fetch configured coastline
-        run: |
-          dataset="$(uv run python -c 'import tomllib; print(tomllib.load(open("data/config.toml", "rb"))["defaults"]["coastline_dataset"])')"
-          mise run data:get -- --dataset "$dataset"
-
-      - name: Fetch configured country boundary
-        run: |
-          dataset="$(uv run python - <<'PY'
-          import tomllib
-
-          with open("data/config.toml", "rb") as source:
-              config = tomllib.load(source)
-          combination = config["combinations"][config["defaults"]["country_combination"]]
-          boundary = combination["boundary_source"]
-          if not boundary.startswith("dataset:"):
-              raise SystemExit(f"configured country boundary is not a registered dataset: {boundary}")
-          print(boundary.removeprefix("dataset:"))
-          PY
-          )"
-          mise run data:get -- --dataset "$dataset"
-
-      - name: Fetch configured prepared countries
-        run: mise run cli -- country fetch
-
-      - run: mise run gallery -- --input results --output build/gallery
+      - name: Stage the selected gallery
+        run: mise run gallery:stage -- "$ASSET_NAME"
+        env:
+          ASSET_NAME: ${{ inputs.asset_name }}
+          GH_TOKEN: ${{ github.token }}
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
@@ -71,3 +45,9 @@ jobs:
 
       - id: deploy
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+      - name: Clean superseded gallery assets
+        run: mise run gallery:cleanup -- "$ASSET_NAME"
+        env:
+          ASSET_NAME: ${{ inputs.asset_name }}
+          GH_TOKEN: ${{ github.token }}

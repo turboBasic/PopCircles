@@ -1,3 +1,4 @@
+import copy
 import json
 import shutil
 import subprocess
@@ -14,7 +15,7 @@ import population_circles.render_map as render_map_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer
 from population_circles.circle_map import Invoke, WorkflowError
 from population_circles.dataset_registry import Registry, load
-from population_circles.gallery import build
+from population_circles.gallery import build, country_documents
 from population_circles.render_map import COASTLINE_DATASET, UnregisteredDatasetError
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
@@ -80,7 +81,29 @@ def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
 def country_cli(
     countries: list[dict[str, str]], swept_countries: list[dict[str, Any]]
 ) -> tuple[Invoke, list[list[str]]]:
-    selection = {
+    selection = country_selection()
+    listing = {
+        "schema_version": 1,
+        "document": "country-list",
+        "tool": "popcircles",
+        "tool_version": "0.3.0",
+        "earth_model": {"model": "sphere", "radius_km": 6371.0088},
+        "result": {"selection": selection, "countries": countries},
+    }
+    sweep = country_sweep(swept_countries, selection)
+    outputs = [json.dumps(listing).encode(), json.dumps(sweep).encode()]
+    calls: list[list[str]] = []
+
+    def invoke(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+        calls.append(arguments)
+        output = outputs[min(len(calls) - 1, 1)]
+        return subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
+
+    return invoke, calls
+
+
+def country_selection() -> dict[str, Any]:
+    return {
         "combination_id": "fixture",
         "resolution": 10,
         "population_source": {
@@ -94,32 +117,24 @@ def country_cli(
             "attribution": "Boundary fixture credit",
         },
     }
-    listing = {
+
+
+def country_sweep(
+    swept_countries: list[dict[str, Any]],
+    selection: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
         "schema_version": 1,
-        "document": "country-list",
+        "document": "country-sweep",
         "tool": "popcircles",
         "tool_version": "0.3.0",
         "earth_model": {"model": "sphere", "radius_km": 6371.0088},
-        "result": {"selection": selection, "countries": countries},
-    }
-    sweep = {
-        **listing,
-        "document": "country-sweep",
         "result": {
-            "selection": selection,
+            "selection": selection or country_selection(),
             "shares": {"from_percent": 50, "to_percent": 50, "step_percent": 1},
             "countries": swept_countries,
         },
     }
-    outputs = [json.dumps(listing).encode(), json.dumps(sweep).encode()]
-    calls: list[list[str]] = []
-
-    def invoke(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
-        calls.append(arguments)
-        output = outputs[min(len(calls) - 1, 1)]
-        return subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
-
-    return invoke, calls
 
 
 def swept_country(identifier: str, name: str) -> dict[str, Any]:
@@ -349,6 +364,150 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert "No population &lt;yet&gt;" in page
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
+
+
+def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: Path) -> None:
+    countries = [configured_country("AA", "Alpha"), configured_country("BB", "Beta")]
+    swept = [swept_country("AA", "Alpha"), swept_country("BB", "Beta")]
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "country-sweep-fixture-10-half.json", country_sweep(swept))
+    invoke, calls = country_cli(countries, swept)
+
+    missing, generated = country_documents(invoke, corpus)
+
+    assert calls == [["country", "list"]]
+    assert missing == []
+    assert set(generated) == {
+        "country-fixture-10-AA-half.json",
+        "country-fixture-10-BB-half.json",
+        "country-sweep-fixture-10-half.json",
+    }
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "raw"),
+    [
+        (("result", "selection", "combination_id"), "other", None),
+        (("result", "selection", "resolution"), 5, None),
+        (("result", "selection", "population_source", "name"), "other", None),
+        (("result", "selection", "population_source", "sha256"), "a" * 64, None),
+        (("result", "selection", "boundary_source", "name"), "other", None),
+        (("result", "selection", "boundary_source", "sha256"), "b" * 64, None),
+        (("result", "countries", 0, "country", "id"), "XX", None),
+        (("result", "countries", 0, "country", "name"), "Other", None),
+        (("result", "countries"), [swept_country("AA", "Alpha")], None),
+        (
+            ("result", "countries"),
+            [swept_country("AA", "Alpha"), swept_country("AA", "Alpha")],
+            None,
+        ),
+        (("result", "countries", 0, "records"), [], None),
+        (
+            ("result", "countries", 0, "records"),
+            [swept_country("AA", "Alpha")["records"][0]] * 2,
+            None,
+        ),
+        (None, None, "{"),
+    ],
+)
+def test_an_invalid_country_sweep_cache_runs_one_fresh_sweep(
+    tmp_path: Path, path: tuple[str | int, ...] | None, value: object, raw: str | None
+) -> None:
+    countries = [configured_country("AA", "Alpha"), configured_country("BB", "Beta")]
+    swept = [swept_country("AA", "Alpha"), swept_country("BB", "Beta")]
+    cache: Any = copy.deepcopy(country_sweep(swept))
+    if path is not None:
+        target = cache
+        for key in path[:-1]:
+            target = target[key]
+        target[path[-1]] = value
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    cache_path = corpus / "country-sweep-fixture-10-half.json"
+    cache_path.write_text(raw if raw is not None else json.dumps(cache))
+    invoke, calls = country_cli(countries, swept)
+
+    country_documents(invoke, corpus)
+
+    assert calls[0] == ["country", "list"]
+    assert calls[1][0:2] == ["country", "sweep"]
+    assert len(calls) == EXPECTED_COUNTRY_CLI_CALLS
+
+
+def test_refresh_bypasses_a_matching_country_sweep_cache(tmp_path: Path) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "country-sweep-fixture-10-half.json", country_sweep(swept))
+    invoke, calls = country_cli(countries, swept)
+
+    country_documents(invoke, corpus, refresh_country_sweep=True)
+
+    assert len(calls) == EXPECTED_COUNTRY_CLI_CALLS
+    assert calls[1][0:2] == ["country", "sweep"]
+
+
+def test_a_failed_render_does_not_replace_saved_country_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    sweep_path = corpus / "country-sweep-fixture-10-half.json"
+    country_path = corpus / "country-fixture-10-AA-half.json"
+    written(corpus, sweep_path.name, country_sweep(swept))
+    written(corpus, country_path.name, document("country-smallest"))
+    before = {path.name: path.read_bytes() for path in (sweep_path, country_path)}
+    written(corpus, "bad.json", document("most-populous", "no-such-dataset"))
+    invoke, _calls = country_cli(countries, swept)
+
+    with pytest.raises(UnregisteredDatasetError):
+        build(corpus, tmp_path / "gallery", invoke)
+
+    assert {path.name: path.read_bytes() for path in (sweep_path, country_path)} == before
+
+
+def test_a_failed_sweep_does_not_replace_saved_country_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    sweep_path = corpus / "country-sweep-fixture-10-half.json"
+    country_path = corpus / "country-fixture-10-AA-half.json"
+    written(corpus, sweep_path.name, country_sweep(swept))
+    written(corpus, country_path.name, document("country-smallest"))
+    before = {path.name: path.read_bytes() for path in (sweep_path, country_path)}
+    list_invoke, calls = country_cli(countries, swept)
+
+    def fail_sweep(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+        result = list_invoke(arguments)
+        if arguments[1] == "sweep":
+            return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+        return result
+
+    with pytest.raises(WorkflowError):
+        build(corpus, tmp_path / "gallery", fail_sweep, refresh_country_sweep=True)
+
+    assert calls[0] == ["country", "list"]
+    assert calls[1][0:2] == ["country", "sweep"]
+    assert len(calls) == EXPECTED_COUNTRY_CLI_CALLS
+    assert {path.name: path.read_bytes() for path in (sweep_path, country_path)} == before
+
+
+def test_gallery_cli_accepts_forced_country_sweep_refresh() -> None:
+    args = gallery_module.parse(
+        ["--input", "results", "--output", "build/gallery", "--refresh-country-sweep"]
+    )
+
+    assert args.refresh_country_sweep
 
 
 def test_a_failed_country_command_leaves_no_gallery_index(

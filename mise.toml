@@ -82,6 +82,18 @@ run = "uv run circle-map"
 description = "Generate the 50% country sweep and render result documents to a gallery"
 run = "uv run render-gallery"
 
+[tasks."gallery:publish"]
+description = "Build and publish the gallery through the draft release handoff"
+run = "uv run publish-gallery publish"
+
+[tasks."gallery:stage"]
+description = "Stage a validated gallery handoff ZIP for Pages"
+run = "uv run publish-gallery stage"
+
+[tasks."gallery:cleanup"]
+description = "Remove superseded gallery handoff ZIP assets after deployment"
+run = "uv run publish-gallery cleanup"
+
 [tasks.fmt]
 description = "Format Rust, Python and TOML"
 run = [
