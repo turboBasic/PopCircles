@@ -4,9 +4,12 @@ status: accepted
 date: 2026-08-19
 scope: output
 tags: [adr, popcircles]
+superseded_by: 0018
 ---
 
 # ADR 0012 — A figure is deployed to a site, never attached to a tag
+
+Superseded by [ADR 0018](0018-a-local-gallery-build-is-handed-to-pages.md).
 
 ## Decision
 

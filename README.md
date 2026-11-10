@@ -80,11 +80,12 @@ To validate against the real raster, run `mise run test:validate`; it skips if t
 ## The maps
 
 The [gallery][gallery] shows maps generated from result files in `results/`, including one separately
-framed 50% country circle for each available country result. The gallery runs one batch sweep from the
-configured prepared country data, saves its answers under `results/`, and lists countries without a result.
+framed 50% country circle for each available country result. The gallery reuses the matching saved
+country sweep or runs one batch sweep from the configured prepared country data, then saves its answers
+under `results/`.
 Each map caption gives its population share, radius and centre, identifies the table used to calculate it,
-and includes the required data credits. The gallery is rebuilt when a change is merged, and each map links
-to its result file.
+and includes the required data credits. Publish it with `mise run gallery:publish`; each map links to its
+result file.
 
 ## Data
 
