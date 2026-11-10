@@ -24,6 +24,7 @@ workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+hex.workspace = true
 # Both ends of the facade: this crate emits its own records and implements the `log::Log` that consumes
 # every crate's.
 log.workspace = true

@@ -15,6 +15,7 @@ clap = { version = "4", default-features = false, features = [
   "usage",
   "error-context",
 ] }
+hex = "0.4"
 insta = { version = "1", features = ["json", "redactions"] }
 # `std` is what the CLI's own subscriber costs, not what the crate requires: `set_boxed_logger` and
 # `impl Error for SetLoggerError` are both behind it, and `log` enables no features by default, so a
@@ -25,7 +26,7 @@ memmap2 = "0.9"
 proptest = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
-sha2 = "0.10"
+sha2 = "0.11"
 tempfile = "3"
 thiserror = "2"
 # Parse only: the CLI reads `data/registry.toml` and writes nothing back, so the writing half and the

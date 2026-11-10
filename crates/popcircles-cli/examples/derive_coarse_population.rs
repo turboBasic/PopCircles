@@ -202,7 +202,7 @@ fn digest(path: &Path) -> anyhow::Result<String> {
         }
         hasher.update(&buffer[..count]);
     }
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(hex::encode(hasher.finalize()))
 }
 
 fn self_check() -> anyhow::Result<()> {
