@@ -318,6 +318,51 @@ uv run python -m population_circles.centre_caption --input results/world-half-30
 Older documents and centres without a nearby settlement still produce a linked coordinate. Rendering
 and formatting need the document, basemap and dataset registry; they do not need the settlement file.
 
+## Publishing the gallery
+
+Run the local publisher from the repository root:
+
+```sh
+mise run gallery:publish
+```
+
+It needs the prepared country bundle selected in `data/config.toml`, that combination's boundary vector,
+and the configured coastline vector. Install the prepared bundle and fetch the registered vectors with:
+
+```sh
+mise run cli -- country fetch
+mise run data:get -- --dataset <country-boundary-dataset-key>
+mise run data:get -- --dataset <coastline-dataset-key>
+```
+
+The dataset keys are the `dataset:` values for `boundary_source` and `defaults.coastline_dataset` in
+`data/config.toml`. The publisher also needs the GitHub CLI authenticated with permission to upload to
+the `gallery-handoff` draft release and dispatch the Pages workflow. It uses prepared country data, so
+the full-resolution population raster is not required when the selected prepared bundle is available.
+
+By default, publishing reuses the saved 50% country sweep only when its full selection and country list
+still match the configuration. If the sweep is missing or stale, the command runs one batch sweep. To
+deliberately recalculate even a matching sweep, run:
+
+```sh
+mise run gallery:publish -- --refresh-country-sweep
+```
+
+The refreshed sweep and country results are saved under `results/` only after every map renders
+successfully. A failed render leaves the previous result documents and `build/gallery` in place. After a
+successful local build, the command leaves the site in `build/gallery`, uploads a uniquely named ZIP to
+the draft handoff release, dispatches Pages with that exact asset name, and waits for the deployment.
+The workflow stages only the selected ZIP and removes older handoff ZIPs after deployment succeeds;
+newer ZIPs remain available if another dispatch is waiting.
+
+If a deployment fails after upload, the error reports the asset name and run link, and the ZIP remains on
+the draft release. Retry the failed run with **Re-run jobs** in GitHub Actions, or dispatch the workflow
+with the exact asset name:
+
+```sh
+gh workflow run gallery.yml --ref main --field asset_name=gallery-<timestamp>-<unique-id>.zip
+```
+
 ## Watching a run
 
 Every command takes `--log-level`, the only control over what a run says about itself: `error`, `warn`,
