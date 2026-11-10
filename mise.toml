@@ -3,12 +3,12 @@
 # gives rust-analyzer the standard library sources for the same pinned toolchain.
 rust = { version = "1.99.1", components = ["clippy", "rustfmt", "rust-src"] }
 python = "3.14"
-uv = "latest"
-prek = "latest"
+uv = "0.13.7"
+prek = "0.5.10"
 "pipx:lizard" = "1.24.2"
 jactionlint = "2.5.0"
-shellcheck = "latest"
-taplo = "latest"
+shellcheck = "0.11.0"
+taplo = "0.10.0"
 node = "24.19.0"
 "npm:markdownlint-cli2" = "0.23.2"
 "npm:cspell-cli" = "10.0.1"

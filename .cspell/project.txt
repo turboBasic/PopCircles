@@ -2,22 +2,23 @@
 # One word per line; case-insensitive unless the entry is capitalised.
 
 # --- Names ---
+alexmijo
 Andrii
 Melnyk
-alexmijo
 
 # --- Repository and tooling ---
-turboBasic
 actionlint
-jactionlint
 anomalyco
 binstall
 codesign
-iostat
 commitizen
 cspell
 deepseek
+fignums
 flycheck
+hardlink
+iostat
+jactionlint
 mise
 notarytool
 opencode
@@ -26,14 +27,13 @@ ponytail
 popcircles
 prek
 pyright
-fignums
-hardlink
 pytest
 ruff
 rustls
 shellcheck
 sigstore
 taplo
+turboBasic
 ureq
 
 # --- Domain vocabulary ---
@@ -96,35 +96,35 @@ capsys
 cartopy
 colortype
 corasick
-nocapture
 darkred
+delenv
 dimgrey
 edgecolor
 facecolor
+figcaption
 figsize
 flate
 fontsize
 geoms
-figcaption
 getpid
-Ivoire
 gridlines
 horizontalalignment
-linestrings
 indicatif
 insta
-delenv
+Ivoire
 keepends
 libc
 libtest
+linestrings
 lons
 mangen
 markersize
 memmap
+miniz
 mlat
 mlon
-miniz
 ndarray
+nocapture
 pread
 proptest
 SEGS
