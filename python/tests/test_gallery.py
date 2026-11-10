@@ -472,7 +472,10 @@ def test_a_failed_render_does_not_replace_saved_country_results(
     assert {path.name: path.read_bytes() for path in (sweep_path, country_path)} == before
 
 
-def test_a_failed_sweep_does_not_replace_saved_country_results(tmp_path: Path) -> None:
+def test_a_failed_sweep_does_not_replace_saved_country_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
     corpus = tmp_path / "corpus"
