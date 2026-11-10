@@ -56,20 +56,78 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
     )
 
 
-def country_documents(invoke: Invoke) -> tuple[list[str], dict[str, dict[str, Any]]]:
+def country_result_document(
+    sweep: dict[str, Any], selection: dict[str, Any], swept_country: dict[str, Any]
+) -> dict[str, Any]:
+    country = swept_country["country"]
+    record = next(record for record in swept_country["records"] if record["share"] == HALF_SHARE)
+    return {
+        "schema_version": sweep["schema_version"],
+        "document": "country-smallest",
+        "tool": sweep["tool"],
+        "tool_version": sweep["tool_version"],
+        "earth_model": sweep["earth_model"],
+        "result": {
+            "selection": selection,
+            "country": country,
+            "population_dataset": selection["population_source"]["name"],
+            "decimation": selection["resolution"],
+            "ledger": swept_country["ledger"],
+            "circle": record["circle"],
+        },
+    }
+
+
+def cached_sweep(
+    path: Path, selection: dict[str, Any], countries: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    try:
+        sweep: Any = json.loads(path.read_text(encoding="utf-8"))
+        if Envelope.model_validate(sweep).document != "country-sweep":
+            return None
+        if sweep["result"]["selection"] != selection:
+            return None
+        swept_countries = sweep["result"]["countries"]
+        expected = [(country["id"], country["name"]) for country in countries]
+        actual = [
+            (country["country"]["id"], country["country"]["name"]) for country in swept_countries
+        ]
+        if actual != expected:
+            return None
+        for country in swept_countries:
+            if sum(record["share"] == HALF_SHARE for record in country["records"]) != 1:
+                return None
+            circle_of(country_result_document(sweep, selection, country))
+    except OSError, ValueError, TypeError, KeyError, IndexError:
+        return None
+    return sweep
+
+
+def country_documents(
+    invoke: Invoke, corpus: Path, *, refresh_country_sweep: bool = False
+) -> tuple[list[str], dict[str, dict[str, Any]]]:
     listed = child("country list", ["country", "list"], invoke)
     require_success("country list", listed)
     listing: Any = json.loads(listed.stdout)
     if listing.get("document") != "country-list":
         message = "country list: Rust CLI returned a document other than country-list"
         raise ValueError(message)
-    selection: Any = listing["result"]["selection"]
+    selection: dict[str, Any] = listing["result"]["selection"]
     countries: list[dict[str, Any]] = listing["result"]["countries"]
     country_ids = [country["id"] for country in countries]
     if len(country_ids) != len(set(country_ids)):
         message = "country list: Rust CLI returned duplicate feature IDs"
         raise ValueError(message)
 
+    sweep_filename = (
+        f"country-sweep-{quote(selection['combination_id'], safe='')}-"
+        f"{selection['resolution']}-half.json"
+    )
+    sweep = (
+        None
+        if refresh_country_sweep
+        else cached_sweep(corpus / sweep_filename, selection, countries)
+    )
     arguments = [
         "country",
         "sweep",
@@ -86,17 +144,16 @@ def country_documents(invoke: Invoke) -> tuple[list[str], dict[str, dict[str, An
     ]
     for country_id in country_ids:
         arguments.extend(["--country", country_id])
-    swept = child("country sweep", arguments, invoke)
-    require_success("country sweep", swept)
-    sweep: Any = json.loads(swept.stdout)
-    if sweep.get("document") != "country-sweep":
-        message = "country sweep: Rust CLI returned a document other than country-sweep"
-        raise ValueError(message)
+    if sweep is None:
+        swept = child("country sweep", arguments, invoke)
+        require_success("country sweep", swept)
+        sweep = json.loads(swept.stdout)
+        if sweep.get("document") != "country-sweep":
+            message = "country sweep: Rust CLI returned a document other than country-sweep"
+            raise ValueError(message)
 
-    selection = sweep["result"]["selection"]
-    if selection["combination_id"] != listing["result"]["selection"]["combination_id"] or (
-        selection["resolution"] != listing["result"]["selection"]["resolution"]
-    ):
+    sweep_selection = sweep["result"]["selection"]
+    if sweep_selection != listing["result"]["selection"]:
         message = "country sweep: result selection differs from the configured country list"
         raise ValueError(message)
     expected = {country["id"]: country for country in countries}
@@ -113,31 +170,13 @@ def country_documents(invoke: Invoke) -> tuple[list[str], dict[str, dict[str, An
             message = f"country sweep: {country_id!r} has no unique 50% result"
             raise ValueError(message)
         result_ids.add(country_id)
-        document = {
-            "schema_version": sweep["schema_version"],
-            "document": "country-smallest",
-            "tool": sweep["tool"],
-            "tool_version": sweep["tool_version"],
-            "earth_model": sweep["earth_model"],
-            "result": {
-                "selection": selection,
-                "country": country,
-                "population_dataset": selection["population_source"]["name"],
-                "decimation": selection["resolution"],
-                "ledger": swept_country["ledger"],
-                "circle": records[0]["circle"],
-            },
-        }
+        document = country_result_document(sweep, sweep_selection, swept_country)
         filename = (
             f"country-{quote(selection['combination_id'], safe='')}-"
             f"{selection['resolution']}-{quote(country_id, safe='')}-half.json"
         )
         documents[filename] = document
 
-    sweep_filename = (
-        f"country-sweep-{quote(selection['combination_id'], safe='')}-"
-        f"{selection['resolution']}-half.json"
-    )
     documents[sweep_filename] = sweep
     return (
         [country["name"] for country in countries if country["id"] not in result_ids],
@@ -146,7 +185,11 @@ def country_documents(invoke: Invoke) -> tuple[list[str], dict[str, dict[str, An
 
 
 def build(
-    corpus: Path, output: Path, invoke: Invoke = invoke_cli
+    corpus: Path,
+    output: Path,
+    invoke: Invoke = invoke_cli,
+    *,
+    refresh_country_sweep: bool = False,
 ) -> tuple[list[Drawn], list[Skipped]]:
     # One basemap union and one registry read for the whole run, which is the only reason this is a
     # second caller of `render` rather than a loop over `render_map.main`.
@@ -155,7 +198,9 @@ def build(
     output.mkdir(parents=True, exist_ok=True)
     (output / "index.html").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
-    missing, generated = country_documents(invoke)
+    missing, generated = country_documents(
+        invoke, corpus, refresh_country_sweep=refresh_country_sweep
+    )
 
     drawn: list[Drawn] = []
     skipped: list[Skipped] = []
@@ -230,6 +275,7 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Render every renderable document in a corpus.")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--refresh-country-sweep", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -238,7 +284,7 @@ def main(argv: list[str] | None = None) -> int:
     corpus: Path = args.input
     output: Path = args.output
 
-    drawn, skipped = build(corpus, output)
+    drawn, skipped = build(corpus, output, refresh_country_sweep=args.refresh_country_sweep)
     for one in drawn:
         print(one.figure)
     for one in skipped:
