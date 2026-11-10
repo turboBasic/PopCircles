@@ -1,14 +1,13 @@
 version: 2
 updates:
+  # Renovate owns version updates; zero keeps Dependabot's security updates enabled.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "ci"
-    groups:
-      actions:
-        patterns: ["*"]
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "cargo"
     directory: "/"
@@ -16,10 +15,7 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
-    groups:
-      rust:
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "uv"
     directory: "/"
@@ -27,10 +23,7 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
-    groups:
-      python:
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "pre-commit"
     directory: "/"
@@ -38,6 +31,4 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
-    groups:
-      hooks:
-        patterns: ["*"]
+    open-pull-requests-limit: 0
