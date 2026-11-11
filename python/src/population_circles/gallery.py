@@ -1,6 +1,7 @@
 import argparse
 import html
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -241,12 +242,23 @@ def country_documents(
     for country_id in country_ids:
         arguments.extend(["--country", country_id])
     if sweep is None:
+        print(
+            f"Gallery: calculating 50% circles for {len(countries)} countries",
+            file=sys.stderr,
+            flush=True,
+        )
         swept = child("country sweep", arguments, invoke)
         require_success("country sweep", swept)
         sweep = json.loads(swept.stdout)
         if sweep.get("document") != "country-sweep":
             message = "country sweep: Rust CLI returned a document other than country-sweep"
             raise ValueError(message)
+    else:
+        print(
+            f"Gallery: reusing saved 50% country sweep ({len(countries)} countries)",
+            file=sys.stderr,
+            flush=True,
+        )
 
     sweep_selection = sweep["result"]["selection"]
     if sweep_selection != listing["result"]["selection"]:
@@ -274,6 +286,11 @@ def country_documents(
         documents[filename] = document
 
     documents[sweep_filename] = sweep
+    print(
+        f"Gallery: prepared {len(documents)} country result documents",
+        file=sys.stderr,
+        flush=True,
+    )
     return (
         [country["name"] for country in countries if country["id"] not in result_ids],
         documents,
@@ -306,9 +323,20 @@ def build(
         if source.name not in generated
     ]
     sources.extend((corpus / name, payload) for name, payload in generated.items())
-    for source, payload in sorted(sources, key=lambda item: item[0].name):
+    sources.sort(key=lambda item: item[0].name)
+    print(
+        f"Gallery: rendering {len(sources)} result documents",
+        file=sys.stderr,
+        flush=True,
+    )
+    for index, (source, payload) in enumerate(sources, start=1):
         envelope = Envelope.model_validate(payload)
         if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
+            print(
+                f"Gallery: [{index}/{len(sources)}] skipping {source.name} ({envelope.document})",
+                file=sys.stderr,
+                flush=True,
+            )
             skipped.append(Skipped(source, envelope.document))
             if source.name in generated:
                 (output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -317,11 +345,21 @@ def build(
             envelope.document == "country-smallest"
             and payload["result"]["circle"]["target"]["total"] == 0
         ):
+            print(
+                f"Gallery: [{index}/{len(sources)}] skipping {source.name} (zero population)",
+                file=sys.stderr,
+                flush=True,
+            )
             skipped.append(Skipped(source, "zero-population country"))
             (output / source.name).unlink(missing_ok=True)
             (output / f"{source.stem}.png").unlink(missing_ok=True)
             continue
         try:
+            print(
+                f"Gallery: [{index}/{len(sources)}] rendering {source.name}",
+                file=sys.stderr,
+                flush=True,
+            )
             answer = circle_of(payload)
             population_attribution = (
                 answer.selection.population_source.attribution
@@ -367,10 +405,20 @@ def build(
                 answer.country.id if answer.country is not None else None,
             )
         )
+        print(
+            f"Gallery: [{index}/{len(sources)}] wrote {target.name}",
+            file=sys.stderr,
+            flush=True,
+        )
 
     for name, payload in generated.items():
         (corpus / name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     (output / "index.html").write_text(page(drawn, missing), encoding="utf-8")
+    print(
+        f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped)",
+        file=sys.stderr,
+        flush=True,
+    )
     return drawn, skipped
 
 
