@@ -27,12 +27,12 @@
   let browserPanel = $state(null);
   let countrySearch = $state(null);
 
-  function restoreCountry() {
-    if (data) {
+  function restoreCountry(countries = data?.countries) {
+    if (countries) {
       selectedCountry = countryFromHash(
-        data.countries,
+        countries,
         window.location.hash,
-        defaultCountry(data.countries)
+        defaultCountry(countries)
       );
     }
   }
@@ -96,13 +96,14 @@
   onMount(() => {
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
+    const handleHistory = () => restoreCountry();
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
     };
     browserOpen = !mobileNavigation.matches;
     mobileNavigation.addEventListener('change', handleNavigationChange);
-    window.addEventListener('hashchange', restoreCountry);
-    window.addEventListener('popstate', restoreCountry);
+    window.addEventListener('hashchange', handleHistory);
+    window.addEventListener('popstate', handleHistory);
     document.addEventListener('pointerdown', handlePointerdown);
     fetch('./gallery-data.json')
       .then((response) => {
@@ -112,7 +113,7 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        restoreCountry();
+        restoreCountry(value.countries);
       })
       .catch((cause) => {
         if (active) error = cause.message;
@@ -120,8 +121,8 @@
 
     return () => {
       active = false;
-      window.removeEventListener('hashchange', restoreCountry);
-      window.removeEventListener('popstate', restoreCountry);
+      window.removeEventListener('hashchange', handleHistory);
+      window.removeEventListener('popstate', handleHistory);
       document.removeEventListener('pointerdown', handlePointerdown);
       mobileNavigation.removeEventListener('change', handleNavigationChange);
     };
@@ -150,7 +151,7 @@
           bind:this={browser}
           bind:open={browserOpen}
           ontoggle={() => {
-            if (mobileNavigation?.matches && browserOpen) countrySearch?.focus();
+            if (mobileNavigation?.matches && browser?.open) countrySearch?.focus();
           }}
         >
           <summary
@@ -209,7 +210,7 @@
             <div class="figure-grid">
               {#each data.world as figure (figure.map)}
                 <figure>
-                  <a href={figure.map}><img src={figure.map} alt={figure.alt} loading="lazy" /></a>
+                  <a href={figure.map}><img src={figure.map} alt={figure.alt} loading="eager" /></a>
                   <figcaption><a href={figure.document}>View result data</a></figcaption>
                 </figure>
               {/each}
@@ -251,7 +252,11 @@
                     {#each country.figures as figure (figure.map)}
                       <figure>
                         <a href={figure.map}>
-                          <img src={figure.map} alt={figure.alt} loading="lazy" />
+                          <img
+                            src={figure.map}
+                            alt={figure.alt}
+                            loading={country.anchor === selectedCountry?.anchor ? 'eager' : 'lazy'}
+                          />
                         </a>
                         <figcaption><a href={figure.document}>View result data</a></figcaption>
                       </figure>
