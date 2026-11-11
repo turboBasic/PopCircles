@@ -3,6 +3,7 @@
 *.rs text
 *.py text
 *.pyi text
+*.html text
 *.toml text
 *.md text
 *.json text
