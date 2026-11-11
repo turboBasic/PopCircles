@@ -229,4 +229,140 @@ def latest_run_id() -> int:
         "--limit",
         "100",
         "--json",
-... (+137 lines) [see remaining: rtk proxy git -c core.fsmonitor=false show HEAD:python/src/repo_tools/publish_gallery.py | tail -n +232]
+        "databaseId",
+        "--jq",
+        ".[].databaseId",
+    )
+    return max((int(line) for line in output.splitlines()), default=0)
+
+
+def run_after(baseline: int, asset_name: str) -> tuple[int, str]:
+    deadline = time.monotonic() + RUN_TIMEOUT_S
+    while time.monotonic() < deadline:
+        time.sleep(POLL_S)
+        output = checked(
+            "gh",
+            "run",
+            "list",
+            "--workflow",
+            WORKFLOW,
+            "--event",
+            "workflow_dispatch",
+            "--branch",
+            WORKFLOW_REF,
+            "--limit",
+            "100",
+            "--json",
+            "databaseId,url,displayTitle",
+            "--jq",
+            r'.[] | "\(.databaseId)\t\(.url)\t\(.displayTitle)"',
+        )
+        for line in output.splitlines():
+            identifier, url, title = line.split("\t", 2)
+            if int(identifier) > baseline and title == f"Gallery {asset_name}":
+                return int(identifier), url
+    message = (
+        f"no new {WORKFLOW} run appeared within {RUN_TIMEOUT_S}s; uploaded asset remains on "
+        f"{RELEASE_TAG}"
+    )
+    raise PublishGalleryError(message)
+
+
+def publish(*, refresh_country_sweep: bool = False) -> None:
+    require_inputs()
+    try:
+        checked("gh", "auth", "status")
+    except PublishGalleryError as error:
+        message = (
+            f"GitHub authentication is required; run `gh auth login` or provide GH_TOKEN: {error}"
+        )
+        raise PublishGalleryError(message) from error
+
+    BUILD.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix=".gallery-publish-", dir=BUILD) as temporary:
+        workspace = Path(temporary)
+        corpus = workspace / "results"
+        staged = workspace / "gallery"
+        asset = workspace / new_asset_name()
+        shutil.copytree(RESULTS, corpus)
+        try:
+            build_gallery(
+                corpus,
+                staged,
+                refresh_country_sweep=refresh_country_sweep,
+                cache_directory=BUILD / ".gallery-cache",
+            )
+        except Exception as error:
+            message = f"gallery build failed: {error}"
+            raise PublishGalleryError(message) from error
+
+        zip_site(staged, asset)
+        replace_site(staged)
+        persist_country_results(corpus)
+        ensure_draft_release()
+        try:
+            checked("gh", "release", "upload", RELEASE_TAG, str(asset))
+        except PublishGalleryError as error:
+            message = f"gallery asset upload failed; existing release assets were retained: {error}"
+            raise PublishGalleryError(message) from error
+
+        baseline = latest_run_id()
+        try:
+            checked(
+                "gh",
+                "workflow",
+                "run",
+                WORKFLOW,
+                "--ref",
+                WORKFLOW_REF,
+                "--field",
+                f"asset_name={asset.name}",
+            )
+        except PublishGalleryError as error:
+            message = (
+                f"gallery workflow dispatch failed; uploaded asset {asset.name!r} remains on "
+                f"{RELEASE_TAG}: {error}"
+            )
+            raise PublishGalleryError(message) from error
+
+        run_id, url = run_after(baseline, asset.name)
+        try:
+            checked("gh", "run", "watch", str(run_id), "--exit-status")
+        except PublishGalleryError as error:
+            message = (
+                f"gallery deployment failed for run {url}; uploaded asset {asset.name!r} remains "
+                f"on {RELEASE_TAG}: {error}"
+            )
+            raise PublishGalleryError(message) from error
+        print(f"Gallery deployed from {asset.name}: {url}")
+
+
+def parse(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build and hand off the PopCircles Pages gallery.")
+    commands = parser.add_subparsers(dest="command", required=True)
+    publish_command = commands.add_parser("publish", help="build, upload and deploy the gallery")
+    publish_command.add_argument("--refresh-country-sweep", action="store_true")
+    stage_command = commands.add_parser("stage", help="download and validate a gallery handoff ZIP")
+    stage_command.add_argument("asset_name")
+    cleanup_command = commands.add_parser("cleanup", help="remove superseded handoff ZIP assets")
+    cleanup_command.add_argument("asset_name")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse(argv)
+    try:
+        if args.command == "publish":
+            publish(refresh_country_sweep=args.refresh_country_sweep)
+        elif args.command == "stage":
+            stage(args.asset_name)
+        elif args.command == "cleanup":
+            cleanup(args.asset_name)
+    except PublishGalleryError as error:
+        print(f"publish-gallery: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

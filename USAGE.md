@@ -172,4 +172,351 @@ share that work.
 
 `country list` prints native IDs and English names from the selected combination's boundary source,
 with `iso_alpha2` when that feature has a unique code. It accepts `--combination` and `--resolution`,
-... (+348 lines) [see remaining: rtk proxy git -c core.fsmonitor=false show HEAD:USAGE.md | tail -n +175]
+which default to the configured combination and its default resolution. For `country smallest` and
+`country sweep`, `--country` accepts a case-insensitive ISO alpha-2 code, an exact English name, or
+the source's native ID. For example, `DE`, `Germany`, and GISCO's `DE` ID select Germany; GADM's
+native ID is `DEU`.
+
+If a selector matches different features through their IDs, names, or codes, the command refuses it
+and lists each candidate as `ID (Name)`. Custom boundary files do not receive inferred ISO codes, but
+remain selectable by their native IDs and names. Result identities keep the source ID, name and
+boundary provenance, and include `iso_alpha2` only when the code is unique.
+
+```sh
+mise run cli -- country list --config my-data.toml
+# {…,"document":"country-list","result":{"selection":{"combination_id":"local-gpw",
+#  "resolution":10,"population_source":{"name":"population.tif",…},
+#  "boundary_source":{"name":"gisco-countries-2024-1m",…}},"countries":[…]}}
+```
+
+Country searches read only the prepared tables for the selected combination and resolution. They never
+prepare or fetch data implicitly. If prepared data is missing or invalid, follow the command's guidance
+to run `country prepare` when the raw sources are local, or `country fetch` when a remote prepared
+bundle is configured. Known source and resolution mismatches are refused. The result's `selection`
+names the combination, resolution, population and boundary sources, and fingerprints when available;
+supplied attribution is carried to rendered maps.
+
+One country uses the same share search, restricted to its uniquely owned population cells. Override the
+configured choices with `--combination` and `--resolution`:
+
+```sh
+mise run cli -- country smallest --country DE --share 50 \
+  --combination gpw-2020-gisco-2024 --resolution 10
+# {…,"document":"country-smallest","result":{"country":{"id":"DE","name":"Germany",
+#  "iso_alpha2":"DE","boundary_dataset":"gisco-countries-2024-1m",…},
+#  "ledger":{"path":"out/countries/4445.json",…},
+#  "circle":{"radius_km":…,"target":{"share":0.5,…},…}}}
+```
+
+Several countries and shares run in one command. Repeat `--country` for each selector; the result orders
+countries by name and each country's records by requested share:
+
+```sh
+mise run cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
+  --combination gpw-2020-gisco-2024 --resolution 10
+# {…,"schema_version":1,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
+#  "countries":[{"country":{"id":"DE","name":"Germany",…},"ledger":{"path":"out/countries/4445.json",…},
+#  "records":[{"share":0.1,"circle":{"target":{"share":0.1,…},…}},…]},…],
+#  "countries_without_population_cells":[{"id":"VA","name":"Vatican City"},…]}}
+```
+
+Each country keeps its own resumable ledger under `out/countries`; pass `--ledger-dir` to choose another
+directory. Countries without owned cells at the selected resolution are listed separately. Repeating a
+run resumes each country's saved radii. Progress and diagnostics go to stderr,
+while stdout contains one JSON document. Choose an affordable prepared resolution for sweeps; use a finer
+prepared resolution for a more precise selected answer when needed.
+
+A sweep skips features with no uniquely owned population cells at that resolution, reports each ID and
+reason on stderr, and measures the elapsed time and cropped grid for every completed feature.
+
+## Maps
+
+From the checkout root, one command searches a named dataset and saves its map:
+
+```sh
+mise run data:get   # fetch the source raster explicitly before the first build
+mise run map -- --dataset population-count-2020-30arcsec --share 50 \
+  --decimate 10 --cache out/gpw-5arcmin --output out/half-world.png
+```
+
+`map` checks and reuses a compatible cache, even if the source raster has since been removed. An
+absent or incompatible cache is built from the named raster; a corrupt or unreadable cache stops the
+run. No data is downloaded implicitly. Omit `--decimate` for full resolution.
+
+The image's sibling `out/half-world.json` contains this invocation's search stdout. `--document`
+selects another path. The default radii ledger is beside that document, with a `.radii.json` suffix;
+`--ledger` selects another. Image, document and ledger paths must differ. The current JSON is saved
+before rendering and retained if document validation or rendering fails, with its path in the error.
+A failed search or document write leaves an existing document untouched and draws no new image.
+
+Launch failures retain uv/mise's own interpreter diagnostic. Application errors name the cache probe,
+table build, search, document publication or rendering stage and preserve child diagnostics. A missing
+raster names `mise run data:get`; a rejected document names the saved JSON. On success, both image
+and document destinations are printed. This combined command requires the checkout and its Python
+plotting environment; the Rust search remains independently usable.
+
+The tools also work separately. Rendering reads the published search document, basemap and registry
+without opening the raster, table or ledger:
+
+```sh
+search most-populous --radius-km 1000 > out/most-populous.json
+mise run render -- --input out/most-populous.json --output out/most-populous.png
+mise run render -- --input out/most-populous.json --output out/globe.png --projection orthographic
+```
+
+**The documents this project publishes its answers as are in the tree**, under
+[`results/`][results], so
+`mise run render -- --input results/world-most-populous-1000km-5arcmin.json --output out/map.png` draws a
+figure on a clone that has fetched no raster at all. `mise run results:build` regenerates the world documents.
+
+`--projection` chooses how the round Earth appears on the flat map. Use `plate-carree` for the familiar
+rectangular world map, or `orthographic` for a globe-like view centred on the circle. Every figure
+includes the credit required by the population data's CC BY licence. The required wording is in
+[`data/README.md`][data-population].
+
+Circles are drawn on the curved Earth, then transformed to fit the flat map. A circle that crosses the
+180° longitude line appears at both edges of a rectangular map. A circle that covers a pole closes across
+the top or bottom edge. Drawing circles directly on a flat map can shade the wrong region in either
+case, so the project checks these cases. A circle that covers both poles appears as the whole map, with
+the area outside the circle cut out.
+
+Rendered maps use the registered boundary dataset named by `defaults.coastline_dataset` in
+`data/config.toml`; the built-in choice is GISCO's Countries 2024 1:1,000,000 coastline. Change that
+key to another registered boundary dataset to switch coastlines. Fetch the selected dataset with
+`mise run data:get -- --dataset <dataset-key>`. The command checks its registered byte count and
+SHA-256 before placing the file. Maps show the selected dataset's attribution. GISCO's coastline
+permits non-commercial use only. The local gallery publish command uses the configured coastline,
+country boundary and prepared country combination. It reuses the matching saved 50% country sweep when
+available, and does not fetch the full-resolution population raster.
+Once it is present, rendering works offline. `--no-coastlines` skips the coastline file and its credit.
+
+When a world document includes a country breakdown, the caption lists each country with its population
+inside and percentages of both country and circle populations, followed by accounting details and
+boundary credit. The figure grows to fit those lines.
+
+A country-result document names its population dataset and decimation, and needs the registered GISCO
+vector at `data/boundaries/gisco-countries-2024-1m.geojson`. The renderer selects the canonical feature
+ID from the document and checks its boundary revision and digest against the registry before drawing.
+It derives the orthographic frame from the selected outline and the result circle, then shows the country
+name and ID with population and boundary credits from their registry rows. Rendering still reads no
+population raster, table or ledger. For example, a committed country result renders with:
+
+```sh
+mise run render -- --input results/country-gpw-2020-gisco-2024-2-AD-half.json --output out/andorra-half.png
+```
+
+Fetch the boundary vector with `mise run data:get` when it is absent. Existing world documents need no
+country boundary file.
+
+Circle documents carry their nearest settlement, so a figure title can name it without opening the
+fetched places file. Markdown centre fragments use the same decision and link the circle's centre to
+OpenStreetMap. After `mise run data:get` and a circle search, format a document with:
+
+```sh
+uv run python -m population_circles.centre_caption --input results/world-half-30arcsec.json
+# [28.84 N, 100.66 E](https://www.openstreetmap.org/?mlat=28.8375&mlon=100.66250000000002) (192 km from Xichang, China)
+```
+
+Older documents and centres without a nearby settlement still produce a linked coordinate. Rendering
+and formatting need the document, basemap and dataset registry; they do not need the settlement file.
+
+## Publishing the gallery
+
+Run the local publisher from the repository root:
+
+```sh
+mise run gallery:publish
+```
+
+It needs the prepared country bundle selected in `data/config.toml`, that combination's boundary vector,
+and the configured coastline vector. Install the prepared bundle and fetch the registered vectors with:
+
+```sh
+mise run cli -- country fetch
+mise run data:get -- --dataset <country-boundary-dataset-key>
+mise run data:get -- --dataset <coastline-dataset-key>
+```
+
+The dataset keys are the `dataset:` values for `boundary_source` and `defaults.coastline_dataset` in
+`data/config.toml`. The publisher also needs the GitHub CLI authenticated with permission to upload to
+the `gallery-handoff` draft release and dispatch the Pages workflow. It uses prepared country data, so
+the full-resolution population raster is not required when the selected prepared bundle is available.
+
+By default, publishing reuses the saved 50% country sweep only when its full selection and country list
+still match the configuration. If the sweep is missing or stale, the command runs one batch sweep. To
+deliberately recalculate even a matching sweep, run:
+
+```sh
+mise run gallery:publish -- --refresh-country-sweep
+```
+
+The refreshed sweep and country results are saved under `results/` only after every map renders
+successfully. A failed render leaves the previous result documents and `build/gallery` in place. After a
+successful local build, the command leaves the site in `build/gallery`, uploads a uniquely named ZIP to
+the draft handoff release, dispatches Pages with that exact asset name, and waits for the deployment.
+The workflow stages only the selected ZIP and removes older handoff ZIPs after deployment succeeds;
+newer ZIPs remain available if another dispatch is waiting.
+
+If a deployment fails after upload, the error reports the asset name and run link, and the ZIP remains on
+the draft release. Retry the failed run with **Re-run jobs** in GitHub Actions, or dispatch the workflow
+with the exact asset name:
+
+```sh
+gh workflow run gallery.yml --ref main --field asset_name=gallery-<timestamp>-<unique-id>.zip
+```
+
+## Watching a run
+
+Every command takes `--log-level`, the only control over what a run says about itself: `error`, `warn`,
+`info` or `debug`, and `info` unless you say otherwise. At `info` a run names the table it resolved and the
+answer it reached; at `debug` each expensive step is bracketed by a begin and an end record carrying one
+operation name, so its duration is the difference between the two elapsed figures on the left. `RUST_LOG`
+does nothing here — the flag is the only way in.
+
+The progress meter is a **second mechanism, and the flag does not govern it.** A log says what happened;
+the meter says how far a run has got. So `--log-level error` still draws a meter, and a `debug` run piped
+to a file draws none — the meter is silent when stderr is not a terminal. Both write to stderr, and
+stdout stays exactly one JSON document at every level.
+
+`mise run cli -- --help` has the full command and flag reference.
+
+## Choosing the inputs
+
+### Population datasets and country combinations
+
+`data/registry.toml` names the declared input datasets. The built-in `data/config.toml` selects the
+10-arcminute world population dataset and the `gpw-2020-gisco-2024` country combination. The native
+30 arc-second raster remains available with `--dataset population-count-2020-30arcsec`. In the GH-223
+comparison on an Apple M2 Pro, the coarse dataset matched native radius and centre answers at 10%, 50%
+and 90%, and average table-build-plus-search time was 8.71× faster (1.872 s vs 16.305 s). These are
+three measured shares, not a guarantee for every query; the [issue records the method and full
+comparison][coarse-comparison]. Use `--config PATH` to layer a user TOML file over the built-in
+choices; relative file sources and prepared-data locations in that file resolve beside it.
+
+For example, save this as `my-data.toml` to add a combination using a local population file and the
+declared GISCO boundary dataset:
+
+```toml
+[defaults]
+country_combination = "local-gpw"
+
+[combinations.local-gpw]
+population_source = "file:population.tif"
+boundary_source = "dataset:gisco-countries-2024-1m"
+default_resolution = 10
+
+[combinations.local-gpw.resolutions.10]
+local = "out/local-gpw/10"
+```
+
+Select that file with `--config my-data.toml`. A `dataset:<name>` source must name a compatible entry
+in `data/registry.toml`; `file:<path>` names a local input. To override a built-in combination, keep
+its ID and source pair, then change its default resolution or add/replace a resolution location. A
+source pair cannot be rebound under an existing ID; add a new ID for a different pair. Global defaults
+can select another registered population dataset or configured combination. Optional `provenance`
+and `attribution` text can be recorded on a new combination.
+
+List the effective built-in and user combinations with:
+
+```sh
+mise run cli -- country combinations --config my-data.toml
+# {…,"document":"country-combinations","result":{"combinations":[…]}}
+```
+
+The list shows configured source pairs and resolutions. It does not fetch inputs or check whether
+source or prepared-data files exist.
+
+Prepare a combination before using its country tables:
+
+```sh
+mise run cli -- country prepare
+mise run cli -- country prepare --combination local-gpw --resolution 10
+```
+
+The command defaults to the configured country combination and its default resolution. It reads
+`dataset:<name>` inputs using `data/registry.toml`, or reads `file:<path>` inputs using metadata in the
+combination: a local population GeoTIFF needs its grid, EPSG code and nodata sentinel, and a local
+boundary GeoJSON needs its string identifier property. Preparation validates and fingerprints both
+input files, applies the same cell ownership and aggregation rules as country searches, and writes a
+versioned manifest plus portable country-prefix files under the selected resolution's `local`
+directory. It checks the prepared output through the shared reader before reporting success. A
+registered file whose bytes differ from its registry SHA-256 is refused. Existing prepared output is
+preserved unless `--replace` is passed explicitly. Fetching remote inputs and selecting prepared
+combinations in searches are separate actions.
+
+To fetch an already prepared bundle, set `remote` beside the local install directory. The remote URL
+names a directory that serves `manifest.json` and the payload files named by that manifest:
+
+```toml
+[combinations.local-gpw.resolutions.10]
+local = "out/local-gpw/10"
+remote = "https://data.example.org/prepared/local-gpw/10"
+```
+
+Then run the explicit fetch command:
+
+```sh
+mise run cli -- country fetch
+mise run cli -- country fetch --combination local-gpw --resolution 10
+```
+
+Fetch defaults to the configured combination and its default resolution. It accepts direct HTTPS
+locations without credentials or query strings, validates the manifest identity and every payload,
+and checks the prepared tables before installing them. An already valid local bundle is reused without
+network access. If the target is invalid or belongs to a different configured identity, pass
+`--replace`; failed downloads or validation leave the previous bundle intact:
+
+```sh
+mise run cli -- country fetch --combination local-gpw --resolution 10 --replace
+```
+
+Fetch never runs implicitly during a search. Use `country prepare` when the raw population and boundary
+sources are available locally; use `country fetch` when the configured prepared bundle is published
+at its remote location.
+
+The built-in country combinations use GPW 2020 with either GISCO Countries 2024 (`gpw-2020-gisco-2024`)
+or GADM 4.1 (`gpw-2020-gadm-4.1`). GISCO is the default. Both offer factor 1 (30 arc-seconds) and
+factor 2 (1 arcminute); factor 2 is the default. Fetch the selected default bundle with
+`mise run cli -- country fetch`, or choose GADM with
+`mise run cli -- country fetch --combination gpw-2020-gadm-4.1`. Each source and resolution has its
+own prepared release, and the selected bundle keeps its source-specific country identifiers.
+
+The release comparison measured the same world radii at both factors (1,227 km at 20%, 3,360 km at
+50%, and 9,510 km at 90%). The required France, United States, Chile, Greenland, and Philippines
+GISCO cases also had matching radii across factors, with small shifts in centres and achieved shares.
+This is evidence about these inputs and cases, not a general accuracy guarantee; the finer GADM
+microstate geometries do not by themselves establish greater accuracy. Source attributions and
+bundle details are in [`data/README.md`](data/README.md), and the full acceptance evidence is recorded
+on [issue #213](https://github.com/turboBasic/PopCircles/issues/213).
+
+**Choose the detail level with `--decimate`.** Use `10` for quick exploration, as in the examples above,
+or `2` for a practical balance between detail and speed. Use `1` for full resolution. Build and search
+with the same value. Country sweeps default to `10`; the other searches default to `1`.
+
+A finer grid needs more memory and may take much longer to search. See the
+[resolution trade-offs and measurements][performance-resolution] before choosing full resolution.
+The program chooses spacing automatically; most users can leave `--spacing` unset.
+
+### What limits precision
+
+- Smallest-circle searches report whole kilometres. For example, the result shows that 3360 km holds
+  half the population and 3359 km does not.
+- Centres are placed at map cell centres. A coarser grid gives fewer possible locations.
+- If numerical uncertainty prevents a firm answer, the result includes an `ambiguity` block, as
+  described in the smallest-circle example above.
+
+See [How resolution affects precision][performance-precision] for the explanation and arithmetic limits.
+
+<!-- Links -->
+
+[data-population]: data/README.md#population-count-2020-30arcsec
+[data-readme]: data/README.md
+[inputs]: #choosing-the-inputs
+[coarse-comparison]: https://github.com/turboBasic/PopCircles/issues/223#issuecomment-6404921257
+[performance]: PERFORMANCE.md
+[performance-ledger]: PERFORMANCE.md#how-the-ledger-avoids-repeated-searches
+[performance-precision]: PERFORMANCE.md#how-resolution-affects-precision
+[performance-resolution]: PERFORMANCE.md#choosing-grid-resolution
+[readme]: README.md
+[results]: results/
+[validation]: README.md#validation
