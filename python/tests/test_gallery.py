@@ -76,6 +76,8 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
 def assert_explorer_shell(page: str) -> None:
     assert '<aside class="country-nav-wrap" aria-label="Country navigation">' in page
     assert '<main class="content"' in page
+    assert "x-init=\"$el.open = matchMedia('(min-width: 801px)').matches\"" in page
+    assert ".country-browser > summary { display: flex;" in page
     assert "Browse countries" in page
     assert 'for="country-search">Search countries</label>' in page
     assert "No 50% result is available for this country." in page
