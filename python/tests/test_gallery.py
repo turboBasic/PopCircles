@@ -81,6 +81,13 @@ def assert_explorer_shell(page: str) -> None:
     assert "No 50% result is available for this country." in page
 
 
+def assert_map_card(page: str, image: str) -> None:
+    assert '<figure class="map-card" data-country-id="AA">' in page
+    assert f'<img src="{image}"' in page
+    assert "height: auto;" in page
+    assert "filter:" not in page
+
+
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
     longitude = answer.circle.centre.lon
     latitude = answer.circle.centre.lat
@@ -454,6 +461,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert not (output / result_names[1].replace(".json", ".png")).exists()
     page = (output / "index.html").read_text(encoding="utf-8")
     assert f'href="{result_names[0]}"' in page
+    assert_map_card(page, result_names[0].replace(".json", ".png"))
     assert result_names[1] not in page
     assert "No population &lt;yet&gt;" in page
     assert_explorer_shell(page)
