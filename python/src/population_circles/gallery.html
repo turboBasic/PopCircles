@@ -27,6 +27,7 @@
     .country-browser > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .country-browser-panel { max-height: calc(100vh - 10rem); overflow: auto; }
+    .drawer-title { display: none; }
     .country-search { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
     .country-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .country-nav { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
@@ -60,7 +61,7 @@
     figcaption { padding: .75rem 1rem; color: var(--muted); font-size: .85rem; }
     figcaption a { text-decoration-color: #65758e; text-underline-offset: 3px; }
     footer { border-top: 1px solid var(--line); padding: 1.5rem 0; color: var(--muted); font-size: .8rem; }
-    @media (max-width: 800px) { .explorer { grid-template-columns: 1fr; } .country-nav-wrap { position: static; padding: 0; border: 0; background: transparent; } .country-browser > summary { display: flex; padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; } .country-browser-panel { display: none; } .country-browser[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; } .country-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 800px) { .explorer { grid-template-columns: 1fr; } .country-nav-wrap { position: static; padding: 0; border: 0; background: transparent; } .country-browser > summary { display: flex; padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; } .country-browser-panel { display: none; } .country-browser[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; } .drawer-title { display: block; } .country-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
 <body>
@@ -70,13 +71,15 @@
       <h1>{{ title }}</h1>
       <p>Explore the smallest circle holding half of each country's population, alongside selected world population circles.</p>
     </header>
-    <div class="explorer" x-data="{ query: '', matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); } }">
+    <div class="explorer" x-data="{ query: '', matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); }, matchCount() { return Array.from(document.querySelectorAll('.country-nav a')).filter(link => this.matches(link.dataset.country)).length; } }">
       <aside class="country-nav-wrap" aria-label="Country navigation">
-      <details class="country-browser" x-init="$el.open = matchMedia('(min-width: 801px)').matches">
-        <summary>Browse countries <span class="map-count">{{ countries|length }} countries</span></summary>
-        <div class="country-browser-panel">
+      <details class="country-browser">
+        <summary id="country-browser-trigger" aria-controls="country-browser-panel" aria-expanded="false">Browse countries <span class="map-count">{{ countries|length }} countries</span></summary>
+        <div class="country-browser-panel" id="country-browser-panel" role="region" aria-label="Country list">
+          <h2 class="drawer-title" id="country-browser-title">Browse countries</h2>
           <label for="country-search">Search countries</label>
           <input class="country-search" id="country-search" type="search" placeholder="Search countries" autocomplete="off" x-model="query">
+          <p class="visually-hidden" x-cloak x-show="query" role="status" aria-live="polite" x-text="`${matchCount()} matching countries`"></p>
           <nav class="country-nav" aria-label="Countries">
             {% for letter, countries_in_group in navigation_groups %}
             <section x-show="Array.from($el.querySelectorAll('a')).some(link => matches(link.dataset.country))">
@@ -86,8 +89,9 @@
               </ul>
             </section>
             {% endfor %}
-            <p class="country-nav-empty" x-cloak x-show="query && !Array.from($el.parentElement.querySelectorAll('a')).some(link => matches(link.dataset.country))" role="status">No matching countries.</p>
+            <p class="country-nav-empty" x-cloak x-show="query && !Array.from($el.parentElement.querySelectorAll('a')).some(link => matches(link.dataset.country))">No matching countries.</p>
           </nav>
+          <p class="visually-hidden" id="country-selection-status" role="status" aria-live="polite"></p>
         </div>
       </details>
       </aside>
@@ -119,9 +123,69 @@
   </div>
   <script>
     history.scrollRestoration = "manual";
+    const countryBrowser = document.querySelector(".country-browser");
+    const countryBrowserTrigger = document.querySelector("#country-browser-trigger");
+    const countryBrowserPanel = document.querySelector("#country-browser-panel");
+    const countrySearch = document.querySelector("#country-search");
+    const mobileNavigation = matchMedia("(max-width: 800px)");
     const countryDetails = [...document.querySelectorAll("#country-results details.country")];
     const countryLinks = [...document.querySelectorAll(".country-nav a")];
     const defaultCountry = countryDetails.find((country) => country.dataset.default === "true") ?? countryDetails[0];
+
+    function syncCountryBrowser() {
+      countryBrowserTrigger.setAttribute("aria-expanded", String(countryBrowser.open));
+      if (mobileNavigation.matches && countryBrowser.open) {
+        countryBrowserPanel.setAttribute("role", "dialog");
+        countryBrowserPanel.setAttribute("aria-modal", "true");
+        countryBrowserPanel.setAttribute("aria-labelledby", "country-browser-title");
+      } else {
+        countryBrowserPanel.setAttribute("role", "region");
+        countryBrowserPanel.removeAttribute("aria-modal");
+        countryBrowserPanel.removeAttribute("aria-labelledby");
+      }
+    }
+
+    function closeCountryBrowser() {
+      if (!mobileNavigation.matches || !countryBrowser.open) return;
+      countryBrowser.open = false;
+      syncCountryBrowser();
+      countryBrowserTrigger.focus();
+    }
+
+    countryBrowser.open = !mobileNavigation.matches;
+    syncCountryBrowser();
+    countryBrowser.addEventListener("toggle", () => {
+      syncCountryBrowser();
+      if (mobileNavigation.matches && countryBrowser.open) countrySearch.focus();
+    });
+    mobileNavigation.addEventListener("change", () => {
+      countryBrowser.open = !mobileNavigation.matches;
+      syncCountryBrowser();
+    });
+    countryBrowser.addEventListener("keydown", (event) => {
+      if (!mobileNavigation.matches || !countryBrowser.open) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeCountryBrowser();
+      } else if (event.key === "Tab") {
+        const focusable = [...countryBrowserPanel.querySelectorAll("input, a")]
+          .filter((element) => element.getClientRects().length);
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (mobileNavigation.matches && countryBrowser.open && !countryBrowser.contains(event.target)) {
+        closeCountryBrowser();
+      }
+    });
 
     function selectCountry(id) {
       const selected = countryDetails.find((country) => country.id === id) ?? defaultCountry;
@@ -136,6 +200,9 @@
         if (selected && link.hash === `#${selected.id}`) link.setAttribute("aria-current", "page");
         else link.removeAttribute("aria-current");
       });
+      document.querySelector("#country-selection-status").textContent = selected
+        ? `Selected ${selected.querySelector(".country-name").textContent}`
+        : "";
       return selected;
     }
 
@@ -149,6 +216,7 @@
       event.preventDefault();
       history.pushState({ country: selected.id }, "", link.hash);
       selectCountry(selected.id);
+      closeCountryBrowser();
     }));
     window.addEventListener("hashchange", restoreCountry);
     window.addEventListener("popstate", restoreCountry);
