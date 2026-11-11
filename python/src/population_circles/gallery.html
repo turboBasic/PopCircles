@@ -126,7 +126,7 @@
       </div>
       <div id="country-results" class="single-map">
         {% for country in countries %}
-        <details class="country{% if country.name == 'Germany' %} selected{% endif %}" id="{{ country.anchor }}" data-country="{{ country.name|lower }}" data-default="{{ 'true' if country.name == 'Germany' else 'false' }}"{% if country.name == 'Germany' %} open{% endif %} x-show="allOpen ? matches($el.dataset.country) : $el.classList.contains('selected')">
+        <details class="country{% if country.name == 'Germany' %} selected{% endif %}" id="{{ country.anchor }}" data-country="{{ country.name|lower }}" data-default="{{ 'true' if country.name == 'Germany' else 'false' }}"{% if country.name == 'Germany' %} open{% endif %} x-show="allOpen ? matches($el.dataset.country) : true">
           <summary><span class="country-name">{{ country.name }}</span><span class="map-count">{% if country.missing %}No result{% else %}{{ country.figures|length }} map{% if country.figures|length != 1 %}s{% endif %}{% endif %}</span></summary>
           {% if country.missing %}<p class="no-result">No 50% result is available for this country.</p>{% else %}
           <div class="figure-grid">
