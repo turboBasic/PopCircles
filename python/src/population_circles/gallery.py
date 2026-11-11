@@ -59,11 +59,23 @@ class Skipped:
     kind: str
 
 
+class PageFigure(TypedDict):
+    map: str
+    document: str
+    country_id: str | None
+    alt: str
+
+
 class PageCountry(TypedDict):
     name: str
     anchor: str
-    figures: list[Drawn]
+    figures: list[PageFigure]
     missing: bool
+
+
+class PageData(TypedDict):
+    world: list[PageFigure]
+    countries: list[PageCountry]
 
 
 @dataclass(frozen=True)
@@ -250,7 +262,16 @@ def render_document(
     )
 
 
-def page(drawn: list[Drawn], missing: list[str]) -> str:
+def page_figure(one: Drawn) -> PageFigure:
+    return {
+        "map": one.figure.name,
+        "document": one.document.name,
+        "country_id": one.country_id,
+        "alt": one.figure.stem,
+    }
+
+
+def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
     countries: dict[tuple[str, str], list[Drawn]] = {}
     world: list[Drawn] = []
     for one in drawn:
@@ -264,7 +285,7 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
         {
             "name": name,
             "anchor": f"country-result-{quote(identifier, safe='')}",
-            "figures": figures,
+            "figures": [page_figure(figure) for figure in figures],
             "missing": False,
         }
         for (name, identifier), figures in ordered
@@ -279,16 +300,25 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
         for name in missing
     )
     page_countries.sort(key=lambda country: (country["name"].casefold(), country["anchor"]))
+    return {"world": [page_figure(one) for one in world], "countries": page_countries}
+
+
+def page(data: PageData) -> str:
     navigation_groups: dict[str, list[PageCountry]] = {}
-    for country in page_countries:
+    for country in data["countries"]:
         navigation_groups.setdefault(country["name"][:1].upper() or "#", []).append(country)
 
     return TEMPLATES.get_template("gallery.html").render(
         title=TITLE,
         navigation_groups=navigation_groups.items(),
-        countries=page_countries,
-        world=world,
+        countries=data["countries"],
+        world=data["world"],
     )
+
+
+def write_page(output: Path, data: PageData) -> None:
+    (output / "gallery-data.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    (output / "index.html").write_text(page(data), encoding="utf-8")
 
 
 def country_result_document(
@@ -558,6 +588,7 @@ def build(
         context_digest,
     )
     (output / "index.html").unlink(missing_ok=True)
+    (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     missing, generated = country_documents(
         invoke, corpus, refresh_country_sweep=refresh_country_sweep
@@ -624,7 +655,8 @@ def build(
         if destination.is_file() and same_country_answer(destination.read_bytes(), content):
             continue
         destination.write_bytes(content)
-    (output / "index.html").write_text(page(drawn, sorted(unavailable)), encoding="utf-8")
+    data = page_data(drawn, sorted(unavailable))
+    write_page(output, data)
     print(
         f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "
         f"{reused_maps} reused, {rendered_maps} rendered)",

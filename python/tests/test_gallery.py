@@ -322,15 +322,27 @@ def test_gallery_page_uses_only_the_current_maps(
     page = (output / "index.html").read_text(encoding="utf-8")
     assert "current.png" in page
     assert "old.png" not in page
+    data = json.loads((output / "gallery-data.json").read_text(encoding="utf-8"))
+    assert data["world"] == [
+        {
+            "map": "current.png",
+            "document": "current.json",
+            "country_id": None,
+            "alt": "current",
+        },
+    ]
+    assert "old.png" not in json.dumps(data)
 
 
 def test_gallery_country_state_uses_existing_anchors_and_browser_history() -> None:
     page = gallery_module.page(
-        [
-            gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
-            gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
-        ],
-        ["Missing country"],
+        gallery_module.page_data(
+            [
+                gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
+                gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
+            ],
+            ["Missing country"],
+        )
     )
 
     assert 'id="country-result-DE"' in page
@@ -512,6 +524,43 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert result_names[1] not in page
     assert "No population &lt;yet&gt;" in page
     assert_explorer_shell(page)
+    assert json.loads((output / "gallery-data.json").read_text(encoding="utf-8")) == {
+        "world": [
+            {
+                "map": "world.png",
+                "document": "world.json",
+                "country_id": None,
+                "alt": "world",
+            },
+        ],
+        "countries": [
+            {
+                "name": "Alpha",
+                "anchor": "country-result-AA",
+                "figures": [
+                    {
+                        "map": result_names[0].replace(".json", ".png"),
+                        "document": result_names[0],
+                        "country_id": "AA",
+                        "alt": result_names[0].removesuffix(".json"),
+                    },
+                ],
+                "missing": False,
+            },
+            {
+                "name": "Beta",
+                "anchor": "country-missing-Beta",
+                "figures": [],
+                "missing": True,
+            },
+            {
+                "name": "No population <yet>",
+                "anchor": "country-missing-No%20population%20%3C" + "yet%3E",
+                "figures": [],
+                "missing": True,
+            },
+        ],
+    }
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
 
