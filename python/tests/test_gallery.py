@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from matplotlib.figure import Figure
@@ -227,6 +228,91 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     assert footer.count(COASTLINE_CREDIT) == 1
 
 
+def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    output = tmp_path / "build" / "gallery"
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
+    render = Mock(wraps=render_map_module.render)
+    monkeypatch.setattr(gallery_module, "render", render)
+    invoke = country_cli(countries, swept)[0]
+    first, _ = build(corpus, output, invoke)
+    original_bytes = {one.figure.name: one.figure.read_bytes() for one in first}
+    expected_maps = 2
+    assert len(original_bytes) == expected_maps
+    assert f"0 reused, {expected_maps} rendered" in capsys.readouterr().err
+
+    render.reset_mock()
+    second, _ = build(corpus, output, country_cli(countries, swept)[0])
+
+    render.assert_not_called()
+    assert {one.figure.name: one.figure.read_bytes() for one in second} == original_bytes
+    diagnostics = capsys.readouterr().err
+    assert "sweep work avoided for 1 countries" in diagnostics
+    assert "2 reused, 0 rendered" in diagnostics
+
+    cache_image = output.parent / ".gallery-cache" / "world" / "map.png"
+    cache_image.write_bytes(b"corrupt cache")
+    third, _ = build(corpus, output, country_cli(countries, swept)[0])
+
+    render.assert_called_once()
+    assert {one.figure.name: one.figure.read_bytes() for one in third} == original_bytes
+
+
+def test_gallery_page_uses_only_the_current_maps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "old.json", document("most-populous"))
+    written(corpus, "current.json", document("most-populous"))
+    output = tmp_path / "gallery"
+    invoke = country_cli([], [])[0]
+
+    build(corpus, output, invoke)
+    assert "old.png" in (output / "index.html").read_text(encoding="utf-8")
+    (corpus / "old.json").unlink()
+
+    build(corpus, output, country_cli([], [])[0])
+
+    page = (output / "index.html").read_text(encoding="utf-8")
+    assert "current.png" in page
+    assert "old.png" not in page
+
+
+def test_map_cache_key_changes_for_each_render_input_category() -> None:
+    coastline = box(-20, -10, 20, 10)
+    outline = box(-5, -5, 5, 5)
+    base = gallery_module.map_cache_key("context", b"document", coastline, outline)
+
+    assert base != gallery_module.map_cache_key("changed context", b"document", coastline, outline)
+    assert base != gallery_module.map_cache_key("context", b"changed document", coastline, outline)
+    assert base != gallery_module.map_cache_key("context", b"document", box(-1, -1, 1, 1), outline)
+    assert base != gallery_module.map_cache_key(
+        "context", b"document", coastline, box(-1, -1, 1, 1)
+    )
+
+
+def test_render_context_hashes_source_and_configuration_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "renderer.py"
+    source.write_text("first", encoding="utf-8")
+    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
+    first = gallery_module.render_context_digest()
+
+    source.write_text("second", encoding="utf-8")
+
+    assert gallery_module.render_context_digest() != first
+
+
 def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -383,6 +469,56 @@ def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: 
         "country-fixture-10-BB-half.json",
         "country-sweep-fixture-10-half.json",
     }
+    assert "stats" not in generated["country-fixture-10-AA-half.json"]["result"]["circle"]
+    assert (
+        "stats"
+        not in generated["country-sweep-fixture-10-half.json"]["result"]["countries"][0]["records"][
+            0
+        ]["circle"]
+    )
+
+
+def test_country_answer_documents_are_stable_when_only_sweep_stats_change(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    first_swept = swept_country("AA", "Alpha")
+    first_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 5
+    first_swept["records"][0]["circle"]["stats"]["radii_reused"] = 3
+    first_invoke, _ = country_cli(countries, [first_swept])
+    first = country_documents(first_invoke, tmp_path / "first", refresh_country_sweep=True)[1]
+    assert "country sweep evaluated 5 radii and reused 3" in capsys.readouterr().err
+
+    second_swept = swept_country("AA", "Alpha")
+    second_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 99
+    second_swept["records"][0]["circle"]["stats"]["radii_reused"] = 42
+    second_invoke, _ = country_cli(countries, [second_swept])
+    second = country_documents(second_invoke, tmp_path / "second", refresh_country_sweep=True)[1]
+
+    assert {name: json.dumps(payload, indent=2) for name, payload in first.items()} == {
+        name: json.dumps(payload, indent=2) for name, payload in second.items()
+    }
+
+
+def test_a_stats_free_sweep_is_reusable_and_reports_avoided_work(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    invoke, calls = country_cli(countries, swept)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    generated = country_documents(invoke, corpus, refresh_country_sweep=True)[1]
+    sweep_path = corpus / "country-sweep-fixture-10-half.json"
+    sweep_path.write_text(json.dumps(generated[sweep_path.name]), encoding="utf-8")
+    calls.clear()
+
+    country_documents(invoke, corpus)
+
+    assert calls == [["country", "list"]]
+    diagnostics = capsys.readouterr().err
+    assert "sweep work avoided for 1 countries" in diagnostics
+    assert "radii evaluated" not in diagnostics
 
 
 @pytest.mark.parametrize(

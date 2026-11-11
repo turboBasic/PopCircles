@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from stat import S_ISLNK
 from tempfile import TemporaryDirectory
+from typing import Any, cast
 from uuid import uuid4
 
 from population_circles.gallery import build as build_gallery
@@ -58,6 +59,34 @@ def require_inputs() -> None:
         raise PublishGalleryError(f"required gallery inputs are missing: {names}")  # noqa: EM102, TRY003
 
 
+def same_country_answer(existing: bytes, generated: bytes) -> bool:
+    try:
+        previous_value: Any = json.loads(existing)
+        current_value: Any = json.loads(generated)
+        if not isinstance(previous_value, dict) or not isinstance(current_value, dict):
+            return False
+        previous = cast(dict[str, Any], previous_value)
+        current = cast(dict[str, Any], current_value)
+        document = current.get("document")
+        if (
+            document not in {"country-sweep", "country-smallest"}
+            or previous.get("document") != document
+        ):
+            return False
+        for payload in (previous, current):
+            result = payload["result"]
+            if document == "country-smallest":
+                result["circle"].pop("stats", None)
+            else:
+                for country in result["countries"]:
+                    for record in country["records"]:
+                        record["circle"].pop("stats", None)
+    except AttributeError, KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError:
+        return False
+    else:
+        return previous == current
+
+
 def replace_site(staged: Path) -> None:
     BUILD.mkdir(parents=True, exist_ok=True)
     backup = BUILD / f".gallery-backup-{uuid4().hex}"
@@ -82,8 +111,10 @@ def persist_country_results(corpus: Path) -> None:
     for source in sorted(corpus.glob("*.json")):
         destination = RESULTS / source.name
         content = source.read_bytes()
-        if destination.is_file() and destination.read_bytes() == content:
-            continue
+        if destination.is_file():
+            previous = destination.read_bytes()
+            if previous == content or same_country_answer(previous, content):
+                continue
         try:
             payload = json.loads(content)
         except json.JSONDecodeError:
@@ -283,7 +314,12 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
         asset = workspace / new_asset_name()
         shutil.copytree(RESULTS, corpus)
         try:
-            build_gallery(corpus, staged, refresh_country_sweep=refresh_country_sweep)
+            build_gallery(
+                corpus,
+                staged,
+                refresh_country_sweep=refresh_country_sweep,
+                cache_directory=BUILD / ".gallery-cache",
+            )
         except Exception as error:
             message = f"gallery build failed: {error}"
             raise PublishGalleryError(message) from error

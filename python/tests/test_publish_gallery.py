@@ -131,13 +131,17 @@ def layout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]
 
 
 def successful_build(
-    seen: list[tuple[Path, bool]] | None = None,
+    seen: list[tuple[Path, bool, Path | None]] | None = None,
 ) -> Callable[..., tuple[list[object], list[object]]]:
     def build(
-        corpus: Path, output: Path, *, refresh_country_sweep: bool
+        corpus: Path,
+        output: Path,
+        *,
+        refresh_country_sweep: bool,
+        cache_directory: Path | None,
     ) -> tuple[list[object], list[object]]:
         if seen is not None:
-            seen.append((corpus, refresh_country_sweep))
+            seen.append((corpus, refresh_country_sweep, cache_directory))
         assert (corpus / "world.json").is_file()
         assert corpus != pg.RESULTS
         output.mkdir()
@@ -160,7 +164,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
         runs=[(41, "https://github.test/runs/41")],
         concurrent_dispatch=True,
     )
-    seen: list[tuple[Path, bool]] = []
+    seen: list[tuple[Path, bool, Path | None]] = []
     monkeypatch.setattr(pg, "run", github)
     monkeypatch.setattr(pg, "build_gallery", successful_build(seen))
     monkeypatch.setattr(time, "sleep", no_sleep)
@@ -169,6 +173,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
 
     assert len(seen) == 1
     assert seen[0][1]
+    assert seen[0][2] == pg.BUILD / ".gallery-cache"
     assert seen[0][0] != results
     assert (site / "index.html").read_text(encoding="utf-8") == "new site"
     assert (site / ".nojekyll").is_file()
@@ -194,6 +199,87 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert not any(command[:3] == ("gh", "release", "create") for command in github.commands)
 
 
+def test_publish_reuses_one_cache_across_temporary_build_workspaces(
+    layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    del layout
+    github = FakeGitHub()
+    seen: list[tuple[Path, bool, Path | None]] = []
+    monkeypatch.setattr(pg, "run", github)
+    monkeypatch.setattr(pg, "build_gallery", successful_build(seen))
+    monkeypatch.setattr(time, "sleep", no_sleep)
+
+    pg.publish()
+    pg.publish()
+
+    build_count = 2
+    assert len(seen) == build_count
+    assert seen[0][0].parent != seen[1][0].parent
+    assert seen[0][2] == seen[1][2] == pg.BUILD / ".gallery-cache"
+
+
+@pytest.mark.parametrize("kind", ["country-sweep", "country-smallest"])
+def test_persist_keeps_existing_country_bytes_when_only_stats_differ(
+    layout: tuple[Path, Path], tmp_path: Path, kind: str
+) -> None:
+    results, _ = layout
+    name = f"{kind}.json"
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    old: dict[str, object]
+    new: dict[str, object]
+    if kind == "country-sweep":
+        old = {
+            "document": kind,
+            "result": {
+                "countries": [
+                    {"records": [{"circle": {"answer": 1, "stats": {"radii_evaluated": 2}}}]}
+                ]
+            },
+        }
+        new = {
+            "document": kind,
+            "result": {"countries": [{"records": [{"circle": {"answer": 1}}]}]},
+        }
+    else:
+        old = {
+            "document": kind,
+            "result": {"circle": {"answer": 1, "stats": {"radii_evaluated": 2}}},
+        }
+        new = {"document": kind, "result": {"circle": {"answer": 1}}}
+    write_json(results / name, old)
+    write_json(corpus / name, new)
+    previous = (results / name).read_bytes()
+
+    pg.persist_country_results(corpus)
+
+    assert (results / name).read_bytes() == previous
+
+
+def test_persist_still_updates_country_answers_when_answer_data_changes(
+    layout: tuple[Path, Path], tmp_path: Path
+) -> None:
+    results, _ = layout
+    name = "country.json"
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    expected_answer = 2
+    write_json(
+        results / name, {"document": "country-smallest", "result": {"circle": {"answer": 1}}}
+    )
+    write_json(
+        corpus / name,
+        {"document": "country-smallest", "result": {"circle": {"answer": expected_answer}}},
+    )
+
+    pg.persist_country_results(corpus)
+
+    assert (
+        json.loads((results / name).read_text(encoding="utf-8"))["result"]["circle"]["answer"]
+        == expected_answer
+    )
+
+
 def test_failed_render_preserves_existing_site_and_result_documents(
     layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -202,8 +288,15 @@ def test_failed_render_preserves_existing_site_and_result_documents(
     old_site = (site / "index.html").read_bytes()
     github = FakeGitHub()
 
-    def fail_build(corpus: Path, output: Path, *, refresh_country_sweep: bool) -> None:
+    def fail_build(
+        corpus: Path,
+        output: Path,
+        *,
+        refresh_country_sweep: bool,
+        cache_directory: Path | None,
+    ) -> None:
         del refresh_country_sweep
+        del cache_directory
         write_json(corpus / "country-sweep-new.json", country_result("country-sweep"))
         output.mkdir()
         raise ValueError("render failed")  # noqa: EM101, TRY003
