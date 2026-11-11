@@ -366,6 +366,7 @@ docs/ponytail.md                 the ponytail plugin's use here, and its limits
 .claude/skills/                  one directory per task workflow
 crates/                          Rust workspace — the search
 data/                            input datasets; registry in data/registry.toml
+frontend/                        compiled Svelte presentation for the static Gallery
 python/                           Python project — src/ holds the packages, tests/ the suite
 results/                         the answers this project publishes, as the documents that printed them
 ```

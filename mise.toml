@@ -34,10 +34,11 @@ run = [
 
 # The leaves depend on this, never `lint`/`typecheck`/`test`: `depends` runs in parallel and would race.
 [tasks.deps]
-description = "Fetch the Rust and Python dependencies"
+description = "Fetch the Rust, Python and frontend dependencies"
 run = [
   "cargo fetch",
   "uv sync --locked",
+  "npm --prefix frontend ci",
 ]
 
 # A guardrail, not a gate — `git merge --no-ff` still overrides it — that makes an accidental merge
@@ -200,7 +201,12 @@ run = "uv run pyright"
 
 [tasks.test]
 description = "Run the Rust and Python test suites"
-depends = ["test:python", "test:rust"]
+depends = ["test:frontend", "test:python", "test:rust"]
+
+[tasks."test:frontend"]
+description = "Build the static Svelte frontend"
+depends = ["deps"]
+run = "npm --prefix frontend run build"
 
 [tasks."test:rust"]
 description = "Run the Rust test suite"

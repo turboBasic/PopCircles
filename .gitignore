@@ -6,6 +6,10 @@
 # is what stops a producer that ignores the config from making it committable.
 /target/
 
+# Svelte dependencies and the standalone frontend build
+/frontend/node_modules/
+/frontend/dist/
+
 # Rust
 **/*.rs.bk
 *.pdb
