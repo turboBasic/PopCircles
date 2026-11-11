@@ -35,7 +35,6 @@ module-name = ["population_circles", "repo_tools"]
 
 [dependency-groups]
 dev = [
-  "jinja2>=3.1.6",
   "matplotlib>=3.11.1",
   "pydantic>=2.13.4",
   "pyproj>=3.7.2",

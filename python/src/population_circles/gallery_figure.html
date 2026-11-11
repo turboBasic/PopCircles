@@ -1,4 +1,0 @@
-<figure class="map-card"{% if one.country_id %} data-country-id="{{ one.country_id }}"{% endif %}>
-  <a class="map-link" href="{{ one.map }}"><img {% if one.country_id %}data-src="{{ one.map }}"{% else %}src="{{ one.map }}"{% endif %} alt="{{ one.alt }}" loading="lazy">{% if one.country_id %}<noscript><img src="{{ one.map }}" alt="{{ one.alt }}" loading="lazy"></noscript>{% endif %}</a>
-  <figcaption><a href="{{ one.document }}">View result data</a></figcaption>
-</figure>

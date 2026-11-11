@@ -1,6 +1,8 @@
 import argparse
 import hashlib
 import json
+import shutil
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +11,6 @@ from urllib.parse import quote
 from uuid import uuid4
 
 import matplotlib as mpl
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
@@ -21,7 +22,6 @@ from population_circles.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.map_frame import PLATE_CARREE
 from population_circles.render_map import citation, registered_coastline, render
 
-TITLE = "The smallest circle on the globe holding a share of world population"
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -29,7 +29,6 @@ RENDER_INPUTS = tuple(
     sorted(
         [
             *Path(__file__).parent.rglob("*.py"),
-            *Path(__file__).parent.rglob("*.html"),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "registry.toml",
             REPO_ROOT / "mise.toml",
@@ -38,10 +37,6 @@ RENDER_INPUTS = tuple(
         ],
         key=lambda path: path.as_posix(),
     )
-)
-TEMPLATES = Environment(
-    loader=FileSystemLoader(Path(__file__).parent),
-    autoescape=select_autoescape(["html"]),
 )
 
 
@@ -303,22 +298,25 @@ def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
     return {"world": [page_figure(one) for one in world], "countries": page_countries}
 
 
-def page(data: PageData) -> str:
-    navigation_groups: dict[str, list[PageCountry]] = {}
-    for country in data["countries"]:
-        navigation_groups.setdefault(country["name"][:1].upper() or "#", []).append(country)
-
-    return TEMPLATES.get_template("gallery.html").render(
-        title=TITLE,
-        navigation_groups=navigation_groups.items(),
-        countries=data["countries"],
-        world=data["world"],
-    )
-
-
-def write_page(output: Path, data: PageData) -> None:
+def build_frontend(output: Path, data: PageData) -> None:
     (output / "gallery-data.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-    (output / "index.html").write_text(page(data), encoding="utf-8")
+    npm = shutil.which("npm")
+    if npm is None:
+        message = "npm is required; run this gallery build through mise"
+        raise FileNotFoundError(message)
+    subprocess.run(  # noqa: S603 — argv only; npm runs the pinned repository frontend build
+        [
+            npm,
+            "--prefix",
+            str(REPO_ROOT / "frontend"),
+            "run",
+            "build",
+            "--",
+            "--outDir",
+            str(output.resolve()),
+        ],
+        check=True,
+    )
 
 
 def country_result_document(
@@ -656,7 +654,7 @@ def build(
             continue
         destination.write_bytes(content)
     data = page_data(drawn, sorted(unavailable))
-    write_page(output, data)
+    build_frontend(output, data)
     print(
         f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "
         f"{reused_maps} reused, {rendered_maps} rendered)",

@@ -81,10 +81,12 @@ run = "uv run circle-map"
 # broken render fails a check without this task being one.
 [tasks.gallery]
 description = "Generate the 50% country sweep and render result documents to a gallery"
+depends = ["deps"]
 run = "uv run render-gallery"
 
 [tasks."gallery:publish"]
 description = "Build and publish the gallery through the draft release handoff"
+depends = ["deps"]
 run = "uv run publish-gallery publish"
 
 [tasks."gallery:stage"]

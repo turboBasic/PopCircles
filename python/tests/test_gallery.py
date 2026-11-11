@@ -73,24 +73,17 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
     (directory / name).write_text(json.dumps(payload), encoding="utf-8")
 
 
-def assert_explorer_shell(page: str) -> None:
-    assert '<aside class="country-nav-wrap" aria-label="Country navigation">' in page
-    assert '<main class="content"' in page
-    assert "countryBrowser.open = !mobileNavigation.matches;" in page
-    assert ".country-browser > summary { display: flex;" in page
-    assert "Browse countries" in page
-    assert 'for="country-search">Search countries</label>' in page
-    assert 'id="theme-toggle" aria-pressed="false"' in page
-    assert 'id="copy-country-url"' in page
-    assert 'id="open-full-size"' in page
-    assert "No 50% result is available for this country." in page
-
-
-def assert_map_card(page: str, image: str) -> None:
-    assert '<figure class="map-card" data-country-id="AA">' in page
-    assert f'<img data-src="{image}"' in page
-    assert "height: auto;" in page
-    assert "filter:" not in page
+def assert_built_site(output: Path) -> None:
+    page = (output / "index.html").read_text(encoding="utf-8")
+    assert 'src="./assets/' in page
+    assert 'href="./assets/' in page
+    assert "cdn.jsdelivr.net" not in page
+    assets = list((output / "assets").glob("*.js"))
+    assert len(assets) == 1
+    bundle = assets[0].read_text(encoding="utf-8")
+    assert "gallery-data.json" in bundle
+    assert "cdn.jsdelivr.net" not in bundle
+    assert (output / "gallery-data.json").is_file()
 
 
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
@@ -243,9 +236,17 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         ("country-sweep-fixture-10-half.json", "country-sweep"),
         ("not-drawable.json", "sweep"),
     ]
-    page = (tmp_path / "gallery" / "index.html").read_text(encoding="utf-8")
-    assert "Committed documents with no figure" not in page
-    assert "not-drawable.json" not in page
+    assert_built_site(tmp_path / "gallery")
+    data = json.loads((tmp_path / "gallery" / "gallery-data.json").read_text(encoding="utf-8"))
+    assert data["world"] == [
+        {
+            "map": "drawable.png",
+            "document": "drawable.json",
+            "country_id": None,
+            "alt": "drawable",
+        },
+    ]
+    assert "not-drawable.json" not in json.dumps(data)
     footer = annotations[-1]
     assert basemap_paths == [coastline_path]
     assert "Coastline credit:" in footer
@@ -302,7 +303,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     assert {one.figure.name: one.figure.read_bytes() for one in third} == original_bytes
 
 
-def test_gallery_page_uses_only_the_current_maps(
+def test_gallery_data_uses_only_the_current_maps(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
@@ -314,14 +315,11 @@ def test_gallery_page_uses_only_the_current_maps(
     invoke = country_cli([], [])[0]
 
     build(corpus, output, invoke)
-    assert "old.png" in (output / "index.html").read_text(encoding="utf-8")
     (corpus / "old.json").unlink()
 
     build(corpus, output, country_cli([], [])[0])
 
-    page = (output / "index.html").read_text(encoding="utf-8")
-    assert "current.png" in page
-    assert "old.png" not in page
+    assert_built_site(output)
     data = json.loads((output / "gallery-data.json").read_text(encoding="utf-8"))
     assert data["world"] == [
         {
@@ -334,27 +332,24 @@ def test_gallery_page_uses_only_the_current_maps(
     assert "old.png" not in json.dumps(data)
 
 
-def test_gallery_country_state_uses_existing_anchors_and_browser_history() -> None:
-    page = gallery_module.page(
-        gallery_module.page_data(
-            [
-                gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
-                gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
-            ],
-            ["Missing country"],
-        )
+def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
+    data = gallery_module.page_data(
+        [
+            gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
+            gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
+        ],
+        ["Missing country"],
     )
 
-    assert 'id="country-result-DE"' in page
-    assert 'id="country-result-FR"' in page
-    assert 'data-default="true"' in page
-    assert 'data-default="false"' in page
-    assert '<img data-src="germany.png"' in page
-    assert 'href="#country-result-DE"' in page
-    assert "if (location.hash !== link.hash)" in page
-    assert 'history.pushState({ country: selected.id }, "", link.hash)' in page
-    assert f'window.addEventListener("{"pop" + "state"}", restoreCountry)' in page
-    assert f'window.addEventListener("{"hash" + "change"}", restoreCountry)' in page
+    assert [country["anchor"] for country in data["countries"]] == [
+        "country-result-FR",
+        "country-result-DE",
+        "country-missing-Missing%20country",
+    ]
+    assert [figure["map"] for country in data["countries"] for figure in country["figures"]] == [
+        "france.png",
+        "germany.png",
+    ]
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
@@ -518,12 +513,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert (output / result_names[0]).is_file()
     assert not (output / result_names[1]).exists()
     assert not (output / result_names[1].replace(".json", ".png")).exists()
-    page = (output / "index.html").read_text(encoding="utf-8")
-    assert f'href="{result_names[0]}"' in page
-    assert_map_card(page, result_names[0].replace(".json", ".png"))
-    assert result_names[1] not in page
-    assert "No population &lt;yet&gt;" in page
-    assert_explorer_shell(page)
+    assert_built_site(output)
     assert json.loads((output / "gallery-data.json").read_text(encoding="utf-8")) == {
         "world": [
             {

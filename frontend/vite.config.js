@@ -5,6 +5,7 @@ export default defineConfig({
   base: './',
   plugins: [svelte()],
   build: {
-    outDir: 'dist'
+    outDir: 'dist',
+    emptyOutDir: false
   }
 });
