@@ -300,6 +300,11 @@ def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
 
 def build_frontend(output: Path, data: PageData) -> None:
     (output / "gallery-data.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    assets = output / "assets"
+    if assets.is_symlink():
+        assets.unlink()
+    elif assets.is_dir():
+        shutil.rmtree(assets)
     npm = shutil.which("npm")
     if npm is None:
         message = "npm is required; run this gallery build through mise"

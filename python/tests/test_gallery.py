@@ -315,11 +315,15 @@ def test_gallery_data_uses_only_the_current_maps(
     invoke = country_cli([], [])[0]
 
     build(corpus, output, invoke)
+    (output / "assets" / "stale.js").write_text("stale", encoding="utf-8")
     (corpus / "old.json").unlink()
 
     build(corpus, output, country_cli([], [])[0])
 
     assert_built_site(output)
+    assert not (output / "assets" / "stale.js").exists()
+    assert (output / "current.png").is_file()
+    assert (output / "current.json").is_file()
     data = json.loads((output / "gallery-data.json").read_text(encoding="utf-8"))
     assert data["world"] == [
         {
