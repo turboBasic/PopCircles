@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   <style>
     :root { color-scheme: dark; --bg: #0b1020; --surface: #121a2b; --surface-2: #19243a; --text: #eef3ff; --muted: #a4b0c5; --accent: #80e0c0; --line: #29364d; font-family: "DM Sans", system-ui, sans-serif; }
     * { box-sizing: border-box; }
+    [x-cloak] { display: none !important; }
     body { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, #203456 0, var(--bg) 55%); font-size: 16px; line-height: 1.55; }
     a { color: inherit; }
     .wrap { width: min(1240px, calc(100% - 2rem)); margin: auto; }
@@ -19,31 +21,45 @@
     .hero h1 { font-family: Manrope, system-ui, sans-serif; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; max-width: 850px; margin: .7rem 0 1rem; letter-spacing: -.045em; }
     .hero p { max-width: 720px; color: var(--muted); margin: 0; }
     .country-nav-wrap { position: sticky; top: 0; z-index: 2; padding: .8rem 0; background: #0b1020ef; border-block: 1px solid var(--line); backdrop-filter: blur(16px); }
-    .country-nav-label { font-size: .75rem; color: var(--muted); margin: 0 0 .55rem; }
-    .country-nav { display: flex; flex-wrap: wrap; gap: .45rem; max-height: 6.5rem; overflow: auto; }
-    .country-nav a { font-size: .8rem; text-decoration: none; padding: .3rem .65rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
-    .country-nav a:hover, .country-nav a:focus-visible { color: var(--text); border-color: var(--accent); outline: none; }
+    .country-browser { position: relative; }
+    .country-browser > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
+    .country-browser > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .country-browser-panel { position: absolute; top: calc(100% + .8rem); left: 0; right: 0; max-height: min(70vh, 42rem); overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; }
+    .country-search { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
+    .country-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .country-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .country-nav h2 { margin: 0 0 .4rem; color: var(--accent); font-size: .8rem; }
+    .country-nav ul { margin: 0; padding: 0; list-style: none; }
+    .country-nav a { display: block; padding: .2rem 0; color: var(--muted); text-decoration: none; }
+    .country-nav a:hover, .country-nav a:focus-visible { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
+    .country-nav-empty { margin: 0; color: var(--muted); }
     .content { padding: 1.5rem 0 4rem; }
-    .country, .missing { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; margin: 0 0 .7rem; overflow: hidden; }
+    .country { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; margin: 0 0 .7rem; overflow: hidden; }
     .country { scroll-margin-top: 9rem; }
-    .country > summary, .missing > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.2rem; font-family: Manrope, system-ui, sans-serif; font-size: 1.08rem; font-weight: 700; cursor: pointer; list-style: none; }
-    .country > summary::-webkit-details-marker, .missing > summary::-webkit-details-marker { display: none; }
-    .country > summary:focus-visible, .missing > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+    .country > summary { display: grid; grid-template-columns: minmax(0, 1fr) auto 1.5rem; align-items: center; gap: 1rem; padding: 1rem 1.2rem; font-family: Manrope, system-ui, sans-serif; font-size: 1.08rem; font-weight: 700; cursor: pointer; list-style: none; }
+    .country-name { overflow-wrap: anywhere; }
+    .country-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .75rem; }
+    .country-actions h2 { margin: 0; font-family: Manrope, system-ui, sans-serif; }
+    .country-actions button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
+    .country-actions button:hover { border-color: var(--accent); }
+    .country-actions button:focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 2px; }
+    .country > summary::-webkit-details-marker { display: none; }
+    .country > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
     .country[open] > summary { border-bottom: 1px solid var(--line); background: var(--surface-2); }
     .country > summary::after { content: '⌄'; color: var(--accent); font-size: 1.2rem; transition: transform .2s; }
     .country[open] > summary::after { transform: rotate(180deg); }
-    .map-count { font: 500 .78rem "DM Sans", system-ui, sans-serif; color: var(--muted); white-space: nowrap; }
+    .map-count { font: 500 .78rem "DM Sans", system-ui, sans-serif; color: var(--muted); white-space: nowrap; text-align: right; }
     .figure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; padding: 1rem; }
+    .no-result { padding: 1rem 1.2rem; color: var(--muted); }
     .world h2 { font-family: Manrope, system-ui, sans-serif; margin: 2rem 0 .5rem; }
     .world figure, .country figure { margin: 0; background: #0d1422; border: 1px solid var(--line); border-radius: .8rem; overflow: hidden; }
     .map-link { display: block; }
     .map-link img { display: block; width: 100%; height: auto; }
     figcaption { padding: .75rem 1rem; color: var(--muted); font-size: .85rem; }
     figcaption a { text-decoration-color: #65758e; text-underline-offset: 3px; }
-    .missing { margin-top: 1.5rem; }
-    .missing ul { columns: 2; color: var(--muted); padding: 0 2.5rem 1rem; }
     footer { border-top: 1px solid var(--line); padding: 1.5rem 0; color: var(--muted); font-size: .8rem; }
-    @media (max-width: 600px) { .hero { padding-top: 2.5rem; } .country-nav { flex-wrap: nowrap; max-height: none; overflow-x: auto; } .missing ul { columns: 1; } }
+    @media (max-width: 600px) { .hero { padding-top: 2.5rem; } .country-browser-panel { position: fixed; top: auto; left: 1rem; right: 1rem; max-height: 70vh; } .country-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
 <body>
@@ -53,13 +69,27 @@
       <h1>{{ title }}</h1>
       <p>Explore the smallest circle holding half of each country's population, alongside selected world population circles. Choose a country below to jump to its map.</p>
     </header>
-    <div class="country-nav-wrap">
-      <p class="country-nav-label">Jump to a country</p>
-      <nav class="country-nav" aria-label="Countries">
-        {% for country in country_navigation %}<a href="#country-{{ country.anchor }}">{{ country.name }}</a>{% endfor %}
-      </nav>
+    <div class="country-nav-wrap" x-data="{ query: '', matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); } }">
+      <details class="country-browser">
+        <summary>Browse countries <span class="map-count">{{ countries|length }} countries</span></summary>
+        <div class="country-browser-panel">
+          <label class="visually-hidden" for="country-search">Search countries</label>
+          <input class="country-search" id="country-search" type="search" placeholder="Search countries" autocomplete="off" x-model="query">
+          <nav class="country-nav" aria-label="Countries">
+            {% for letter, countries_in_group in navigation_groups %}
+            <section x-show="Array.from($el.querySelectorAll('a')).some(link => matches(link.dataset.country))">
+              <h2>{{ letter }}</h2>
+              <ul>
+                {% for country in countries_in_group %}<li><a href="#{{ country.anchor }}" data-country="{{ country.name|lower }}" x-show="matches($el.dataset.country)" x-on:click="document.getElementById('{{ country.anchor }}').open = true; $el.closest('details').open = false">{{ country.name }}</a></li>{% endfor %}
+              </ul>
+            </section>
+            {% endfor %}
+            <p class="country-nav-empty" x-cloak x-show="query && !Array.from($el.parentElement.querySelectorAll('a')).some(link => matches(link.dataset.country))" role="status">No matching countries.</p>
+          </nav>
+        </div>
+      </details>
     </div>
-    <main class="content">
+    <main class="content" x-data="{ allOpen: false, toggleAll() { this.allOpen = !this.allOpen; document.querySelectorAll('#country-results details.country').forEach(country => country.open = this.allOpen); } }">
       {% if world %}
       <section class="world">
         <h2>World maps</h2>
@@ -68,20 +98,19 @@
         </div>
       </section>
       {% endif %}
-      {% for country in countries %}
-      <details class="country" id="country-{{ country.anchor }}">
-        <summary><span>{{ country.name }}</span><span class="map-count">{{ country.figures|length }} map{% if country.figures|length != 1 %}s{% endif %}</span></summary>
-        <div class="figure-grid">
-          {% for one in country.figures %}{% include "gallery_figure.html" %}{% endfor %}
-        </div>
-      </details>
-      {% endfor %}
-      {% if missing %}
-      <details class="missing">
-        <summary>Countries without a 50% result <span class="map-count">{{ missing|length }}</span></summary>
-        <ul>{% for name in missing %}<li>{{ name }}</li>{% endfor %}</ul>
-      </details>
-      {% endif %}
+      <div class="country-actions"><h2>Countries</h2><button type="button" x-on:click="toggleAll()" x-text="allOpen ? 'Collapse all country maps' : 'Expand all country maps'">Expand all country maps</button></div>
+      <div id="country-results">
+        {% for country in countries %}
+        <details class="country" id="{{ country.anchor }}">
+          <summary><span class="country-name">{{ country.name }}</span><span class="map-count">{% if country.missing %}No result{% else %}{{ country.figures|length }} map{% if country.figures|length != 1 %}s{% endif %}{% endif %}</span></summary>
+          {% if country.missing %}<p class="no-result">No 50% result is available for this country.</p>{% else %}
+          <div class="figure-grid">
+            {% for one in country.figures %}{% include "gallery_figure.html" %}{% endfor %}
+          </div>
+          {% endif %}
+        </details>
+        {% endfor %}
+      </div>
     </main>
     <footer>Population circle results with source documents and data credits.</footer>
   </div>

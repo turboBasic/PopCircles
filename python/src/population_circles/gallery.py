@@ -3,7 +3,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -39,6 +39,13 @@ class Skipped:
     kind: str
 
 
+class PageCountry(TypedDict):
+    name: str
+    anchor: str
+    figures: list[Drawn]
+    missing: bool
+
+
 def page(drawn: list[Drawn], missing: list[str]) -> str:
     countries: dict[tuple[str, str], list[Drawn]] = {}
     world: list[Drawn] = []
@@ -49,22 +56,34 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
             countries.setdefault((one.country_name, one.country_id), []).append(one)
 
     ordered = sorted(countries.items(), key=lambda item: (item[0][0].casefold(), item[0][1]))
+    page_countries: list[PageCountry] = [
+        {
+            "name": name,
+            "anchor": f"country-result-{quote(identifier, safe='')}",
+            "figures": figures,
+            "missing": False,
+        }
+        for (name, identifier), figures in ordered
+    ]
+    page_countries.extend(
+        {
+            "name": name,
+            "anchor": f"country-missing-{quote(name, safe='')}",
+            "figures": [],
+            "missing": True,
+        }
+        for name in missing
+    )
+    page_countries.sort(key=lambda country: (country["name"].casefold(), country["anchor"]))
+    navigation_groups: dict[str, list[PageCountry]] = {}
+    for country in page_countries:
+        navigation_groups.setdefault(country["name"][:1].upper() or "#", []).append(country)
+
     return TEMPLATES.get_template("gallery.html").render(
         title=TITLE,
-        country_navigation=[
-            {"name": name, "anchor": quote(identifier, safe="")}
-            for name, identifier in (key for key, _ in ordered)
-        ],
-        countries=[
-            {
-                "name": name,
-                "anchor": quote(identifier, safe=""),
-                "figures": figures,
-            }
-            for (name, identifier), figures in ordered
-        ],
+        navigation_groups=navigation_groups.items(),
+        countries=page_countries,
         world=world,
-        missing=missing,
     )
 
 
@@ -232,6 +251,7 @@ def build(
 
     drawn: list[Drawn] = []
     skipped: list[Skipped] = []
+    unavailable = set(missing)
     sources = [
         (source, json.loads(source.read_text(encoding="utf-8")))
         for source in sorted(corpus.glob("*.json"))
@@ -266,6 +286,7 @@ def build(
                 flush=True,
             )
             skipped.append(Skipped(source, "zero-population country"))
+            unavailable.add(payload["result"]["country"]["name"])
             (output / source.name).unlink(missing_ok=True)
             (output / f"{source.stem}.png").unlink(missing_ok=True)
             continue
@@ -328,7 +349,7 @@ def build(
 
     for name, payload in generated.items():
         (corpus / name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    (output / "index.html").write_text(page(drawn, missing), encoding="utf-8")
+    (output / "index.html").write_text(page(drawn, sorted(unavailable)), encoding="utf-8")
     print(
         f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped)",
         file=sys.stderr,
