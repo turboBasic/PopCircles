@@ -322,6 +322,7 @@ def test_gallery_country_state_uses_existing_anchors_and_browser_history() -> No
     assert 'data-default="false"' in page
     assert '<img data-src="germany.png"' in page
     assert 'href="#country-result-DE"' in page
+    assert "if (location.hash !== link.hash)" in page
     assert 'history.pushState({ country: selected.id }, "", link.hash)' in page
     assert f'window.addEventListener("{"pop" + "state"}", restoreCountry)' in page
     assert f'window.addEventListener("{"hash" + "change"}", restoreCountry)' in page

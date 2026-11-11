@@ -262,7 +262,7 @@
       const selected = document.getElementById(link.hash.slice(1));
       if (!selected || !selected.matches("#country-results details.country")) return;
       event.preventDefault();
-      history.pushState({ country: selected.id }, "", link.hash);
+      if (location.hash !== link.hash) history.pushState({ country: selected.id }, "", link.hash);
       selectCountry(selected.id);
       closeCountryBrowser();
     }));
