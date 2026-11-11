@@ -26,6 +26,13 @@ virtual environment by hand, or install a Rust toolchain outside mise.
 If a task is not yet part of `lint` or `ci`, its comment explains why. Meet the stated condition before
 adding it. The two Python tasks are waiting for source files and tests to exist.
 
+### Cache access
+
+After a configured tool reports a cache permission failure, inspect its configuration to find the cache
+path. If the harness supports elevated access, request it for the requested operation limited to that
+path before treating the operation as blocked. If denied, continue unaffected work and report the
+specific denial.
+
 ## AI harnesses
 
 Resolve relative paths in reused skills and personas from their source files. Follow their workflows
