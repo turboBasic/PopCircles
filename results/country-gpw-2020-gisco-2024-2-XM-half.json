@@ -52,23 +52,7 @@
       "share_achieved": 0.0,
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.13436e-319,
-      "ambiguity": {
-        "lowest_km": 0,
-        "highest_km": 1,
-        "radii": 2
-      },
-      "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 2,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 15,
-          "blocks_examined": 349895712,
-          "blocks_pruned": 0,
-          "circles_evaluated": 349895712,
-          "kernels_built": 90168444
-        }
-      }
+      "tolerance_persons": 0.0
     }
   }
 }
