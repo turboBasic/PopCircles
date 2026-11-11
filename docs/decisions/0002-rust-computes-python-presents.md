@@ -1,12 +1,15 @@
 ---
 id: 0002
-status: accepted
+status: superseded
+superseded_by: 0019
 date: 2026-08-13
 scope: architecture
 tags: [adr, popcircles]
 ---
 
 # ADR 0002 — Rust owns everything numeric; Python owns presentation only
+
+Superseded by [ADR 0019](0019-svelte-presents-the-static-gallery.md).
 
 ## Decision
 

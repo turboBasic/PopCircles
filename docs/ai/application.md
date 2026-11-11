@@ -222,4 +222,6 @@ Rust owns numeric work: geodesy, raster ingest, tables, kernels, search, and the
 must reuse Rust's raster reader rather than introduce a second raster stack. Python renders figures
 and coordinates combined workflows by invoking the Rust CLI and passing its published JSON to the
 renderer. Python must not read raster pixels, cache headers, or ledger contents. Move any Python helper
-that needs raster pixels into Rust.
+that needs raster pixels into Rust. The static Gallery's browser presentation is Svelte and consumes
+generated Gallery data; it does not calculate population answers or render maps
+([ADR 0019](../decisions/0019-svelte-presents-the-static-gallery.md)).
