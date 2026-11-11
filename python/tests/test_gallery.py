@@ -73,6 +73,26 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
     (directory / name).write_text(json.dumps(payload), encoding="utf-8")
 
 
+def assert_explorer_shell(page: str) -> None:
+    assert '<aside class="country-nav-wrap" aria-label="Country navigation">' in page
+    assert '<main class="content"' in page
+    assert "countryBrowser.open = !mobileNavigation.matches;" in page
+    assert ".country-browser > summary { display: flex;" in page
+    assert "Browse countries" in page
+    assert 'for="country-search">Search countries</label>' in page
+    assert 'id="theme-toggle" aria-pressed="false"' in page
+    assert 'id="copy-country-url"' in page
+    assert 'id="open-full-size"' in page
+    assert "No 50% result is available for this country." in page
+
+
+def assert_map_card(page: str, image: str) -> None:
+    assert '<figure class="map-card" data-country-id="AA">' in page
+    assert f'<img data-src="{image}"' in page
+    assert "height: auto;" in page
+    assert "filter:" not in page
+
+
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
     longitude = answer.circle.centre.lon
     latitude = answer.circle.centre.lat
@@ -287,6 +307,27 @@ def test_gallery_page_uses_only_the_current_maps(
     assert "old.png" not in page
 
 
+def test_gallery_country_state_uses_existing_anchors_and_browser_history() -> None:
+    page = gallery_module.page(
+        [
+            gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
+            gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
+        ],
+        ["Missing country"],
+    )
+
+    assert 'id="country-result-DE"' in page
+    assert 'id="country-result-FR"' in page
+    assert 'data-default="true"' in page
+    assert 'data-default="false"' in page
+    assert '<img data-src="germany.png"' in page
+    assert 'href="#country-result-DE"' in page
+    assert "if (location.hash !== link.hash)" in page
+    assert 'history.pushState({ country: selected.id }, "", link.hash)' in page
+    assert f'window.addEventListener("{"pop" + "state"}", restoreCountry)' in page
+    assert f'window.addEventListener("{"hash" + "change"}", restoreCountry)' in page
+
+
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
     coastline = box(-20, -10, 20, 10)
     outline = box(-5, -5, 5, 5)
@@ -446,8 +487,10 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert not (output / result_names[1].replace(".json", ".png")).exists()
     page = (output / "index.html").read_text(encoding="utf-8")
     assert f'href="{result_names[0]}"' in page
+    assert_map_card(page, result_names[0].replace(".json", ".png"))
     assert result_names[1] not in page
     assert "No population &lt;yet&gt;" in page
+    assert_explorer_shell(page)
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
 
