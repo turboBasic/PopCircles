@@ -76,7 +76,7 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
 def assert_explorer_shell(page: str) -> None:
     assert '<aside class="country-nav-wrap" aria-label="Country navigation">' in page
     assert '<main class="content"' in page
-    assert "x-init=\"$el.open = matchMedia('(min-width: 801px)').matches\"" in page
+    assert "countryBrowser.open = !mobileNavigation.matches;" in page
     assert ".country-browser > summary { display: flex;" in page
     assert "Browse countries" in page
     assert 'for="country-search">Search countries</label>' in page
@@ -85,7 +85,7 @@ def assert_explorer_shell(page: str) -> None:
 
 def assert_map_card(page: str, image: str) -> None:
     assert '<figure class="map-card" data-country-id="AA">' in page
-    assert f'<img src="{image}"' in page
+    assert f'<img data-src="{image}"' in page
     assert "height: auto;" in page
     assert "filter:" not in page
 
@@ -313,8 +313,11 @@ def test_gallery_country_state_uses_existing_anchors_and_browser_history() -> No
         ["Missing country"],
     )
 
-    assert 'id="country-result-DE" data-default="true"' in page
-    assert 'id="country-result-FR" data-default="false"' in page
+    assert 'id="country-result-DE"' in page
+    assert 'id="country-result-FR"' in page
+    assert 'data-default="true"' in page
+    assert 'data-default="false"' in page
+    assert '<img data-src="germany.png"' in page
     assert 'href="#country-result-DE"' in page
     assert 'history.pushState({ country: selected.id }, "", link.hash)' in page
     assert f'window.addEventListener("{"pop" + "state"}", restoreCountry)' in page

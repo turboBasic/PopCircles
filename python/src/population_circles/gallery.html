@@ -37,7 +37,7 @@
     .country-nav a:hover, .country-nav a:focus-visible { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
     .country-nav-empty { margin: 0; color: var(--muted); }
     .content { min-width: 0; padding: 0 0 4rem; }
-    .country { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; margin: 0 0 .7rem; overflow: hidden; }
+    .country { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; margin: 0 0 .7rem; overflow: hidden; }
     .country { scroll-margin-top: 9rem; }
     .country > summary { display: grid; grid-template-columns: minmax(0, 1fr) auto 1.5rem; align-items: center; gap: 1rem; padding: 1rem 1.2rem; font-family: Manrope, system-ui, sans-serif; font-size: 1.08rem; font-weight: 700; cursor: pointer; list-style: none; }
     .country-name { overflow-wrap: anywhere; }
@@ -53,6 +53,10 @@
     .country[open] > summary::after { transform: rotate(180deg); }
     .map-count { font: 500 .78rem "DM Sans", system-ui, sans-serif; color: var(--muted); white-space: nowrap; text-align: right; }
     .figure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; padding: 1rem; }
+    #country-results.gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 1rem; }
+    #country-results.gallery-mode .country { margin: 0; }
+    #country-results.gallery-mode .figure-grid { grid-template-columns: minmax(0, 1fr); padding: .75rem; }
+    #country-results.single-map .country:not(.selected) { display: none; }
     .no-result { padding: 1rem 1.2rem; color: var(--muted); }
     .world h2 { font-family: Manrope, system-ui, sans-serif; margin: 2rem 0 .5rem; }
     .world figure, .country figure { margin: 0; background: #0d1422; border: 1px solid var(--line); border-radius: .8rem; overflow: hidden; }
@@ -71,7 +75,7 @@
       <h1>{{ title }}</h1>
       <p>Explore the smallest circle holding half of each country's population, alongside selected world population circles.</p>
     </header>
-    <div class="explorer" x-data="{ query: '', matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); }, matchCount() { return Array.from(document.querySelectorAll('.country-nav a')).filter(link => this.matches(link.dataset.country)).length; } }">
+    <div class="explorer" x-data="{ query: '', allOpen: false, matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); }, matchCount() { return Array.from(document.querySelectorAll('.country-nav a')).filter(link => this.matches(link.dataset.country)).length; }, toggleAll() { this.allOpen = !this.allOpen; $dispatch('gallery-toggle', this.allOpen); } }" x-on:country-selected.window="allOpen = false">
       <aside class="country-nav-wrap" aria-label="Country navigation">
       <details class="country-browser">
         <summary id="country-browser-trigger" aria-controls="country-browser-panel" aria-expanded="false">Browse countries <span class="map-count">{{ countries|length }} countries</span></summary>
@@ -95,7 +99,7 @@
         </div>
       </details>
       </aside>
-    <main class="content" x-data="{ allOpen: false, toggleAll() { this.allOpen = !this.allOpen; document.querySelectorAll('#country-results details.country').forEach(country => country.open = this.allOpen); } }">
+    <main class="content">
       {% if world %}
       <section class="world">
         <h2>World maps</h2>
@@ -104,10 +108,10 @@
         </div>
       </section>
       {% endif %}
-      <div class="country-actions"><h2>Countries</h2><button type="button" x-on:click="toggleAll()" x-text="allOpen ? 'Collapse all country maps' : 'Expand all country maps'">Expand all country maps</button></div>
-      <div id="country-results">
+      <div class="country-actions"><h2>Countries</h2><button type="button" id="toggle-all" x-on:click="toggleAll()" x-bind:aria-expanded="allOpen" x-text="allOpen ? 'Collapse all country maps' : 'Expand all country maps'">Expand all country maps</button></div>
+      <div id="country-results" class="single-map">
         {% for country in countries %}
-        <details class="country" id="{{ country.anchor }}" data-default="{{ 'true' if country.name == 'Germany' else 'false' }}">
+        <details class="country{% if country.name == 'Germany' %} selected{% endif %}" id="{{ country.anchor }}" data-country="{{ country.name|lower }}" data-default="{{ 'true' if country.name == 'Germany' else 'false' }}"{% if country.name == 'Germany' %} open{% endif %} x-show="allOpen ? matches($el.dataset.country) : $el.classList.contains('selected')">
           <summary><span class="country-name">{{ country.name }}</span><span class="map-count">{% if country.missing %}No result{% else %}{{ country.figures|length }} map{% if country.figures|length != 1 %}s{% endif %}{% endif %}</span></summary>
           {% if country.missing %}<p class="no-result">No 50% result is available for this country.</p>{% else %}
           <div class="figure-grid">
@@ -186,6 +190,22 @@
         closeCountryBrowser();
       }
     });
+    document.addEventListener("gallery-toggle", (event) => {
+      const expanded = event.detail;
+      const results = document.querySelector("#country-results");
+      results.classList.toggle("gallery-mode", expanded);
+      results.classList.toggle("single-map", !expanded);
+      countryDetails.forEach((country) => {
+        country.open = expanded || country.classList.contains("selected");
+        if (expanded) loadCountryImages(country);
+      });
+    });
+
+    function loadCountryImages(country) {
+      country.querySelectorAll("img[data-src]").forEach((image) => {
+        image.setAttribute("src", image.dataset.src);
+      });
+    }
 
     function selectCountry(id) {
       const selected = countryDetails.find((country) => country.id === id) ?? defaultCountry;
@@ -196,6 +216,10 @@
         if (active) country.querySelector("summary").setAttribute("aria-current", "true");
         else country.querySelector("summary").removeAttribute("aria-current");
       });
+      document.querySelector("#country-results").classList.remove("gallery-mode");
+      document.querySelector("#country-results").classList.add("single-map");
+      if (selected) loadCountryImages(selected);
+      window.dispatchEvent(new Event("country-selected"));
       countryLinks.forEach((link) => {
         if (selected && link.hash === `#${selected.id}`) link.setAttribute("aria-current", "page");
         else link.removeAttribute("aria-current");
