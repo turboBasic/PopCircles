@@ -51,10 +51,12 @@ start a fresh subagent and tell it to read the source persona and the workflow b
 - Python: dev tooling in `[dependency-groups].dev`. No `setup.py`, `setup.cfg` or
   `requirements.txt`. Run `uv lock` after editing dependencies and commit the result in the same
   change.
-- Node: use it only to host CLIs, never as an application dependency. Pin `node` and each tool in
-  `mise.toml`'s `[tools]` via the `npm:` backend (e.g. `"npm:markdownlint-cli2" = "0.23.2"`);
-  never `npm install -g`. Its prek hook calls the pinned binary directly (`language: system`),
-  as `cargo-fmt` and `taplo-fmt`; do not let the hook manage its own runtime.
+- Node: use it to host CLIs and the pinned Svelte build for the static Gallery browser presentation;
+  never as an application runtime dependency. Pin `node` and each tool in `mise.toml`'s `[tools]`
+  via the `npm:` backend (e.g. `"npm:markdownlint-cli2" = "0.23.2"`); never `npm install -g`.
+  Its prek hook calls the pinned binary directly (`language: system`), as `cargo-fmt` and
+  `taplo-fmt`; do not let the hook manage its own runtime. [ADR 0019](../decisions/0019-svelte-presents-the-static-gallery.md)
+  owns the presentation boundary.
 - Before adding a dependency, check whether the tree already has one that covers the need. Prefer the
   standard library for small tasks.
 - Introducing a new file type or framework updates `.editorconfig`, `.gitattributes` and
@@ -364,6 +366,7 @@ docs/ponytail.md                 the ponytail plugin's use here, and its limits
 .claude/skills/                  one directory per task workflow
 crates/                          Rust workspace — the search
 data/                            input datasets; registry in data/registry.toml
-python/                          Python project — src/ holds the packages, tests/ the suite
+frontend/                        compiled Svelte presentation for the static Gallery
+python/                           Python project — src/ holds the packages, tests/ the suite
 results/                         the answers this project publishes, as the documents that printed them
 ```

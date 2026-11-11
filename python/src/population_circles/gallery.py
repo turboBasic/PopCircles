@@ -1,6 +1,8 @@
 import argparse
 import hashlib
 import json
+import shutil
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +11,6 @@ from urllib.parse import quote
 from uuid import uuid4
 
 import matplotlib as mpl
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
@@ -21,7 +22,6 @@ from population_circles.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.map_frame import PLATE_CARREE
 from population_circles.render_map import citation, registered_coastline, render
 
-TITLE = "The smallest circle on the globe holding a share of world population"
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -29,7 +29,6 @@ RENDER_INPUTS = tuple(
     sorted(
         [
             *Path(__file__).parent.rglob("*.py"),
-            *Path(__file__).parent.rglob("*.html"),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "registry.toml",
             REPO_ROOT / "mise.toml",
@@ -38,10 +37,6 @@ RENDER_INPUTS = tuple(
         ],
         key=lambda path: path.as_posix(),
     )
-)
-TEMPLATES = Environment(
-    loader=FileSystemLoader(Path(__file__).parent),
-    autoescape=select_autoescape(["html"]),
 )
 
 
@@ -59,11 +54,23 @@ class Skipped:
     kind: str
 
 
+class PageFigure(TypedDict):
+    map: str
+    document: str
+    country_id: str | None
+    alt: str
+
+
 class PageCountry(TypedDict):
     name: str
     anchor: str
-    figures: list[Drawn]
+    figures: list[PageFigure]
     missing: bool
+
+
+class PageData(TypedDict):
+    world: list[PageFigure]
+    countries: list[PageCountry]
 
 
 @dataclass(frozen=True)
@@ -250,7 +257,16 @@ def render_document(
     )
 
 
-def page(drawn: list[Drawn], missing: list[str]) -> str:
+def page_figure(one: Drawn) -> PageFigure:
+    return {
+        "map": one.figure.name,
+        "document": one.document.name,
+        "country_id": one.country_id,
+        "alt": one.figure.stem,
+    }
+
+
+def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
     countries: dict[tuple[str, str], list[Drawn]] = {}
     world: list[Drawn] = []
     for one in drawn:
@@ -264,7 +280,7 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
         {
             "name": name,
             "anchor": f"country-result-{quote(identifier, safe='')}",
-            "figures": figures,
+            "figures": [page_figure(figure) for figure in figures],
             "missing": False,
         }
         for (name, identifier), figures in ordered
@@ -279,15 +295,32 @@ def page(drawn: list[Drawn], missing: list[str]) -> str:
         for name in missing
     )
     page_countries.sort(key=lambda country: (country["name"].casefold(), country["anchor"]))
-    navigation_groups: dict[str, list[PageCountry]] = {}
-    for country in page_countries:
-        navigation_groups.setdefault(country["name"][:1].upper() or "#", []).append(country)
+    return {"world": [page_figure(one) for one in world], "countries": page_countries}
 
-    return TEMPLATES.get_template("gallery.html").render(
-        title=TITLE,
-        navigation_groups=navigation_groups.items(),
-        countries=page_countries,
-        world=world,
+
+def build_frontend(output: Path, data: PageData) -> None:
+    (output / "gallery-data.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    assets = output / "assets"
+    if assets.is_symlink():
+        assets.unlink()
+    elif assets.is_dir():
+        shutil.rmtree(assets)
+    npm = shutil.which("npm")
+    if npm is None:
+        message = "npm is required; run this gallery build through mise"
+        raise FileNotFoundError(message)
+    subprocess.run(  # noqa: S603 — argv only; npm runs the pinned repository frontend build
+        [
+            npm,
+            "--prefix",
+            str(REPO_ROOT / "frontend"),
+            "run",
+            "build",
+            "--",
+            "--outDir",
+            str(output.resolve()),
+        ],
+        check=True,
     )
 
 
@@ -558,6 +591,7 @@ def build(
         context_digest,
     )
     (output / "index.html").unlink(missing_ok=True)
+    (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     missing, generated = country_documents(
         invoke, corpus, refresh_country_sweep=refresh_country_sweep
@@ -624,7 +658,8 @@ def build(
         if destination.is_file() and same_country_answer(destination.read_bytes(), content):
             continue
         destination.write_bytes(content)
-    (output / "index.html").write_text(page(drawn, sorted(unavailable)), encoding="utf-8")
+    data = page_data(drawn, sorted(unavailable))
+    build_frontend(output, data)
     print(
         f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "
         f"{reused_maps} reused, {rendered_maps} rendered)",
