@@ -1315,6 +1315,10 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
     assert_eq!(cold_countries.len(), 2);
     assert_eq!(cold_countries[0]["country"]["id"], "AA");
     assert_eq!(cold_countries[1]["country"]["id"], "BB");
+    assert_eq!(
+        cold_doc["result"]["countries_without_population_cells"],
+        serde_json::json!([{"id": "EMPTY", "name": "No unique cells"}])
+    );
     let stderr = String::from_utf8_lossy(&cold.stderr);
     assert!(
         stderr.contains("EMPTY: no owned population cells"),
@@ -1363,7 +1367,16 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
     let warm = invoke(&["AA", "BB"], "out/country-ledgers");
     assert_eq!(warm.status.code(), Some(0), "{warm:?}");
     let mut warm_doc: serde_json::Value = serde_json::from_slice(&warm.stdout).unwrap();
+    assert_eq!(
+        resumed_doc["result"]["countries_without_population_cells"],
+        serde_json::json!([])
+    );
+    assert_eq!(
+        warm_doc["result"]["countries_without_population_cells"],
+        serde_json::json!([])
+    );
     for document in [&mut cold_doc, &mut resumed_doc, &mut warm_doc] {
+        document["result"]["countries_without_population_cells"] = serde_json::json!([]);
         for country in document["result"]["countries"].as_array_mut().unwrap() {
             country["ledger"].as_object_mut().unwrap().remove("path");
             for record in country["records"].as_array_mut().unwrap() {

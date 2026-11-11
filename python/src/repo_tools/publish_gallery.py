@@ -10,10 +10,10 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from stat import S_ISLNK
 from tempfile import TemporaryDirectory
-from typing import Any, cast
 from uuid import uuid4
 
 from population_circles.gallery import build as build_gallery
+from population_circles.gallery import same_country_answer
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RESULTS = REPO_ROOT / "results"
@@ -57,34 +57,6 @@ def require_inputs() -> None:
     if missing:
         names = ", ".join(str(path.relative_to(REPO_ROOT)) for path in missing)
         raise PublishGalleryError(f"required gallery inputs are missing: {names}")  # noqa: EM102, TRY003
-
-
-def same_country_answer(existing: bytes, generated: bytes) -> bool:
-    try:
-        previous_value: Any = json.loads(existing)
-        current_value: Any = json.loads(generated)
-        if not isinstance(previous_value, dict) or not isinstance(current_value, dict):
-            return False
-        previous = cast(dict[str, Any], previous_value)
-        current = cast(dict[str, Any], current_value)
-        document = current.get("document")
-        if (
-            document not in {"country-sweep", "country-smallest"}
-            or previous.get("document") != document
-        ):
-            return False
-        for payload in (previous, current):
-            result = payload["result"]
-            if document == "country-smallest":
-                result["circle"].pop("stats", None)
-            else:
-                for country in result["countries"]:
-                    for record in country["records"]:
-                        record["circle"].pop("stats", None)
-    except AttributeError, KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError:
-        return False
-    else:
-        return previous == current
 
 
 def replace_site(staged: Path) -> None:

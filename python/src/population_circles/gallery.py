@@ -339,6 +339,63 @@ def stable_country_sweep(sweep: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def same_country_answer(existing: bytes, generated: bytes) -> bool:
+    try:
+        previous_value: Any = json.loads(existing)
+        current_value: Any = json.loads(generated)
+        if not isinstance(previous_value, dict) or not isinstance(current_value, dict):
+            return False
+        previous = cast(dict[str, Any], previous_value)
+        current = cast(dict[str, Any], current_value)
+        document = current.get("document")
+        if document not in {"country-sweep", "country-smallest"}:
+            return False
+        if previous.get("document") != document:
+            return False
+        for payload in (previous, current):
+            result = payload["result"]
+            if document == "country-smallest":
+                result["circle"].pop("stats", None)
+            else:
+                for country in result["countries"]:
+                    for record in country["records"]:
+                        record["circle"].pop("stats", None)
+    except AttributeError, KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError:
+        return False
+    else:
+        return previous == current
+
+
+def missing_country_names(sweep: dict[str, Any], countries: list[dict[str, Any]]) -> list[str]:
+    expected = {country["id"]: country["name"] for country in countries}
+    accounted_for: set[str] = set()
+    for country in sweep["result"]["countries"]:
+        identity = country["country"]
+        country_id = identity["id"]
+        if country_id not in expected or expected[country_id] != identity["name"]:
+            message = f"country sweep: unexpected feature ID {country_id!r}"
+            raise ValueError(message)
+        if country_id in accounted_for:
+            message = f"country sweep: duplicate feature ID {country_id!r}"
+            raise ValueError(message)
+        accounted_for.add(country_id)
+    missing: list[str] = []
+    for country in sweep["result"]["countries_without_population_cells"]:
+        country_id = country["id"]
+        if country_id not in expected or expected[country_id] != country["name"]:
+            message = f"country sweep: unexpected unavailable feature ID {country_id!r}"
+            raise ValueError(message)
+        if country_id in accounted_for:
+            message = f"country sweep: duplicate feature ID {country_id!r}"
+            raise ValueError(message)
+        accounted_for.add(country_id)
+        missing.append(country_id)
+    if accounted_for != expected.keys():
+        message = "country sweep: result does not account for every configured country"
+        raise ValueError(message)
+    return [expected[country_id] for country_id in missing]
+
+
 def cached_sweep(
     path: Path, selection: dict[str, Any], countries: list[dict[str, Any]]
 ) -> dict[str, Any] | None:
@@ -349,12 +406,7 @@ def cached_sweep(
         if sweep["result"]["selection"] != selection:
             return None
         swept_countries = sweep["result"]["countries"]
-        expected = [(country["id"], country["name"]) for country in countries]
-        actual = [
-            (country["country"]["id"], country["country"]["name"]) for country in swept_countries
-        ]
-        if actual != expected:
-            return None
+        missing_country_names(sweep, countries)
         for country in swept_countries:
             if sum(record["share"] == HALF_SHARE for record in country["records"]) != 1:
                 return None
@@ -444,6 +496,7 @@ def country_documents(
     if sweep_selection != listing["result"]["selection"]:
         message = "country sweep: result selection differs from the configured country list"
         raise ValueError(message)
+    missing = missing_country_names(sweep, countries)
     expected = {country["id"]: country for country in countries}
     result_ids: set[str] = set()
     documents: dict[str, dict[str, Any]] = {}
@@ -472,7 +525,7 @@ def country_documents(
         flush=True,
     )
     return (
-        [country["name"] for country in countries if country["id"] not in result_ids],
+        missing,
         documents,
     )
 
@@ -566,7 +619,11 @@ def build(
             rendered_maps += 1
 
     for name, payload in generated.items():
-        (corpus / name).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        destination = corpus / name
+        content = (json.dumps(payload, indent=2) + "\n").encode()
+        if destination.is_file() and same_country_answer(destination.read_bytes(), content):
+            continue
+        destination.write_bytes(content)
     (output / "index.html").write_text(page(drawn, sorted(unavailable)), encoding="utf-8")
     print(
         f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "

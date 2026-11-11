@@ -209,18 +209,20 @@ mise run cli -- country smallest --country DE --share 50 \
 ```
 
 Several countries and shares run in one command. Repeat `--country` for each selector; the result orders
-countries by canonical ID and each country's records by requested share:
+countries by name and each country's records by requested share:
 
 ```sh
 mise run cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
   --combination gpw-2020-gisco-2024 --resolution 10
 # {…,"schema_version":1,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
 #  "countries":[{"country":{"id":"DE","name":"Germany",…},"ledger":{"path":"out/countries/4445.json",…},
-#  "records":[{"share":0.1,"circle":{"target":{"share":0.1,…},…}},…]},…]}}
+#  "records":[{"share":0.1,"circle":{"target":{"share":0.1,…},…}},…]},…],
+#  "countries_without_population_cells":[{"id":"VA","name":"Vatican City"},…]}}
 ```
 
 Each country keeps its own resumable ledger under `out/countries`; pass `--ledger-dir` to choose another
-directory. Repeating a run resumes that country's saved radii. Progress and diagnostics go to stderr,
+directory. Countries without owned cells at the selected resolution are listed separately. Repeating a
+run resumes each country's saved radii. Progress and diagnostics go to stderr,
 while stdout contains one JSON document. Choose an affordable prepared resolution for sweeps; use a finer
 prepared resolution for a more precise selected answer when needed.
 

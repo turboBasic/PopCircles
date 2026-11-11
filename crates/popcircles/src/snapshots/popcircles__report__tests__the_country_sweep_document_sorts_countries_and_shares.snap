@@ -537,6 +537,7 @@ expression: document
           }
         ]
       }
-    ]
+    ],
+    "countries_without_population_cells": []
   }
 }

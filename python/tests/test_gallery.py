@@ -100,7 +100,9 @@ def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
 
 
 def country_cli(
-    countries: list[dict[str, str]], swept_countries: list[dict[str, Any]]
+    countries: list[dict[str, str]],
+    swept_countries: list[dict[str, Any]],
+    countries_without_population_cells: list[dict[str, str]] | None = None,
 ) -> tuple[Invoke, list[list[str]]]:
     selection = country_selection()
     listing = {
@@ -112,6 +114,7 @@ def country_cli(
         "result": {"selection": selection, "countries": countries},
     }
     sweep = country_sweep(swept_countries, selection)
+    sweep["result"]["countries_without_population_cells"] = countries_without_population_cells or []
     outputs = [json.dumps(listing).encode(), json.dumps(sweep).encode()]
     calls: list[list[str]] = []
 
@@ -154,6 +157,7 @@ def country_sweep(
             "selection": selection or country_selection(),
             "shares": {"from_percent": 50, "to_percent": 50, "step_percent": 1},
             "countries": swept_countries,
+            "countries_without_population_cells": [],
         },
     }
 
@@ -268,11 +272,24 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     assert len(original_bytes) == expected_maps
     assert f"0 reused, {expected_maps} rendered" in capsys.readouterr().err
 
+    country_path = corpus / "country-fixture-10-AA-half.json"
+    country_payload = json.loads(country_path.read_text(encoding="utf-8"))
+    country_payload["result"]["circle"]["stats"] = {"radii_evaluated": 5}
+    country_path.write_text(json.dumps(country_payload, indent=2), encoding="utf-8")
+    sweep_path = corpus / "country-sweep-fixture-10-half.json"
+    sweep_payload = json.loads(sweep_path.read_text(encoding="utf-8"))
+    sweep_payload["result"]["countries"][0]["records"][0]["circle"]["stats"] = {
+        "radii_evaluated": 5
+    }
+    sweep_path.write_text(json.dumps(sweep_payload, indent=2), encoding="utf-8")
+    saved_results = {path.name: path.read_bytes() for path in (country_path, sweep_path)}
+
     render.reset_mock()
     second, _ = build(corpus, output, country_cli(countries, swept)[0])
 
     render.assert_not_called()
     assert {one.figure.name: one.figure.read_bytes() for one in second} == original_bytes
+    assert {path.name: path.read_bytes() for path in (country_path, sweep_path)} == saved_results
     diagnostics = capsys.readouterr().err
     assert "sweep work avoided for 1 countries" in diagnostics
     assert "2 reused, 0 rendered" in diagnostics
@@ -430,7 +447,11 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     zero_population["records"][0]["circle"]["population"] = 0
     zero_population["records"][0]["circle"]["target"]["persons"] = 0
     zero_population["records"][0]["circle"]["target"]["total"] = 0
-    invoke, calls = country_cli(countries, [swept_country("AA", "Alpha"), zero_population])
+    invoke, calls = country_cli(
+        countries,
+        [swept_country("AA", "Alpha"), zero_population],
+        countries_without_population_cells=[{"id": "CC", "name": "No population <yet>"}],
+    )
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "world.json", document("most-populous"))
@@ -519,6 +540,53 @@ def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: 
             0
         ]["circle"]
     )
+
+
+def test_a_saved_sweep_without_unavailable_country_metadata_is_refreshed(tmp_path: Path) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    stale = country_sweep(swept)
+    del stale["result"]["countries_without_population_cells"]
+    written(corpus, "country-sweep-fixture-10-half.json", stale)
+    invoke, calls = country_cli(countries, swept)
+
+    country_documents(invoke, corpus)
+
+    assert calls[0] == ["country", "list"]
+    assert calls[1][0:2] == ["country", "sweep"]
+
+
+def test_sweep_with_unavailable_country_reuses_independent_of_result_order(
+    tmp_path: Path,
+) -> None:
+    countries = [
+        configured_country("AA", "Alpha"),
+        configured_country("BB", "Beta"),
+        configured_country("CC", "Gamma"),
+    ]
+    swept = [swept_country("CC", "Gamma"), swept_country("AA", "Alpha")]
+    invoke, calls = country_cli(
+        countries,
+        swept,
+        countries_without_population_cells=[{"id": "BB", "name": "Beta"}],
+    )
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    cached = country_sweep(swept)
+    cached["result"]["countries_without_population_cells"] = [{"id": "BB", "name": "Beta"}]
+    written(corpus, "country-sweep-fixture-10-half.json", cached)
+
+    missing, generated = country_documents(invoke, corpus)
+
+    assert calls == [["country", "list"]]
+    assert missing == ["Beta"]
+    assert set(generated) == {
+        "country-fixture-10-AA-half.json",
+        "country-fixture-10-CC-half.json",
+        "country-sweep-fixture-10-half.json",
+    }
 
 
 def test_country_answer_documents_are_stable_when_only_sweep_stats_change(

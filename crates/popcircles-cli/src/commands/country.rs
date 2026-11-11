@@ -821,6 +821,7 @@ pub(crate) fn sweep(
     let boundary_revision = boundary_revision.map(str::to_owned);
     let boundary_digest = boundary_digest.to_owned();
     let mut countries = Vec::with_capacity(features.len());
+    let mut countries_without_population_cells = Vec::new();
     for feature in features {
         let started = std::time::Instant::now();
         let Some(table) = prepared.country_table(feature.id.as_str())? else {
@@ -828,6 +829,7 @@ pub(crate) fn sweep(
                 "{}: no owned population cells at this resolution",
                 feature.id.as_str()
             );
+            countries_without_population_cells.push((feature.id, feature.name));
             continue;
         };
         let path = country_ledger_path(ledger_dir, feature.id.as_str());
@@ -885,7 +887,8 @@ pub(crate) fn sweep(
             selection,
             SweepShares::new(range.from, range.to, range.step),
             countries,
-        ),
+        )
+        .with_countries_without_population_cells(countries_without_population_cells),
     )))
 }
 #[cfg(test)]

@@ -1151,6 +1151,7 @@ pub struct CountrySweepDocument {
     selection: CountrySelectionReport,
     shares: SweepShares,
     countries: Vec<CountrySweepCountry>,
+    countries_without_population_cells: Vec<CountryListEntry>,
 }
 
 impl Document for CountrySweepDocument {
@@ -1175,7 +1176,25 @@ impl CountrySweepDocument {
             selection,
             shares,
             countries,
+            countries_without_population_cells: Vec::new(),
         }
+    }
+
+    #[must_use]
+    pub fn with_countries_without_population_cells(
+        mut self,
+        mut countries: Vec<(FeatureId, String)>,
+    ) -> Self {
+        countries.sort_by(|left, right| left.0.as_str().cmp(right.0.as_str()));
+        self.countries_without_population_cells = countries
+            .into_iter()
+            .map(|(id, name)| CountryListEntry {
+                id: id.as_str().to_owned(),
+                name,
+                iso_alpha2: None,
+            })
+            .collect();
+        self
     }
 }
 
