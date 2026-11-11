@@ -80,6 +80,9 @@ def assert_explorer_shell(page: str) -> None:
     assert ".country-browser > summary { display: flex;" in page
     assert "Browse countries" in page
     assert 'for="country-search">Search countries</label>' in page
+    assert 'id="theme-toggle" aria-pressed="false"' in page
+    assert 'id="copy-country-url"' in page
+    assert 'id="open-full-size"' in page
     assert "No 50% result is available for this country." in page
 
 
