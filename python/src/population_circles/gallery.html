@@ -82,7 +82,7 @@
             <section x-show="Array.from($el.querySelectorAll('a')).some(link => matches(link.dataset.country))">
               <h2>{{ letter }}</h2>
               <ul>
-                {% for country in countries_in_group %}<li><a href="#{{ country.anchor }}" data-country="{{ country.name|lower }}" x-show="matches($el.dataset.country)" x-on:click="document.getElementById('{{ country.anchor }}').open = true; $el.closest('details').open = false">{{ country.name }}</a></li>{% endfor %}
+                {% for country in countries_in_group %}<li><a href="#{{ country.anchor }}" data-country="{{ country.name|lower }}" x-show="matches($el.dataset.country)">{{ country.name }}</a></li>{% endfor %}
               </ul>
             </section>
             {% endfor %}
@@ -103,7 +103,7 @@
       <div class="country-actions"><h2>Countries</h2><button type="button" x-on:click="toggleAll()" x-text="allOpen ? 'Collapse all country maps' : 'Expand all country maps'">Expand all country maps</button></div>
       <div id="country-results">
         {% for country in countries %}
-        <details class="country" id="{{ country.anchor }}">
+        <details class="country" id="{{ country.anchor }}" data-default="{{ 'true' if country.name == 'Germany' else 'false' }}">
           <summary><span class="country-name">{{ country.name }}</span><span class="map-count">{% if country.missing %}No result{% else %}{{ country.figures|length }} map{% if country.figures|length != 1 %}s{% endif %}{% endif %}</span></summary>
           {% if country.missing %}<p class="no-result">No 50% result is available for this country.</p>{% else %}
           <div class="figure-grid">
@@ -117,5 +117,43 @@
     </div>
     <footer>Population circle results with source documents and data credits.</footer>
   </div>
+  <script>
+    history.scrollRestoration = "manual";
+    const countryDetails = [...document.querySelectorAll("#country-results details.country")];
+    const countryLinks = [...document.querySelectorAll(".country-nav a")];
+    const defaultCountry = countryDetails.find((country) => country.dataset.default === "true") ?? countryDetails[0];
+
+    function selectCountry(id) {
+      const selected = countryDetails.find((country) => country.id === id) ?? defaultCountry;
+      countryDetails.forEach((country) => {
+        const active = country === selected;
+        country.open = active;
+        country.classList.toggle("selected", active);
+        if (active) country.querySelector("summary").setAttribute("aria-current", "true");
+        else country.querySelector("summary").removeAttribute("aria-current");
+      });
+      countryLinks.forEach((link) => {
+        if (selected && link.hash === `#${selected.id}`) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+      });
+      return selected;
+    }
+
+    function restoreCountry() {
+      return selectCountry(location.hash.slice(1));
+    }
+
+    countryLinks.forEach((link) => link.addEventListener("click", (event) => {
+      const selected = document.getElementById(link.hash.slice(1));
+      if (!selected || !selected.matches("#country-results details.country")) return;
+      event.preventDefault();
+      history.pushState({ country: selected.id }, "", link.hash);
+      selectCountry(selected.id);
+    }));
+    window.addEventListener("hashchange", restoreCountry);
+    window.addEventListener("popstate", restoreCountry);
+    const initialCountry = restoreCountry();
+    if (location.hash && initialCountry) window.scrollTo(0, 0);
+  </script>
 </body>
 </html>

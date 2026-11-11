@@ -304,6 +304,23 @@ def test_gallery_page_uses_only_the_current_maps(
     assert "old.png" not in page
 
 
+def test_gallery_country_state_uses_existing_anchors_and_browser_history() -> None:
+    page = gallery_module.page(
+        [
+            gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
+            gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
+        ],
+        ["Missing country"],
+    )
+
+    assert 'id="country-result-DE" data-default="true"' in page
+    assert 'id="country-result-FR" data-default="false"' in page
+    assert 'href="#country-result-DE"' in page
+    assert 'history.pushState({ country: selected.id }, "", link.hash)' in page
+    assert f'window.addEventListener("{"pop" + "state"}", restoreCountry)' in page
+    assert f'window.addEventListener("{"hash" + "change"}", restoreCountry)' in page
+
+
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
     coastline = box(-20, -10, 20, 10)
     outline = box(-5, -5, 5, 5)
