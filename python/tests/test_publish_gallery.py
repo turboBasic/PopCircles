@@ -194,6 +194,66 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert not any(command[:3] == ("gh", "release", "create") for command in github.commands)
 
 
+@pytest.mark.parametrize("kind", ["country-sweep", "country-smallest"])
+def test_persist_keeps_existing_country_bytes_when_only_stats_differ(
+    layout: tuple[Path, Path], tmp_path: Path, kind: str
+) -> None:
+    results, _ = layout
+    name = f"{kind}.json"
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    if kind == "country-sweep":
+        old = {
+            "document": kind,
+            "result": {
+                "countries": [
+                    {"records": [{"circle": {"answer": 1, "stats": {"radii_evaluated": 2}}}]}
+                ]
+            },
+        }
+        new = {
+            "document": kind,
+            "result": {"countries": [{"records": [{"circle": {"answer": 1}}]}]},
+        }
+    else:
+        old = {
+            "document": kind,
+            "result": {"circle": {"answer": 1, "stats": {"radii_evaluated": 2}}},
+        }
+        new = {"document": kind, "result": {"circle": {"answer": 1}}}
+    write_json(results / name, old)
+    write_json(corpus / name, new)
+    previous = (results / name).read_bytes()
+
+    pg.persist_country_results(corpus)
+
+    assert (results / name).read_bytes() == previous
+
+
+def test_persist_still_updates_country_answers_when_answer_data_changes(
+    layout: tuple[Path, Path], tmp_path: Path
+) -> None:
+    results, _ = layout
+    name = "country.json"
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    expected_answer = 2
+    write_json(
+        results / name, {"document": "country-smallest", "result": {"circle": {"answer": 1}}}
+    )
+    write_json(
+        corpus / name,
+        {"document": "country-smallest", "result": {"circle": {"answer": expected_answer}}},
+    )
+
+    pg.persist_country_results(corpus)
+
+    assert (
+        json.loads((results / name).read_text(encoding="utf-8"))["result"]["circle"]["answer"]
+        == expected_answer
+    )
+
+
 def test_failed_render_preserves_existing_site_and_result_documents(
     layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
