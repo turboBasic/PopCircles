@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from matplotlib.figure import Figure
@@ -225,6 +226,62 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     assert basemap_paths == [coastline_path]
     assert "Coastline credit:" in footer
     assert footer.count(COASTLINE_CREDIT) == 1
+
+
+def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    output = tmp_path / "build" / "gallery"
+    render = Mock(wraps=render_map_module.render)
+    monkeypatch.setattr(gallery_module, "render", render)
+    invoke = country_cli([], [])[0]
+    first, _ = build(corpus, output, invoke)
+    original_bytes = first[0].figure.read_bytes()
+    assert "0 reused, 1 rendered" in capsys.readouterr().err
+
+    render.reset_mock()
+    second, _ = build(corpus, output, country_cli([], [])[0])
+
+    render.assert_not_called()
+    assert second[0].figure.read_bytes() == original_bytes
+    assert "1 reused, 0 rendered" in capsys.readouterr().err
+
+    cache_image = output.parent / ".gallery-cache" / "world" / "map.png"
+    cache_image.write_bytes(b"corrupt cache")
+    third, _ = build(corpus, output, country_cli([], [])[0])
+
+    render.assert_called_once()
+    assert third[0].figure.read_bytes() == original_bytes
+
+
+def test_map_cache_key_changes_for_each_render_input_category() -> None:
+    coastline = box(-20, -10, 20, 10)
+    outline = box(-5, -5, 5, 5)
+    base = gallery_module.map_cache_key("context", b"document", coastline, outline)
+
+    assert base != gallery_module.map_cache_key("changed context", b"document", coastline, outline)
+    assert base != gallery_module.map_cache_key("context", b"changed document", coastline, outline)
+    assert base != gallery_module.map_cache_key("context", b"document", box(-1, -1, 1, 1), outline)
+    assert base != gallery_module.map_cache_key(
+        "context", b"document", coastline, box(-1, -1, 1, 1)
+    )
+
+
+def test_render_context_hashes_source_and_configuration_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "renderer.py"
+    source.write_text("first", encoding="utf-8")
+    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
+    first = gallery_module.render_context_digest()
+
+    source.write_text("second", encoding="utf-8")
+
+    assert gallery_module.render_context_digest() != first
 
 
 def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
