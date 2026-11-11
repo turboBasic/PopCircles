@@ -73,6 +73,14 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
     (directory / name).write_text(json.dumps(payload), encoding="utf-8")
 
 
+def assert_explorer_shell(page: str) -> None:
+    assert '<aside class="country-nav-wrap" aria-label="Country navigation">' in page
+    assert '<main class="content"' in page
+    assert "Browse countries" in page
+    assert 'for="country-search">Search countries</label>' in page
+    assert "No 50% result is available for this country." in page
+
+
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
     longitude = answer.circle.centre.lon
     latitude = answer.circle.centre.lat
@@ -448,6 +456,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert f'href="{result_names[0]}"' in page
     assert result_names[1] not in page
     assert "No population &lt;yet&gt;" in page
+    assert_explorer_shell(page)
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
 

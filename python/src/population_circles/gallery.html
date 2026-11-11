@@ -15,26 +15,27 @@
     [x-cloak] { display: none !important; }
     body { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, #203456 0, var(--bg) 55%); font-size: 16px; line-height: 1.55; }
     a { color: inherit; }
-    .wrap { width: min(1240px, calc(100% - 2rem)); margin: auto; }
+    .wrap { width: min(1600px, calc(100% - 2rem)); margin: auto; }
     .hero { padding: 4rem 0 2rem; }
     .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
     .hero h1 { font-family: Manrope, system-ui, sans-serif; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; max-width: 850px; margin: .7rem 0 1rem; letter-spacing: -.045em; }
     .hero p { max-width: 720px; color: var(--muted); margin: 0; }
-    .country-nav-wrap { position: sticky; top: 0; z-index: 2; padding: .8rem 0; background: #0b1020ef; border-block: 1px solid var(--line); backdrop-filter: blur(16px); }
+    .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+    .country-nav-wrap { position: sticky; top: 1rem; z-index: 2; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
     .country-browser { position: relative; }
-    .country-browser > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
+    .country-browser > summary { display: none; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
     .country-browser > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-    .country-browser-panel { position: absolute; top: calc(100% + .8rem); left: 0; right: 0; max-height: min(70vh, 42rem); overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; }
+    .country-browser-panel { max-height: calc(100vh - 10rem); overflow: auto; }
     .country-search { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
     .country-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .country-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .country-nav { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
     .country-nav h2 { margin: 0 0 .4rem; color: var(--accent); font-size: .8rem; }
     .country-nav ul { margin: 0; padding: 0; list-style: none; }
     .country-nav a { display: block; padding: .2rem 0; color: var(--muted); text-decoration: none; }
     .country-nav a:hover, .country-nav a:focus-visible { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
     .country-nav-empty { margin: 0; color: var(--muted); }
-    .content { padding: 1.5rem 0 4rem; }
+    .content { min-width: 0; padding: 0 0 4rem; }
     .country { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; margin: 0 0 .7rem; overflow: hidden; }
     .country { scroll-margin-top: 9rem; }
     .country > summary { display: grid; grid-template-columns: minmax(0, 1fr) auto 1.5rem; align-items: center; gap: 1rem; padding: 1rem 1.2rem; font-family: Manrope, system-ui, sans-serif; font-size: 1.08rem; font-weight: 700; cursor: pointer; list-style: none; }
@@ -59,7 +60,7 @@
     figcaption { padding: .75rem 1rem; color: var(--muted); font-size: .85rem; }
     figcaption a { text-decoration-color: #65758e; text-underline-offset: 3px; }
     footer { border-top: 1px solid var(--line); padding: 1.5rem 0; color: var(--muted); font-size: .8rem; }
-    @media (max-width: 600px) { .hero { padding-top: 2.5rem; } .country-browser-panel { position: fixed; top: auto; left: 1rem; right: 1rem; max-height: 70vh; } .country-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 800px) { .explorer { grid-template-columns: 1fr; } .country-nav-wrap { position: static; padding: 0; border: 0; background: transparent; } .country-browser > summary { display: flex; padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; } .country-browser-panel { display: none; } .country-browser[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; } .country-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
 <body>
@@ -67,13 +68,14 @@
     <header class="hero">
       <div class="eyebrow">PopCircles · Map gallery</div>
       <h1>{{ title }}</h1>
-      <p>Explore the smallest circle holding half of each country's population, alongside selected world population circles. Choose a country below to jump to its map.</p>
+      <p>Explore the smallest circle holding half of each country's population, alongside selected world population circles.</p>
     </header>
-    <div class="country-nav-wrap" x-data="{ query: '', matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); } }">
+    <div class="explorer" x-data="{ query: '', matches(name) { return name.toLowerCase().includes(this.query.trim().toLowerCase()); } }">
+      <aside class="country-nav-wrap" aria-label="Country navigation">
       <details class="country-browser">
         <summary>Browse countries <span class="map-count">{{ countries|length }} countries</span></summary>
         <div class="country-browser-panel">
-          <label class="visually-hidden" for="country-search">Search countries</label>
+          <label for="country-search">Search countries</label>
           <input class="country-search" id="country-search" type="search" placeholder="Search countries" autocomplete="off" x-model="query">
           <nav class="country-nav" aria-label="Countries">
             {% for letter, countries_in_group in navigation_groups %}
@@ -88,7 +90,7 @@
           </nav>
         </div>
       </details>
-    </div>
+      </aside>
     <main class="content" x-data="{ allOpen: false, toggleAll() { this.allOpen = !this.allOpen; document.querySelectorAll('#country-results details.country').forEach(country => country.open = this.allOpen); } }">
       {% if world %}
       <section class="world">
@@ -112,6 +114,7 @@
         {% endfor %}
       </div>
     </main>
+    </div>
     <footer>Population circle results with source documents and data credits.</footer>
   </div>
 </body>
