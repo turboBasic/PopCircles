@@ -204,9 +204,9 @@ description = "Run the Rust and Python test suites"
 depends = ["test:frontend", "test:python", "test:rust"]
 
 [tasks."test:frontend"]
-description = "Build the static Svelte frontend"
+description = "Test and build the static Svelte frontend"
 depends = ["deps"]
-run = "npm --prefix frontend run build"
+run = ["npm --prefix frontend test", "npm --prefix frontend run build"]
 
 [tasks."test:rust"]
 description = "Run the Rust test suite"
