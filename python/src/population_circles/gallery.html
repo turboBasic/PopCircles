@@ -64,7 +64,6 @@
     #country-results.gallery-mode .figure-grid { grid-template-columns: minmax(0, 1fr); padding: .75rem; }
     #country-results.single-map .country:not(.selected) { display: none; }
     .no-result { padding: 1rem 1.2rem; color: var(--muted); }
-    .world h2 { font-family: Manrope, system-ui, sans-serif; margin: 2rem 0 .5rem; }
     .world figure, .country figure { margin: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: .8rem; overflow: hidden; }
     .map-link { display: block; }
     .map-link img { display: block; width: 100%; height: auto; }
@@ -107,12 +106,12 @@
       </aside>
     <main class="content">
       {% if world %}
-      <section class="world">
-        <h2>World maps</h2>
+      <details class="country world">
+        <summary><span class="country-name">World</span><span class="map-count">{{ world|length }} maps</span></summary>
         <div class="figure-grid">
           {% for one in world %}{% include "gallery_figure.html" %}{% endfor %}
         </div>
-      </section>
+      </details>
       {% endif %}
       <div class="country-actions">
         <h2>Countries</h2>
