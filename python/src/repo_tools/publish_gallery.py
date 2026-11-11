@@ -314,7 +314,12 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
         asset = workspace / new_asset_name()
         shutil.copytree(RESULTS, corpus)
         try:
-            build_gallery(corpus, staged, refresh_country_sweep=refresh_country_sweep)
+            build_gallery(
+                corpus,
+                staged,
+                refresh_country_sweep=refresh_country_sweep,
+                cache_directory=BUILD / ".gallery-cache",
+            )
         except Exception as error:
             message = f"gallery build failed: {error}"
             raise PublishGalleryError(message) from error

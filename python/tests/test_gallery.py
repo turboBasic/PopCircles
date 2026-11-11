@@ -236,26 +236,55 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     corpus.mkdir()
     written(corpus, "world.json", document("most-populous"))
     output = tmp_path / "build" / "gallery"
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
     render = Mock(wraps=render_map_module.render)
     monkeypatch.setattr(gallery_module, "render", render)
-    invoke = country_cli([], [])[0]
+    invoke = country_cli(countries, swept)[0]
     first, _ = build(corpus, output, invoke)
-    original_bytes = first[0].figure.read_bytes()
-    assert "0 reused, 1 rendered" in capsys.readouterr().err
+    original_bytes = {one.figure.name: one.figure.read_bytes() for one in first}
+    expected_maps = 2
+    assert len(original_bytes) == expected_maps
+    assert f"0 reused, {expected_maps} rendered" in capsys.readouterr().err
 
     render.reset_mock()
-    second, _ = build(corpus, output, country_cli([], [])[0])
+    second, _ = build(corpus, output, country_cli(countries, swept)[0])
 
     render.assert_not_called()
-    assert second[0].figure.read_bytes() == original_bytes
-    assert "1 reused, 0 rendered" in capsys.readouterr().err
+    assert {one.figure.name: one.figure.read_bytes() for one in second} == original_bytes
+    diagnostics = capsys.readouterr().err
+    assert "sweep work avoided for 1 countries" in diagnostics
+    assert "2 reused, 0 rendered" in diagnostics
 
     cache_image = output.parent / ".gallery-cache" / "world" / "map.png"
     cache_image.write_bytes(b"corrupt cache")
-    third, _ = build(corpus, output, country_cli([], [])[0])
+    third, _ = build(corpus, output, country_cli(countries, swept)[0])
 
     render.assert_called_once()
-    assert third[0].figure.read_bytes() == original_bytes
+    assert {one.figure.name: one.figure.read_bytes() for one in third} == original_bytes
+
+
+def test_gallery_page_uses_only_the_current_maps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "old.json", document("most-populous"))
+    written(corpus, "current.json", document("most-populous"))
+    output = tmp_path / "gallery"
+    invoke = country_cli([], [])[0]
+
+    build(corpus, output, invoke)
+    assert "old.png" in (output / "index.html").read_text(encoding="utf-8")
+    (corpus / "old.json").unlink()
+
+    build(corpus, output, country_cli([], [])[0])
+
+    page = (output / "index.html").read_text(encoding="utf-8")
+    assert "current.png" in page
+    assert "old.png" not in page
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
