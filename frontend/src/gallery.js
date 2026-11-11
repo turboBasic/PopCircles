@@ -12,8 +12,8 @@ export function countryFromHash(countries, hash, fallback) {
   return countries.find((country) => country.anchor === anchor) ?? fallback;
 }
 
-export function countryMapSource(map, selectedAnchor, countryAnchor, expanded) {
-  return expanded || selectedAnchor === countryAnchor ? map : null;
+export function visibleCountries(countries, selectedAnchor, expanded) {
+  return expanded ? countries : countries.filter((country) => country.anchor === selectedAnchor);
 }
 
 export function countryUrl(currentUrl, anchor) {

@@ -2,19 +2,22 @@
   import { onMount } from 'svelte';
   import {
     countryFromHash,
-    countryMapSource,
     countryUrl,
     defaultCountry,
-    filterCountries
+    filterCountries,
+    visibleCountries
   } from './gallery.js';
 
   let data = $state(null);
   let error = $state('');
   let query = $state('');
   let selectedCountry = $state(null);
+  let allOpen = $state(false);
   let matches = $derived(data ? filterCountries(data.countries, query) : []);
   let selectedFigure = $derived(selectedCountry?.figures[0] ?? null);
-  let allOpen = $state(false);
+  let visibleCountryResults = $derived(
+    data ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen) : []
+  );
   let browserOpen = $state(false);
   let themeLight = $state(false);
   let copyStatus = $state('');
@@ -88,10 +91,6 @@
     } catch {
       copyStatus = `Copy failed. Copy this URL: ${url}`;
     }
-  }
-
-  function countryImageSource(country, figure) {
-    return countryMapSource(figure.map, selectedCountry?.anchor, country.anchor, allOpen);
   }
 
   onMount(() => {
@@ -242,7 +241,7 @@
           </div>
 
           <div id="country-results-list" class:gallery-mode={allOpen} class:single-map={!allOpen}>
-            {#each (allOpen ? data.countries : selectedCountry ? [selectedCountry] : []) as country (country.anchor)}
+            {#each visibleCountryResults as country (country.anchor)}
               <section class="country" id={country.anchor}>
                 <h3>{country.name}</h3>
                 {#if country.missing}
@@ -252,12 +251,7 @@
                     {#each country.figures as figure (figure.map)}
                       <figure>
                         <a href={figure.map}>
-                          <img
-                            src={countryImageSource(country, figure) ?? undefined}
-                            data-src={countryImageSource(country, figure) ? undefined : figure.map}
-                            alt={figure.alt}
-                            loading="lazy"
-                          />
+                          <img src={figure.map} alt={figure.alt} loading="lazy" />
                         </a>
                         <figcaption><a href={figure.document}>View result data</a></figcaption>
                       </figure>

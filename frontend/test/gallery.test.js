@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   countryFromHash,
-  countryMapSource,
   countryUrl,
   defaultCountry,
-  filterCountries
+  filterCountries,
+  visibleCountries
 } from '../src/gallery.js';
 
 const countries = [
@@ -39,10 +39,10 @@ test('defaults to Germany or the first available country', () => {
   assert.equal(defaultCountry([]), null);
 });
 
-test('activates country maps only for selection or expand all', () => {
-  assert.equal(countryMapSource('alpha.png', 'country-AA', 'country-AA', false), 'alpha.png');
-  assert.equal(countryMapSource('beta.png', 'country-AA', 'country-BB', false), null);
-  assert.equal(countryMapSource('beta.png', 'country-AA', 'country-BB', true), 'beta.png');
+test('shows maps for the selected country or every country when expanded', () => {
+  assert.deepEqual(visibleCountries(countries, 'country-result-AA', false), [countries[0]]);
+  assert.deepEqual(visibleCountries(countries, null, false), []);
+  assert.deepEqual(visibleCountries(countries, 'country-result-AA', true), countries);
 });
 
 test('copies the selected country fragment without keeping an old fragment', () => {
