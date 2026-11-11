@@ -202,6 +202,8 @@ def test_persist_keeps_existing_country_bytes_when_only_stats_differ(
     name = f"{kind}.json"
     corpus = tmp_path / "corpus"
     corpus.mkdir()
+    old: dict[str, object]
+    new: dict[str, object]
     if kind == "country-sweep":
         old = {
             "document": kind,

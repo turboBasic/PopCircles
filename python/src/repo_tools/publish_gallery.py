@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from stat import S_ISLNK
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from population_circles.gallery import build as build_gallery
@@ -61,10 +61,12 @@ def require_inputs() -> None:
 
 def same_country_answer(existing: bytes, generated: bytes) -> bool:
     try:
-        previous: Any = json.loads(existing)
-        current: Any = json.loads(generated)
-        if not isinstance(previous, dict) or not isinstance(current, dict):
+        previous_value: Any = json.loads(existing)
+        current_value: Any = json.loads(generated)
+        if not isinstance(previous_value, dict) or not isinstance(current_value, dict):
             return False
+        previous = cast(dict[str, Any], previous_value)
+        current = cast(dict[str, Any], current_value)
         document = current.get("document")
         if (
             document not in {"country-sweep", "country-smallest"}
