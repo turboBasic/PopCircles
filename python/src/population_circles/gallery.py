@@ -104,7 +104,33 @@ def country_result_document(
             "population_dataset": selection["population_source"]["name"],
             "decimation": selection["resolution"],
             "ledger": swept_country["ledger"],
-            "circle": record["circle"],
+            "circle": {key: value for key, value in record["circle"].items() if key != "stats"},
+        },
+    }
+
+
+def stable_country_sweep(sweep: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **sweep,
+        "result": {
+            **sweep["result"],
+            "countries": [
+                {
+                    **country,
+                    "records": [
+                        {
+                            **record,
+                            "circle": {
+                                key: value
+                                for key, value in record["circle"].items()
+                                if key != "stats"
+                            },
+                        }
+                        for record in country["records"]
+                    ],
+                }
+                for country in sweep["result"]["countries"]
+            ],
         },
     }
 
@@ -132,6 +158,20 @@ def cached_sweep(
     except OSError, ValueError, TypeError, KeyError, IndexError:
         return None
     return sweep
+
+
+def report_sweep_work(sweep: dict[str, Any]) -> None:
+    evaluated = reused = 0
+    for country in sweep["result"]["countries"]:
+        for record in country["records"]:
+            stats = record["circle"].get("stats", {})
+            evaluated += stats.get("radii_evaluated", 0)
+            reused += stats.get("radii_reused", 0)
+    print(
+        f"Gallery: country sweep evaluated {evaluated} radii and reused {reused}",
+        file=sys.stderr,
+        flush=True,
+    )
 
 
 def country_documents(
@@ -187,9 +227,11 @@ def country_documents(
         if sweep.get("document") != "country-sweep":
             message = "country sweep: Rust CLI returned a document other than country-sweep"
             raise ValueError(message)
+        report_sweep_work(sweep)
     else:
         print(
-            f"Gallery: reusing saved 50% country sweep ({len(countries)} countries)",
+            "Gallery: reused saved 50% country sweep; "
+            f"sweep work avoided for {len(countries)} countries",
             file=sys.stderr,
             flush=True,
         )
@@ -219,7 +261,7 @@ def country_documents(
         )
         documents[filename] = document
 
-    documents[sweep_filename] = sweep
+    documents[sweep_filename] = stable_country_sweep(sweep)
     print(
         f"Gallery: prepared {len(documents)} country result documents",
         file=sys.stderr,

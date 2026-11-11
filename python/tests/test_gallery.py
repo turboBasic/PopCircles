@@ -383,6 +383,56 @@ def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: 
         "country-fixture-10-BB-half.json",
         "country-sweep-fixture-10-half.json",
     }
+    assert "stats" not in generated["country-fixture-10-AA-half.json"]["result"]["circle"]
+    assert (
+        "stats"
+        not in generated["country-sweep-fixture-10-half.json"]["result"]["countries"][0]["records"][
+            0
+        ]["circle"]
+    )
+
+
+def test_country_answer_documents_are_stable_when_only_sweep_stats_change(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    first_swept = swept_country("AA", "Alpha")
+    first_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 5
+    first_swept["records"][0]["circle"]["stats"]["radii_reused"] = 3
+    first_invoke, _ = country_cli(countries, [first_swept])
+    first = country_documents(first_invoke, tmp_path / "first", refresh_country_sweep=True)[1]
+    assert "country sweep evaluated 5 radii and reused 3" in capsys.readouterr().err
+
+    second_swept = swept_country("AA", "Alpha")
+    second_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 99
+    second_swept["records"][0]["circle"]["stats"]["radii_reused"] = 42
+    second_invoke, _ = country_cli(countries, [second_swept])
+    second = country_documents(second_invoke, tmp_path / "second", refresh_country_sweep=True)[1]
+
+    assert {name: json.dumps(payload, indent=2) for name, payload in first.items()} == {
+        name: json.dumps(payload, indent=2) for name, payload in second.items()
+    }
+
+
+def test_a_stats_free_sweep_is_reusable_and_reports_avoided_work(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    invoke, calls = country_cli(countries, swept)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    generated = country_documents(invoke, corpus, refresh_country_sweep=True)[1]
+    sweep_path = corpus / "country-sweep-fixture-10-half.json"
+    sweep_path.write_text(json.dumps(generated[sweep_path.name]), encoding="utf-8")
+    calls.clear()
+
+    country_documents(invoke, corpus)
+
+    assert calls == [["country", "list"]]
+    diagnostics = capsys.readouterr().err
+    assert "sweep work avoided for 1 countries" in diagnostics
+    assert "radii evaluated" not in diagnostics
 
 
 @pytest.mark.parametrize(
