@@ -22,10 +22,10 @@ from shapely.geometry.base import BaseGeometry
 
 from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.circle_map import Invoke, child, invoke_cli, require_success
-from population_circles.country_outline import load_outline
+from population_circles.country_outline import load_country_boundaries, load_outline
 from population_circles.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.map_frame import PLATE_CARREE
-from population_circles.render_map import citation, registered_coastline, render
+from population_circles.render_map import citation, other_countries, registered_coastline, render
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
@@ -216,6 +216,12 @@ def render_document(
 ) -> tuple[Drawn, bool]:
     try:
         answer = circle_of(payload)
+        selected = load_outline(answer, context.registry) if answer.country is not None else None
+        boundaries = (
+            load_country_boundaries(answer, context.registry)
+            if selected is not None and answer.country is not None
+            else None
+        )
         population_attribution = (
             answer.selection.population_source.attribution if answer.selection is not None else None
         ) or citation(context.registry, answer.provenance.dataset)
@@ -226,7 +232,7 @@ def render_document(
                 if answer.selection is not None
                 else None
             ) or citation(context.registry, answer.country.boundary_dataset)
-            outline_and_credit = (load_outline(answer, context.registry), boundary_attribution)
+            outline_and_credit = (selected, boundary_attribution)
         target = context.output / f"{source.stem}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
         cache_key = (
@@ -273,6 +279,11 @@ def render_document(
             coastline=context.coastline,
             coastline_attribution=context.coastline_attribution,
             outline_and_credit=outline_and_credit,
+            **(
+                {"other_countries": other_countries(boundaries, answer)}
+                if answer.country is not None
+                else {}
+            ),
         )
     except Exception as error:
         # The early-built page is removed by `build_gallery_output` if a map fails.

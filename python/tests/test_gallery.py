@@ -109,6 +109,12 @@ def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
     return box(longitude - 5, latitude - 5, longitude + 5, latitude + 5)
 
 
+def fixture_boundaries(answer: Answer, registry: Registry) -> dict[str, BaseGeometry] | None:
+    if answer.country is None:
+        return None
+    return {answer.country.id: fixture_outline(answer, registry)}
+
+
 def country_cli(
     countries: list[dict[str, str]],
     swept_countries: list[dict[str, Any]],
@@ -281,6 +287,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
     monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
+    monkeypatch.setattr(gallery_module, "load_country_boundaries", fixture_boundaries)
     render = Mock(wraps=render_map_module.render)
     monkeypatch.setattr(gallery_module, "render", render)
     invoke = country_cli(countries, swept)[0]
@@ -496,6 +503,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     # fixtures exercise actual map rendering without redrawing the full corpus in CI.
     use_coastline_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
+    monkeypatch.setattr(gallery_module, "load_country_boundaries", fixture_boundaries)
     render = Mock(return_value=Figure())
     monkeypatch.setattr(gallery_module, "render", render)
     output = tmp_path / "gallery"
@@ -567,6 +575,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         current_annotate(figure, y, text, size, alignment)
 
     monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
+    monkeypatch.setattr(gallery_module, "load_country_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     drawn, skipped = build(corpus, output, invoke)
