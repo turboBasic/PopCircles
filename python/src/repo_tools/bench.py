@@ -273,17 +273,30 @@ def paired_result(
     return result
 
 
-def answers_equal(before: object, after: object) -> bool:
-    return before is not None and before == after
+def country_answers_equal(
+    before: list[Mapping[str, object]], after: list[Mapping[str, object]]
+) -> bool:
+    before_signature = before[0].get("answer_signature") if before else None
+    after_signature = after[0].get("answer_signature") if after else None
+    return (
+        before_signature is not None
+        and before_signature == after_signature
+        and all(item.get("answer_signature") == before_signature for item in before)
+        and all(item.get("answer_signature") == after_signature for item in after)
+    )
 
 
 def answer_signature_smoke() -> None:
     signature = {"row": 7, "col": 11, "population_bits": float(42).hex()}
-    if not answers_equal(signature, signature):
+    before = [{"answer_signature": signature}]
+    after = [{"answer_signature": signature}]
+    if not country_answers_equal(before, after):
         raise ValueError("matching answer signatures were rejected")  # noqa: EM101, TRY003
     mismatch = {"row": 8, "col": 11, "population_bits": float(42).hex()}
-    if answers_equal(signature, mismatch):
+    if country_answers_equal(before, [{"answer_signature": mismatch}]):
         raise ValueError("mismatched answer signatures were accepted")  # noqa: EM101, TRY003
+    if country_answers_equal([{}], [{}]):
+        raise ValueError("missing answer signatures were accepted")  # noqa: EM101, TRY003
 
 
 def comparison_smoke() -> None:
@@ -925,16 +938,11 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
     mismatches = compatibility_mismatches(before_pass, after_pass)
     before_answer = before_pass.get("answer_signature")
     after_answer = after_pass.get("answer_signature")
-    answer_equal: bool | None = None
-    if before_answer is not None or after_answer is not None:
-        before_records = [before_pass, *before_samples]
-        after_records = [after_pass, *after_samples]
-        answer_equal = (
-            before_answer is not None
-            and answers_equal(before_answer, after_answer)
-            and all(item.get("answer_signature") == before_answer for item in before_records)
-            and all(item.get("answer_signature") == after_answer for item in after_records)
-        )
+    answer_equal = (
+        country_answers_equal([before_pass, *before_samples], [after_pass, *after_samples])
+        if workload.workload == "country-search"
+        else None
+    )
     before_values = [json_samples(item["raw_samples_seconds"])[0] for item in before_samples]
     after_values = [json_samples(item["raw_samples_seconds"])[0] for item in after_samples]
     first_pass = {
