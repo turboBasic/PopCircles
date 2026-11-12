@@ -896,12 +896,12 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
                     before_tree, before_commit, workload, history, args.before_workers
                 )
                 before_pass = first_before
-                before_paths.append(str(path))
+                before_paths.append(path.name)
                 first_after, path = run_revision(
                     after_tree, after_commit, workload, history, args.after_workers
                 )
                 after_pass = first_after
-                after_paths.append(str(path))
+                after_paths.append(path.name)
                 with tempfile.TemporaryDirectory(prefix="popcircles-warmup-") as warmup:
                     warm_history = Path(warmup)
                     run_revision(
@@ -926,10 +926,10 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
                         )
                         if side == "before":
                             before_samples.append(measured)
-                            before_paths.append(str(path))
+                            before_paths.append(path.name)
                         else:
                             after_samples.append(measured)
-                            after_paths.append(str(path))
+                            after_paths.append(path.name)
             finally:
                 if after_tree.exists():
                     command_output("git", "worktree", "remove", "--force", str(after_tree))
