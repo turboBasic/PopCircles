@@ -760,6 +760,37 @@ def run_revision(
     return measured, path
 
 
+def share_inputs(worktree: Path, workload: argparse.Namespace) -> None:
+    with (worktree / "data/registry.toml").open("rb") as registry_file:
+        registry = tomllib.load(registry_file)["datasets"]
+    if workload.workload == "world-search":
+        names = [workload.dataset]
+    elif workload.workload == "country-search":
+        with (worktree / "data/config.toml").open("rb") as config_file:
+            selection = tomllib.load(config_file)["combinations"][workload.combination]
+        resolution = selection["resolutions"][str(workload.resolution)]
+        link_input(worktree, resolution["local"])
+        names = [selection["population_source"], selection["boundary_source"]]
+    else:
+        return
+    for name in names:
+        dataset = registry.get(name.removeprefix("dataset:"))
+        if dataset is not None:
+            link_input(worktree, dataset["path"])
+
+
+def link_input(worktree: Path, relative: str) -> None:
+    path = Path(relative)
+    if path.is_absolute() or ".." in path.parts:
+        message = f"input path escapes the worktree: {relative}"
+        raise ValueError(message)
+    source = REPO_ROOT / path
+    target = worktree / path
+    if source.exists() and not target.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.symlink_to(source.resolve(), target_is_directory=source.is_dir())
+
+
 def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # noqa: PLR0915 — measured pass order is explicit
     before_commit = resolve_commit(args.before)
     after_commit = resolve_commit(args.after)
@@ -794,6 +825,8 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
                 "git", "worktree", "add", "--detach", "--quiet", str(after_tree), after_commit
             )
             try:
+                share_inputs(before_tree, workload)
+                share_inputs(after_tree, workload)
                 first_before, path = run_revision(before_tree, before_commit, workload, history)
                 before_pass = first_before
                 before_paths.append(str(path))
