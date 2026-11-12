@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import textwrap
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -11,8 +12,9 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
-from matplotlib.patches import PathPatch
+from matplotlib.patches import PathPatch, Rectangle
 from matplotlib.path import Path as DrawPath
+from shapely import get_coordinates
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
@@ -22,7 +24,7 @@ from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
-from population_circles.country_outline import load_outline
+from population_circles.country_outline import load_country_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
@@ -75,6 +77,8 @@ GRATICULE_LAYER = 1
 COASTLINE_LAYER = 2
 CIRCLE_LAYER = 3
 COUNTRY_LAYER = 2.5
+OCEAN = "#DFFFFD"
+COUNTRY = "#65cbc1"
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
 
@@ -116,14 +120,21 @@ def fill_circle(axes: Axes, geometry: BaseGeometry) -> None:
         )
 
 
-def outline(axes: Axes, geometry: BaseGeometry, layer: float = HORIZON_LAYER) -> None:
+def outline(
+    axes: Axes,
+    geometry: BaseGeometry,
+    layer: float = HORIZON_LAYER,
+    *,
+    facecolor: str = "none",
+    linewidth: float = 0.6,
+) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
             PathPatch(
                 compound(polygon),
-                facecolor="none",
+                facecolor=facecolor,
                 edgecolor="0.4",
-                linewidth=0.6,
+                linewidth=linewidth,
                 zorder=layer,
             ),
         )
@@ -178,12 +189,21 @@ def annotate(
     )
 
 
-def draw(axes: Axes, view: Frame, coastline: BaseGeometry | None) -> None:
+def draw(
+    axes: Axes,
+    view: Frame,
+    coastline: BaseGeometry | None,
+    other_countries: Sequence[BaseGeometry] = (),
+) -> None:
     stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
     if coastline is not None:
         stroke(axes, project(view, coastline), "dimgrey", 0.5, COASTLINE_LAYER)
     if view.country_outline is not None:
-        outline(axes, view.country_outline, COUNTRY_LAYER)
+        for geometry in other_countries:
+            projected = project(view, geometry)
+            if all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
+                outline(axes, projected, COUNTRY_LAYER, facecolor="white")
+        outline(axes, view.country_outline, COUNTRY_LAYER, facecolor=COUNTRY, linewidth=1)
     fill_circle(axes, view.circle)
     outline(axes, view.horizon)
 
@@ -198,6 +218,7 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
     coastline: BaseGeometry | None,
     coastline_attribution: str | None = None,
     outline_and_credit: tuple[BaseGeometry | None, str] | None = None,
+    other_countries: Sequence[BaseGeometry] = (),
 ) -> Figure:
     if answer.country is not None and outline_and_credit is None:
         raise MissingCountryOutlineError
@@ -248,8 +269,19 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
         west, south, east, north = view.horizon.bounds
         axes.set_xlim(west, east)
         axes.set_ylim(south, north)
+        if view.country_outline is not None:
+            axes.add_patch(
+                Rectangle(
+                    (west, south),
+                    east - west,
+                    north - south,
+                    facecolor=OCEAN,
+                    edgecolor="none",
+                    zorder=0,
+                ),
+            )
 
-        draw(axes, view, coastline)
+        draw(axes, view, coastline, other_countries)
         axes.plot(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
             [centre[0]],
             [centre[1]],
@@ -313,6 +345,7 @@ def render_file(
     coastline, coastline_attribution = (
         (None, None) if no_coastlines else registered_coastline(registry)
     )
+    boundaries = load_country_boundaries(answer, registry) if answer.country is not None else None
     figure = render(
         answer,
         projection,
@@ -321,11 +354,16 @@ def render_file(
         coastline_attribution=coastline_attribution,
         outline_and_credit=(
             (
-                load_outline(answer, registry),
+                boundaries[answer.country.id] if boundaries is not None and answer.country is not None else None,
                 boundary_attribution or citation(registry, answer.country.boundary_dataset),
             )
             if answer.country is not None
             else None
+        ),
+        other_countries=(
+            [geometry for identifier, geometry in boundaries.items() if identifier != answer.country.id]
+            if boundaries is not None and answer.country is not None
+            else ()
         ),
     )
     try:
