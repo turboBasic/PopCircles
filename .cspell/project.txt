@@ -21,8 +21,8 @@ iostat
 jactionlint
 loadgroup
 mise
-numprocesses
 notarytool
+numprocesses
 opencode
 OpenRouter
 ponytail

@@ -218,7 +218,7 @@ run = "cargo test --all-features"
 [tasks."test:python"]
 description = "Run the Python test suite"
 depends = ["deps"]
-run = "uv run pytest --numprocesses=2 --dist loadgroup"
+run = "uv run pytest"
 
 # Never in `test`: a CI checkout has no raster, and a length assertion against it would fail for
 # having no file. `-m` overrides pyproject.toml's addopts, the way `--ignored` selects Rust's.

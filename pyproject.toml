@@ -100,7 +100,7 @@ include = ["python"]
 [tool.pytest.ini_options]
 # `-m "not raster"` is what keeps the suite runnable on a clone with no raster in it, which is every
 # clone CI makes. `mise run test:python-raster` passes its own `-m` to override.
-addopts = "-ra --strict-markers --strict-config -m 'not raster'"
+addopts = "-ra --strict-markers --strict-config --numprocesses=2 --dist=loadgroup -m 'not raster'"
 cache_dir = "build/pytest"
 markers = [
   "raster: needs fetched raster content, so never runs in CI",
