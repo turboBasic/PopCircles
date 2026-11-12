@@ -17,6 +17,8 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_HISTORY_DIR = REPO_ROOT / "benchmarks/history"
 SAMPLE_COUNT = 3
 REQUIRED = {
     "schema_version",
@@ -48,7 +50,7 @@ def executable(name: str) -> str:
 
 def command_output(name: str, *arguments: str, stderr: int | None = None) -> str:
     return subprocess.check_output(  # noqa: S603 — fixed command names and argv, never a shell
-        [executable(name), *arguments], text=True, stderr=stderr
+        [executable(name), *arguments], text=True, stderr=stderr, cwd=REPO_ROOT
     )
 
 
@@ -161,7 +163,7 @@ def smoke() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workload", choices=["synthetic"], default="synthetic")
-    parser.add_argument("--history-dir", type=Path, default=Path("benchmarks/history"))
+    parser.add_argument("--history-dir", type=Path, default=DEFAULT_HISTORY_DIR)
     parser.add_argument("--iterations", type=int, default=10_000)
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
@@ -170,12 +172,11 @@ def main() -> None:
     if args.smoke:
         smoke()
     else:
-        repository_history = Path("benchmarks/history").resolve()
         print(
             write_record(
                 args.history_dir,
                 args.iterations,
-                require_clean=args.history_dir.resolve() == repository_history,
+                require_clean=args.history_dir.resolve() == DEFAULT_HISTORY_DIR,
             )
         )
 
