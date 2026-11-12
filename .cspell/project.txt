@@ -94,6 +94,7 @@ webp
 # --- Library and API identifiers ---
 anstream
 anstyle
+autouse
 bpaf
 bytemuck
 capsys
@@ -114,6 +115,7 @@ getpid
 gridlines
 horizontalalignment
 indicatif
+initargs
 insta
 Ivoire
 keepends
