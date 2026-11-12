@@ -667,7 +667,7 @@ pub fn country_most_populous<P: Progress>(
         grid,
         Block::tile_country_domain(&grid, table, radius, spacing)?,
         radius,
-        1,
+        4,
         progress,
         |kernel, col| Ok(circle::country_population(table, kernel, col)?),
     )
