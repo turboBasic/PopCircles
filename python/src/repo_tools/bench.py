@@ -837,6 +837,7 @@ def share_inputs(worktree: Path, workload: argparse.Namespace) -> None:
         names = [selection["population_source"], selection["boundary_source"]]
     else:
         return
+    names.append("populated-places-1to10m")
     for name in names:
         dataset = registry.get(name.removeprefix("dataset:"))
         if dataset is not None:
