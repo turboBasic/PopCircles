@@ -12,6 +12,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
+from matplotlib.image import AxesImage
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path as DrawPath
 from shapely import get_coordinates
@@ -24,7 +25,7 @@ from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
-from population_circles.country_outline import load_country_boundaries, load_outline
+from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
@@ -78,7 +79,8 @@ COASTLINE_LAYER = 2
 CIRCLE_LAYER = 3
 COUNTRY_LAYER = 2.5
 OCEAN = "#DFFFFD"
-COUNTRY = "#65cbc1"
+COUNTRY = "#65CBC1"
+OUTLINE_WIDTH = 0.6
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
 
@@ -126,7 +128,7 @@ def outline(
     layer: float = HORIZON_LAYER,
     *,
     facecolor: str = "none",
-    linewidth: float = 0.6,
+    linewidth: float = OUTLINE_WIDTH,
 ) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
@@ -172,10 +174,12 @@ def title_of(answer: Answer) -> str:
 def other_countries(
     boundaries: Mapping[str, BaseGeometry] | None, answer: Answer
 ) -> list[BaseGeometry]:
-    if boundaries is None or answer.country is None:
+    if boundaries is None:
         return []
     return [
-        geometry for identifier, geometry in boundaries.items() if identifier != answer.country.id
+        geometry
+        for identifier, geometry in boundaries.items()
+        if answer.country is None or identifier != answer.country.id
     ]
 
 
@@ -208,14 +212,39 @@ def draw(
     stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
     if coastline is not None:
         stroke(axes, project(view, coastline), "dimgrey", 0.5, COASTLINE_LAYER)
+    country_paths: list[DrawPath] = []
+    for geometry in other_countries:
+        projected = project(view, geometry)
+        if all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
+            country_paths.extend(compound(polygon) for polygon in polygons(projected))
+    if country_paths:
+        axes.add_patch(
+            PathPatch(
+                DrawPath.make_compound_path(*country_paths),
+                facecolor="white",
+                edgecolor="0.4",
+                linewidth=OUTLINE_WIDTH,
+                zorder=COUNTRY_LAYER,
+            ),
+        )
     if view.country_outline is not None:
-        for geometry in other_countries:
-            projected = project(view, geometry)
-            if all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
-                outline(axes, projected, COUNTRY_LAYER, facecolor="white")
         outline(axes, view.country_outline, COUNTRY_LAYER, facecolor=COUNTRY, linewidth=1)
     fill_circle(axes, view.circle)
     outline(axes, view.horizon)
+
+
+def fill_ocean(axes: Axes, view: Frame) -> None:
+    west, south, east, north = view.horizon.bounds
+    draw_image = cast(Callable[..., AxesImage], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+    ocean = draw_image(
+        [[(223 / 255, 1.0, 253 / 255, 1.0)]],
+        extent=(west, east, south, north),
+        zorder=0,
+    )
+    horizon = DrawPath.make_compound_path(
+        *(compound(polygon) for polygon in polygons(view.horizon))
+    )
+    ocean.set_clip_path(PathPatch(horizon, transform=axes.transData))
 
 
 def render(  # noqa: PLR0913 — distinct source credits must remain distinguishable
@@ -279,13 +308,8 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
         west, south, east, north = view.horizon.bounds
         axes.set_xlim(west, east)
         axes.set_ylim(south, north)
-        if view.country_outline is not None:
-            draw_image = cast(Callable[..., object], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
-            draw_image(
-                [[(223 / 255, 1.0, 253 / 255, 1.0)]],
-                extent=(west, east, south, north),
-                zorder=0,
-            )
+        if view.country_outline is not None or other_countries:
+            fill_ocean(axes, view)
 
         draw(axes, view, coastline, other_countries)
         axes.plot(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
@@ -351,12 +375,8 @@ def render_file(
     coastline, coastline_attribution = (
         (None, None) if no_coastlines else registered_coastline(registry)
     )
-    selected = load_outline(answer, registry) if answer.country is not None else None
-    boundaries = (
-        load_country_boundaries(answer, registry)
-        if selected is not None and answer.country is not None
-        else None
-    )
+    boundaries = load_map_boundaries(answer, registry)
+    selected = boundaries.get(answer.country.id) if answer.country is not None else None
     figure = render(
         answer,
         projection,
@@ -371,11 +391,7 @@ def render_file(
             if answer.country is not None
             else None
         ),
-        **(
-            {"other_countries": other_countries(boundaries, answer)}
-            if answer.country is not None
-            else {}
-        ),
+        **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)

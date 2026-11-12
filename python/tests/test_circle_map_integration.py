@@ -10,7 +10,12 @@ from population_circles import render_map
 from population_circles.circle_document import SweepRecords, circle_of
 from population_circles.circle_map import REPO_ROOT, Options, WorkflowError, workflow
 from population_circles.dataset_registry import parse
-from test_render_map import PNG_MAGIC
+from test_render_map import PNG_MAGIC, empty_boundaries
+
+
+@pytest.fixture(autouse=True)
+def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
 
 
 def run(arguments: list[str], directory: Path) -> subprocess.CompletedProcess[bytes]:

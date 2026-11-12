@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import Literal
@@ -15,7 +16,12 @@ from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import load
 from population_circles.map_frame import ORTHOGRAPHIC
-from test_render_map import DATASET, PNG_MAGIC, document
+from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
+
+
+@pytest.fixture(autouse=True)
+def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
 
 
 @pytest.fixture
@@ -294,6 +300,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
         coastline: BaseGeometry | None,
         coastline_attribution: str | None = None,
         outline_and_credit: tuple[BaseGeometry, str] | None = None,
+        other_countries: Sequence[BaseGeometry] = (),
     ) -> Figure:
         seen.append((answer.circle.earth_radius_km, attribution))
         return original(
@@ -303,6 +310,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
             coastline=coastline,
             coastline_attribution=coastline_attribution,
             outline_and_credit=outline_and_credit,
+            other_countries=other_countries,
         )
 
     monkeypatch.setattr(render_map, "render", capture)

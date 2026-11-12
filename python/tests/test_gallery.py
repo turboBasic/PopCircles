@@ -16,7 +16,7 @@ import population_circles.gallery as gallery_module
 import population_circles.render_map as render_map_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer
 from population_circles.circle_map import Invoke, WorkflowError
-from population_circles.dataset_registry import Registry, load
+from population_circles.dataset_registry import Registry, country_boundary_dataset_key, load
 from population_circles.gallery import build, country_documents
 from population_circles.render_map import (
     COASTLINE_DATASET,
@@ -64,6 +64,7 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
         return min(1, count)
 
     monkeypatch.setattr(gallery_module, "render_worker_count", one_worker)
+    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
 
 
 def document(kind: str, dataset: str = DATASET) -> dict[str, Any]:
@@ -111,8 +112,21 @@ def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
 
 def fixture_boundaries(answer: Answer, registry: Registry) -> dict[str, BaseGeometry] | None:
     if answer.country is None:
-        return None
+        return {"AA": box(-10, -10, 10, 10)}
     return {answer.country.id: fixture_outline(answer, registry)}
+
+
+def registry_without_country_boundaries() -> Registry:
+    registry = load()
+    return registry.model_copy(
+        update={
+            "datasets": {
+                key: dataset
+                for key, dataset in registry.datasets.items()
+                if key != country_boundary_dataset_key()
+            }
+        }
+    )
 
 
 def country_cli(
@@ -286,8 +300,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     output = tmp_path / "build" / "gallery"
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
-    monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
-    monkeypatch.setattr(gallery_module, "load_country_boundaries", fixture_boundaries)
+    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     render = Mock(wraps=render_map_module.render)
     monkeypatch.setattr(gallery_module, "render", render)
     invoke = country_cli(countries, swept)[0]
@@ -435,7 +448,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
         (tmp_path / "alpha.json", payload),
         (tmp_path / "beta.json", payload),
     ]
-    registry = load()
+    registry = registry_without_country_boundaries()
     coastline, attribution = registered_coastline(registry)
     serial_output = tmp_path / "serial"
     concurrent_output = tmp_path / "concurrent"
@@ -447,6 +460,11 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     concurrent_context = gallery_module.MapRenderContext(
         registry, coastline, attribution, concurrent_output, None, "fixture"
     )
+
+    def no_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
+        return {}
+
+    monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
 
     serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
 
@@ -472,6 +490,8 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
+    registry = registry_without_country_boundaries()
+    monkeypatch.setattr(gallery_module, "load", lambda: registry)
 
     def two_workers(count: int) -> int:
         return min(2, count)
@@ -502,8 +522,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     # Keep every committed document on the Gallery parsing and classification path; representative
     # fixtures exercise actual map rendering without redrawing the full corpus in CI.
     use_coastline_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
-    monkeypatch.setattr(gallery_module, "load_country_boundaries", fixture_boundaries)
+    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     render = Mock(return_value=Figure())
     monkeypatch.setattr(gallery_module, "render", render)
     output = tmp_path / "gallery"
@@ -574,8 +593,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         annotations.append(text)
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
-    monkeypatch.setattr(gallery_module, "load_country_boundaries", fixture_boundaries)
+    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     drawn, skipped = build(corpus, output, invoke)
