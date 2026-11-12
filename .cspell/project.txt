@@ -19,8 +19,10 @@ flycheck
 hardlink
 iostat
 jactionlint
+loadgroup
 mise
 notarytool
+numprocesses
 opencode
 OpenRouter
 ponytail
@@ -28,6 +30,7 @@ popcircles
 prek
 pyright
 pytest
+xdist
 ruff
 rustls
 shellcheck

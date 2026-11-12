@@ -40,6 +40,7 @@ dev = [
   "pyproj>=3.7.2",
   "pyright>=1.1.407",
   "pytest>=9.0.2",
+  "pytest-xdist>=3.8.0",
   "ruff>=0.16.2",
   "shapely>=2.1.2",
 ]
@@ -99,7 +100,10 @@ include = ["python"]
 [tool.pytest.ini_options]
 # `-m "not raster"` is what keeps the suite runnable on a clone with no raster in it, which is every
 # clone CI makes. `mise run test:python-raster` passes its own `-m` to override.
-addopts = "-ra --strict-markers --strict-config -m 'not raster'"
+addopts = "-ra --strict-markers --strict-config --numprocesses=4 --dist=loadgroup -m 'not raster'"
 cache_dir = "build/pytest"
-markers = ["raster: needs fetched raster content, so never runs in CI"]
+markers = [
+  "raster: needs fetched raster content, so never runs in CI",
+  "xdist_group(name): tests that must run in the same worker",
+]
 testpaths = ["python/tests"]

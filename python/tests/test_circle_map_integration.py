@@ -31,6 +31,7 @@ def numeric_binary() -> Path:
     return Path(metadata["target_directory"]) / "release" / "popcircles"
 
 
+@pytest.mark.xdist_group(name="numeric-binary")
 def test_real_build_reuse_and_missing_raster(
     tmp_path: Path,
     numeric_binary: Path,
@@ -108,6 +109,7 @@ def test_real_build_reuse_and_missing_raster(
     assert not options.output.exists()
 
 
+@pytest.mark.xdist_group(name="numeric-binary")
 def test_rust_circle_documents_cross_the_python_boundary_with_optional_settlements(
     tmp_path: Path,
     numeric_binary: Path,
