@@ -25,6 +25,7 @@ SAMPLE_COUNT = 3
 MAX_WORKERS = 256
 MAX_SHARE_PERCENT = 100
 SMOKE_ITERATIONS = 100
+COMPARISON_SMOKE_WORKERS = 4
 COMPATIBILITY_FIELDS = (
     "workload",
     "workload_version",
@@ -138,7 +139,7 @@ def record(  # noqa: PLR0913, PLR0917 — fields map directly to the record sche
     cache_mode: str,
 ) -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "workload": workload,
         "workload_version": 1,
         "parameters": parameters,
@@ -272,6 +273,19 @@ def paired_result(
     return result
 
 
+def answers_equal(before: object, after: object) -> bool:
+    return before is not None and before == after
+
+
+def answer_signature_smoke() -> None:
+    signature = {"row": 7, "col": 11, "population_bits": float(42).hex()}
+    if not answers_equal(signature, signature):
+        raise ValueError("matching answer signatures were rejected")  # noqa: EM101, TRY003
+    mismatch = {"row": 8, "col": 11, "population_bits": float(42).hex()}
+    if answers_equal(signature, mismatch):
+        raise ValueError("mismatched answer signatures were accepted")  # noqa: EM101, TRY003
+
+
 def comparison_smoke() -> None:
     fields: dict[str, object] = {
         "workload": "synthetic",
@@ -284,8 +298,8 @@ def comparison_smoke() -> None:
         "build_profile": "synthetic-python",
         "cache_mode": "synthetic-no-cache",
     }
-    before = {**fields, "commit": "a" * 40}
-    after = {**fields, "commit": "b" * 40}
+    before = {**fields, "commit": "a" * 40, "worker_count": 1}
+    after = {**fields, "commit": "b" * 40, "worker_count": 4}
     orders = [["before", "after"], ["after", "before"], ["before", "after"]]
     summary = comparison_summary([3.0, 2.0, 4.0], [6.0, 4.0, 8.0], orders)
     expected_pairs = [
@@ -299,6 +313,9 @@ def comparison_smoke() -> None:
         raise ValueError("synthetic comparison fixture lost pair order, samples, or medians")  # noqa: EM101, TRY003
     if compatibility_mismatches(before, after):
         raise ValueError("commit identity must not prevent a compatible comparison")  # noqa: EM101, TRY003
+    answer_signature_smoke()
+    if before.get("worker_count") != 1 or after.get("worker_count") != COMPARISON_SMOKE_WORKERS:
+        raise ValueError("worker counts must not prevent a compatible comparison")  # noqa: EM101, TRY003
     compatible = paired_result([3.0, 2.0, 4.0], [6.0, 4.0, 8.0], orders, [])
     if compatible["delta_seconds"] != 3.0:  # noqa: PLR2004 — asserted synthetic fixture delta
         raise ValueError("compatible fixture did not produce a numeric delta")  # noqa: EM101, TRY003
@@ -396,6 +413,8 @@ def parser() -> argparse.ArgumentParser:
     compare = workloads.add_parser("compare")
     compare.add_argument("--before", required=True)
     compare.add_argument("--after", required=True)
+    compare.add_argument("--before-workers", type=worker_count, required=True)
+    compare.add_argument("--after-workers", type=worker_count, required=True)
     compare.add_argument(
         "target_workload",
         choices=[
@@ -620,6 +639,7 @@ def component_record(args: argparse.Namespace) -> dict[str, object]:
 def search_record(args: argparse.Namespace) -> dict[str, object]:
     binary = build_cli()
     raw: list[float] = []
+    answers: list[dict[str, object]] = []
     cpu_time = 0.0
     peak_rss: int | None = None
     parameters: dict[str, object]
@@ -630,7 +650,6 @@ def search_record(args: argparse.Namespace) -> dict[str, object]:
             "cache": str(args.cache),
             "radius_km": args.radius_km,
             "spacing": args.spacing,
-            "workers": args.workers,
             "samples": args.samples,
         }
     else:
@@ -641,7 +660,6 @@ def search_record(args: argparse.Namespace) -> dict[str, object]:
             "country": args.country,
             "share": args.share,
             "spacing": args.spacing,
-            "workers": args.workers,
             "samples": args.samples,
         }
     with tempfile.TemporaryDirectory(prefix="popcircles-bench-") as temporary:
@@ -682,11 +700,35 @@ def search_record(args: argparse.Namespace) -> dict[str, object]:
                     str(Path(temporary) / f"ledger-{index}.json"),
                 ]
             measured = run_captured(command, workers=args.workers)
-            json_object(json.loads(str(measured["stdout"])))
+            answer = json_object(json.loads(str(measured["stdout"])))
+            if args.workload == "country-search":
+                answer = json_object(answer.get("result"))
+                circle = json_object(answer.get("circle"))
+                row, col, population = (
+                    circle.get("row"),
+                    circle.get("col"),
+                    circle.get("population"),
+                )
+                if (
+                    not isinstance(row, int)
+                    or isinstance(row, bool)
+                    or not isinstance(col, int)
+                    or isinstance(col, bool)
+                    or not isinstance(population, int | float)
+                    or isinstance(population, bool)
+                ):
+                    raise TypeError("country search returned an invalid answer signature")  # noqa: EM101, TRY003
+                answers.append(
+                    {
+                        "row": row,
+                        "col": col,
+                        "population_bits": float(population).hex(),
+                    }
+                )
             raw.append(json_number(measured["wall_time_seconds"], "wall time"))
             cpu_time += json_number(measured["cpu_time_seconds"], "CPU time")
             peak_rss = max(peak_rss or 0, int(json_number(measured["peak_rss_bytes"], "peak RSS")))
-    return record(
+    result = record(
         args.workload,
         parameters,
         identity,
@@ -698,6 +740,11 @@ def search_record(args: argparse.Namespace) -> dict[str, object]:
         args.workers,
         "mapped",
     )
+    if args.workload == "country-search":
+        if len({json.dumps(answer, sort_keys=True) for answer in answers}) != 1:
+            raise ValueError("country search answer changed between benchmark runs")  # noqa: EM101, TRY003
+        result["answer_signature"] = answers[0]
+    return result
 
 
 def run(args: argparse.Namespace) -> dict[str, object]:
@@ -708,12 +755,15 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     return search_record(args)
 
 
-def workload_argv(args: argparse.Namespace, history: Path, samples: int) -> list[str]:
+def workload_argv(
+    args: argparse.Namespace, history: Path, samples: int, workers: int | None = None
+) -> list[str]:
     arguments = [args.workload]
     for name, original in vars(args).items():
         if name in {"workload", "history_dir", "samples"} or original is None:
             continue
-        value = repo_path(original) if isinstance(original, Path) else original
+        argument = workers if name == "workers" and workers is not None else original
+        value = repo_path(argument) if isinstance(argument, Path) else argument
         arguments.extend([f"--{name.replace('_', '-')}", str(value)])
     arguments.extend(["--samples", str(samples), "--history-dir", str(history)])
     return arguments
@@ -730,10 +780,11 @@ def run_revision(
     commit: str,
     args: argparse.Namespace,
     history: Path,
+    workers: int | None = None,
 ) -> tuple[dict[str, object], Path]:
     entrypoint = Path(__file__).resolve()
     result = subprocess.run(  # noqa: S603 — fixed Python entrypoint and parsed workload argv
-        [sys.executable, str(entrypoint), *workload_argv(args, history, 1)],
+        [sys.executable, str(entrypoint), *workload_argv(args, history, 1, workers)],
         cwd=worktree,
         env={**os.environ, "POPCIRCLES_BENCH_ROOT": str(worktree)},
         capture_output=True,
@@ -827,16 +878,24 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
             try:
                 share_inputs(before_tree, workload)
                 share_inputs(after_tree, workload)
-                first_before, path = run_revision(before_tree, before_commit, workload, history)
+                first_before, path = run_revision(
+                    before_tree, before_commit, workload, history, args.before_workers
+                )
                 before_pass = first_before
                 before_paths.append(str(path))
-                first_after, path = run_revision(after_tree, after_commit, workload, history)
+                first_after, path = run_revision(
+                    after_tree, after_commit, workload, history, args.after_workers
+                )
                 after_pass = first_after
                 after_paths.append(str(path))
                 with tempfile.TemporaryDirectory(prefix="popcircles-warmup-") as warmup:
                     warm_history = Path(warmup)
-                    run_revision(before_tree, before_commit, workload, warm_history)
-                    run_revision(after_tree, after_commit, workload, warm_history)
+                    run_revision(
+                        before_tree, before_commit, workload, warm_history, args.before_workers
+                    )
+                    run_revision(
+                        after_tree, after_commit, workload, warm_history, args.after_workers
+                    )
                 for order in orders:
                     for side in order:
                         tree, commit = (
@@ -844,7 +903,13 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
                             if side == "before"
                             else (after_tree, after_commit)
                         )
-                        measured, path = run_revision(tree, commit, workload, history)
+                        measured, path = run_revision(
+                            tree,
+                            commit,
+                            workload,
+                            history,
+                            args.before_workers if side == "before" else args.after_workers,
+                        )
                         if side == "before":
                             before_samples.append(measured)
                             before_paths.append(str(path))
@@ -858,6 +923,18 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
             command_output("git", "worktree", "remove", "--force", str(before_tree))
 
     mismatches = compatibility_mismatches(before_pass, after_pass)
+    before_answer = before_pass.get("answer_signature")
+    after_answer = after_pass.get("answer_signature")
+    answer_equal: bool | None = None
+    if before_answer is not None or after_answer is not None:
+        before_records = [before_pass, *before_samples]
+        after_records = [after_pass, *after_samples]
+        answer_equal = (
+            before_answer is not None
+            and answers_equal(before_answer, after_answer)
+            and all(item.get("answer_signature") == before_answer for item in before_records)
+            and all(item.get("answer_signature") == after_answer for item in after_records)
+        )
     before_values = [json_samples(item["raw_samples_seconds"])[0] for item in before_samples]
     after_values = [json_samples(item["raw_samples_seconds"])[0] for item in after_samples]
     first_pass = {
@@ -867,12 +944,14 @@ def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # 
     }
     paired = paired_result(before_values, after_values, orders, mismatches)
     output: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "workload": workload.workload,
         "before_commit": before_commit,
         "after_commit": after_commit,
         "parameters": before_pass.get("parameters"),
         "compatibility_mismatches": mismatches,
+        "answer_signatures": {"before": before_answer, "after": after_answer},
+        "answers_equal": answer_equal,
         "first_pass": first_pass,
         "warmup": "one untimed invocation per revision",
         "paired_samples": paired["pairs"],
@@ -914,7 +993,11 @@ def main() -> None:
     args = parser().parse_args()
     if args.workload == "compare":
         workload_args = parser().parse_args([args.target_workload, *args.workload_args])
-        print(compare(args, workload_args))
+        result_path = compare(args, workload_args)
+        print(result_path)
+        if json.loads(result_path.read_text(encoding="utf-8")).get("answers_equal") is False:
+            message = "country search answer signatures differ"
+            raise SystemExit(message)
         return
     result = run(args)
     print(
