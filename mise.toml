@@ -206,8 +206,13 @@ depends = ["deps"]
 run = "uv run pyright"
 
 [tasks.test]
-description = "Run the Rust and Python test suites"
-depends = ["test:frontend", "test:python", "test:rust"]
+description = "Run the Rust, Python and benchmark smoke suites"
+depends = ["test:bench", "test:frontend", "test:python", "test:rust"]
+
+[tasks."test:bench"]
+description = "Exercise the bounded synthetic benchmark record path"
+depends = ["deps"]
+run = "uv run popcircles-bench --smoke"
 
 [tasks."test:frontend"]
 description = "Test and build the static Svelte frontend"
