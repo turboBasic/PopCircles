@@ -69,19 +69,20 @@ def peak_rss_bytes() -> int | None:
 
 
 def cpu_name() -> str:
-    if platform.processor():
-        return platform.processor()
-    try:
-        if sys.platform == "darwin":
+    if sys.platform == "darwin":
+        try:
             return command_output(
                 "sysctl", "-n", "machdep.cpu.brand_string", stderr=subprocess.DEVNULL
             ).strip()
+        except OSError, subprocess.CalledProcessError:
+            return "unavailable"
+    try:
         for line in Path("/proc/cpuinfo").read_text().splitlines():
             if line.lower().startswith("model name"):
                 return line.split(":", 1)[1].strip()
-    except OSError, subprocess.CalledProcessError:
+    except OSError:
         pass
-    return platform.machine()
+    return platform.processor() or "unavailable"
 
 
 def run_synthetic(iterations: int) -> tuple[list[float], float, float]:
