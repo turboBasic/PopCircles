@@ -12,6 +12,7 @@ Repository = "https://github.com/turboBasic/PopCircles"
 # entry point is what lets a hook and a mise task call one without naming where its file sits.
 [project.scripts]
 circle-map = "population_circles.circle_map:main"
+popcircles-bench = "repo_tools.bench:main"
 capture-agent-answer = "repo_tools.capture_agent_answer:main"
 fetch-data = "repo_tools.fetch_data:main"
 lint-docs = "repo_tools.lint_docs:main"
