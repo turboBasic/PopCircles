@@ -175,9 +175,7 @@ def other_countries(
     if boundaries is None or answer.country is None:
         return []
     return [
-        geometry
-        for identifier, geometry in boundaries.items()
-        if identifier != answer.country.id
+        geometry for identifier, geometry in boundaries.items() if identifier != answer.country.id
     ]
 
 
