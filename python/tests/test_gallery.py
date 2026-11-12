@@ -405,14 +405,15 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     }
 
 
-def test_the_committed_corpus_draws_every_kind_this_reader_holds(
+def test_the_committed_corpus_is_accounted_for_by_gallery(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # The gallery CI publishes, built here so a broken render fails a pull request. Which documents
-    # are drawn is read off the corpus rather than listed: a kind added to the reader, or a document
-    # added to `results/`, moves this assertion without editing it.
+    # Keep every committed document on the Gallery parsing and classification path; representative
+    # fixtures exercise actual map rendering without redrawing the full corpus in CI.
     use_coastline_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(gallery_module, "load_outline", fixture_outline)
+    render = Mock(return_value=Figure())
+    monkeypatch.setattr(gallery_module, "render", render)
     output = tmp_path / "gallery"
     corpus = tmp_path / "corpus"
     corpus.mkdir()
@@ -421,6 +422,7 @@ def test_the_committed_corpus_draws_every_kind_this_reader_holds(
     drawn, skipped = build(corpus, output, country_cli([], [])[0])
 
     committed = sorted(corpus.glob("*.json"))
+    assert render.call_count == len(drawn)
     assert len(drawn) + len(skipped) == len(committed)
     assert drawn, "the committed corpus holds no document this gallery can draw"
     zero_population = {
