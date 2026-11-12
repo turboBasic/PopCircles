@@ -110,7 +110,7 @@ def make_record(iterations: int) -> dict[str, object]:
         "os": f"{platform.system()} {platform.release()} ({platform.machine()})",
         "host_memory_bytes": host_memory_bytes(),
         "rust_toolchain": rust_toolchain,
-        "build_profile": "release",
+        "build_profile": "synthetic-python",
         "worker_count": 1,
         "cache_mode": "synthetic-no-cache",
         "raw_samples_seconds": samples,
@@ -121,7 +121,15 @@ def make_record(iterations: int) -> dict[str, object]:
 
 
 def write_record(history_dir: Path, iterations: int, *, require_clean: bool = True) -> Path:
-    if require_clean and command_output("git", "status", "--porcelain", "--untracked-files=normal"):
+    if require_clean and command_output(
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=normal",
+        "--",
+        ".",
+        ":(exclude)benchmarks/history/**",
+    ):
         print("commit the benchmark source before writing a history record", file=sys.stderr)
         raise SystemExit(1)
     history_dir.mkdir(parents=True, exist_ok=True)
