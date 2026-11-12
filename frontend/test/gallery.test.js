@@ -13,14 +13,17 @@ const countries = [
   { name: 'Germany', anchor: 'country-result-DE' },
   {
     name: 'No population <yet>',
-    anchor: 'country-missing-No%20population%20%3C' + 'yet%3E'
+    anchor: 'country-missing-No%20population%20%3C' + 'yet%3E',
+    missing: true
   }
 ];
 
 test('filters countries by trimmed, case-insensitive names', () => {
   assert.deepEqual(filterCountries(countries, '  ALP '), [countries[0]]);
-  assert.deepEqual(filterCountries(countries, ''), countries);
-  assert.deepEqual(filterCountries(countries, 'population'), [countries[2]]);
+  assert.deepEqual(filterCountries(countries, ''), countries.slice(0, 2));
+  assert.deepEqual(filterCountries(countries, 'population'), []);
+  assert.deepEqual(filterCountries(countries, 'population', true), [countries[2]]);
+  assert.deepEqual(filterCountries(countries, '', true), countries);
 });
 
 test('restores countries from stable URL anchors and falls back when unmatched', () => {

@@ -1,6 +1,10 @@
-export function filterCountries(countries, query) {
+export function filterCountries(countries, query, includeZeroPopulation = false) {
   const search = query.trim().toLowerCase();
-  return countries.filter((country) => country.name.toLowerCase().includes(search));
+  return countries.filter(
+    (country) =>
+      (includeZeroPopulation || !country.missing) &&
+      country.name.toLowerCase().includes(search)
+  );
 }
 
 export function defaultCountry(countries) {

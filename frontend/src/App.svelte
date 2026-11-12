@@ -11,9 +11,12 @@
   let data = $state(null);
   let error = $state('');
   let query = $state('');
+  let includeZeroPopulation = $state(false);
   let selectedCountry = $state(null);
   let allOpen = $state(false);
-  let matches = $derived(data ? filterCountries(data.countries, query) : []);
+  let matches = $derived(
+    data ? filterCountries(data.countries, query, includeZeroPopulation) : []
+  );
   let selectedFigure = $derived(selectedCountry?.figures[0] ?? null);
   let visibleCountryResults = $derived(
     data ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen) : []
@@ -135,6 +138,9 @@
 
 <main>
   <header>
+    <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="PopCircles on GitHub">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.75 2.05 3.44 1.57.1-.73.39-1.23.7-1.52-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.12-1.44 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.52.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
+    </a>
     <p class="eyebrow">PopCircles · Map gallery</p>
     <h1>One circle, half the population.</h1>
     <p class="intro">Explore country and world population circles.</p>
@@ -181,6 +187,10 @@
               placeholder="Search countries"
               autocomplete="off"
             />
+            <label class="zero-population-filter">
+              <input type="checkbox" bind:checked={includeZeroPopulation} />
+              Include territories with zero population
+            </label>
             <p class="visually-hidden" role="status" aria-live="polite">
               {query ? `${matches.length} matching countries` : ''}
             </p>
@@ -205,8 +215,8 @@
 
       <div class="results">
         {#if data.world.length}
-          <section class="world" aria-label="World maps">
-            <h2>World</h2>
+          <details class="world">
+            <summary>World</summary>
             <div class="figure-grid">
               {#each data.world as figure (figure.map)}
                 <figure>
@@ -215,7 +225,7 @@
                 </figure>
               {/each}
             </div>
-          </section>
+          </details>
         {/if}
 
         <section class="country-results" aria-label="Country maps">
@@ -279,6 +289,8 @@
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
   header { padding: 4rem 0 2rem; }
+  .repository-link { float: right; width: 1.75rem; color: var(--muted); }
+  .repository-link svg { display: block; width: 100%; }
   .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
   h1 { max-width: 850px; margin: .7rem 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.045em; }
   .intro, .status, .empty, figcaption, .copy-status { color: var(--muted); }
@@ -287,6 +299,8 @@
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .country-browser-panel { max-height: calc(100vh - 10rem); overflow: auto; }
+  .zero-population-filter { display: flex; align-items: center; gap: .5rem; margin: .75rem 0; color: var(--muted); }
+  .zero-population-filter input { width: auto; padding: 0; }
   .drawer-title { display: none; }
   label { display: block; margin: .8rem 0 .5rem; font-weight: 600; }
   input { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
@@ -297,6 +311,7 @@
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
   .world, .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  .world > summary { justify-content: flex-start; font-size: 1.25rem; }
   .country-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .75rem; flex-wrap: wrap; }
   .country-actions h2 { margin: 0; }
   .map-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
