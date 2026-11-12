@@ -5,6 +5,7 @@ import os
 import platform
 import resource
 import shutil
+import statistics
 import subprocess
 import sys
 import tempfile
@@ -16,12 +17,25 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(
+    os.environ.get("POPCIRCLES_BENCH_ROOT", Path(__file__).resolve().parents[3])
+).resolve()
 DEFAULT_HISTORY_DIR = REPO_ROOT / "benchmarks/history"
 SAMPLE_COUNT = 3
 MAX_WORKERS = 256
 MAX_SHARE_PERCENT = 100
 SMOKE_ITERATIONS = 100
+COMPATIBILITY_FIELDS = (
+    "workload",
+    "workload_version",
+    "parameters",
+    "input_identity",
+    "cpu",
+    "os",
+    "rust_toolchain",
+    "build_profile",
+    "cache_mode",
+)
 REQUIRED = {
     "schema_version",
     "commit",
@@ -200,7 +214,105 @@ def smoke() -> None:
             if record.keys() < REQUIRED or len(record["raw_samples_seconds"]) != SAMPLE_COUNT:
                 print("benchmark smoke record is incomplete", file=sys.stderr)
                 raise SystemExit(1)
+        comparison_smoke()
         print("synthetic benchmark smoke passed")
+
+
+def compatibility_mismatches(
+    before: Mapping[str, object], after: Mapping[str, object]
+) -> list[dict[str, object]]:
+    mismatches: list[dict[str, object]] = []
+    for field in COMPATIBILITY_FIELDS:
+        left = before.get(field)
+        right = after.get(field)
+        if (
+            left != right
+            or left is None
+            or right is None
+            or (field == "cpu" and (left == "unavailable" or right == "unavailable"))
+        ):
+            mismatches.append({"field": field, "before": left, "after": right})
+    return mismatches
+
+
+def comparison_summary(
+    before: list[float], after: list[float], orders: list[list[str]]
+) -> dict[str, object]:
+    if len(before) != SAMPLE_COUNT or len(after) != SAMPLE_COUNT or len(orders) != SAMPLE_COUNT:
+        raise ValueError("comparison requires exactly three paired samples")  # noqa: EM101, TRY003
+    pairs = [
+        {"order": order, "before_seconds": left, "after_seconds": right}
+        for order, left, right in zip(orders, before, after, strict=True)
+    ]
+    return {
+        "pairs": pairs,
+        "medians_seconds": {
+            "before": statistics.median(before),
+            "after": statistics.median(after),
+        },
+    }
+
+
+def paired_result(
+    before: list[float],
+    after: list[float],
+    orders: list[list[str]],
+    mismatches: list[dict[str, object]],
+) -> dict[str, object]:
+    result = comparison_summary(before, after, orders)
+    before_median = statistics.median(before)
+    after_median = statistics.median(after)
+    result["medians_seconds"] = (
+        None if mismatches else {"before": before_median, "after": after_median}
+    )
+    result["delta_seconds"] = None if mismatches else after_median - before_median
+    result["delta_percent"] = (
+        (after_median / before_median - 1) * 100 if not mismatches and before_median else None
+    )
+    return result
+
+
+def comparison_smoke() -> None:
+    fields: dict[str, object] = {
+        "workload": "synthetic",
+        "workload_version": 1,
+        "parameters": {"iterations_per_sample": 100, "samples": 1},
+        "input_identity": "synthetic:v1",
+        "cpu": "fixture CPU",
+        "os": "fixture OS",
+        "rust_toolchain": "fixture rustc",
+        "build_profile": "synthetic-python",
+        "cache_mode": "synthetic-no-cache",
+    }
+    before = {**fields, "commit": "a" * 40}
+    after = {**fields, "commit": "b" * 40}
+    orders = [["before", "after"], ["after", "before"], ["before", "after"]]
+    summary = comparison_summary([3.0, 2.0, 4.0], [6.0, 4.0, 8.0], orders)
+    expected_pairs = [
+        {"order": order, "before_seconds": left, "after_seconds": right}
+        for order, left, right in zip(orders, [3.0, 2.0, 4.0], [6.0, 4.0, 8.0], strict=True)
+    ]
+    if summary["pairs"] != expected_pairs or summary["medians_seconds"] != {
+        "before": 3.0,
+        "after": 6.0,
+    }:
+        raise ValueError("synthetic comparison fixture lost pair order, samples, or medians")  # noqa: EM101, TRY003
+    if compatibility_mismatches(before, after):
+        raise ValueError("commit identity must not prevent a compatible comparison")  # noqa: EM101, TRY003
+    compatible = paired_result([3.0, 2.0, 4.0], [6.0, 4.0, 8.0], orders, [])
+    if compatible["delta_seconds"] != 3.0:  # noqa: PLR2004 — asserted synthetic fixture delta
+        raise ValueError("compatible fixture did not produce a numeric delta")  # noqa: EM101, TRY003
+    for field in COMPATIBILITY_FIELDS:
+        incompatible = {**after, field: object()}
+        mismatches = compatibility_mismatches(before, incompatible)
+        if [item["field"] for item in mismatches] != [field]:
+            raise ValueError(f"comparison fixture did not identify the `{field}` mismatch")  # noqa: EM102, TRY003
+        result = paired_result([3.0, 2.0, 4.0], [6.0, 4.0, 8.0], orders, mismatches)
+        if result["medians_seconds"] is not None or result["delta_seconds"] is not None:
+            raise ValueError(f"`{field}` mismatch did not suppress the numeric comparison")  # noqa: EM102, TRY003
+    unavailable = {**after, "cpu": "unavailable"}
+    if [item["field"] for item in compatibility_mismatches(before, unavailable)] != ["cpu"]:
+        raise ValueError("comparison fixture accepted an unavailable CPU identity")  # noqa: EM101, TRY003
 
 
 def positive_int(value: str) -> int:
@@ -280,6 +392,22 @@ def parser() -> argparse.ArgumentParser:
     country.add_argument("--spacing", type=positive_int, required=True)
     country.add_argument("--workers", type=worker_count, default=1)
     add_record_options(country)
+
+    compare = workloads.add_parser("compare")
+    compare.add_argument("--before", required=True)
+    compare.add_argument("--after", required=True)
+    compare.add_argument(
+        "target_workload",
+        choices=[
+            "synthetic",
+            "table-build",
+            "kernel",
+            "circle-evaluation",
+            "world-search",
+            "country-search",
+        ],
+    )
+    compare.add_argument("workload_args", nargs=argparse.REMAINDER)
     return root
 
 
@@ -483,7 +611,7 @@ def component_record(args: argparse.Namespace) -> dict[str, object]:
         json_number(measured["wall_time_seconds"], "wall time"),
         json_number(measured["cpu_time_seconds"], "CPU time"),
         measured["peak_rss_bytes"] if isinstance(measured["peak_rss_bytes"], int) else None,
-        "release",
+        "bench",
         1,
         cache_mode,
     )
@@ -580,6 +708,154 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     return search_record(args)
 
 
+def workload_argv(args: argparse.Namespace, history: Path, samples: int) -> list[str]:
+    arguments = [args.workload]
+    for name, original in vars(args).items():
+        if name in {"workload", "history_dir", "samples"} or original is None:
+            continue
+        value = repo_path(original) if isinstance(original, Path) else original
+        arguments.extend([f"--{name.replace('_', '-')}", str(value)])
+    arguments.extend(["--samples", str(samples), "--history-dir", str(history)])
+    return arguments
+
+
+def resolve_commit(revision: str) -> str:
+    return command_output(
+        "git", "rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}"
+    ).strip()
+
+
+def run_revision(
+    worktree: Path,
+    commit: str,
+    args: argparse.Namespace,
+    history: Path,
+) -> tuple[dict[str, object], Path]:
+    entrypoint = Path(__file__).resolve()
+    result = subprocess.run(  # noqa: S603 — fixed Python entrypoint and parsed workload argv
+        [sys.executable, str(entrypoint), *workload_argv(args, history, 1)],
+        cwd=worktree,
+        env={**os.environ, "POPCIRCLES_BENCH_ROOT": str(worktree)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip()
+        message = f"benchmark on {commit[:12]} failed: {detail}"
+        raise RuntimeError(message)
+    lines = result.stdout.strip().splitlines()
+    if not lines:
+        message = f"benchmark on {commit[:12]} returned no record path"
+        raise ValueError(message)
+    path = Path(lines[-1])
+    if not path.is_absolute():
+        path = worktree / path
+    measured = json_object(json.loads(path.read_text(encoding="utf-8")))
+    if measured.get("commit") != commit:
+        message = f"benchmark record does not identify revision {commit[:12]}"
+        raise ValueError(message)
+    if len(json_samples(measured.get("raw_samples_seconds"))) != 1:
+        raise ValueError("paired comparison expects one raw sample per invocation")  # noqa: EM101, TRY003
+    return measured, path
+
+
+def compare(args: argparse.Namespace, workload: argparse.Namespace) -> Path:  # noqa: PLR0915 — measured pass order is explicit
+    before_commit = resolve_commit(args.before)
+    after_commit = resolve_commit(args.after)
+    if before_commit == after_commit:
+        raise ValueError("comparison revisions must be different commits")  # noqa: EM101, TRY003
+    history = repo_path(workload.history_dir)
+    if history.resolve() == DEFAULT_HISTORY_DIR and command_output(
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=normal",
+        "--",
+        ".",
+        ":(exclude)benchmarks/history/**",
+    ):
+        raise ValueError("commit the benchmark source before writing a comparison")  # noqa: EM101, TRY003
+
+    before_samples: list[dict[str, object]] = []
+    after_samples: list[dict[str, object]] = []
+    before_paths: list[str] = []
+    after_paths: list[str] = []
+    orders = [["before", "after"], ["after", "before"], ["before", "after"]]
+    with tempfile.TemporaryDirectory(prefix="popcircles-compare-") as temporary:
+        root = Path(temporary)
+        before_tree = root / "before"
+        after_tree = root / "after"
+        command_output(
+            "git", "worktree", "add", "--detach", "--quiet", str(before_tree), before_commit
+        )
+        try:
+            command_output(
+                "git", "worktree", "add", "--detach", "--quiet", str(after_tree), after_commit
+            )
+            try:
+                first_before, path = run_revision(before_tree, before_commit, workload, history)
+                before_pass = first_before
+                before_paths.append(str(path))
+                first_after, path = run_revision(after_tree, after_commit, workload, history)
+                after_pass = first_after
+                after_paths.append(str(path))
+                with tempfile.TemporaryDirectory(prefix="popcircles-warmup-") as warmup:
+                    warm_history = Path(warmup)
+                    run_revision(before_tree, before_commit, workload, warm_history)
+                    run_revision(after_tree, after_commit, workload, warm_history)
+                for order in orders:
+                    for side in order:
+                        tree, commit = (
+                            (before_tree, before_commit)
+                            if side == "before"
+                            else (after_tree, after_commit)
+                        )
+                        measured, path = run_revision(tree, commit, workload, history)
+                        if side == "before":
+                            before_samples.append(measured)
+                            before_paths.append(str(path))
+                        else:
+                            after_samples.append(measured)
+                            after_paths.append(str(path))
+            finally:
+                if after_tree.exists():
+                    command_output("git", "worktree", "remove", "--force", str(after_tree))
+        finally:
+            command_output("git", "worktree", "remove", "--force", str(before_tree))
+
+    mismatches = compatibility_mismatches(before_pass, after_pass)
+    before_values = [json_samples(item["raw_samples_seconds"])[0] for item in before_samples]
+    after_values = [json_samples(item["raw_samples_seconds"])[0] for item in after_samples]
+    first_pass = {
+        "label": "first pass",
+        "before_seconds": json_samples(before_pass["raw_samples_seconds"])[0],
+        "after_seconds": json_samples(after_pass["raw_samples_seconds"])[0],
+    }
+    paired = paired_result(before_values, after_values, orders, mismatches)
+    output: dict[str, object] = {
+        "schema_version": 1,
+        "workload": workload.workload,
+        "before_commit": before_commit,
+        "after_commit": after_commit,
+        "parameters": before_pass.get("parameters"),
+        "compatibility_mismatches": mismatches,
+        "first_pass": first_pass,
+        "warmup": "one untimed invocation per revision",
+        "paired_samples": paired["pairs"],
+        "records": {"before": before_paths, "after": after_paths},
+        "medians_seconds": paired["medians_seconds"],
+        "delta_seconds": paired["delta_seconds"],
+        "delta_percent": paired["delta_percent"],
+    }
+    history.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
+    result = history / f"{timestamp}-{uuid.uuid4().hex[:8]}-comparison.json"
+    with result.open("x", encoding="utf-8") as target:
+        target.write(json.dumps(output, indent=2, sort_keys=True) + "\n")
+    return result
+
+
 def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "--capture":
         request = json_object(json.loads(sys.argv[2]))
@@ -603,6 +879,10 @@ def main() -> None:
         smoke()
         return
     args = parser().parse_args()
+    if args.workload == "compare":
+        workload_args = parser().parse_args([args.target_workload, *args.workload_args])
+        print(compare(args, workload_args))
+        return
     result = run(args)
     print(
         write_record(
