@@ -1,6 +1,6 @@
 # What CI runs is this repository's own `lint`, `typecheck` and `test` tasks, so it cannot drift from
-# `mise run ci`. Nothing caches a compile here: the called workflow caches its hook runner and no other
-# path, and a caller cannot add a step to a job it does not own.
+# `mise run ci`. The reusable workflow owns caches; paths that differ from language defaults are passed
+# here because a caller cannot add a step to a job it does not own.
 
 name: 🌜 ci
 
@@ -27,3 +27,5 @@ jobs:
       # build-binaries.yml builds the release binary and release-smoke.yml proves it; a build stage here
       # would compile the same tree again.
       run-build: false
+      # Match .cargo/config.toml so the reusable workflow caches the target directory Cargo uses.
+      cargo-target-cache-path: build/target
