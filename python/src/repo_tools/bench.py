@@ -12,7 +12,7 @@ import tempfile
 import time
 import tomllib
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
@@ -274,7 +274,7 @@ def paired_result(
 
 
 def country_answers_equal(
-    before: list[Mapping[str, object]], after: list[Mapping[str, object]]
+    before: Sequence[Mapping[str, object]], after: Sequence[Mapping[str, object]]
 ) -> bool:
     before_signature = before[0].get("answer_signature") if before else None
     after_signature = after[0].get("answer_signature") if after else None
