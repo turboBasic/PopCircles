@@ -1,0 +1,80 @@
+{
+  "after_commit": "635b96da9e02a32c67a8e2af1db5a67a0e08d370",
+  "answer_signatures": {
+    "after": {
+      "col": 12314,
+      "population_bits": "0x1.1eb3227a60236p+24",
+      "row": 5445
+    },
+    "before": {
+      "col": 12314,
+      "population_bits": "0x1.1eb3227a60236p+24",
+      "row": 5445
+    }
+  },
+  "answers_equal": true,
+  "before_commit": "8bc55da1d83115093c63032bfbed84250a7a1233",
+  "compatibility_mismatches": [],
+  "delta_percent": -5.164260224969541,
+  "delta_seconds": -1.165923250024207,
+  "first_pass": {
+    "after_seconds": 21.623949624947272,
+    "before_seconds": 22.915593749959953,
+    "label": "first pass"
+  },
+  "medians_seconds": {
+    "after": 21.41084862500429,
+    "before": 22.5767718750285
+  },
+  "paired_samples": [
+    {
+      "after_seconds": 21.48117425001692,
+      "before_seconds": 22.5767718750285,
+      "order": [
+        "before",
+        "after"
+      ]
+    },
+    {
+      "after_seconds": 21.41084862500429,
+      "before_seconds": 22.56357187498361,
+      "order": [
+        "after",
+        "before"
+      ]
+    },
+    {
+      "after_seconds": 21.37430395896081,
+      "before_seconds": 22.673722292063758,
+      "order": [
+        "before",
+        "after"
+      ]
+    }
+  ],
+  "parameters": {
+    "combination": "gpw-2020-gisco-2024",
+    "country": "CA",
+    "resolution": 1,
+    "samples": 1,
+    "share": 50,
+    "spacing": 256
+  },
+  "records": {
+    "after": [
+      "20261112T232636.184197Z-229acccb-country-search.json",
+      "20261112T232806.983676Z-664ba1d4-country-search.json",
+      "20261112T232828.951883Z-d24cee2d-country-search.json",
+      "20261112T232937.514046Z-46fff9ea-country-search.json"
+    ],
+    "before": [
+      "20261112T232550.402761Z-917aaa90-country-search.json",
+      "20261112T232744.946685Z-b2248125-country-search.json",
+      "20261112T232852.087151Z-22672a91-country-search.json",
+      "20261112T232915.360333Z-8b65ea1a-country-search.json"
+    ]
+  },
+  "schema_version": 2,
+  "warmup": "one untimed invocation per revision",
+  "workload": "country-search"
+}

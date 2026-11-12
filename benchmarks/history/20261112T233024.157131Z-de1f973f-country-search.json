@@ -1,0 +1,33 @@
+{
+  "answer_signature": {
+    "col": 34773,
+    "population_bits": "0x1.034bb7ec6ce48p+27",
+    "row": 11637
+  },
+  "build_profile": "release",
+  "cache_mode": "mapped",
+  "commit": "8bc55da1d83115093c63032bfbed84250a7a1233",
+  "cpu": "Apple M2 Pro",
+  "cpu_time_seconds": 5.850136,
+  "host_memory_bytes": 17179869184,
+  "input_identity": "78d961da8a451c9c8cab619773366982b5f6f12a6c6992126d88583ee37f906d",
+  "os": "Darwin 27.2.0 (arm64)",
+  "parameters": {
+    "combination": "gpw-2020-gisco-2024",
+    "country": "ID",
+    "resolution": 1,
+    "samples": 1,
+    "share": 50,
+    "spacing": 256
+  },
+  "peak_rss_bytes": 466501632,
+  "raw_samples_seconds": [
+    6.11138195800595
+  ],
+  "rust_toolchain": "rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew)",
+  "schema_version": 2,
+  "wall_time_seconds": 6.11138195800595,
+  "worker_count": 1,
+  "workload": "country-search",
+  "workload_version": 1
+}
