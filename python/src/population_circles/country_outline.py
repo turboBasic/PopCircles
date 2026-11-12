@@ -59,6 +59,25 @@ def _registered_boundary(
     return country, dataset, dataset.source_id_field
 
 
+def _boundaries_from_file(path: Path, source_id_field: str) -> dict[str, BaseGeometry]:
+    collection = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(collection, dict) or not isinstance(collection.get("features"), list):
+        refuse(f"country boundary file {path} has no feature collection")
+    boundaries: dict[str, BaseGeometry] = {}
+    for raw_feature in collection["features"]:
+        if not isinstance(raw_feature, dict):
+            refuse("country boundary file contains a malformed feature")
+        feature = cast(dict[str, object], raw_feature)
+        identifier = _feature_id(feature, source_id_field)
+        if identifier in boundaries:
+            refuse(f"country boundary file has duplicate {source_id_field} {identifier!r}")
+        geometry = feature.get("geometry")
+        if not isinstance(geometry, dict):
+            refuse(f"country boundary feature {identifier!r} has no geometry")
+        boundaries[identifier] = shape(cast(dict[str, Any], geometry))
+    return boundaries
+
+
 def load_country_boundaries(
     answer: Answer, registry: Registry, root: Path = REPO_ROOT
 ) -> dict[str, BaseGeometry] | None:
@@ -70,7 +89,6 @@ def load_country_boundaries(
     ):
         return None
     country, dataset, source_id_field = _registered_boundary(answer, registry)
-
     path = dataset.file(root)
     if not path.is_file():
         refuse(
@@ -89,21 +107,7 @@ def load_country_boundaries(
             f"country boundary file {path} does not match the registry; run mise run data:get",
             BoundaryIdentityError,
         )
-    collection = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(collection, dict) or not isinstance(collection.get("features"), list):
-        refuse(f"country boundary file {path} has no feature collection")
-    boundaries: dict[str, BaseGeometry] = {}
-    for raw_feature in collection["features"]:
-        if not isinstance(raw_feature, dict):
-            refuse("country boundary file contains a malformed feature")
-        feature = cast(dict[str, object], raw_feature)
-        identifier = _feature_id(feature, source_id_field)
-        if identifier in boundaries:
-            refuse(f"country boundary file has duplicate {source_id_field} {identifier!r}")
-        geometry = feature.get("geometry")
-        if not isinstance(geometry, dict):
-            refuse(f"country boundary feature {identifier!r} has no geometry")
-        boundaries[identifier] = shape(cast(dict[str, Any], geometry))
+    boundaries = _boundaries_from_file(path, source_id_field)
     if country.id not in boundaries:
         refuse(f"country boundary file has no feature with {source_id_field}={country.id!r}")
     return boundaries
@@ -111,7 +115,6 @@ def load_country_boundaries(
 
 def load_outline(answer: Answer, registry: Registry, root: Path = REPO_ROOT) -> BaseGeometry | None:
     boundaries = load_country_boundaries(answer, registry, root)
-    if boundaries is None:
+    if boundaries is None or answer.country is None:
         return None
-    assert answer.country is not None
     return boundaries[answer.country.id]

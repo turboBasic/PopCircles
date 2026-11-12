@@ -169,6 +169,18 @@ def title_of(answer: Answer) -> str:
     )
 
 
+def other_countries(
+    boundaries: Mapping[str, BaseGeometry] | None, answer: Answer
+) -> list[BaseGeometry]:
+    if boundaries is None or answer.country is None:
+        return []
+    return [
+        geometry
+        for identifier, geometry in boundaries.items()
+        if identifier != answer.country.id
+    ]
+
+
 def annotate(
     figure: Figure,
     y: float,
@@ -346,6 +358,11 @@ def render_file(
         (None, None) if no_coastlines else registered_coastline(registry)
     )
     boundaries = load_country_boundaries(answer, registry) if answer.country is not None else None
+    selected = (
+        boundaries.get(answer.country.id)
+        if boundaries is not None and answer.country is not None
+        else None
+    )
     figure = render(
         answer,
         projection,
@@ -354,17 +371,13 @@ def render_file(
         coastline_attribution=coastline_attribution,
         outline_and_credit=(
             (
-                boundaries[answer.country.id] if boundaries is not None and answer.country is not None else None,
+                selected,
                 boundary_attribution or citation(registry, answer.country.boundary_dataset),
             )
             if answer.country is not None
             else None
         ),
-        other_countries=(
-            [geometry for identifier, geometry in boundaries.items() if identifier != answer.country.id]
-            if boundaries is not None and answer.country is not None
-            else ()
-        ),
+        other_countries=other_countries(boundaries, answer),
     )
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
