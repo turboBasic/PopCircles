@@ -1,3 +1,4 @@
+import functools
 import hashlib
 import json
 from pathlib import Path
@@ -7,7 +8,12 @@ from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.circle_document import Answer, CountryIdentity
-from population_circles.dataset_registry import REPO_ROOT, BoundaryVector, Registry
+from population_circles.dataset_registry import (
+    REPO_ROOT,
+    BoundaryVector,
+    Registry,
+    country_boundary_dataset_key,
+)
 
 
 class BoundaryIdentityError(ValueError):
@@ -82,17 +88,9 @@ def _boundaries_from_file(path: Path, source_id_field: str) -> dict[str, BaseGeo
     return boundaries
 
 
-def load_country_boundaries(
-    answer: Answer, registry: Registry, root: Path = REPO_ROOT
-) -> dict[str, BaseGeometry] | None:
-    if (
-        answer.country is not None
-        and answer.selection is not None
-        and answer.selection.boundary_source.name.startswith("file:")
-        and answer.country.boundary_dataset not in registry.datasets
-    ):
-        return None
-    country, dataset, source_id_field = _registered_boundary(answer, registry)
+def _registered_boundaries(dataset: BoundaryVector, root: Path) -> dict[str, BaseGeometry]:
+    if dataset.source_id_field is None:
+        refuse("country boundary dataset has no registered identifier field", BoundaryIdentityError)
     path = dataset.file(root)
     if not path.is_file():
         refuse(
@@ -111,10 +109,62 @@ def load_country_boundaries(
             f"country boundary file {path} does not match the registry; run mise run data:get",
             BoundaryIdentityError,
         )
-    boundaries = _boundaries_from_file(path, source_id_field)
+    return _cached_boundaries(path, dataset.source_id_field, digest)
+
+
+# Gallery maps share one verified boundary snapshot; keep its parsed geometries for the process.
+@functools.cache
+def _cached_boundaries(
+    path: Path, source_id_field: str, _verified_digest: str
+) -> dict[str, BaseGeometry]:
+    return _boundaries_from_file(path, source_id_field)
+
+
+def load_country_boundaries(
+    answer: Answer, registry: Registry, root: Path = REPO_ROOT
+) -> dict[str, BaseGeometry] | None:
+    if (
+        answer.country is not None
+        and answer.selection is not None
+        and answer.selection.boundary_source.name.startswith("file:")
+        and answer.country.boundary_dataset not in registry.datasets
+    ):
+        return None
+    country, dataset, source_id_field = _registered_boundary(answer, registry)
+    if dataset.source_id_field != source_id_field:
+        refuse(
+            "country boundary identifier field does not match the registry", BoundaryIdentityError
+        )
+    boundaries = _registered_boundaries(dataset, root)
     if country.id not in boundaries:
         refuse(f"country boundary file has no feature with {source_id_field}={country.id!r}")
     return boundaries
+
+
+def load_map_boundaries(
+    answer: Answer, registry: Registry, root: Path = REPO_ROOT
+) -> dict[str, BaseGeometry]:
+    if answer.country is not None:
+        boundaries = load_country_boundaries(answer, registry, root)
+        return boundaries or {}
+    provenance = (
+        answer.caption.country_breakdown.provenance if answer.caption.country_breakdown else None
+    )
+    key = provenance.boundary_dataset if provenance is not None else country_boundary_dataset_key()
+    dataset = registry.datasets.get(key)
+    if dataset is None and provenance is None:
+        return {}
+    if not isinstance(dataset, BoundaryVector) or dataset.revision is None:
+        refuse(f"country boundary dataset {key!r} is not registered", BoundaryIdentityError)
+    if provenance is not None and (
+        provenance.boundary_revision != dataset.revision
+        or provenance.boundary_digest.casefold() != dataset.sha256.casefold()
+    ):
+        refuse(
+            f"country boundary identity for map does not match dataset {key!r}",
+            BoundaryIdentityError,
+        )
+    return _registered_boundaries(dataset, root)
 
 
 def load_outline(answer: Answer, registry: Registry, root: Path = REPO_ROOT) -> BaseGeometry | None:

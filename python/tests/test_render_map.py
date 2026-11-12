@@ -49,6 +49,12 @@ BOUNDARY_CREDIT = (
 )
 
 
+def empty_boundaries(
+    _answer: Answer, _registry: Registry, _root: Path = Path()
+) -> dict[str, BaseGeometry]:
+    return {}
+
+
 def document() -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -681,10 +687,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
 
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
-    def no_outline(_answer: Answer, _registry: Registry, _root: Path = Path()) -> None:
-        return None
-
-    monkeypatch.setattr(render_map_module, "load_outline", no_outline)
+    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
 
     def refuse_coastline(_registry: Registry) -> tuple[BaseGeometry, str]:
         message = "no-coastlines loaded coastline"
@@ -754,6 +757,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / f"map-{projection}.png"
     use_coastline_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
     monkeypatch.chdir(tmp_path)
 
     assert main(["--input", str(source), "--output", str(output), "--projection", projection]) == 0
