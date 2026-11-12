@@ -1,6 +1,6 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
-assertion_line: 1147
+assertion_line: 1141
 expression: document
 ---
 {
@@ -30,10 +30,10 @@ expression: document
         "radii_evaluated": 20,
         "radii_reused": 0,
         "searched": {
-          "blocks_examined": 9844,
-          "blocks_pruned": 7391,
-          "circles_evaluated": 2453,
-          "kernels_built": 916,
+          "blocks_examined": 10004,
+          "blocks_pruned": 7511,
+          "circles_evaluated": 2493,
+          "kernels_built": 1570,
           "levels": 60
         }
       },
