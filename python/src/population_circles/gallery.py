@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import shutil
 import subprocess
@@ -31,9 +32,6 @@ RENDER_INPUTS = tuple(
             *Path(__file__).parent.rglob("*.py"),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "registry.toml",
-            REPO_ROOT / "mise.toml",
-            REPO_ROOT / "pyproject.toml",
-            REPO_ROOT / "uv.lock",
         ],
         key=lambda path: path.as_posix(),
     )
@@ -86,7 +84,8 @@ class MapRenderContext:
 def render_context_digest() -> str:
     digest = hashlib.sha256()
     digest.update(sys.version.encode())
-    digest.update(mpl.__version__.encode())
+    for package in ("matplotlib", "pyproj", "shapely"):
+        digest.update(importlib.metadata.version(package).encode())
     digest.update(
         json.dumps(
             {key: repr(mpl.rcParams[key]) for key in sorted(mpl.rcParams)},
@@ -226,9 +225,8 @@ def render_document(
             outline_and_credit=outline_and_credit,
         )
     except Exception as error:
-        # The exception carries the document, because a traceback out of pydantic or
-        # matplotlib names neither. Re-raised rather than collected: `index.html` is written
-        # after the loop, so a failure publishes no gallery rather than one with a hole in it.
+        # The early-built page is removed by `build_gallery_output` if a map fails.
+        # Re-raise rather than publishing a partial gallery.
         error.add_note(f"raised while rendering {source}")
         raise
     figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
@@ -298,8 +296,7 @@ def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
     return {"world": [page_figure(one) for one in world], "countries": page_countries}
 
 
-def build_frontend(output: Path, data: PageData) -> None:
-    (output / "gallery-data.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+def build_frontend(output: Path) -> None:
     assets = output / "assets"
     if assets.is_symlink():
         assets.unlink()
@@ -322,6 +319,90 @@ def build_frontend(output: Path, data: PageData) -> None:
         ],
         check=True,
     )
+
+
+def build_gallery_output(
+    corpus: Path,
+    sources: list[tuple[Path, dict[str, Any]]],
+    generated: dict[str, dict[str, Any]],
+    missing: list[str],
+    context: MapRenderContext,
+) -> tuple[list[Drawn], list[Skipped]]:
+    output = context.output
+    drawn: list[Drawn] = []
+    skipped: list[Skipped] = []
+    reused_maps = rendered_maps = 0
+    unavailable = set(missing)
+    try:
+        build_frontend(output)
+        print(
+            f"Gallery: rendering {len(sources)} result documents",
+            file=sys.stderr,
+            flush=True,
+        )
+        for index, (source, payload) in enumerate(sources, start=1):
+            envelope = Envelope.model_validate(payload)
+            if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
+                print(
+                    f"Gallery: [{index}/{len(sources)}] skipping {source.name} "
+                    f"({envelope.document})",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                skipped.append(Skipped(source, envelope.document))
+                if source.name in generated:
+                    (output / source.name).write_text(
+                        json.dumps(payload, indent=2), encoding="utf-8"
+                    )
+                continue
+            if (
+                envelope.document == "country-smallest"
+                and payload["result"]["circle"]["target"]["total"] == 0
+            ):
+                print(
+                    f"Gallery: [{index}/{len(sources)}] skipping {source.name} (zero population)",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                skipped.append(Skipped(source, "zero-population country"))
+                unavailable.add(payload["result"]["country"]["name"])
+                (output / source.name).unlink(missing_ok=True)
+                (output / f"{source.stem}.png").unlink(missing_ok=True)
+                continue
+            drawn_map, reused = render_document(
+                source,
+                payload,
+                context,
+                index,
+                len(sources),
+            )
+            drawn.append(drawn_map)
+            if reused:
+                reused_maps += 1
+            else:
+                rendered_maps += 1
+
+        for name, payload in generated.items():
+            destination = corpus / name
+            content = (json.dumps(payload, indent=2) + "\n").encode()
+            if destination.is_file() and same_country_answer(destination.read_bytes(), content):
+                continue
+            destination.write_bytes(content)
+        data = page_data(drawn, sorted(unavailable))
+        (output / "gallery-data.json").write_text(
+            json.dumps(data, indent=2) + "\n", encoding="utf-8"
+        )
+    except Exception:
+        (output / "index.html").unlink(missing_ok=True)
+        (output / "gallery-data.json").unlink(missing_ok=True)
+        raise
+    print(
+        f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "
+        f"{reused_maps} reused, {rendered_maps} rendered)",
+        file=sys.stderr,
+        flush=True,
+    )
+    return drawn, skipped
 
 
 def country_result_document(
@@ -597,10 +678,6 @@ def build(
         invoke, corpus, refresh_country_sweep=refresh_country_sweep
     )
 
-    drawn: list[Drawn] = []
-    skipped: list[Skipped] = []
-    reused_maps = rendered_maps = 0
-    unavailable = set(missing)
     sources = [
         (source, json.loads(source.read_text(encoding="utf-8")))
         for source in sorted(corpus.glob("*.json"))
@@ -608,65 +685,13 @@ def build(
     ]
     sources.extend((corpus / name, payload) for name, payload in generated.items())
     sources.sort(key=lambda item: item[0].name)
-    print(
-        f"Gallery: rendering {len(sources)} result documents",
-        file=sys.stderr,
-        flush=True,
+    return build_gallery_output(
+        corpus,
+        sources,
+        generated,
+        missing,
+        render_context,
     )
-    for index, (source, payload) in enumerate(sources, start=1):
-        envelope = Envelope.model_validate(payload)
-        if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
-            print(
-                f"Gallery: [{index}/{len(sources)}] skipping {source.name} ({envelope.document})",
-                file=sys.stderr,
-                flush=True,
-            )
-            skipped.append(Skipped(source, envelope.document))
-            if source.name in generated:
-                (output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
-            continue
-        if (
-            envelope.document == "country-smallest"
-            and payload["result"]["circle"]["target"]["total"] == 0
-        ):
-            print(
-                f"Gallery: [{index}/{len(sources)}] skipping {source.name} (zero population)",
-                file=sys.stderr,
-                flush=True,
-            )
-            skipped.append(Skipped(source, "zero-population country"))
-            unavailable.add(payload["result"]["country"]["name"])
-            (output / source.name).unlink(missing_ok=True)
-            (output / f"{source.stem}.png").unlink(missing_ok=True)
-            continue
-        drawn_map, reused = render_document(
-            source,
-            payload,
-            render_context,
-            index,
-            len(sources),
-        )
-        drawn.append(drawn_map)
-        if reused:
-            reused_maps += 1
-        else:
-            rendered_maps += 1
-
-    for name, payload in generated.items():
-        destination = corpus / name
-        content = (json.dumps(payload, indent=2) + "\n").encode()
-        if destination.is_file() and same_country_answer(destination.read_bytes(), content):
-            continue
-        destination.write_bytes(content)
-    data = page_data(drawn, sorted(unavailable))
-    build_frontend(output, data)
-    print(
-        f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "
-        f"{reused_maps} reused, {rendered_maps} rendered)",
-        file=sys.stderr,
-        flush=True,
-    )
-    return drawn, skipped
 
 
 def parse(argv: list[str] | None = None) -> argparse.Namespace:

@@ -369,6 +369,12 @@ def test_map_cache_key_changes_for_each_render_input_category() -> None:
     )
 
 
+def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
+    assert CORPUS.parent / "mise.toml" not in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "pyproject.toml" not in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "uv.lock" not in gallery_module.RENDER_INPUTS
+
+
 def test_render_context_hashes_source_and_configuration_files(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
