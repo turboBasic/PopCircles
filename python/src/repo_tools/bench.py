@@ -83,7 +83,7 @@ def cpu_name() -> str:
 
 
 def run_synthetic(iterations: int) -> tuple[list[float], float, float]:
-    samples = []
+    samples: list[float] = []
     started = time.perf_counter()
     cpu_started = time.process_time()
     value = b"popcircles synthetic benchmark v1"
