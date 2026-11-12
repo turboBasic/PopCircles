@@ -12,7 +12,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
-from matplotlib.patches import PathPatch, Rectangle
+from matplotlib.patches import PathPatch
 from matplotlib.path import Path as DrawPath
 from shapely import get_coordinates
 from shapely.geometry import shape
@@ -24,7 +24,7 @@ from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
-from population_circles.country_outline import load_country_boundaries
+from population_circles.country_outline import load_country_boundaries, load_outline
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
@@ -280,15 +280,10 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
         axes.set_xlim(west, east)
         axes.set_ylim(south, north)
         if view.country_outline is not None:
-            axes.add_patch(
-                Rectangle(
-                    (west, south),
-                    east - west,
-                    north - south,
-                    facecolor=OCEAN,
-                    edgecolor="none",
-                    zorder=0,
-                ),
+            axes.imshow(
+                [[mpl.colors.to_rgba(OCEAN)]],
+                extent=(west, east, south, north),
+                zorder=0,
             )
 
         draw(axes, view, coastline, other_countries)
@@ -355,10 +350,10 @@ def render_file(
     coastline, coastline_attribution = (
         (None, None) if no_coastlines else registered_coastline(registry)
     )
-    boundaries = load_country_boundaries(answer, registry) if answer.country is not None else None
-    selected = (
-        boundaries.get(answer.country.id)
-        if boundaries is not None and answer.country is not None
+    selected = load_outline(answer, registry) if answer.country is not None else None
+    boundaries = (
+        load_country_boundaries(answer, registry)
+        if selected is not None and answer.country is not None
         else None
     )
     figure = render(
@@ -375,7 +370,11 @@ def render_file(
             if answer.country is not None
             else None
         ),
-        other_countries=other_countries(boundaries, answer),
+        **(
+            {"other_countries": other_countries(boundaries, answer)}
+            if answer.country is not None
+            else {}
+        ),
     )
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
