@@ -9,6 +9,7 @@ import pytest
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
+from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.render_map as render_map_module
@@ -19,6 +20,8 @@ from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
 from population_circles.render_map import (
     COASTLINE_DATASET,
+    COUNTRY_LAYER,
+    OUTLINE_WIDTH,
     MissingCountryOutlineError,
     UnregisteredDatasetError,
     citation,
@@ -53,6 +56,11 @@ def empty_boundaries(
     _answer: Answer, _registry: Registry, _root: Path = Path()
 ) -> dict[str, BaseGeometry]:
     return {}
+
+
+@pytest.fixture(autouse=True)
+def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
 
 
 def document() -> dict[str, Any]:
@@ -577,6 +585,25 @@ def test_the_footer_artist_carries_the_citation() -> None:
     # The string handed in, not the one the registry holds: `render` draws what it is given, which
     # is the whole of what this test can prove about it.
     assert MARKER in drawn_text
+
+
+def test_world_country_boundaries_share_one_standard_width_patch() -> None:
+    figure = render(
+        circle_of(document()),
+        PLATE_CARREE,
+        MARKER,
+        coastline=None,
+        other_countries=[box(-20, -10, -10, 0), box(10, 0, 20, 10)],
+    )
+    try:
+        country_patches = [
+            patch for patch in figure.axes[0].patches if patch.get_zorder() == COUNTRY_LAYER
+        ]
+        assert len(country_patches) == 1
+        assert country_patches[0].get_linewidth() == OUTLINE_WIDTH
+        assert country_patches[0].get_facecolor()[:3] == (1.0, 1.0, 1.0)
+    finally:
+        plt.close(figure)
 
 
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])

@@ -79,7 +79,8 @@ COASTLINE_LAYER = 2
 CIRCLE_LAYER = 3
 COUNTRY_LAYER = 2.5
 OCEAN = "#DFFFFD"
-COUNTRY = "#65cbc1"
+COUNTRY = "#65CBC1"
+OUTLINE_WIDTH = 0.6
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
 
@@ -127,7 +128,7 @@ def outline(
     layer: float = HORIZON_LAYER,
     *,
     facecolor: str = "none",
-    linewidth: float = 0.6,
+    linewidth: float = OUTLINE_WIDTH,
 ) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
@@ -211,10 +212,21 @@ def draw(
     stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
     if coastline is not None:
         stroke(axes, project(view, coastline), "dimgrey", 0.5, COASTLINE_LAYER)
+    country_paths: list[DrawPath] = []
     for geometry in other_countries:
         projected = project(view, geometry)
         if all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
-            outline(axes, projected, COUNTRY_LAYER, facecolor="white")
+            country_paths.extend(compound(polygon) for polygon in polygons(projected))
+    if country_paths:
+        axes.add_patch(
+            PathPatch(
+                DrawPath.make_compound_path(*country_paths),
+                facecolor="white",
+                edgecolor="0.4",
+                linewidth=OUTLINE_WIDTH,
+                zorder=COUNTRY_LAYER,
+            ),
+        )
     if view.country_outline is not None:
         outline(axes, view.country_outline, COUNTRY_LAYER, facecolor=COUNTRY, linewidth=1)
     fill_circle(axes, view.circle)

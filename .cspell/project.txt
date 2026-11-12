@@ -15,9 +15,9 @@ commitizen
 cspell
 deepseek
 fignums
-imshow
 flycheck
 hardlink
+imshow
 iostat
 jactionlint
 loadgroup
@@ -31,7 +31,6 @@ popcircles
 prek
 pyright
 pytest
-xdist
 ruff
 rustls
 shellcheck
@@ -40,16 +39,17 @@ taplo
 turboBasic
 ureq
 vite
+xdist
 
 # --- Domain vocabulary ---
 antimeridian
 arcmin
 arcminute
 arcminutes
+arcsec
 basemap
 binade
 binades
-arcsec
 datasheet
 equirectangular
 geotiff

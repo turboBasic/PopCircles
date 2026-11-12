@@ -16,7 +16,12 @@ from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import load
 from population_circles.map_frame import ORTHOGRAPHIC
-from test_render_map import DATASET, PNG_MAGIC, document
+from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
+
+
+@pytest.fixture(autouse=True)
+def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
 
 
 @pytest.fixture
