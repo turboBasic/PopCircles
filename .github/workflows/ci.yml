@@ -27,4 +27,3 @@ jobs:
       # build-binaries.yml builds the release binary and release-smoke.yml proves it; a build stage here
       # would compile the same tree again.
       run-build: false
-      cargo-target-cache-path: build/target
