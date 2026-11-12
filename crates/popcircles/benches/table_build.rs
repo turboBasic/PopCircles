@@ -19,6 +19,10 @@ use popcircles::grid::Grid;
 use popcircles::raster::{CellTallies, RasterError, RasterRow, RasterSource, sanitise_row};
 use popcircles::table::cache::Cache;
 use popcircles::table::{Decimation, build};
+use serde_json::json;
+
+#[path = "support/options.rs"]
+mod options;
 
 /// The registry raster's sentinel, so the generated rows travel the path a real strip travels.
 const NODATA: f32 = -3.402_823e38;
@@ -164,6 +168,20 @@ fn through_the_cache(source: Grid, factor: u32, base: &std::path::Path) -> (f64,
 }
 
 fn main() {
+    let options = match options::Options::from_env() {
+        Ok(options) => options,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    if !options.is_empty() {
+        if let Err(error) = selected(&options) {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+        return;
+    }
     println!("table build — a generated raster at the registry's mix of nodata, zero and counts\n");
     println!(
         "{:>13}  {:>4}  {:>13}  {:>13}  {:>9}  {:>12}",
@@ -201,4 +219,53 @@ fn main() {
     println!(
         "\nthe same 933 120 000 cells through the cache writer: {seconds:.3} s for {bytes} payload bytes"
     );
+}
+
+fn selected(options: &options::Options) -> Result<(), String> {
+    options.only(&["width", "height", "factor", "mode", "samples"])?;
+    let width: u32 = options.required("width")?;
+    let height: u32 = options.required("height")?;
+    let factor: u32 = options.required("factor")?;
+    let mode = options.text("mode").unwrap_or("discard");
+    let samples: u32 = options.optional("samples", 3)?;
+    if width == 0 || height == 0 || factor == 0 || samples == 0 {
+        return Err("width, height, factor and samples must be positive".to_owned());
+    }
+    if !matches!(mode, "discard" | "write") {
+        return Err("mode must be `discard` or `write`".to_owned());
+    }
+    let source = grid(width, height);
+    Decimation::new(source, factor).map_err(|error| error.to_string())?;
+    let mut raw = Vec::with_capacity(usize::try_from(samples).unwrap_or(usize::MAX));
+    let mut payload_bytes = None;
+    for _ in 0..samples {
+        let seconds = if mode == "discard" {
+            discarding(source, factor).0
+        } else {
+            std::fs::create_dir_all(workspace("out")).map_err(|error| {
+                format!("could not create the repository scratch directory: {error}")
+            })?;
+            let (seconds, bytes) =
+                through_the_cache(source, factor, &workspace("out/bench-table-build"));
+            payload_bytes = Some(bytes);
+            seconds
+        };
+        raw.push(seconds);
+    }
+    println!(
+        "{}",
+        json!({
+            "samples_seconds": raw,
+            "input_identity": "synthetic:generated-raster-v1",
+            "parameters": {
+                "width": width,
+                "height": height,
+                "factor": factor,
+                "mode": mode,
+                "samples": samples,
+            },
+            "payload_bytes": payload_bytes,
+        })
+    );
+    Ok(())
 }
