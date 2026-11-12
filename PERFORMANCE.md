@@ -252,6 +252,10 @@ Rust toolchain, build profile, and cache mode. If any field differs—or a CPU m
 summary names the mismatch and leaves medians and deltas empty. Both commits' records and their raw
 samples remain available for review.
 
+`workload_version` is suite-wide. Increment it when a change alters any workload's timed operation,
+sample definition, or input interpretation; CLI, output-format, and metadata-only changes do not need a
+bump. A semantic change therefore keeps every older record from comparing numerically.
+
 <!-- Links -->
 
 [inputs]: USAGE.md#choosing-the-inputs
