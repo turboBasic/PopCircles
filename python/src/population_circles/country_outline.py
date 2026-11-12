@@ -61,10 +61,14 @@ def _registered_boundary(
 
 def _boundaries_from_file(path: Path, source_id_field: str) -> dict[str, BaseGeometry]:
     collection = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(collection, dict) or not isinstance(collection.get("features"), list):
+    if not isinstance(collection, dict):
         refuse(f"country boundary file {path} has no feature collection")
+    collection = cast(dict[str, object], collection)
+    features = collection.get("features")
+    if not isinstance(features, list):
+        refuse(f"country boundary file {path} has no feature list")
     boundaries: dict[str, BaseGeometry] = {}
-    for raw_feature in collection["features"]:
+    for raw_feature in cast(list[object], features):
         if not isinstance(raw_feature, dict):
             refuse("country boundary file contains a malformed feature")
         feature = cast(dict[str, object], raw_feature)
