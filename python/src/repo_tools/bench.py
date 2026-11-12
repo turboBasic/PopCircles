@@ -1,7 +1,3 @@
-"""Write immutable benchmark history records."""
-
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -162,7 +158,7 @@ def smoke() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--workload", choices=["synthetic"], default="synthetic")
     parser.add_argument("--history-dir", type=Path, default=DEFAULT_HISTORY_DIR)
     parser.add_argument("--iterations", type=int, default=10_000)
