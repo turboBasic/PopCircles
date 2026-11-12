@@ -202,6 +202,60 @@ to individual cells, so changing spacing changes the work rather than the result
 When comparing spacing settings, use a radius that needs a fresh search. If a ledger already holds
 that radius, the program reuses its result and does not exercise either spacing setting.
 
+## Repeatable benchmark runs
+
+Run `uv run popcircles-bench --help` for the workload list and `uv run popcircles-bench <workload> --help`
+for that workload's required inputs. The named workloads are `table-build`, `kernel`,
+`circle-evaluation`, `world-search`, and `country-search`. They are opt-in; no command fetches input data
+or builds a search table for you. World search needs an existing cache. Country search needs an existing
+prepared country selection. Comparisons link only the selected, already-present inputs into temporary
+checkouts.
+
+The synthetic path is bounded and needs no data. CI runs its record and comparison smoke checks without
+checking timing thresholds. To write a local synthetic record:
+
+```sh
+uv run popcircles-bench synthetic --iterations 10000
+```
+
+The component workloads use explicit dimensions and settings. For example:
+
+```sh
+uv run popcircles-bench kernel --width 4320 --height 2160 --radius-km 800 --rows 128
+uv run popcircles-bench table-build --width 4320 --height 2160 --factor 10 --mode discard
+uv run popcircles-bench circle-evaluation --radius-km 800 --centres 1000
+```
+
+Search workloads also require explicit prepared inputs. For example, give `world-search` a registered
+dataset and an existing cache base, or give `country-search` a combination, resolution, country, and
+population share. `table-build --mode write` writes a temporary payload and removes it afterwards; a
+full-resolution table is about 7.5 GB, so keep this explicit workload separate from write-free runs.
+
+By default, each run writes a uniquely named JSON record under `benchmarks/history/`. Review its machine,
+toolchain, inputs, parameters, cache mode, and raw samples before committing it as history. Records are
+immutable; a later run never overwrites one. Use `--history-dir` to write records elsewhere.
+
+Compare two commits with the same workload arguments. For example, after setting `BASE` and `HEAD` to
+the two commit IDs:
+
+```sh
+uv run popcircles-bench compare --before "$BASE" --after "$HEAD" synthetic --iterations 10000
+```
+
+The comparison records one traversal per commit as `first pass`, runs an untimed warmup on each commit,
+then records three warmed pairs in alternating revision order. It does not clear the operating system's
+cache, so `first pass` is not a controlled cold-cache measurement. The sample records and a comparison
+summary are written to the selected history directory.
+
+A numeric comparison requires matching workload version and parameters, input identity, CPU model, OS,
+Rust toolchain, build profile, and cache mode. If any field differs—or a CPU model is unavailable—the
+summary names the mismatch and leaves medians and deltas empty. Both commits' records and their raw
+samples remain available for review.
+
+`workload_version` is suite-wide. Increment it when a change alters any workload's timed operation,
+sample definition, or input interpretation; CLI, output-format, and metadata-only changes do not need a
+bump. A semantic change therefore keeps every older record from comparing numerically.
+
 <!-- Links -->
 
 [inputs]: USAGE.md#choosing-the-inputs

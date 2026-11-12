@@ -14,6 +14,10 @@ use std::time::Instant;
 use popcircles::geodesy::{LatLon, RadiusKm};
 use popcircles::grid::Grid;
 use popcircles::kernel::Kernel;
+use serde_json::json;
+
+#[path = "support/options.rs"]
+mod options;
 
 /// Rows sampled per shape rather than every row, and printed as such: a full-resolution grid has 21 600
 /// rows and a 8 000 km kernel spans 17 000 of them, so the whole sweep would be a quarter of an hour for
@@ -42,8 +46,8 @@ fn radius(km: f64) -> RadiusKm {
 
 /// Builds `SAMPLED_ROWS` kernels evenly spaced over the grid, and reports the seconds and the rows those
 /// kernels covered — the second figure being what the cost actually scales with.
-fn sweep(grid: &Grid, radius: RadiusKm) -> (f64, u64) {
-    let stride = (grid.height() / SAMPLED_ROWS).max(1);
+fn sweep(grid: &Grid, radius: RadiusKm, sampled_rows: u32) -> (f64, u64) {
+    let stride = (grid.height() / sampled_rows).max(1);
     let mut rows_covered = 0u64;
     let started = Instant::now();
     for index in (0..grid.height()).step_by(stride as usize) {
@@ -56,6 +60,20 @@ fn sweep(grid: &Grid, radius: RadiusKm) -> (f64, u64) {
 }
 
 fn main() {
+    let options = match options::Options::from_env() {
+        Ok(options) => options,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    if !options.is_empty() {
+        if let Err(error) = selected(&options) {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+        return;
+    }
     println!(
         "kernel construction — {SAMPLED_ROWS} kernels per shape, evenly spaced over the grid\n"
     );
@@ -67,7 +85,7 @@ fn main() {
     let shapes = [grid(4320, 2160), grid(43200, 21600)];
     for shape in shapes {
         for radius_km in [200.0, 800.0, 3300.0, 8000.0] {
-            let (seconds, rows_covered) = sweep(&shape, radius(radius_km));
+            let (seconds, rows_covered) = sweep(&shape, radius(radius_km), SAMPLED_ROWS);
             // Every widening here is of a count under 2^24, which f64 holds exactly.
             #[allow(clippy::cast_precision_loss)]
             let per_kernel = seconds * 1e6 / f64::from(SAMPLED_ROWS);
@@ -81,4 +99,37 @@ fn main() {
             );
         }
     }
+}
+
+fn selected(options: &options::Options) -> Result<(), String> {
+    options.only(&["width", "height", "radius-km", "rows", "samples"])?;
+    let width: u32 = options.required("width")?;
+    let height: u32 = options.required("height")?;
+    let km: f64 = options.required("radius-km")?;
+    let rows: u32 = options.optional("rows", SAMPLED_ROWS)?;
+    let samples: u32 = options.optional("samples", 3)?;
+    if width == 0 || height == 0 || rows == 0 || samples == 0 {
+        return Err("width, height, rows and samples must be positive".to_owned());
+    }
+    let radius = RadiusKm::new(km).map_err(|error| error.to_string())?;
+    let shape = grid(width, height);
+    let mut raw = Vec::with_capacity(usize::try_from(samples).unwrap_or(usize::MAX));
+    for _ in 0..samples {
+        let (seconds, _) = sweep(&shape, radius, rows);
+        raw.push(seconds);
+    }
+    println!(
+        "{}",
+        json!({
+            "samples_seconds": raw,
+            "parameters": {
+                "width": width,
+                "height": height,
+                "radius_km": km,
+                "sampled_rows": rows,
+                "samples": samples,
+            },
+        })
+    );
+    Ok(())
 }

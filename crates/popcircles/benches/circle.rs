@@ -23,6 +23,10 @@ use popcircles::grid::Grid;
 use popcircles::kernel::Kernel;
 use popcircles::table::cache::{Cache, Identity};
 use popcircles::table::{Decimation, Table};
+use serde_json::json;
+
+#[path = "support/options.rs"]
+mod options;
 
 /// The 5 arcmin shape, whose table is 74.7 MB and therefore resident.
 const RESIDENT_SHAPE: (u32, u32) = (4320, 2160);
@@ -147,6 +151,20 @@ fn header() {
 }
 
 fn main() {
+    let options = match options::Options::from_env() {
+        Ok(options) => options,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    if !options.is_empty() {
+        if let Err(error) = selected(&options) {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+        return;
+    }
     println!("circle evaluation — one rectangle query per row a kernel spans\n");
     header();
 
@@ -164,6 +182,56 @@ fn main() {
     }
 
     mapped();
+}
+
+fn selected(options: &options::Options) -> Result<(), String> {
+    options.only(&["radius-km", "centres", "samples", "cache"])?;
+    let km: f64 = options.required("radius-km")?;
+    let centres: u32 = options.required("centres")?;
+    let samples: u32 = options.optional("samples", 3)?;
+    if centres == 0 || samples == 0 {
+        return Err("centres and samples must be positive".to_owned());
+    }
+    let radius = RadiusKm::new(km).map_err(|error| error.to_string())?;
+    let mut raw = Vec::with_capacity(usize::try_from(samples).unwrap_or(usize::MAX));
+    let input_identity = if let Some(base) = options.text("cache") {
+        let shape = grid(REGISTRY_SHAPE.0, REGISTRY_SHAPE.1);
+        let identity = Identity {
+            digest: REGISTRY_DIGEST,
+            decimation: Decimation::none(shape),
+        };
+        let mapped = Cache::new(base)
+            .open(&identity)
+            .map_err(|error| error.to_string())?;
+        let cells = mapped.cells().map_err(|error| error.to_string())?;
+        let table = Table::new(shape, cells).map_err(|error| error.to_string())?;
+        for _ in 0..samples {
+            raw.push(evaluate(&table, radius, centres).0);
+        }
+        format!("cache:{base}")
+    } else {
+        let shape = grid(RESIDENT_SHAPE.0, RESIDENT_SHAPE.1);
+        let cells = resident_cells(&shape);
+        let table = Table::new(shape, &cells).map_err(|error| error.to_string())?;
+        for _ in 0..samples {
+            raw.push(evaluate(&table, radius, centres).0);
+        }
+        "synthetic:resident-ramp-v1".to_owned()
+    };
+    println!(
+        "{}",
+        json!({
+            "samples_seconds": raw,
+            "input_identity": input_identity,
+            "parameters": {
+                "radius_km": km,
+                "centres": centres,
+                "samples": samples,
+                "cache": options.text("cache"),
+            },
+        })
+    );
+    Ok(())
 }
 
 /// The full-resolution table through mmap, when one is there.
