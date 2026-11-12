@@ -38,6 +38,7 @@ sigstore
 taplo
 turboBasic
 ureq
+vite
 
 # --- Domain vocabulary ---
 antimeridian

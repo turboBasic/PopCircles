@@ -84,6 +84,10 @@ description = "Generate the 50% country sweep and render result documents to a g
 depends = ["deps"]
 run = "uv run render-gallery"
 
+[tasks."gallery:dev"]
+description = "Serve the generated gallery locally"
+run = "python -m http.server --bind 127.0.0.1 --directory build/gallery 8000"
+
 [tasks."gallery:publish"]
 description = "Build and publish the gallery through the draft release handoff"
 depends = ["deps"]
