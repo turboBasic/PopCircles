@@ -245,8 +245,11 @@ fn selected(options: &options::Options) -> Result<(), String> {
             std::fs::create_dir_all(workspace("out")).map_err(|error| {
                 format!("could not create the repository scratch directory: {error}")
             })?;
-            let (seconds, bytes) =
-                through_the_cache(source, factor, &workspace("out/bench-table-build"));
+            let output = tempfile::Builder::new()
+                .prefix("bench-table-build-")
+                .tempdir_in(workspace("out"))
+                .map_err(|error| format!("could not create temporary table output: {error}"))?;
+            let (seconds, bytes) = through_the_cache(source, factor, &output.path().join("table"));
             payload_bytes = Some(bytes);
             seconds
         };
