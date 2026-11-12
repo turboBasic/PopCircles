@@ -2,7 +2,7 @@ import argparse
 import json
 import math
 import textwrap
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import cast
 
@@ -280,8 +280,9 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
         axes.set_xlim(west, east)
         axes.set_ylim(south, north)
         if view.country_outline is not None:
-            axes.imshow(
-                [[mpl.colors.to_rgba(OCEAN)]],
+            draw_image = cast(Callable[..., object], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+            draw_image(
+                [[(223 / 255, 1.0, 253 / 255, 1.0)]],
                 extent=(west, east, south, north),
                 zorder=0,
             )
