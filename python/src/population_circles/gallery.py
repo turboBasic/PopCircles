@@ -1,10 +1,14 @@
 import argparse
+import concurrent.futures
+import contextvars
 import hashlib
 import importlib.metadata
 import json
+import os
 import shutil
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict, cast
@@ -79,6 +83,52 @@ class MapRenderContext:
     output: Path
     cache_directory: Path | None
     digest: str
+
+
+_WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
+    "gallery_render_context", default=None
+)
+
+
+def init_render_worker(context: MapRenderContext) -> None:
+    _WORKER_CONTEXT.set(context)
+
+
+def render_document_in_worker(
+    job: tuple[Path, dict[str, Any], int, int],
+) -> tuple[Drawn, bool]:
+    context = _WORKER_CONTEXT.get()
+    if context is None:
+        message = "gallery render worker was not initialized"
+        raise RuntimeError(message)
+    source, payload, index, total = job
+    return render_document(source, payload, context, index, total)
+
+
+def render_worker_count(map_count: int) -> int:
+    return min(max(1, (os.process_cpu_count() or 1) - 1), map_count)
+
+
+def render_documents(
+    jobs: list[tuple[Path, dict[str, Any], int, int]], context: MapRenderContext
+) -> tuple[list[tuple[Drawn, bool]], int, float]:
+    workers = render_worker_count(len(jobs))
+    started = time.perf_counter()
+    if workers == 1:
+        results = [
+            render_document(source, payload, context, index, total)
+            for source, payload, index, total in jobs
+        ]
+    elif workers > 1:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=workers,
+            initializer=init_render_worker,
+            initargs=(context,),
+        ) as pool:
+            results = list(pool.map(render_document_in_worker, jobs))
+    else:
+        results = []
+    return results, workers, time.perf_counter() - started
 
 
 def render_context_digest() -> str:
@@ -333,6 +383,7 @@ def build_gallery_output(
     skipped: list[Skipped] = []
     reused_maps = rendered_maps = 0
     unavailable = set(missing)
+    render_jobs: list[tuple[Path, dict[str, Any], int, int]] = []
     try:
         build_frontend(output)
         print(
@@ -369,18 +420,20 @@ def build_gallery_output(
                 (output / source.name).unlink(missing_ok=True)
                 (output / f"{source.stem}.png").unlink(missing_ok=True)
                 continue
-            drawn_map, reused = render_document(
-                source,
-                payload,
-                context,
-                index,
-                len(sources),
-            )
+            render_jobs.append((source, payload, index, len(sources)))
+
+        drawn_results, workers, render_seconds = render_documents(render_jobs, context)
+        for drawn_map, reused in drawn_results:
             drawn.append(drawn_map)
             if reused:
                 reused_maps += 1
             else:
                 rendered_maps += 1
+        print(
+            f"Gallery: maps used {workers} workers and took {render_seconds:.2f}s",
+            file=sys.stderr,
+            flush=True,
+        )
 
         for name, payload in generated.items():
             destination = corpus / name

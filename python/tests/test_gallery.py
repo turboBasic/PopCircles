@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -17,13 +18,21 @@ from population_circles.circle_document import CIRCLE_KINDS, Answer
 from population_circles.circle_map import Invoke, WorkflowError
 from population_circles.dataset_registry import Registry, load
 from population_circles.gallery import build, country_documents
-from population_circles.render_map import COASTLINE_DATASET, UnregisteredDatasetError
+from population_circles.render_map import (
+    COASTLINE_DATASET,
+    UnregisteredDatasetError,
+    registered_coastline,
+)
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 EXPECTED_COUNTRY_CLI_CALLS = 2
+RENDER_WORKER_COUNT = gallery_module.render_worker_count
+AVAILABLE_CPUS = 6
+EXPECTED_WORKERS = AVAILABLE_CPUS - 1
+SMALL_MAP_COUNT = 2
 
 
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -47,6 +56,14 @@ def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         ),
         encoding="utf-8",
     )
+
+
+@pytest.fixture(autouse=True)
+def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    def one_worker(count: int) -> int:
+        return min(1, count)
+
+    monkeypatch.setattr(gallery_module, "render_worker_count", one_worker)
 
 
 def document(kind: str, dataset: str = DATASET) -> dict[str, Any]:
@@ -388,10 +405,71 @@ def test_render_context_hashes_source_and_configuration_files(
     assert gallery_module.render_context_digest() != first
 
 
+def test_render_worker_count_leaves_one_cpu_free(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os, "process_cpu_count", lambda: AVAILABLE_CPUS)
+
+    assert RENDER_WORKER_COUNT(20) == EXPECTED_WORKERS
+    assert RENDER_WORKER_COUNT(SMALL_MAP_COUNT) == SMALL_MAP_COUNT
+
+
+def test_serial_and_concurrent_gallery_maps_are_identical(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+
+    def skip_frontend(_output: Path) -> None:
+        return
+
+    monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
+    payload = document("most-populous")
+    sources = [
+        (tmp_path / "alpha.json", payload),
+        (tmp_path / "beta.json", payload),
+    ]
+    registry = load()
+    coastline, attribution = registered_coastline(registry)
+    serial_output = tmp_path / "serial"
+    concurrent_output = tmp_path / "concurrent"
+    serial_output.mkdir()
+    concurrent_output.mkdir()
+    serial_context = gallery_module.MapRenderContext(
+        registry, coastline, attribution, serial_output, None, "fixture"
+    )
+    concurrent_context = gallery_module.MapRenderContext(
+        registry, coastline, attribution, concurrent_output, None, "fixture"
+    )
+
+    serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
+
+    def two_workers(count: int) -> int:
+        return min(2, count)
+
+    monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    concurrent, _ = gallery_module.build_gallery_output(
+        tmp_path, sources, {}, [], concurrent_context
+    )
+
+    assert [item.figure.name for item in serial] == [item.figure.name for item in concurrent]
+    assert {item.figure.name: item.figure.read_bytes() for item in serial} == {
+        item.figure.name: item.figure.read_bytes() for item in concurrent
+    }
+    assert (serial_output / "gallery-data.json").read_bytes() == (
+        concurrent_output / "gallery-data.json"
+    ).read_bytes()
+    assert "maps used 2 workers and took" in capsys.readouterr().err
+
+
 def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
+
+    def two_workers(count: int) -> int:
+        return min(2, count)
+
+    monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
     corpus = tmp_path / "corpus"
