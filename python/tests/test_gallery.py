@@ -357,7 +357,14 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     copied_document = json.loads(
         (tmp_path / "gallery" / "drawable.json").read_text(encoding="utf-8")
     )
-    assert annotations == [VISIBLE_FOOTER]
+    assert annotations == [
+        (
+            "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+            "Center: 25.1250, 79.7080"
+        ),
+        "Answered from population dataset population-count-2020-30arcsec at decimation k=10",
+        VISIBLE_FOOTER,
+    ]
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert "© Andrii Melnyk, 2026" in metadata["Copyright"]
