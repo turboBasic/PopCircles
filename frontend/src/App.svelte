@@ -289,7 +289,6 @@
             </nav>
           </div>
         </details>
-        <p class="status" role="status" aria-live="polite">{matches.length} maps</p>
       </aside>
 
       <div class="results">
