@@ -88,7 +88,8 @@ def test_real_build_reuse_and_missing_raster(
     assert options.output.read_bytes().startswith(PNG_MAGIC)
     first = json.loads(options.document.read_bytes())
     assert first["provenance"]["dataset"] == "tiny"
-    assert options.document.read_bytes() == results[-1].stdout
+    assert first["result"] == json.loads(results[-1].stdout)["result"]
+    assert first["render_metadata"]["Title"]
     assert first["result"]["circle"]["target"]["total"] == 28.0  # noqa: PLR2004 — generated cells sum
 
     (tmp_path / "data/tiny.tif").unlink()
