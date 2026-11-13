@@ -177,13 +177,13 @@
 {/snippet}
 
 <svelte:head>
-  <title>PopCircles · Map gallery</title>
+  <title>PopCircles</title>
 </svelte:head>
 
 <main>
   <header style:--header-shrink={headerShrink}>
     <p class="eyebrow">
-      PopCircles · Map gallery ·
+      PopCircles ·
       <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="turbobasic/PopCircles on GitHub">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.75 2.05 3.44 1.57.1-.73.39-1.23.7-1.52-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.12-1.44 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.52.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
         GitHub
@@ -325,9 +325,7 @@
     </div>
   {/if}
   <footer class="site-footer">
-    © Andrii Melnyk, 2026,
-    <a href="https://github.com/turboBasic/PopCircles">https://github.com/turboBasic/PopCircles</a>
-    · © EuroGeographics for the administrative boundaries
+    © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
   </footer>
 </main>
 
