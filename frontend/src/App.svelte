@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import {
     countryFromHash,
     countryUrl,
@@ -17,7 +18,6 @@
   let matches = $derived(
     data ? filterCountries(data.countries, query, includeZeroPopulation) : []
   );
-  let selectedFigure = $derived(selectedCountry?.figures[0] ?? null);
   let visibleCountryResults = $derived(
     data
       ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen, includeZeroPopulation)
@@ -26,11 +26,13 @@
   let browserOpen = $state(false);
   let themeLight = $state(false);
   let copyStatus = $state('');
+  let copyTimeout = null;
   let mobileNavigation = $state(null);
   let browser = $state(null);
   let browserTrigger = $state(null);
   let browserPanel = $state(null);
   let countrySearch = $state(null);
+  let headerShrink = $state(0);
 
   function restoreCountry(countries = data?.countries) {
     if (countries) {
@@ -80,7 +82,14 @@
     selectedCountry = country;
     allOpen = false;
     copyStatus = '';
+    window.clearTimeout(copyTimeout);
     closeBrowser();
+  }
+
+  function showCopyStatus(message) {
+    copyStatus = message;
+    window.clearTimeout(copyTimeout);
+    copyTimeout = window.setTimeout(() => (copyStatus = ''), 2400);
   }
 
   function toggleTheme() {
@@ -88,13 +97,14 @@
     document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
   }
 
-  async function copyCountryUrl() {
-    const url = countryUrl(window.location.href, selectedCountry?.anchor);
+  async function copyCountryUrl(event, anchor) {
+    event.preventDefault();
+    const url = countryUrl(window.location.href, anchor);
     try {
       await navigator.clipboard.writeText(url);
-      copyStatus = 'Country URL copied.';
+      showCopyStatus('Country URL copied');
     } catch {
-      copyStatus = `Copy failed. Copy this URL: ${url}`;
+      showCopyStatus('Could not copy URL. Use the link menu to copy it.');
     }
   }
 
@@ -102,14 +112,17 @@
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
     const handleHistory = () => restoreCountry();
+    const handleScroll = () => (headerShrink = Math.min(window.scrollY / 120, 1));
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
     };
     browserOpen = !mobileNavigation.matches;
+    handleScroll();
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     document.addEventListener('pointerdown', handlePointerdown);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     fetch('./gallery-data.json')
       .then((response) => {
         if (!response.ok) throw new Error(`Gallery data request failed (${response.status})`);
@@ -126,15 +139,17 @@
 
     return () => {
       active = false;
+      window.clearTimeout(copyTimeout);
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
+      window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('pointerdown', handlePointerdown);
       mobileNavigation.removeEventListener('change', handleNavigationChange);
     };
   });
 </script>
 
-{#snippet figureCaption(figure)}
+{#snippet figureCaption(figure, countryAnchor = null)}
   {#if figure.caption}
     <p>
       {figure.caption.radius_km.toLocaleString()} km radius ·
@@ -156,6 +171,9 @@
     </p>
   {/if}
   <a href={figure.document}>View result data</a>
+  {#if countryAnchor}
+    · <a href={countryUrl(window.location.href, countryAnchor)} onclick={(event) => copyCountryUrl(event, countryAnchor)}>Copy country URL</a>
+  {/if}
 {/snippet}
 
 <svelte:head>
@@ -163,7 +181,7 @@
 </svelte:head>
 
 <main>
-  <header>
+  <header style:--header-shrink={headerShrink}>
     <p class="eyebrow">
       PopCircles · Map gallery ·
       <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="turbobasic/PopCircles on GitHub">
@@ -173,7 +191,21 @@
     </p>
     <h1>One circle, half the population.</h1>
     <p class="intro">Explore country and world population circles.</p>
-    <p class="attribution">© EuroGeographics for the administrative boundaries</p>
+    {#if data}
+      <div class="map-actions" aria-label="Gallery controls">
+        <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
+          Use {themeLight ? 'dark' : 'light'} theme
+        </button>
+        <button
+          type="button"
+          aria-controls="country-results-list"
+          aria-expanded={allOpen}
+          onclick={() => (allOpen = !allOpen)}
+        >
+          {allOpen ? 'Collapse all country maps' : 'Expand all country maps'}
+        </button>
+      </div>
+    {/if}
   </header>
 
   {#if error}
@@ -261,24 +293,6 @@
         <section class="country-results" aria-label="Country maps">
           <div class="country-actions">
             <h2>Countries</h2>
-            <div class="map-actions">
-              <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
-                Use {themeLight ? 'dark' : 'light'} theme
-              </button>
-              <button type="button" onclick={copyCountryUrl}>Copy country URL</button>
-              {#if selectedFigure}
-                <a href={selectedFigure.map} target="_blank" rel="noopener">Open full-resolution map</a>
-              {/if}
-              <button
-                type="button"
-                aria-controls="country-results-list"
-                aria-expanded={allOpen}
-                onclick={() => (allOpen = !allOpen)}
-              >
-                {allOpen ? 'Collapse all country maps' : 'Expand all country maps'}
-              </button>
-            </div>
-            <p class="copy-status" role="status" aria-live="polite">{copyStatus}</p>
           </div>
 
           <div id="country-results-list" class:gallery-mode={allOpen} class:single-map={!allOpen}>
@@ -298,7 +312,7 @@
                             loading={country.anchor === selectedCountry?.anchor ? 'eager' : 'lazy'}
                           />
                         </a>
-                        <figcaption>{@render figureCaption(figure)}</figcaption>
+                        <figcaption>{@render figureCaption(figure, country.anchor)}</figcaption>
                       </figure>
                     {/each}
                   </div>
@@ -310,7 +324,18 @@
       </div>
     </div>
   {/if}
+  <footer class="site-footer">
+    © Andrii Melnyk, 2026,
+    <a href="https://github.com/turboBasic/PopCircles">https://github.com/turboBasic/PopCircles</a>
+    · © EuroGeographics for the administrative boundaries
+  </footer>
 </main>
+
+{#if copyStatus}
+  <p class="copy-toast" role="status" aria-live="polite" aria-atomic="true" transition:fade={{ duration: 150 }}>
+    {copyStatus}
+  </p>
+{/if}
 
 <style>
   :global(:root) { color-scheme: dark; --bg: #0b1020; --surface: #121a2b; --surface-2: #19243a; --text: #eef3ff; --muted: #a4b0c5; --accent: #80e0c0; --line: #29364d; --glow: #203456; }
@@ -318,26 +343,28 @@
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
-  header { padding: 4rem 0 2rem; }
+  header { position: sticky; top: 0; z-index: 4; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
   .repository-link { color: var(--muted); font: inherit; letter-spacing: inherit; text-decoration: none; text-transform: inherit; }
   .repository-link svg { width: 1.33em; height: 1.33em; overflow: visible; vertical-align: -.285em; }
   .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
-  h1 { max-width: 850px; margin: .7rem 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.045em; }
-  .intro, .attribution, .status, .empty, figcaption, .copy-status { color: var(--muted); }
+  h1 { max-width: 850px; margin: calc(.7rem - .5rem * var(--header-shrink)) 0 calc(1rem - .5rem * var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink)) + 1.35rem * var(--header-shrink)); line-height: 1.08; letter-spacing: -.045em; }
+  header .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
+  .intro, .status, .empty, figcaption, .site-footer { color: var(--muted); }
   .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-  aside { position: sticky; top: 1rem; z-index: 2; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  aside { position: sticky; top: calc(7rem + 3rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (7rem + 3rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .country-browser-panel { max-height: calc(100vh - 10rem); overflow: auto; }
+  .country-browser-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; max-height: none; overflow: hidden; }
   .zero-population-filter { display: flex; align-items: center; gap: .5rem; margin: .75rem 0; color: var(--muted); }
   .zero-population-filter input { width: auto; padding: 0; }
   .drawer-title { display: none; }
   label { display: block; margin: .8rem 0 .5rem; font-weight: 600; }
   input { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
-  nav { display: grid; gap: .35rem; margin-top: 1rem; }
+  nav { display: grid; flex: 1; gap: .35rem; min-height: 0; margin-top: 1rem; overflow-y: auto; }
   nav a { padding: .25rem 0; color: var(--muted); text-decoration: none; }
   nav a:hover, nav a.active { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
-  .status, .copy-status { font-size: .85rem; }
+  .status { font-size: .85rem; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
   .world, .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
@@ -349,10 +376,12 @@
   .country-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .75rem; flex-wrap: wrap; }
   .country-actions h2 { margin: 0; }
   .map-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
-  button, .map-actions a { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
-  .map-actions a { text-decoration: none; }
-  button:hover, .map-actions a:hover { border-color: var(--accent); }
-  .copy-status { width: 100%; margin: 0; overflow-wrap: anywhere; }
+  header .map-actions { margin-top: .75rem; }
+  button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
+  .site-footer { margin-top: 2rem; padding: 1.25rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
+  .site-footer a { color: inherit; }
   .country-results { display: block; }
   .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
   .gallery-mode .country { margin: 0; }
@@ -365,7 +394,7 @@
   figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
     .explorer { grid-template-columns: 1fr; }
-    aside { position: static; padding: 0; border: 0; background: transparent; }
+    aside { position: static; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
     summary { padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; }
     .country-browser-panel { display: none; }
     details[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; }
