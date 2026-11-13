@@ -486,6 +486,13 @@ def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy(
     assert "run-name: Gallery ${{ inputs.asset_name }}" in triggers
     assert "\non:\n  workflow_dispatch:\n    inputs:\n      asset_name:" in triggers
     assert not any(f"\n  {event}:" in triggers for event in ("push", "pull_request", "schedule"))
+    assert re.search(
+        (
+            r"name: Cache UV packages\n\s+uses: actions/cache@[^\n]+\n\s+with:\n"
+            r"\s+path: ~/.cache/uv\n\s+key: uv-"
+        ),
+        workflow,
+    )
     assert 'run: mise run gallery:stage -- "$ASSET_NAME"' in workflow
     assert "ASSET_NAME: ${{ inputs.asset_name }}" in workflow
     assert re.search(
