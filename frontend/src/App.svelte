@@ -349,7 +349,7 @@
   h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
   header .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
   .intro, .status, .empty, figcaption, .site-footer { color: var(--muted); }
-  .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+  .explorer { display: grid; min-height: 100vh; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
   aside { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
@@ -387,7 +387,7 @@
   figcaption p { margin: 0 0 .5rem; }
   figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
-    .explorer { grid-template-columns: 1fr; }
+    .explorer { min-height: 0; grid-template-columns: 1fr; }
     aside { position: static; z-index: auto; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
     aside summary { display: none; }
     .mobile-browser-toggle { display: block; }
