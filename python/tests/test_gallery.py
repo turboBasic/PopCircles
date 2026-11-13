@@ -15,7 +15,7 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery as gallery_module
 import population_circles.render_map as render_map_module
-from population_circles.circle_document import CIRCLE_KINDS, Answer
+from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.circle_map import Invoke, WorkflowError
 from population_circles.dataset_registry import Registry, country_boundary_dataset_key, load
 from population_circles.gallery import build, country_documents
@@ -24,6 +24,7 @@ from population_circles.render_map import (
     UnregisteredDatasetError,
     registered_coastline,
 )
+from test_render_map import country_circle_document
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
@@ -101,6 +102,8 @@ def assert_built_site(output: Path) -> None:
     assert len(assets) == 1
     bundle = assets[0].read_text(encoding="utf-8")
     assert "gallery-data.json" in bundle
+    assert "Nearest settlement:" in bundle
+    assert "Math.round" in bundle
     assert "cdn.jsdelivr.net" not in bundle
     assert (output / "gallery-data.json").is_file()
 
@@ -193,8 +196,10 @@ def country_sweep(
     }
 
 
-def swept_country(identifier: str, name: str) -> dict[str, Any]:
-    return {
+def swept_country(
+    identifier: str, name: str, settlement: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    country: dict[str, Any] = {
         "country": {
             "id": identifier,
             "name": name,
@@ -233,6 +238,9 @@ def swept_country(identifier: str, name: str) -> dict[str, Any]:
             },
         ],
     }
+    if settlement is not None:
+        country["records"][0]["circle"]["nearest_settlement"] = settlement
+    return country
 
 
 def configured_country(identifier: str, name: str) -> dict[str, str]:
@@ -397,6 +405,19 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
         "france.png",
         "germany.png",
     ]
+
+
+def test_country_caption_omits_settlement_when_the_answer_has_none() -> None:
+    caption = gallery_module.country_caption(circle_of(country_circle_document()))
+
+    assert caption == {
+        "radius_km": 200.0,
+        "share": 0.5,
+        "population": 40.0,
+        "centre_lat": 51.0,
+        "centre_lon": 10.0,
+        "settlement": None,
+    }
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
@@ -579,7 +600,19 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     zero_population["records"][0]["circle"]["target"]["total"] = 0
     invoke, calls = country_cli(
         countries,
-        [swept_country("AA", "Alpha"), zero_population],
+        [
+            swept_country(
+                "AA",
+                "Alpha",
+                {
+                    "name": "Fixture Place",
+                    "country": "Fixture Country",
+                    "distance_km": 0.5,
+                    "short_form": True,
+                },
+            ),
+            zero_population,
+        ],
         countries_without_population_cells=[{"id": "CC", "name": "No population <yet>"}],
     )
     corpus = tmp_path / "corpus"
@@ -657,6 +690,18 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                         "document": result_names[0],
                         "country_id": "AA",
                         "alt": result_names[0].removesuffix(".json"),
+                        "caption": {
+                            "radius_km": 100,
+                            "share": 0.5,
+                            "population": 50,
+                            "centre_lat": 25.0,
+                            "centre_lon": 79.0,
+                            "settlement": {
+                                "name": "Fixture Place",
+                                "country": "Fixture Country",
+                                "distance_km": 0.5,
+                            },
+                        },
                     },
                 ],
                 "missing": False,

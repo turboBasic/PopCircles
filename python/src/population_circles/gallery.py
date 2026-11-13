@@ -12,7 +12,7 @@ import time
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, NotRequired, TypedDict, cast
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -21,7 +21,7 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.circle_document import CIRCLE_KINDS, Answer, Envelope, circle_of
 from population_circles.circle_map import Invoke, child, invoke_cli, require_success
 from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
@@ -63,12 +63,28 @@ def excluded_country_ids() -> set[str]:
     return set(config["excluded_country_ids"])
 
 
+class SettlementCaption(TypedDict):
+    name: str
+    country: str
+    distance_km: float
+
+
+class CountryCaption(TypedDict):
+    radius_km: float
+    share: float
+    population: float
+    centre_lat: float
+    centre_lon: float
+    settlement: SettlementCaption | None
+
+
 @dataclass(frozen=True)
 class Drawn:
     document: Path
     figure: Path
     country_name: str | None = None
     country_id: str | None = None
+    caption: CountryCaption | None = None
 
 
 @dataclass(frozen=True)
@@ -82,6 +98,7 @@ class PageFigure(TypedDict):
     document: str
     country_id: str | None
     alt: str
+    caption: NotRequired[CountryCaption]
 
 
 class PageCountry(TypedDict):
@@ -196,6 +213,28 @@ def map_cache_key(
     return digest.hexdigest()
 
 
+def country_caption(answer: Answer) -> CountryCaption | None:
+    if answer.country is None:
+        return None
+    settlement = answer.caption.settlement
+    return {
+        "radius_km": answer.circle.radius_km,
+        "share": answer.caption.share,
+        "population": answer.caption.population,
+        "centre_lat": answer.circle.centre.lat,
+        "centre_lon": answer.circle.centre.lon,
+        "settlement": (
+            {
+                "name": settlement.name,
+                "country": settlement.country,
+                "distance_km": settlement.distance_km,
+            }
+            if settlement is not None
+            else None
+        ),
+    }
+
+
 def reuse_cached_map(cache: Path, key: str, target: Path) -> bool:
     entry = cache / target.stem
     image_path = entry / "map.png"
@@ -282,6 +321,7 @@ def render_document(
                     target,
                     answer.country.name if answer.country is not None else None,
                     answer.country.id if answer.country is not None else None,
+                    country_caption(answer),
                 ),
                 True,
             )
@@ -336,18 +376,22 @@ def render_document(
             target,
             answer.country.name if answer.country is not None else None,
             answer.country.id if answer.country is not None else None,
+            country_caption(answer),
         ),
         False,
     )
 
 
 def page_figure(one: Drawn) -> PageFigure:
-    return {
+    figure: PageFigure = {
         "map": one.figure.name,
         "document": one.document.name,
         "country_id": one.country_id,
         "alt": one.figure.stem,
     }
+    if one.caption is not None:
+        figure["caption"] = one.caption
+    return figure
 
 
 def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:

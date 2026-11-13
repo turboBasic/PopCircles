@@ -273,7 +273,24 @@
                             loading={country.anchor === selectedCountry?.anchor ? 'eager' : 'lazy'}
                           />
                         </a>
-                        <figcaption><a href={figure.document}>View result data</a></figcaption>
+                        <figcaption>
+                          {#if figure.caption}
+                            <p>
+                              {figure.caption.radius_km.toLocaleString()} km radius ·
+                              {(figure.caption.share * 100).toFixed(2)}% achieved ·
+                              {figure.caption.population.toLocaleString()} people · centre
+                              {figure.caption.centre_lat.toFixed(4)}, {figure.caption.centre_lon.toFixed(4)}
+                            </p>
+                            {#if figure.caption.settlement}
+                              <p>
+                                Nearest settlement: {figure.caption.settlement.name},
+                                {figure.caption.settlement.country}
+                                ({Math.round(figure.caption.settlement.distance_km).toLocaleString()} km)
+                              </p>
+                            {/if}
+                          {/if}
+                          <a href={figure.document}>View result data</a>
+                        </figcaption>
                       </figure>
                     {/each}
                   </div>
@@ -336,6 +353,7 @@
   figure { min-width: 0; margin: 0; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); border-radius: .8rem; }
   figure img { display: block; width: 100%; height: auto; }
   figcaption { padding: .75rem 1rem; font-size: .85rem; }
+  figcaption p { margin: 0 0 .5rem; }
   figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
     .explorer { grid-template-columns: 1fr; }
