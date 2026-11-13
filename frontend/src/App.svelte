@@ -17,7 +17,6 @@
   let matches = $derived(
     data ? filterCountries(data.countries, query, includeZeroPopulation) : []
   );
-  let selectedFigure = $derived(selectedCountry?.figures[0] ?? null);
   let visibleCountryResults = $derived(
     data
       ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen, includeZeroPopulation)
@@ -31,6 +30,7 @@
   let browserTrigger = $state(null);
   let browserPanel = $state(null);
   let countrySearch = $state(null);
+  let compactHeader = $state(false);
 
   function restoreCountry(countries = data?.countries) {
     if (countries) {
@@ -88,8 +88,9 @@
     document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
   }
 
-  async function copyCountryUrl() {
-    const url = countryUrl(window.location.href, selectedCountry?.anchor);
+  async function copyCountryUrl(event, anchor) {
+    event.preventDefault();
+    const url = countryUrl(window.location.href, anchor);
     try {
       await navigator.clipboard.writeText(url);
       copyStatus = 'Country URL copied.';
@@ -102,14 +103,17 @@
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
     const handleHistory = () => restoreCountry();
+    const handleScroll = () => (compactHeader = window.scrollY > 40);
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
     };
     browserOpen = !mobileNavigation.matches;
+    handleScroll();
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     document.addEventListener('pointerdown', handlePointerdown);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     fetch('./gallery-data.json')
       .then((response) => {
         if (!response.ok) throw new Error(`Gallery data request failed (${response.status})`);
@@ -128,13 +132,14 @@
       active = false;
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
+      window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('pointerdown', handlePointerdown);
       mobileNavigation.removeEventListener('change', handleNavigationChange);
     };
   });
 </script>
 
-{#snippet figureCaption(figure)}
+{#snippet figureCaption(figure, countryAnchor = null)}
   {#if figure.caption}
     <p>
       {figure.caption.radius_km.toLocaleString()} km radius ·
@@ -156,6 +161,9 @@
     </p>
   {/if}
   <a href={figure.document}>View result data</a>
+  {#if countryAnchor}
+    · <a href={countryUrl(window.location.href, countryAnchor)} onclick={(event) => copyCountryUrl(event, countryAnchor)}>Copy country URL</a>
+  {/if}
 {/snippet}
 
 <svelte:head>
@@ -163,7 +171,7 @@
 </svelte:head>
 
 <main>
-  <header>
+  <header class:compact={compactHeader}>
     <p class="eyebrow">
       PopCircles · Map gallery ·
       <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="turbobasic/PopCircles on GitHub">
@@ -174,6 +182,22 @@
     <h1>One circle, half the population.</h1>
     <p class="intro">Explore country and world population circles.</p>
     <p class="attribution">© EuroGeographics for the administrative boundaries</p>
+    {#if data}
+      <div class="map-actions" aria-label="Gallery controls">
+        <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
+          Use {themeLight ? 'dark' : 'light'} theme
+        </button>
+        <button
+          type="button"
+          aria-controls="country-results-list"
+          aria-expanded={allOpen}
+          onclick={() => (allOpen = !allOpen)}
+        >
+          {allOpen ? 'Collapse all country maps' : 'Expand all country maps'}
+        </button>
+      </div>
+      <p class="copy-status" role="status" aria-live="polite">{copyStatus}</p>
+    {/if}
   </header>
 
   {#if error}
@@ -261,24 +285,6 @@
         <section class="country-results" aria-label="Country maps">
           <div class="country-actions">
             <h2>Countries</h2>
-            <div class="map-actions">
-              <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
-                Use {themeLight ? 'dark' : 'light'} theme
-              </button>
-              <button type="button" onclick={copyCountryUrl}>Copy country URL</button>
-              {#if selectedFigure}
-                <a href={selectedFigure.map} target="_blank" rel="noopener">Open full-resolution map</a>
-              {/if}
-              <button
-                type="button"
-                aria-controls="country-results-list"
-                aria-expanded={allOpen}
-                onclick={() => (allOpen = !allOpen)}
-              >
-                {allOpen ? 'Collapse all country maps' : 'Expand all country maps'}
-              </button>
-            </div>
-            <p class="copy-status" role="status" aria-live="polite">{copyStatus}</p>
           </div>
 
           <div id="country-results-list" class:gallery-mode={allOpen} class:single-map={!allOpen}>
@@ -298,7 +304,7 @@
                             loading={country.anchor === selectedCountry?.anchor ? 'eager' : 'lazy'}
                           />
                         </a>
-                        <figcaption>{@render figureCaption(figure)}</figcaption>
+                        <figcaption>{@render figureCaption(figure, country.anchor)}</figcaption>
                       </figure>
                     {/each}
                   </div>
@@ -318,11 +324,14 @@
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
-  header { padding: 4rem 0 2rem; }
+  header { position: sticky; top: 0; z-index: 4; padding: 4rem 0 1rem; background: var(--bg); border-bottom: 1px solid transparent; }
+  header.compact { padding: .6rem 0; border-color: var(--line); }
   .repository-link { color: var(--muted); font: inherit; letter-spacing: inherit; text-decoration: none; text-transform: inherit; }
   .repository-link svg { width: 1.33em; height: 1.33em; overflow: visible; vertical-align: -.285em; }
   .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
   h1 { max-width: 850px; margin: .7rem 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.045em; }
+  header.compact h1 { margin: .2rem 0 .5rem; font-size: 1.35rem; }
+  header.compact .intro, header.compact .attribution { display: none; }
   .intro, .attribution, .status, .empty, figcaption, .copy-status { color: var(--muted); }
   .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
   aside { position: sticky; top: 1rem; z-index: 2; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
@@ -349,9 +358,9 @@
   .country-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .75rem; flex-wrap: wrap; }
   .country-actions h2 { margin: 0; }
   .map-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
-  button, .map-actions a { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
-  .map-actions a { text-decoration: none; }
-  button:hover, .map-actions a:hover { border-color: var(--accent); }
+  header .map-actions { margin-top: .75rem; }
+  button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
   .copy-status { width: 100%; margin: 0; overflow-wrap: anywhere; }
   .country-results { display: block; }
   .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
