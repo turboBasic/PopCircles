@@ -161,7 +161,7 @@ def map_text_placement() -> tuple[MapTextPlacement, MapTextPlacement]:
         if value not in ("metadata", "raster"):
             message = f"{path}: map_text.{field} must be 'metadata' or 'raster'"
             raise ValueError(message)
-        placements.append(cast(MapTextPlacement, value))
+        placements.append(value)
     return placements[0], placements[1]
 
 

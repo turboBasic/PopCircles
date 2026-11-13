@@ -205,7 +205,7 @@ def png_metadata(
     placement: tuple[MapTextPlacement, MapTextPlacement],
 ) -> dict[str, str]:
     title_placement, credits_placement = placement
-    metadata = {}
+    metadata: dict[str, str] = {}
     if title_placement == "metadata":
         metadata["Title"] = title
     if credits_placement == "metadata":
@@ -410,11 +410,14 @@ def render_file(
     text_placement = map_text_placement()
     boundaries = load_map_boundaries(answer, registry)
     selected = boundaries.get(answer.country.id) if answer.country is not None else None
-    country_boundary_attribution = (
-        boundary_attribution or citation(registry, answer.country.boundary_dataset)
-        if answer.country is not None
-        else None
-    )
+    country_boundary_attribution = None
+    outline_and_credit = None
+    if answer.country is not None:
+        boundary_credit = boundary_attribution or citation(
+            registry, answer.country.boundary_dataset
+        )
+        country_boundary_attribution = boundary_credit
+        outline_and_credit = (selected, boundary_credit)
     figure = render(
         answer,
         projection,
@@ -422,9 +425,7 @@ def render_file(
         coastline=coastline,
         coastline_attribution=coastline_attribution,
         text_placement=text_placement,
-        outline_and_credit=(
-            (selected, country_boundary_attribution) if answer.country is not None else None
-        ),
+        outline_and_credit=outline_and_credit,
         **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
     try:

@@ -2,6 +2,7 @@ import hashlib
 import json
 import re
 import socket
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -60,7 +61,7 @@ def empty_boundaries(
     return {}
 
 
-def png_info(path: Path) -> dict[str, object]:
+def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
     with Image.open(path) as image:
         return image.info
 
