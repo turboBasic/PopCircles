@@ -302,7 +302,7 @@ def render_document(
         description = description_of(answer)
         properties = xmp_properties(answer, title, description, copyright_text)
         payload["render_metadata"] = metadata_json_fields(
-            title, description, copyright_text, properties, context.text_placement
+            answer, properties, context.text_placement
         )
         target = context.output / f"{source.stem}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
@@ -367,11 +367,7 @@ def render_document(
             description,
             properties,
         ),
-        pil_kwargs={
-            "exif": exif_gps_packet(
-                float(properties["centerLatitude"]), float(properties["centerLongitude"])
-            )
-        },
+        pil_kwargs={"exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)},
     )
     plt.close(figure)
     if context.cache_directory is not None and cache_key is not None:

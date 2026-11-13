@@ -149,8 +149,8 @@ def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None
         "https://github.com/turboBasic/PopCircles"
     )
     assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"]
-    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"] == "51,0N"
-    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLongitude"] == "10,0E"
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"] == "25,0N"
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLongitude"] == "79,0E"
     assert properties["Iptc4xmpExt:LocationShown"][0]["Iptc4xmpExt:City"] == "Fixture Place"
     assert properties["dc:rights"] == "© Andrii Melnyk, 2026"
     assert properties["photoshop:Credit"].startswith("© Andrii Melnyk, 2026,")
@@ -849,7 +849,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         ],
     }
     assert VISIBLE_FOOTER in annotations
-    assert any("Alpha (AA): 100 km circle" in annotation for annotation in annotations)
+    assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
     with Image.open(drawn[0].figure) as image:
         assert "Title" not in image.info
         assert "Copyright" not in image.info

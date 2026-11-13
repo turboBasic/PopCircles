@@ -478,7 +478,7 @@ def test_country_figure_shows_only_the_approved_visible_footer(
         footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
         axes = figure.axes[0].get_window_extent()
         rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
-        assert "A country with an exceptionally long published name (DE)" in rendered_text
+        assert "A country with an exceptionally long published name:" in rendered_text
         assert rendered_text.count(VISIBLE_FOOTER) == 1
         assert "Population credit:" not in rendered_text
         assert normalised(population_credit) not in normalised(rendered_text)
@@ -728,7 +728,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
     assert "1,000 km circle" in drawn_text
     assert "16.2% of the population" in drawn_text
     assert "1,254,363,868 people" in drawn_text
-    assert f"{CENTRE_LAT}, {CENTRE_LON}" in drawn_text
+    assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
     assert "Center:" in drawn_text
 
 

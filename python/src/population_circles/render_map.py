@@ -342,19 +342,18 @@ def description_of(answer: Answer) -> str:
 
 
 def metadata_json_fields(
-    title: str,
-    description: str,
-    copyright_text: str,
+    answer: Answer,
     properties: Mapping[str, object],
     placement: tuple[MapTextPlacement, MapTextPlacement],
 ) -> dict[str, object]:
+    title = cast(str, properties["dc:title"])
+    description = cast(str, properties["dc:description"])
+    copyright_text = cast(str, properties["fullAttribution"])
     title_placement, credits_placement = placement
     values: dict[str, object] = {
         "Description": description,
         "XML:com.adobe.xmp": dict(properties),
-        "EXIF:GPSInfo": exif_gps_values(
-            float(properties["centerLatitude"]), float(properties["centerLongitude"])
-        ),
+        "EXIF:GPSInfo": exif_gps_values(answer.circle.centre.lat, answer.circle.centre.lon),
     }
     if title_placement == "metadata":
         values["Title"] = title
@@ -621,9 +620,7 @@ def render_file(
     )
     description = description_of(answer)
     properties = xmp_properties(answer, title, description, copyright_text)
-    metadata_values = metadata_json_fields(
-        title, description, copyright_text, properties, text_placement
-    )
+    metadata_values = metadata_json_fields(answer, properties, text_placement)
     sidecar_path = output_path.with_suffix(".json")
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -634,9 +631,7 @@ def render_file(
             dpi=200,
             metadata=png_metadata(title, copyright_text, text_placement, description, properties),
             pil_kwargs={
-                "exif": exif_gps_packet(
-                    float(properties["centerLatitude"]), float(properties["centerLongitude"])
-                )
+                "exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)
             },
         )
         document["render_metadata"] = metadata_values
