@@ -16,19 +16,19 @@ cspell
 deepseek
 fignums
 flycheck
-hardlink
 getrusage
+hardlink
 imshow
-ismath
 iostat
+ismath
 jactionlint
 loadgroup
 machdep
 maxrss
 mise
+noopener
 notarytool
 numprocesses
-noopener
 opencode
 OpenRouter
 ponytail
@@ -79,8 +79,8 @@ Valeriepieris
 # --- Geospatial tooling and standards ---
 AEQD
 Carree
-EPSG
 ENGL
+EPSG
 featurecla
 GDAL
 grib
@@ -149,8 +149,8 @@ skia
 socketpair
 splitmix
 thiserror
-tobytes
 tmpg
+tobytes
 verticalalignment
 weezl
 wght

@@ -166,8 +166,8 @@ run = "prek run --all-files markdownlint-cli2"
 
 # Same shape as `lint:data`: this is what puts the hook in CI.
 [tasks."lint:cspell"]
-description = "Spell-check every tracked file with cspell"
-run = "prek run --all-files cspell"
+description = "Check spelling and project dictionary order"
+run = "prek run --all-files cspell cspell-dictionary-order"
 
 # Same shape as `lint:data`: this is what puts the hook in CI.
 [tasks."lint:docs"]
