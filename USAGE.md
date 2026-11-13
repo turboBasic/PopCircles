@@ -274,6 +274,11 @@ rectangular world map, or `orthographic` for a globe-like view centred on the ci
 includes the credit required by the population data's CC BY licence. The required wording is in
 [`data/README.md`][data-population].
 
+Map titles and credits are stored in PNG metadata by default, under `Title` and `Copyright`. Set
+`map_text.title` or `map_text.credits` in `data/config.toml` to `raster` to draw that field on the
+image; `metadata` keeps it in the PNG metadata. The standalone renderer and Gallery use the same
+settings.
+
 Circles are drawn on the curved Earth, then transformed to fit the flat map. A circle that crosses the
 180° longitude line appears at both edges of a rectangular map. A circle that covers a pole closes across
 the top or bottom edge. Drawing circles directly on a flat map can shade the wrong region in either
