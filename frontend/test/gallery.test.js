@@ -42,7 +42,7 @@ test('shows all available entries by default or only a selected fragment entry',
   assert.deepEqual(visibleEntries(entries, 'world-result'), [entries[0]]);
   assert.deepEqual(visibleEntries(entries, 'country-result-AA'), [countries[0]]);
   assert.deepEqual(visibleEntries(entries, null, true), entries);
-  assert.deepEqual(visibleEntries(entries, countries[2].anchor, true), [countries[2]]);
+  assert.deepEqual(visibleEntries(entries, countries[2].anchor), [countries[2]]);
 });
 
 test('copies the selected country fragment without keeping an old fragment', () => {

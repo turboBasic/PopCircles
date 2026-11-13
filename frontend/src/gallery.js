@@ -15,7 +15,7 @@ export function entryFromHash(entries, hash) {
 export function visibleEntries(entries, selectedAnchor, includeMissing = false) {
   return entries
     .filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor)
-    .filter((entry) => includeMissing || !entry.missing);
+    .filter((entry) => entry.anchor === selectedAnchor || includeMissing || !entry.missing);
 }
 
 export function countryUrl(currentUrl, anchor) {
