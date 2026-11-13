@@ -306,13 +306,16 @@ def test_publish_keeps_existing_render_metadata_when_country_answer_is_unchanged
     name = "country.json"
     corpus = tmp_path / "corpus"
     corpus.mkdir()
-    original = {
+    original: dict[str, object] = {
         "document": "country-smallest",
         "result": {"circle": {"answer": 1}},
         "render_metadata": {"Description": "same", "Title": "same"},
     }
-    refreshed = {"document": "country-smallest", "result": {"circle": {"answer": 1}}}
-    rendered = {
+    refreshed: dict[str, object] = {
+        "document": "country-smallest",
+        "result": {"circle": {"answer": 1}},
+    }
+    rendered: dict[str, object] = {
         **refreshed,
         "render_metadata": {"Title": "same", "Description": "same"},
     }
