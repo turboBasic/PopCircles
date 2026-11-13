@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 1038976.5897667771,
+      "populationShare": 0.503461474997717,
+      "radiusKm": 48.0,
+      "centerLatitude": 12.125,
+      "centerLongitude": -15.691666666666663,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Guinea-Bissau",
+      "Iptc4xmpCore:CountryCode": "GW",
+      "countryName": "Guinea-Bissau",
+      "countryCode": "GW",
+      "nearestSettlement": "Bissau",
+      "nearestSettlementCountry": "Guinea Bissau",
+      "distanceToSettlementKm": 30.63771053895299,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "12,7.5N",
+          "exif:GPSLongitude": "15,41.5W",
+          "Iptc4xmpExt:CountryName": "Guinea-Bissau",
+          "Iptc4xmpExt:CountryCode": "GW",
+          "Iptc4xmpExt:City": "Bissau"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Guinea-Bissau: 48 km circle holding 50.3% of the population (1,038,977 people); Center: 12.1250, -15.6917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          12,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          15,
+          1
+        ],
+        [
+          41,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Guinea-Bissau: 48 km circle holding 50.3% of the population (1,038,977 people); Center: 12.1250, -15.6917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

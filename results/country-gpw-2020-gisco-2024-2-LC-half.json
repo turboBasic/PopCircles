@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 96665.2164607048,
+      "populationShare": 0.5052885631402579,
+      "radiusKm": 8.0,
+      "centerLatitude": 13.974999999999994,
+      "centerLongitude": -60.95833333333333,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Saint Lucia",
+      "Iptc4xmpCore:CountryCode": "LC",
+      "countryName": "Saint Lucia",
+      "countryCode": "LC",
+      "nearestSettlement": "Castries",
+      "nearestSettlementCountry": "Saint Lucia",
+      "distanceToSettlementKm": 5.220424671582829,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "13,58.5N",
+          "exif:GPSLongitude": "60,57.5W",
+          "Iptc4xmpExt:CountryName": "Saint Lucia",
+          "Iptc4xmpExt:CountryCode": "LC",
+          "Iptc4xmpExt:City": "Castries"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Saint Lucia: 8 km circle holding 50.5% of the population (96,665 people); Center: 13.9750, -60.9583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          13,
+          1
+        ],
+        [
+          58,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          60,
+          1
+        ],
+        [
+          57,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Saint Lucia: 8 km circle holding 50.5% of the population (96,665 people); Center: 13.9750, -60.9583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

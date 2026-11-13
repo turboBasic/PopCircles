@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 7568.7273898124695,
+      "populationShare": 0.5014301107125483,
+      "radiusKm": 5.0,
+      "centerLatitude": 18.224999999999994,
+      "centerLongitude": -63.025000000000006,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Anguilla",
+      "Iptc4xmpCore:CountryCode": "AI",
+      "countryName": "Anguilla",
+      "countryCode": "AI",
+      "nearestSettlement": "Basseterre",
+      "nearestSettlementCountry": "Saint Kitts and Nevis",
+      "distanceToSettlementKm": 107.68704885148856,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,13.5N",
+          "exif:GPSLongitude": "63,1.5W",
+          "Iptc4xmpExt:CountryName": "Anguilla",
+          "Iptc4xmpExt:CountryCode": "AI",
+          "Iptc4xmpExt:City": "Basseterre"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Anguilla: 5 km circle holding 50.1% of the population (7,569 people); Center: 18.2250, -63.0250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          13,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          63,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Anguilla: 5 km circle holding 50.1% of the population (7,569 people); Center: 18.2250, -63.0250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -328,7 +328,16 @@ and formatting need the document, basemap and dataset registry; they do not need
 
 ## Publishing the gallery
 
-Run the local publisher from the repository root:
+For a local preview, use a temporary copy of `results/`:
+
+```sh
+preview=$(mktemp -d)
+cp -R results "$preview/results"
+mise run gallery -- --input "$preview/results" --output build/gallery
+mise run gallery:dev
+```
+
+Publish the Gallery from the repository root:
 
 ```sh
 mise run gallery:publish
@@ -344,16 +353,9 @@ mise run data:get -- --dataset <coastline-dataset-key>
 ```
 
 The dataset keys are the `dataset:` values for `boundary_source` and `defaults.coastline_dataset` in
-`data/config.toml`. The publisher also needs the GitHub CLI authenticated with permission to upload to
-the `gallery-handoff` draft release and dispatch the Pages workflow. It uses prepared country data, so
-the full-resolution population raster is not required when the selected prepared bundle is available.
-
-Publishing refreshes the sweep and saves its country results under `results/` only after every map renders
-successfully. A failed render leaves the previous result documents and `build/gallery` in place. After a
-successful local build, the command leaves the site in `build/gallery`, uploads a uniquely named ZIP to
-the draft handoff release, dispatches Pages with that exact asset name, and waits for the deployment.
-The workflow stages only the selected ZIP and removes older handoff ZIPs after deployment succeeds;
-newer ZIPs remain available if another dispatch is waiting.
+`data/config.toml`. The publisher needs GitHub CLI authentication to publish through Pages. It uses
+prepared country data, so the full-resolution population raster is not required when the selected
+prepared bundle is available.
 
 If a deployment fails after upload, the error reports the asset name and run link, and the ZIP remains on
 the draft release. Retry the failed run with **Re-run jobs** in GitHub Actions, or dispatch the workflow

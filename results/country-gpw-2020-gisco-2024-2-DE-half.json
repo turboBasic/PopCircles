@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 40151116.662235394,
+      "populationShare": 0.5009451773039264,
+      "radiusKm": 207.0,
+      "centerLatitude": 50.55833333333334,
+      "centerLongitude": 8.941666666666663,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Germany",
+      "Iptc4xmpCore:CountryCode": "DE",
+      "countryName": "Germany",
+      "countryCode": "DE",
+      "nearestSettlement": "Gießen",
+      "nearestSettlementCountry": "Germany",
+      "distanceToSettlementKm": 20.790422000221085,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "50,33.5N",
+          "exif:GPSLongitude": "8,56.5E",
+          "Iptc4xmpExt:CountryName": "Germany",
+          "Iptc4xmpExt:CountryCode": "DE",
+          "Iptc4xmpExt:City": "Gießen"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Germany: 207 km circle holding 50.1% of the population (40,151,117 people); Center: 50.5583, 8.9417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          50,
+          1
+        ],
+        [
+          33,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          8,
+          1
+        ],
+        [
+          56,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Germany: 207 km circle holding 50.1% of the population (40,151,117 people); Center: 50.5583, 8.9417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 104567.125988245,
+      "populationShare": 0.5252992171384223,
+      "radiusKm": 13.0,
+      "centerLatitude": -13.891666666666666,
+      "centerLongitude": -171.825,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Samoa",
+      "Iptc4xmpCore:CountryCode": "WS",
+      "countryName": "Samoa",
+      "countryCode": "WS",
+      "nearestSettlement": "Apia",
+      "nearestSettlementCountry": "Samoa",
+      "distanceToSettlementKm": 8.705248578839164,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "13,53.5S",
+          "exif:GPSLongitude": "171,49.5W",
+          "Iptc4xmpExt:CountryName": "Samoa",
+          "Iptc4xmpExt:CountryCode": "WS",
+          "Iptc4xmpExt:City": "Apia"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Samoa: 13 km circle holding 52.5% of the population (104,567 people); Center: -13.8917, -171.8250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          13,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          171,
+          1
+        ],
+        [
+          49,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Samoa: 13 km circle holding 52.5% of the population (104,567 people); Center: -13.8917, -171.8250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

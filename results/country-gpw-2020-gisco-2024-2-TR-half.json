@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 41142440.355176345,
+      "populationShare": 0.501492393294062,
+      "radiusKm": 264.0,
+      "centerLatitude": 39.141666666666666,
+      "centerLongitude": 30.008333333333326,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Türkiye",
+      "Iptc4xmpCore:CountryCode": "TR",
+      "countryName": "Türkiye",
+      "countryCode": "TR",
+      "nearestSettlement": "Kütahya",
+      "nearestSettlementCountry": "Turkey",
+      "distanceToSettlementKm": 31.676198728850498,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "39,8.5N",
+          "exif:GPSLongitude": "30,0.5E",
+          "Iptc4xmpExt:CountryName": "Türkiye",
+          "Iptc4xmpExt:CountryCode": "TR",
+          "Iptc4xmpExt:City": "Kütahya"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Türkiye: 264 km circle holding 50.1% of the population (41,142,440 people); Center: 39.1417, 30.0083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          39,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          30,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Türkiye: 264 km circle holding 50.1% of the population (41,142,440 people); Center: 39.1417, 30.0083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

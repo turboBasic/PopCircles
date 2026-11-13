@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 37673.43006467819,
+      "populationShare": 0.5972272986414601,
+      "radiusKm": 6.0,
+      "centerLatitude": 19.29166666666667,
+      "centerLongitude": -81.34166666666667,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Cayman Islands",
+      "Iptc4xmpCore:CountryCode": "KY",
+      "countryName": "Cayman Islands",
+      "countryCode": "KY",
+      "nearestSettlement": "George Town",
+      "nearestSettlementCountry": "Cayman Islands",
+      "distanceToSettlementKm": 3.1570139130636985,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "19,17.5N",
+          "exif:GPSLongitude": "81,20.5W",
+          "Iptc4xmpExt:CountryName": "Cayman Islands",
+          "Iptc4xmpExt:CountryCode": "KY",
+          "Iptc4xmpExt:City": "George Town"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Cayman Islands: 6 km circle holding 59.7% of the population (37,673 people); Center: 19.2917, -81.3417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          19,
+          1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          81,
+          1
+        ],
+        [
+          20,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Cayman Islands: 6 km circle holding 59.7% of the population (37,673 people); Center: 19.2917, -81.3417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

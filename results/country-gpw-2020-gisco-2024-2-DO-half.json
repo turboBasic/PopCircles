@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 5593946.070956573,
+      "populationShare": 0.5037621610525874,
+      "radiusKm": 57.0,
+      "centerLatitude": 18.724999999999994,
+      "centerLongitude": -70.075,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Dominican Republic",
+      "Iptc4xmpCore:CountryCode": "DO",
+      "countryName": "Dominican Republic",
+      "countryCode": "DO",
+      "nearestSettlement": "Monte Plata",
+      "nearestSettlementCountry": "Dominican Republic",
+      "distanceToSettlementKm": 31.96553752336067,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,43.5N",
+          "exif:GPSLongitude": "70,4.5W",
+          "Iptc4xmpExt:CountryName": "Dominican Republic",
+          "Iptc4xmpExt:CountryCode": "DO",
+          "Iptc4xmpExt:City": "Monte Plata"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Dominican Republic: 57 km circle holding 50.4% of the population (5,593,946 people); Center: 18.7250, -70.0750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          43,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          70,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Dominican Republic: 57 km circle holding 50.4% of the population (5,593,946 people); Center: 18.7250, -70.0750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

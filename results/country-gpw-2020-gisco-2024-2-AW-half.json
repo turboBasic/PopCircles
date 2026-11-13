@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 62820.45587751642,
+      "populationShare": 0.5960441390303075,
+      "radiusKm": 5.0,
+      "centerLatitude": 12.541666666666671,
+      "centerLongitude": -70.00833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Aruba",
+      "Iptc4xmpCore:CountryCode": "AW",
+      "countryName": "Aruba",
+      "countryCode": "AW",
+      "nearestSettlement": "Oranjestad",
+      "nearestSettlementCountry": "Aruba",
+      "distanceToSettlementKm": 2.917139204547999,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "12,32.5N",
+          "exif:GPSLongitude": "70,0.5W",
+          "Iptc4xmpExt:CountryName": "Aruba",
+          "Iptc4xmpExt:CountryCode": "AW",
+          "Iptc4xmpExt:City": "Oranjestad"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Aruba: 5 km circle holding 59.6% of the population (62,820 people); Center: 12.5417, -70.0083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          12,
+          1
+        ],
+        [
+          32,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          70,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Aruba: 5 km circle holding 59.6% of the population (62,820 people); Center: 12.5417, -70.0083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 54682.078272257,
+      "populationShare": 0.5566697219845816,
+      "radiusKm": 7.0,
+      "centerLatitude": -4.658333333333331,
+      "centerLongitude": 55.474999999999994,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Seychelles",
+      "Iptc4xmpCore:CountryCode": "SC",
+      "countryName": "Seychelles",
+      "countryCode": "SC",
+      "nearestSettlement": "Victoria",
+      "nearestSettlementCountry": "Seychelles",
+      "distanceToSettlementKm": 5.4023102422433436,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "4,39.5S",
+          "exif:GPSLongitude": "55,28.5E",
+          "Iptc4xmpExt:CountryName": "Seychelles",
+          "Iptc4xmpExt:CountryCode": "SC",
+          "Iptc4xmpExt:City": "Victoria"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Seychelles: 7 km circle holding 55.7% of the population (54,682 people); Center: -4.6583, 55.4750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          4,
+          1
+        ],
+        [
+          39,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          55,
+          1
+        ],
+        [
+          28,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Seychelles: 7 km circle holding 55.7% of the population (54,682 people); Center: -4.6583, 55.4750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

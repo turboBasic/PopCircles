@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 5789.297546386719,
+      "populationShare": 0.6571648306352307,
+      "radiusKm": 1.0,
+      "centerLatitude": 43.725,
+      "centerLongitude": 7.425000000000011,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Monaco",
+      "Iptc4xmpCore:CountryCode": "MC",
+      "countryName": "Monaco",
+      "countryCode": "MC",
+      "nearestSettlement": "Monaco",
+      "nearestSettlementCountry": "Monaco",
+      "distanceToSettlementKm": 2.1826853382575204,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "43,43.5N",
+          "exif:GPSLongitude": "7,25.5E",
+          "Iptc4xmpExt:CountryName": "Monaco",
+          "Iptc4xmpExt:CountryCode": "MC",
+          "Iptc4xmpExt:City": "Monaco"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Monaco: 1 km circle holding 65.7% of the population (5,789 people); Center: 43.7250, 7.4250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          43,
+          1
+        ],
+        [
+          43,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          7,
+          1
+        ],
+        [
+          25,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Monaco: 1 km circle holding 65.7% of the population (5,789 people); Center: 43.7250, 7.4250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

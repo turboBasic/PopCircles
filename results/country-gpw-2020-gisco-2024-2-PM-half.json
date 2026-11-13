@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 3905.8079812526703,
+      "populationShare": 0.6136778936973567,
+      "radiusKm": 3.0,
+      "centerLatitude": 46.775,
+      "centerLongitude": -56.19166666666666,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Saint Pierre and Miquelon",
+      "Iptc4xmpCore:CountryCode": "PM",
+      "countryName": "Saint Pierre and Miquelon",
+      "countryCode": "PM",
+      "nearestSettlement": "Argentia",
+      "nearestSettlementCountry": "Canada",
+      "distanceToSettlementKm": 176.77166977150623,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "46,46.5N",
+          "exif:GPSLongitude": "56,11.5W",
+          "Iptc4xmpExt:CountryName": "Saint Pierre and Miquelon",
+          "Iptc4xmpExt:CountryCode": "PM",
+          "Iptc4xmpExt:City": "Argentia"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Saint Pierre and Miquelon: 3 km circle holding 61.4% of the population (3,906 people); Center: 46.7750, -56.1917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          46,
+          1
+        ],
+        [
+          46,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          56,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Saint Pierre and Miquelon: 3 km circle holding 61.4% of the population (3,906 people); Center: 46.7750, -56.1917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

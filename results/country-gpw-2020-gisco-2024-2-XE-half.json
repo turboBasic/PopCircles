@@ -65,5 +65,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 19875.24591126293,
+      "populationShare": 0.5274641542862544,
+      "radiusKm": 18.0,
+      "centerLatitude": 31.208333333333336,
+      "centerLongitude": 79.10833333333335,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "China/India",
+      "Iptc4xmpCore:CountryCode": "XE",
+      "countryName": "China/India",
+      "countryCode": "XE",
+      "nearestSettlement": "Gar",
+      "nearestSettlementCountry": "China",
+      "distanceToSettlementKm": 137.91399543462762,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "31,12.5N",
+          "exif:GPSLongitude": "79,6.5E",
+          "Iptc4xmpExt:CountryName": "China/India",
+          "Iptc4xmpExt:CountryCode": "XE",
+          "Iptc4xmpExt:City": "Gar"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "China/India: 18 km circle holding 52.7% of the population (19,875 people); Center: 31.2083, 79.1083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          31,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          79,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "China/India: 18 km circle holding 52.7% of the population (19,875 people); Center: 31.2083, 79.1083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

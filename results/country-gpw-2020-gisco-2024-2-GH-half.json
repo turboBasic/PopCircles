@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 15363586.536627963,
+      "populationShare": 0.5030317953481455,
+      "radiusKm": 116.0,
+      "centerLatitude": 6.091666666666669,
+      "centerLongitude": -0.9416666666666629,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Ghana",
+      "Iptc4xmpCore:CountryCode": "GH",
+      "countryName": "Ghana",
+      "countryCode": "GH",
+      "nearestSettlement": "Nkawkaw",
+      "nearestSettlementCountry": "Ghana",
+      "distanceToSettlementKm": 54.05387933286647,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "6,5.5N",
+          "exif:GPSLongitude": "0,56.5W",
+          "Iptc4xmpExt:CountryName": "Ghana",
+          "Iptc4xmpExt:CountryCode": "GH",
+          "Iptc4xmpExt:City": "Nkawkaw"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Ghana: 116 km circle holding 50.3% of the population (15,363,587 people); Center: 6.0917, -0.9417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          6,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          0,
+          1
+        ],
+        [
+          56,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Ghana: 116 km circle holding 50.3% of the population (15,363,587 people); Center: 6.0917, -0.9417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

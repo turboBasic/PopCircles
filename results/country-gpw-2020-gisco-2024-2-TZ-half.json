@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 31091913.34881718,
+      "populationShare": 0.5012982105762539,
+      "radiusKm": 383.0,
+      "centerLatitude": -5.708333333333329,
+      "centerLongitude": 36.07499999999999,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "United Republic of Tanzania",
+      "Iptc4xmpCore:CountryCode": "TZ",
+      "countryName": "United Republic of Tanzania",
+      "countryCode": "TZ",
+      "nearestSettlement": "Dodoma",
+      "nearestSettlementCountry": "Tanzania",
+      "distanceToSettlementKm": 63.88517213532877,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "5,42.5S",
+          "exif:GPSLongitude": "36,4.5E",
+          "Iptc4xmpExt:CountryName": "United Republic of Tanzania",
+          "Iptc4xmpExt:CountryCode": "TZ",
+          "Iptc4xmpExt:City": "Dodoma"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "United Republic of Tanzania: 383 km circle holding 50.1% of the population (31,091,913 people); Center: -5.7083, 36.0750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          5,
+          1
+        ],
+        [
+          42,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          36,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "United Republic of Tanzania: 383 km circle holding 50.1% of the population (31,091,913 people); Center: -5.7083, 36.0750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

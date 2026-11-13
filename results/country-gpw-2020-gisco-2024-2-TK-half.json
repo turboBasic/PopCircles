@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 748.909223570663,
+      "populationShare": 0.5518860505600388,
+      "radiusKm": 37.0,
+      "centerLatitude": -9.275000000000006,
+      "centerLongitude": -171.49166666666667,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Tokelau",
+      "Iptc4xmpCore:CountryCode": "TK",
+      "countryName": "Tokelau",
+      "countryCode": "TK",
+      "nearestSettlement": "Atafu",
+      "nearestSettlementCountry": "Tokelau",
+      "distanceToSettlementKm": 136.88116764031025,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "9,16.5S",
+          "exif:GPSLongitude": "171,29.5W",
+          "Iptc4xmpExt:CountryName": "Tokelau",
+          "Iptc4xmpExt:CountryCode": "TK",
+          "Iptc4xmpExt:City": "Atafu"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Tokelau: 37 km circle holding 55.2% of the population (749 people); Center: -9.2750, -171.4917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          9,
+          1
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          171,
+          1
+        ],
+        [
+          29,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Tokelau: 37 km circle holding 55.2% of the population (749 people); Center: -9.2750, -171.4917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

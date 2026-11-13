@@ -65,5 +65,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 76944.18647473905,
+      "populationShare": 0.5008461630123561,
+      "radiusKm": 81.0,
+      "centerLatitude": 7.00833333333334,
+      "centerLongitude": -59.00833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Essequibo",
+      "Iptc4xmpCore:CountryCode": "XXY",
+      "countryName": "Essequibo",
+      "countryCode": "XXY",
+      "nearestSettlement": "Anna Regina",
+      "nearestSettlementCountry": "Guyana",
+      "distanceToSettlementKm": 63.19988302839621,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "7,0.5N",
+          "exif:GPSLongitude": "59,0.5W",
+          "Iptc4xmpExt:CountryName": "Essequibo",
+          "Iptc4xmpExt:CountryCode": "XXY",
+          "Iptc4xmpExt:City": "Anna Regina"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Essequibo: 81 km circle holding 50.1% of the population (76,944 people); Center: 7.0083, -59.0083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          7,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          59,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Essequibo: 81 km circle holding 50.1% of the population (76,944 people); Center: 7.0083, -59.0083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

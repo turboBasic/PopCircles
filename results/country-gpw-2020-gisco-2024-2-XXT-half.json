@@ -65,5 +65,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 0.7962841987609863,
+      "populationShare": 1.0,
+      "radiusKm": 1.0,
+      "centerLatitude": 16.141666666666666,
+      "centerLongitude": -88.25833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Sapodilla Cayes",
+      "Iptc4xmpCore:CountryCode": "XXT",
+      "countryName": "Sapodilla Cayes",
+      "countryCode": "XXT",
+      "nearestSettlement": "Punta Gorda",
+      "nearestSettlementCountry": "Belize",
+      "distanceToSettlementKm": 59.110990420146315,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "16,8.5N",
+          "exif:GPSLongitude": "88,15.5W",
+          "Iptc4xmpExt:CountryName": "Sapodilla Cayes",
+          "Iptc4xmpExt:CountryCode": "XXT",
+          "Iptc4xmpExt:City": "Punta Gorda"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Sapodilla Cayes: 1 km circle holding 100.0% of the population (1 people); Center: 16.1417, -88.2583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          16,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          88,
+          1
+        ],
+        [
+          15,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Sapodilla Cayes: 1 km circle holding 100.0% of the population (1 people); Center: 16.1417, -88.2583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

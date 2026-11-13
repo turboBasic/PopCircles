@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 15128217.513648104,
+      "populationShare": 0.5046669510644051,
+      "radiusKm": 116.0,
+      "centerLatitude": 14.558333333333337,
+      "centerLongitude": 43.89166666666665,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Yemen",
+      "Iptc4xmpCore:CountryCode": "YE",
+      "countryName": "Yemen",
+      "countryCode": "YE",
+      "nearestSettlement": "Dhamar",
+      "nearestSettlementCountry": "Yemen",
+      "distanceToSettlementKm": 53.3599730851903,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "14,33.5N",
+          "exif:GPSLongitude": "43,53.5E",
+          "Iptc4xmpExt:CountryName": "Yemen",
+          "Iptc4xmpExt:CountryCode": "YE",
+          "Iptc4xmpExt:City": "Dhamar"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Yemen: 116 km circle holding 50.5% of the population (15,128,218 people); Center: 14.5583, 43.8917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          14,
+          1
+        ],
+        [
+          33,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          43,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Yemen: 116 km circle holding 50.5% of the population (15,128,218 people); Center: 14.5583, 43.8917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

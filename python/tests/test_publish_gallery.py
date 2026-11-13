@@ -147,6 +147,14 @@ def successful_build(
         output.mkdir()
         (output / "index.html").write_text("new site", encoding="utf-8")
         (output / "map.png").write_bytes(b"map")
+        write_json(
+            output / "world.json",
+            {"document": "most-populous", "render_metadata": {"Title": "World"}},
+        )
+        write_json(
+            output / "country-fixture-10-AA-half.json",
+            {"document": "country-smallest", "render_metadata": {"Title": "Alpha"}},
+        )
         write_json(corpus / "country-sweep-fixture-10-half.json", country_result("country-sweep"))
         write_json(corpus / "country-fixture-10-AA-half.json", country_result("country-smallest"))
         return [], []
@@ -154,7 +162,7 @@ def successful_build(
     return build
 
 
-def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for_run_id(
+def test_publish_builds_in_isolation_persists_rendered_results_and_waits_for_run_id(
     layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     results, site = layout
@@ -177,7 +185,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert seen[0][0] != results
     assert (site / "index.html").read_text(encoding="utf-8") == "new site"
     assert (site / ".nojekyll").is_file()
-    assert (results / "world.json").read_bytes() == previous["world.json"]
+    assert json.loads((results / "world.json").read_text())["render_metadata"] == {"Title": "World"}
     assert (results / "country-sweep-other.json").read_bytes() == previous[
         "country-sweep-other.json"
     ]
@@ -187,6 +195,9 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert json.loads((results / "country-fixture-10-AA-half.json").read_text())["document"] == (
         "country-smallest"
     )
+    assert json.loads((results / "country-fixture-10-AA-half.json").read_text())[
+        "render_metadata"
+    ] == {"Title": "Alpha"}
     assert len(github.uploaded) == 1
     assert re.fullmatch(r"gallery-\d{8}T\d{12}Z-[0-9a-f]{32}\.zip", github.uploaded[0])
     assert ".nojekyll" in github.zip_files[0]

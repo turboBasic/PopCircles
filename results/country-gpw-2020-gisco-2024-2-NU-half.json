@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 1011.7549909353256,
+      "populationShare": 0.6242723016319057,
+      "radiusKm": 6.0,
+      "centerLatitude": -19.09166666666667,
+      "centerLongitude": -169.89166666666668,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Niue",
+      "Iptc4xmpCore:CountryCode": "NU",
+      "countryName": "Niue",
+      "countryCode": "NU",
+      "nearestSettlement": "Alofi",
+      "nearestSettlementCountry": "Niue",
+      "distanceToSettlementKm": 3.671199378236611,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "19,5.5S",
+          "exif:GPSLongitude": "169,53.5W",
+          "Iptc4xmpExt:CountryName": "Niue",
+          "Iptc4xmpExt:CountryCode": "NU",
+          "Iptc4xmpExt:City": "Alofi"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Niue: 6 km circle holding 62.4% of the population (1,012 people); Center: -19.0917, -169.8917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          19,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          169,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Niue: 6 km circle holding 62.4% of the population (1,012 people); Center: -19.0917, -169.8917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

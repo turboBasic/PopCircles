@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 139339.46604812145,
+      "populationShare": 0.5083616074328292,
+      "radiusKm": 50.0,
+      "centerLatitude": 17.641666666666666,
+      "centerLongitude": -88.65833333333333,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Belize",
+      "Iptc4xmpCore:CountryCode": "BZ",
+      "countryName": "Belize",
+      "countryCode": "BZ",
+      "nearestSettlement": "Belmopan",
+      "nearestSettlementCountry": "Belize",
+      "distanceToSettlementKm": 44.834614293027904,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "17,38.5N",
+          "exif:GPSLongitude": "88,39.5W",
+          "Iptc4xmpExt:CountryName": "Belize",
+          "Iptc4xmpExt:CountryCode": "BZ",
+          "Iptc4xmpExt:City": "Belmopan"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Belize: 50 km circle holding 50.8% of the population (139,339 people); Center: 17.6417, -88.6583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          17,
+          1
+        ],
+        [
+          38,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          88,
+          1
+        ],
+        [
+          39,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Belize: 50 km circle holding 50.8% of the population (139,339 people); Center: 17.6417, -88.6583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

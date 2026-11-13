@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 12852446.316443428,
+      "populationShare": 0.5015988599500782,
+      "radiusKm": 108.0,
+      "centerLatitude": 38.858333333333334,
+      "centerLongitude": 126.29166666666669,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "North Korea",
+      "Iptc4xmpCore:CountryCode": "KP",
+      "countryName": "North Korea",
+      "countryCode": "KP",
+      "nearestSettlement": "Pyongyang",
+      "nearestSettlementCountry": "North Korea",
+      "distanceToSettlementKm": 50.012324967550114,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "38,51.5N",
+          "exif:GPSLongitude": "126,17.5E",
+          "Iptc4xmpExt:CountryName": "North Korea",
+          "Iptc4xmpExt:CountryCode": "KP",
+          "Iptc4xmpExt:City": "Pyongyang"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "North Korea: 108 km circle holding 50.2% of the population (12,852,446 people); Center: 38.8583, 126.2917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          38,
+          1
+        ],
+        [
+          51,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          126,
+          1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "North Korea: 108 km circle holding 50.2% of the population (12,852,446 people); Center: 38.8583, 126.2917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

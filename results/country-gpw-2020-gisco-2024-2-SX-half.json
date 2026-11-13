@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 21437.34555053711,
+      "populationShare": 0.6480793744789846,
+      "radiusKm": 2.0,
+      "centerLatitude": 18.04166666666667,
+      "centerLongitude": -63.05833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Sint-Maarten",
+      "Iptc4xmpCore:CountryCode": "SX",
+      "countryName": "Sint-Maarten",
+      "countryCode": "SX",
+      "nearestSettlement": "Basseterre",
+      "nearestSettlementCountry": "Saint Kitts and Nevis",
+      "distanceToSettlementKm": 89.8429682370488,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,2.5N",
+          "exif:GPSLongitude": "63,3.5W",
+          "Iptc4xmpExt:CountryName": "Sint-Maarten",
+          "Iptc4xmpExt:CountryCode": "SX",
+          "Iptc4xmpExt:City": "Basseterre"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Sint-Maarten: 2 km circle holding 64.8% of the population (21,437 people); Center: 18.0417, -63.0583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          63,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Sint-Maarten: 2 km circle holding 64.8% of the population (21,437 people); Center: 18.0417, -63.0583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 64441.606384277344,
+      "populationShare": 0.6208751488729205,
+      "radiusKm": 4.0,
+      "centerLatitude": 49.19166666666667,
+      "centerLongitude": -2.0916666666666686,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Jersey",
+      "Iptc4xmpCore:CountryCode": "JE",
+      "countryName": "Jersey",
+      "countryCode": "JE",
+      "nearestSettlement": "Cherbourg-Octeville",
+      "nearestSettlementCountry": "France",
+      "distanceToSettlementKm": 60.18662672017228,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "49,11.5N",
+          "exif:GPSLongitude": "2,5.5W",
+          "Iptc4xmpExt:CountryName": "Jersey",
+          "Iptc4xmpExt:CountryCode": "JE",
+          "Iptc4xmpExt:City": "Cherbourg-Octeville"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Jersey: 4 km circle holding 62.1% of the population (64,442 people); Center: 49.1917, -2.0917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          49,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          2,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Jersey: 4 km circle holding 62.1% of the population (64,442 people); Center: 49.1917, -2.0917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

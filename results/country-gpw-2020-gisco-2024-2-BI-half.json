@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 6458776.954166412,
+      "populationShare": 0.5021688429207208,
+      "radiusKm": 55.0,
+      "centerLatitude": -3.2750000000000057,
+      "centerLongitude": 29.741666666666674,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Burundi",
+      "Iptc4xmpCore:CountryCode": "BI",
+      "countryName": "Burundi",
+      "countryCode": "BI",
+      "nearestSettlement": "Muramvya",
+      "nearestSettlementCountry": "Burundi",
+      "distanceToSettlementKm": 14.478926409445753,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "3,16.5S",
+          "exif:GPSLongitude": "29,44.5E",
+          "Iptc4xmpExt:CountryName": "Burundi",
+          "Iptc4xmpExt:CountryCode": "BI",
+          "Iptc4xmpExt:City": "Muramvya"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Burundi: 55 km circle holding 50.2% of the population (6,458,777 people); Center: -3.2750, 29.7417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          3,
+          1
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          29,
+          1
+        ],
+        [
+          44,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Burundi: 55 km circle holding 50.2% of the population (6,458,777 people); Center: -3.2750, 29.7417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

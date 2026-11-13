@@ -65,5 +65,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 3267.368215560913,
+      "populationShare": 0.5121195579788097,
+      "radiusKm": 19.0,
+      "centerLatitude": 21.875,
+      "centerLongitude": 33.64166666666665,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Bir Tawil (Disputed Territory)",
+      "Iptc4xmpCore:CountryCode": "XV",
+      "countryName": "Bir Tawil (Disputed Territory)",
+      "countryCode": "XV",
+      "nearestSettlement": "Wadi Halfa",
+      "nearestSettlementCountry": "Sudan",
+      "distanceToSettlementKm": 236.68524846934355,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "21,52.5N",
+          "exif:GPSLongitude": "33,38.5E",
+          "Iptc4xmpExt:CountryName": "Bir Tawil (Disputed Territory)",
+          "Iptc4xmpExt:CountryCode": "XV",
+          "Iptc4xmpExt:City": "Wadi Halfa"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Bir Tawil (Disputed Territory): 19 km circle holding 51.2% of the population (3,267 people); Center: 21.8750, 33.6417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          21,
+          1
+        ],
+        [
+          52,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          33,
+          1
+        ],
+        [
+          38,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Bir Tawil (Disputed Territory): 19 km circle holding 51.2% of the population (3,267 people); Center: 21.8750, 33.6417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

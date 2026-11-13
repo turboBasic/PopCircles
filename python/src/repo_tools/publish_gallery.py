@@ -10,8 +10,10 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from stat import S_ISLNK
 from tempfile import TemporaryDirectory
+from typing import cast
 from uuid import uuid4
 
+from population_circles.circle_document import CIRCLE_KINDS
 from population_circles.gallery import build as build_gallery
 from population_circles.gallery import same_country_answer
 
@@ -93,6 +95,34 @@ def persist_country_results(corpus: Path) -> None:
             continue
         if payload.get("document") not in {"country-sweep", "country-smallest"}:
             continue
+        temporary = RESULTS / f".{source.name}.{uuid4().hex}.tmp"
+        try:
+            temporary.write_bytes(content)
+            temporary.replace(destination)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
+def persist_rendered_results(site: Path) -> None:
+    for source in sorted(site.glob("*.json")):
+        content = source.read_bytes()
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        payload = cast(dict[str, object], payload)
+        if (
+            payload.get("document") not in CIRCLE_KINDS | {"country-smallest"}
+            or "render_metadata" not in payload
+        ):
+            continue
+        destination = RESULTS / source.name
+        if destination.is_file():
+            previous = destination.read_bytes()
+            if previous == content or same_country_answer(previous, content):
+                continue
         temporary = RESULTS / f".{source.name}.{uuid4().hex}.tmp"
         try:
             temporary.write_bytes(content)
@@ -299,6 +329,7 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
         zip_site(staged, asset)
         replace_site(staged)
         persist_country_results(corpus)
+        persist_rendered_results(SITE)
         ensure_draft_release()
         try:
             checked("gh", "release", "upload", RELEASE_TAG, str(asset))

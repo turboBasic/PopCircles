@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 3655247.57975919,
+      "populationShare": 0.5003924211010907,
+      "radiusKm": 208.0,
+      "centerLatitude": 19.674999999999997,
+      "centerLongitude": 102.29166666666669,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Laos",
+      "Iptc4xmpCore:CountryCode": "LA",
+      "countryName": "Laos",
+      "countryCode": "LA",
+      "nearestSettlement": "Luang Prabang",
+      "nearestSettlementCountry": "Laos",
+      "distanceToSettlementKm": 28.095821242836813,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "19,40.5N",
+          "exif:GPSLongitude": "102,17.5E",
+          "Iptc4xmpExt:CountryName": "Laos",
+          "Iptc4xmpExt:CountryCode": "LA",
+          "Iptc4xmpExt:City": "Luang Prabang"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Laos: 208 km circle holding 50.0% of the population (3,655,248 people); Center: 19.6750, 102.2917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          19,
+          1
+        ],
+        [
+          40,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          102,
+          1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Laos: 208 km circle holding 50.0% of the population (3,655,248 people); Center: 19.6750, 102.2917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

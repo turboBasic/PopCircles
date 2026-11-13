@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 18791372.361645952,
+      "populationShare": 0.500536876212968,
+      "radiusKm": 369.0,
+      "centerLatitude": 44.575,
+      "centerLongitude": -77.34166666666667,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Canada",
+      "Iptc4xmpCore:CountryCode": "CA",
+      "countryName": "Canada",
+      "countryCode": "CA",
+      "nearestSettlement": "Belleville",
+      "nearestSettlementCountry": "Canada",
+      "distanceToSettlementKm": 45.5250040637697,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "44,34.5N",
+          "exif:GPSLongitude": "77,20.5W",
+          "Iptc4xmpExt:CountryName": "Canada",
+          "Iptc4xmpExt:CountryCode": "CA",
+          "Iptc4xmpExt:City": "Belleville"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Canada: 369 km circle holding 50.1% of the population (18,791,372 people); Center: 44.5750, -77.3417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          44,
+          1
+        ],
+        [
+          34,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          77,
+          1
+        ],
+        [
+          20,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Canada: 369 km circle holding 50.1% of the population (18,791,372 people); Center: 44.5750, -77.3417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

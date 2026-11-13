@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 107888865.88086586,
+      "populationShare": 0.5001039513688429,
+      "radiusKm": 672.0,
+      "centerLatitude": -21.424999999999997,
+      "centerLongitude": -46.55833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Brazil",
+      "Iptc4xmpCore:CountryCode": "BR",
+      "countryName": "Brazil",
+      "countryCode": "BR",
+      "nearestSettlement": "Guaxupé",
+      "nearestSettlementCountry": "Brazil",
+      "distanceToSettlementKm": 21.7200950914428,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "21,25.5S",
+          "exif:GPSLongitude": "46,33.5W",
+          "Iptc4xmpExt:CountryName": "Brazil",
+          "Iptc4xmpExt:CountryCode": "BR",
+          "Iptc4xmpExt:City": "Guaxupé"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Brazil: 672 km circle holding 50.0% of the population (107,888,866 people); Center: -21.4250, -46.5583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          21,
+          1
+        ],
+        [
+          25,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          46,
+          1
+        ],
+        [
+          33,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Brazil: 672 km circle holding 50.0% of the population (107,888,866 people); Center: -21.4250, -46.5583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

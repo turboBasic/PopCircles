@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 325613.34282940626,
+      "populationShare": 0.5191662647735603,
+      "radiusKm": 38.0,
+      "centerLatitude": 42.525,
+      "centerLongitude": 19.07499999999999,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Montenegro",
+      "Iptc4xmpCore:CountryCode": "ME",
+      "countryName": "Montenegro",
+      "countryCode": "ME",
+      "nearestSettlement": "Podgorica",
+      "nearestSettlementCountry": "Montenegro",
+      "distanceToSettlementKm": 17.00275156263155,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "42,31.5N",
+          "exif:GPSLongitude": "19,4.5E",
+          "Iptc4xmpExt:CountryName": "Montenegro",
+          "Iptc4xmpExt:CountryCode": "ME",
+          "Iptc4xmpExt:City": "Podgorica"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Montenegro: 38 km circle holding 51.9% of the population (325,613 people); Center: 42.5250, 19.0750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          42,
+          1
+        ],
+        [
+          31,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          19,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Montenegro: 38 km circle holding 51.9% of the population (325,613 people); Center: 42.5250, 19.0750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

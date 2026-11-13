@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 282957.376953125,
+      "populationShare": 0.6619310066411528,
+      "radiusKm": 2.0,
+      "centerLatitude": 22.20833333333333,
+      "centerLongitude": 113.54166666666669,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Macau",
+      "Iptc4xmpCore:CountryCode": "MO",
+      "countryName": "Macau",
+      "countryCode": "MO",
+      "nearestSettlement": "Macau",
+      "nearestSettlementCountry": "Macau S.A.R",
+      "distanceToSettlementKm": 2.152892984069253,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "22,12.5N",
+          "exif:GPSLongitude": "113,32.5E",
+          "Iptc4xmpExt:CountryName": "Macau",
+          "Iptc4xmpExt:CountryCode": "MO",
+          "Iptc4xmpExt:City": "Macau"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Macau: 2 km circle holding 66.2% of the population (282,957 people); Center: 22.2083, 113.5417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          22,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          113,
+          1
+        ],
+        [
+          32,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Macau: 2 km circle holding 66.2% of the population (282,957 people); Center: 22.2083, 113.5417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

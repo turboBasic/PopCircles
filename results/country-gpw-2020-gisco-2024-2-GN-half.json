@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 7165992.294512031,
+      "populationShare": 0.5017208177834107,
+      "radiusKm": 154.0,
+      "centerLatitude": 10.708333333333329,
+      "centerLongitude": -13.191666666666663,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Guinea",
+      "Iptc4xmpCore:CountryCode": "GN",
+      "countryName": "Guinea",
+      "countryCode": "GN",
+      "nearestSettlement": "Télimélé",
+      "nearestSettlementCountry": "Guinea",
+      "distanceToSettlementKm": 27.23809824547264,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "10,42.5N",
+          "exif:GPSLongitude": "13,11.5W",
+          "Iptc4xmpExt:CountryName": "Guinea",
+          "Iptc4xmpExt:CountryCode": "GN",
+          "Iptc4xmpExt:City": "Télimélé"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Guinea: 154 km circle holding 50.2% of the population (7,165,992 people); Center: 10.7083, -13.1917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          10,
+          1
+        ],
+        [
+          42,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          13,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Guinea: 154 km circle holding 50.2% of the population (7,165,992 people); Center: 10.7083, -13.1917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

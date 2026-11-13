@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 55952872.72798246,
+      "populationShare": 0.5004356246190218,
+      "radiusKm": 268.0,
+      "centerLatitude": 8.075000000000003,
+      "centerLongitude": 37.80833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Ethiopia",
+      "Iptc4xmpCore:CountryCode": "ET",
+      "countryName": "Ethiopia",
+      "countryCode": "ET",
+      "nearestSettlement": "Waliso",
+      "nearestSettlementCountry": "Ethiopia",
+      "distanceToSettlementKm": 53.67470033989971,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "8,4.5N",
+          "exif:GPSLongitude": "37,48.5E",
+          "Iptc4xmpExt:CountryName": "Ethiopia",
+          "Iptc4xmpExt:CountryCode": "ET",
+          "Iptc4xmpExt:City": "Waliso"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Ethiopia: 268 km circle holding 50.0% of the population (55,952,873 people); Center: 8.0750, 37.8083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          8,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          37,
+          1
+        ],
+        [
+          48,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Ethiopia: 268 km circle holding 50.0% of the population (55,952,873 people); Center: 8.0750, 37.8083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 8732294.497511756,
+      "populationShare": 0.5013448812735359,
+      "radiusKm": 175.0,
+      "centerLatitude": -18.575000000000003,
+      "centerLongitude": 31.10833333333332,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Zimbabwe",
+      "Iptc4xmpCore:CountryCode": "ZW",
+      "countryName": "Zimbabwe",
+      "countryCode": "ZW",
+      "nearestSettlement": "Chitungwiza",
+      "nearestSettlementCountry": "Zimbabwe",
+      "distanceToSettlementKm": 63.943108781650935,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,34.5S",
+          "exif:GPSLongitude": "31,6.5E",
+          "Iptc4xmpExt:CountryName": "Zimbabwe",
+          "Iptc4xmpExt:CountryCode": "ZW",
+          "Iptc4xmpExt:City": "Chitungwiza"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Zimbabwe: 175 km circle holding 50.1% of the population (8,732,294 people); Center: -18.5750, 31.1083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          34,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          31,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Zimbabwe: 175 km circle holding 50.1% of the population (8,732,294 people); Center: -18.5750, 31.1083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

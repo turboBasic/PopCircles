@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 17366929.414274696,
+      "populationShare": 0.5006644329782578,
+      "radiusKm": 434.0,
+      "centerLatitude": 22.891666666666666,
+      "centerLongitude": 42.95833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Saudi Arabia",
+      "Iptc4xmpCore:CountryCode": "SA",
+      "countryName": "Saudi Arabia",
+      "countryCode": "SA",
+      "nearestSettlement": "Al-Quway'iyah governorate",
+      "nearestSettlementCountry": "Saudi Arabia",
+      "distanceToSettlementKm": 270.86106276317776,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "22,53.5N",
+          "exif:GPSLongitude": "42,57.5E",
+          "Iptc4xmpExt:CountryName": "Saudi Arabia",
+          "Iptc4xmpExt:CountryCode": "SA",
+          "Iptc4xmpExt:City": "Al-Quway'iyah governorate"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Saudi Arabia: 434 km circle holding 50.1% of the population (17,366,929 people); Center: 22.8917, 42.9583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          22,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          42,
+          1
+        ],
+        [
+          57,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Saudi Arabia: 434 km circle holding 50.1% of the population (17,366,929 people); Center: 22.8917, 42.9583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

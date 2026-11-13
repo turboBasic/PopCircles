@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 147866.62642097473,
+      "populationShare": 0.5141477769182464,
+      "radiusKm": 7.0,
+      "centerLatitude": 13.125,
+      "centerLongitude": -59.575,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Barbados",
+      "Iptc4xmpCore:CountryCode": "BB",
+      "countryName": "Barbados",
+      "countryCode": "BB",
+      "nearestSettlement": "Bridgetown",
+      "nearestSettlementCountry": "Barbados",
+      "distanceToSettlementKm": 5.173363102986296,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "13,7.5N",
+          "exif:GPSLongitude": "59,34.5W",
+          "Iptc4xmpExt:CountryName": "Barbados",
+          "Iptc4xmpExt:CountryCode": "BB",
+          "Iptc4xmpExt:City": "Bridgetown"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Barbados: 7 km circle holding 51.4% of the population (147,867 people); Center: 13.1250, -59.5750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          13,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          59,
+          1
+        ],
+        [
+          34,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Barbados: 7 km circle holding 51.4% of the population (147,867 people); Center: 13.1250, -59.5750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

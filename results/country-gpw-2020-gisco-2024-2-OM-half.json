@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 2464416.3309427164,
+      "populationShare": 0.5012063341328666,
+      "radiusKm": 88.0,
+      "centerLatitude": 23.34166666666667,
+      "centerLongitude": 57.85833333333332,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Oman",
+      "Iptc4xmpCore:CountryCode": "OM",
+      "countryName": "Oman",
+      "countryCode": "OM",
+      "nearestSettlement": "'Alayat Sama’il",
+      "nearestSettlementCountry": "Oman",
+      "distanceToSettlementKm": 12.966562432743418,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "23,20.5N",
+          "exif:GPSLongitude": "57,51.5E",
+          "Iptc4xmpExt:CountryName": "Oman",
+          "Iptc4xmpExt:CountryCode": "OM",
+          "Iptc4xmpExt:City": "'Alayat Sama’il"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Oman: 88 km circle holding 50.1% of the population (2,464,416 people); Center: 23.3417, 57.8583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          23,
+          1
+        ],
+        [
+          20,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          57,
+          1
+        ],
+        [
+          51,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Oman: 88 km circle holding 50.1% of the population (2,464,416 people); Center: 23.3417, 57.8583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

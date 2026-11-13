@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 60345.307633894496,
+      "populationShare": 0.553897455456764,
+      "radiusKm": 11.0,
+      "centerLatitude": -21.174999999999997,
+      "centerLongitude": -175.175,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Tonga",
+      "Iptc4xmpCore:CountryCode": "TO",
+      "countryName": "Tonga",
+      "countryCode": "TO",
+      "nearestSettlement": "Nuku'alofa",
+      "nearestSettlementCountry": "Tonga",
+      "distanceToSettlementKm": 6.227931396621257,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "21,10.5S",
+          "exif:GPSLongitude": "175,10.5W",
+          "Iptc4xmpExt:CountryName": "Tonga",
+          "Iptc4xmpExt:CountryCode": "TO",
+          "Iptc4xmpExt:City": "Nuku'alofa"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Tonga: 11 km circle holding 55.4% of the population (60,345 people); Center: -21.1750, -175.1750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          21,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          175,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Tonga: 11 km circle holding 55.4% of the population (60,345 people); Center: -21.1750, -175.1750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

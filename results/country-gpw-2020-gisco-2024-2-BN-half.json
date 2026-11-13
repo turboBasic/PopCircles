@@ -66,5 +66,85 @@
         "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 240308.67160701752,
+      "populationShare": 0.5350899664359554,
+      "radiusKm": 10.0,
+      "centerLatitude": 4.924999999999997,
+      "centerLongitude": 114.92500000000001,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Brunei",
+      "Iptc4xmpCore:CountryCode": "BN",
+      "countryName": "Brunei",
+      "countryCode": "BN",
+      "nearestSettlement": "Bandar Seri Begawan",
+      "nearestSettlementCountry": "Brunei",
+      "distanceToSettlementKm": 4.723407693293265,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "4,55.5N",
+          "exif:GPSLongitude": "114,55.5E",
+          "Iptc4xmpExt:CountryName": "Brunei",
+          "Iptc4xmpExt:CountryCode": "BN",
+          "Iptc4xmpExt:City": "Bandar Seri Begawan"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Brunei: 10 km circle holding 53.5% of the population (240,309 people); Center: 4.9250, 114.9250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          4,
+          1
+        ],
+        [
+          55,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          114,
+          1
+        ],
+        [
+          55,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Brunei: 10 km circle holding 53.5% of the population (240,309 people); Center: 4.9250, 114.9250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 9434181.71773988,
+      "populationShare": 0.5013745071236714,
+      "radiusKm": 70.0,
+      "centerLatitude": -33.29166666666667,
+      "centerLongitude": -70.97500000000001,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Chile",
+      "Iptc4xmpCore:CountryCode": "CL",
+      "countryName": "Chile",
+      "countryCode": "CL",
+      "nearestSettlement": "Santiago",
+      "nearestSettlementCountry": "Chile",
+      "distanceToSettlementKm": 34.364571887110074,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "33,17.5S",
+          "exif:GPSLongitude": "70,58.5W",
+          "Iptc4xmpExt:CountryName": "Chile",
+          "Iptc4xmpExt:CountryCode": "CL",
+          "Iptc4xmpExt:City": "Santiago"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Chile: 70 km circle holding 50.1% of the population (9,434,182 people); Center: -33.2917, -70.9750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          33,
+          1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          70,
+          1
+        ],
+        [
+          58,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Chile: 70 km circle holding 50.1% of the population (9,434,182 people); Center: -33.2917, -70.9750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

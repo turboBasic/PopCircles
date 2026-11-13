@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 14588184.630397063,
+      "populationShare": 0.5002242222386882,
+      "radiusKm": 151.0,
+      "centerLatitude": -9.808333333333337,
+      "centerLongitude": 14.125,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Angola",
+      "Iptc4xmpCore:CountryCode": "AO",
+      "countryName": "Angola",
+      "countryCode": "AO",
+      "nearestSettlement": "Dondo",
+      "nearestSettlementCountry": "Angola",
+      "distanceToSettlementKm": 35.922030747070835,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "9,48.5S",
+          "exif:GPSLongitude": "14,7.5E",
+          "Iptc4xmpExt:CountryName": "Angola",
+          "Iptc4xmpExt:CountryCode": "AO",
+          "Iptc4xmpExt:City": "Dondo"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Angola: 151 km circle holding 50.0% of the population (14,588,185 people); Center: -9.8083, 14.1250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          9,
+          1
+        ],
+        [
+          48,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          14,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Angola: 151 km circle holding 50.0% of the population (14,588,185 people); Center: -9.8083, 14.1250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

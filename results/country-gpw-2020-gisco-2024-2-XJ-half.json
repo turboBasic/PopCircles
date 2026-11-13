@@ -65,5 +65,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 11.735544204711914,
+      "populationShare": 0.6067146387149552,
+      "radiusKm": 1.0,
+      "centerLatitude": 37.24166666666667,
+      "centerLongitude": 131.85833333333335,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Liancourt Rock",
+      "Iptc4xmpCore:CountryCode": "XJ",
+      "countryName": "Liancourt Rock",
+      "countryCode": "XJ",
+      "nearestSettlement": "Matsue",
+      "nearestSettlementCountry": "Japan",
+      "distanceToSettlementKm": 225.0497358906905,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "37,14.5N",
+          "exif:GPSLongitude": "131,51.5E",
+          "Iptc4xmpExt:CountryName": "Liancourt Rock",
+          "Iptc4xmpExt:CountryCode": "XJ",
+          "Iptc4xmpExt:City": "Matsue"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Liancourt Rock: 1 km circle holding 60.7% of the population (12 people); Center: 37.2417, 131.8583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          37,
+          1
+        ],
+        [
+          14,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          131,
+          1
+        ],
+        [
+          51,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Liancourt Rock: 1 km circle holding 60.7% of the population (12 people); Center: 37.2417, 131.8583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

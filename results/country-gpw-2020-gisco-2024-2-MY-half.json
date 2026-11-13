@@ -66,5 +66,85 @@
         "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 16270627.359205976,
+      "populationShare": 0.503797340849621,
+      "radiusKm": 184.0,
+      "centerLatitude": 4.558333333333337,
+      "centerLongitude": 101.69166666666666,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Malaysia",
+      "Iptc4xmpCore:CountryCode": "MY",
+      "countryName": "Malaysia",
+      "countryCode": "MY",
+      "nearestSettlement": "Kuala Lipis",
+      "nearestSettlementCountry": "Malaysia",
+      "distanceToSettlementKm": 56.93203586799575,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "4,33.5N",
+          "exif:GPSLongitude": "101,41.5E",
+          "Iptc4xmpExt:CountryName": "Malaysia",
+          "Iptc4xmpExt:CountryCode": "MY",
+          "Iptc4xmpExt:City": "Kuala Lipis"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Malaysia: 184 km circle holding 50.4% of the population (16,270,627 people); Center: 4.5583, 101.6917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          4,
+          1
+        ],
+        [
+          33,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          101,
+          1
+        ],
+        [
+          41,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Malaysia: 184 km circle holding 50.4% of the population (16,270,627 people); Center: 4.5583, 101.6917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }
