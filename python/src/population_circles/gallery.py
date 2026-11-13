@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict, cast
@@ -35,11 +36,17 @@ RENDER_INPUTS = tuple(
         [
             *Path(__file__).parent.rglob("*.py"),
             REPO_ROOT / "data" / "config.toml",
+            REPO_ROOT / "data" / "gallery.toml",
             REPO_ROOT / "data" / "registry.toml",
         ],
         key=lambda path: path.as_posix(),
     )
 )
+
+
+def excluded_country_ids() -> set[str]:
+    config = tomllib.loads((REPO_ROOT / "data" / "gallery.toml").read_text(encoding="utf-8"))
+    return set(config["excluded_country_ids"])
 
 
 @dataclass(frozen=True)
@@ -386,6 +393,9 @@ def build_gallery_output(
     skipped: list[Skipped] = []
     reused_maps = rendered_maps = 0
     unavailable = set(missing)
+    excluded = excluded_country_ids()
+    sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
+    skipped.extend(excluded_sources)
     render_jobs: list[tuple[Path, dict[str, Any], int, int]] = []
     try:
         build_frontend(output)
@@ -459,6 +469,21 @@ def build_gallery_output(
         flush=True,
     )
     return drawn, skipped
+
+
+def omit_excluded_sources(
+    sources: list[tuple[Path, dict[str, Any]]], output: Path, excluded: set[str]
+) -> tuple[list[tuple[Path, dict[str, Any]]], list[Skipped]]:
+    rendered: list[tuple[Path, dict[str, Any]]] = []
+    skipped: list[Skipped] = []
+    for source, payload in sources:
+        if payload.get("result", {}).get("country", {}).get("id") in excluded:
+            (output / source.name).unlink(missing_ok=True)
+            (output / f"{source.stem}.png").unlink(missing_ok=True)
+            skipped.append(Skipped(source, "excluded country"))
+        else:
+            rendered.append((source, payload))
+    return rendered, skipped
 
 
 def country_result_document(
@@ -563,7 +588,8 @@ def missing_country_names(sweep: dict[str, Any], countries: list[dict[str, Any]]
     if accounted_for != expected.keys():
         message = "country sweep: result does not account for every configured country"
         raise ValueError(message)
-    return [expected[country_id] for country_id in missing]
+    excluded = excluded_country_ids()
+    return [expected[country_id] for country_id in missing if country_id not in excluded]
 
 
 def cached_sweep(

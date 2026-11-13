@@ -19,7 +19,9 @@
   );
   let selectedFigure = $derived(selectedCountry?.figures[0] ?? null);
   let visibleCountryResults = $derived(
-    data ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen) : []
+    data
+      ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen, includeZeroPopulation)
+      : []
   );
   let browserOpen = $state(false);
   let themeLight = $state(false);
@@ -314,7 +316,11 @@
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
   .world, .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
-  .world > summary { justify-content: flex-start; font-size: 1.25rem; }
+  .world > summary { justify-content: flex-start; font-size: 1.25rem; list-style: none; }
+  .world > summary::-webkit-details-marker { display: none; }
+  .world > summary::after { content: ''; width: 1rem; height: 1rem; margin-left: auto; background: linear-gradient(var(--accent), var(--accent)) center / .75rem 2px no-repeat, linear-gradient(var(--accent), var(--accent)) center / 2px .75rem no-repeat; }
+  .world[open] > summary::after { background: linear-gradient(var(--accent), var(--accent)) center / .75rem 2px no-repeat; }
+  .world > .figure-grid { margin-top: 1.25rem; }
   .country-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .75rem; flex-wrap: wrap; }
   .country-actions h2 { margin: 0; }
   .map-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }

@@ -45,7 +45,8 @@ test('defaults to Germany or the first available country', () => {
 test('shows maps for the selected country or every country when expanded', () => {
   assert.deepEqual(visibleCountries(countries, 'country-result-AA', false), [countries[0]]);
   assert.deepEqual(visibleCountries(countries, null, false), []);
-  assert.deepEqual(visibleCountries(countries, 'country-result-AA', true), countries);
+  assert.deepEqual(visibleCountries(countries, 'country-result-AA', true), countries.slice(0, 2));
+  assert.deepEqual(visibleCountries(countries, 'country-result-AA', true, true), countries);
 });
 
 test('copies the selected country fragment without keeping an old fragment', () => {
