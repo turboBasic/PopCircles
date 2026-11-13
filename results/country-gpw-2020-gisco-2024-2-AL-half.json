@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.7127505840378824e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 10,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 90,
-          "blocks_examined": 5166,
-          "blocks_pruned": 3734,
-          "circles_evaluated": 1432,
-          "kernels_built": 2154
-        }
+      "nearest_settlement": {
+        "name": "Tirana",
+        "country": "Albania",
+        "country_iso_alpha2": "AL",
+        "distance_km": 10.228608354505509,
+        "short_form": false
       }
     }
   }

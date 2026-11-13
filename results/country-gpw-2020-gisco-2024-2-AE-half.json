@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010264794086845194,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 120,
-          "blocks_examined": 24262,
-          "blocks_pruned": 17422,
-          "circles_evaluated": 6840,
-          "kernels_built": 7746
-        }
+      "nearest_settlement": {
+        "name": "Dubai",
+        "country": "United Arab Emirates",
+        "country_iso_alpha2": "AE",
+        "distance_km": 30.747930340657188,
+        "short_form": false
       }
     }
   }

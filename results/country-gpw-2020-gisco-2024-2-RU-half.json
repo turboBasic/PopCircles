@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0016294022594548925,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 20,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 300,
-          "blocks_examined": 117892,
-          "blocks_pruned": 86863,
-          "circles_evaluated": 31029,
-          "kernels_built": 48179
-        }
+      "nearest_settlement": {
+        "name": "Penza",
+        "country": "Russia",
+        "country_iso_alpha2": "RU",
+        "distance_km": 26.40479651341523,
+        "short_form": false
       }
     }
   }

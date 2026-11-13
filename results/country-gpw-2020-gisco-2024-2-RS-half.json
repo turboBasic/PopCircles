@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0001010388983253093,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 137,
-          "blocks_examined": 21632,
-          "blocks_pruned": 16074,
-          "circles_evaluated": 5558,
-          "kernels_built": 5246
-        }
+      "nearest_settlement": {
+        "name": "Belgrade",
+        "country": "Serbia",
+        "country_iso_alpha2": "RS",
+        "distance_km": 34.726872146523064,
+        "short_form": false
       }
     }
   }

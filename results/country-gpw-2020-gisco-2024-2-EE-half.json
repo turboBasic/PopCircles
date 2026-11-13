@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.3145028421230676e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 120,
-          "blocks_examined": 7416,
-          "blocks_pruned": 5425,
-          "circles_evaluated": 1991,
-          "kernels_built": 2751
-        }
+      "nearest_settlement": {
+        "name": "Tallinn",
+        "country": "Estonia",
+        "country_iso_alpha2": "EE",
+        "distance_km": 33.3621290228467,
+        "short_form": false
       }
     }
   }

@@ -57,7 +57,14 @@
       },
       "covers_whole_grid": false,
       "predicate_slack_persons": 4.6888444026344775e-07,
-      "tolerance_persons": 0.0
+      "tolerance_persons": 0.0,
+      "nearest_settlement": {
+        "name": "Andorra la Vella",
+        "country": "Andorra",
+        "country_iso_alpha2": "AD",
+        "distance_km": 2.615520014345095,
+        "short_form": true
+      }
     }
   }
 }

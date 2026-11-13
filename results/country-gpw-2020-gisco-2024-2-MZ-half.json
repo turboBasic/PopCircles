@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00023737762383372498,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 209,
-          "blocks_examined": 68078,
-          "blocks_pruned": 50258,
-          "circles_evaluated": 17820,
-          "kernels_built": 10201
-        }
+      "nearest_settlement": {
+        "name": "Ligonha",
+        "country": "Mozambique",
+        "country_iso_alpha2": "MZ",
+        "distance_km": 62.6854179870093,
+        "short_form": false
       }
     }
   }

@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 3.591548416665298e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 64,
-          "blocks_examined": 2266,
-          "blocks_pruned": 1638,
-          "circles_evaluated": 628,
-          "kernels_built": 1175
-        }
+      "nearest_settlement": {
+        "name": "Bandar Seri Begawan",
+        "country": "Brunei",
+        "country_iso_alpha2": "BN",
+        "distance_km": 4.723407693293265,
+        "short_form": true
       }
     }
   }

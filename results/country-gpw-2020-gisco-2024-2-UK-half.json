@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0004817700948416935,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 0,
-        "radii_reused": 16,
-        "searched": {
-          "levels": 0,
-          "blocks_examined": 0,
-          "blocks_pruned": 0,
-          "circles_evaluated": 0,
-          "kernels_built": 0
-        }
+      "nearest_settlement": {
+        "name": "Oxford",
+        "country": "United Kingdom",
+        "country_iso_alpha2": "GB",
+        "distance_km": 11.182426303357738,
+        "short_form": false
       }
     }
   }

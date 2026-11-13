@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.235800088981783e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 135,
-          "blocks_examined": 12688,
-          "blocks_pruned": 9392,
-          "circles_evaluated": 3296,
-          "kernels_built": 3856
-        }
+      "nearest_settlement": {
+        "name": "Kakata",
+        "country": "Liberia",
+        "country_iso_alpha2": "LR",
+        "distance_km": 25.847131991580603,
+        "short_form": false
       }
     }
   }

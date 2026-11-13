@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010111452311563728,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 141,
-          "blocks_examined": 31224,
-          "blocks_pruned": 22773,
-          "circles_evaluated": 8451,
-          "kernels_built": 10539
-        }
+      "nearest_settlement": {
+        "name": "Santa Bárbara",
+        "country": "Honduras",
+        "country_iso_alpha2": "HN",
+        "distance_km": 42.41392828804488,
+        "short_form": false
       }
     }
   }

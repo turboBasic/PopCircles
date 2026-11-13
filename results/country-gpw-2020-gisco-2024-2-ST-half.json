@@ -19,12 +19,12 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
       "id": "ST",
-      "name": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+      "name": "São Tomé and Príncipe",
       "iso_alpha2": "ST",
       "boundary_dataset": "gisco-countries-2024-1m",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.7599759310230454e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 6,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 48,
-          "blocks_examined": 1048,
-          "blocks_pruned": 767,
-          "circles_evaluated": 281,
-          "kernels_built": 401
-        }
+      "nearest_settlement": {
+        "name": "São Tomé",
+        "country": "Sao Tome and Principe",
+        "country_iso_alpha2": "ST",
+        "distance_km": 4.445142827650165,
+        "short_form": true
       }
     }
   }

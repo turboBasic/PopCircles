@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0008063268269964743,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 252,
-          "blocks_examined": 60722,
-          "blocks_pruned": 45067,
-          "circles_evaluated": 15655,
-          "kernels_built": 21801
-        }
+      "nearest_settlement": {
+        "name": "Troyes",
+        "country": "France",
+        "country_iso_alpha2": "FR",
+        "distance_km": 19.5829883057243,
+        "short_form": false
       }
     }
   }

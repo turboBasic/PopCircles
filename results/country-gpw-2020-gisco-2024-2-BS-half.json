@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 3.4612693811969813e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 80,
-          "blocks_examined": 4908,
-          "blocks_pruned": 3634,
-          "circles_evaluated": 1274,
-          "kernels_built": 2227
-        }
+      "nearest_settlement": {
+        "name": "Nassau",
+        "country": "The Bahamas",
+        "country_iso_alpha2": "BS",
+        "distance_km": 6.2530872426705075,
+        "short_form": true
       }
     }
   }

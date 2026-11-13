@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.3874576916773996e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 185,
-          "blocks_examined": 53638,
-          "blocks_pruned": 39325,
-          "circles_evaluated": 14313,
-          "kernels_built": 18166
-        }
+      "nearest_settlement": {
+        "name": "Khiva",
+        "country": "Uzbekistan",
+        "country_iso_alpha2": "UZ",
+        "distance_km": 192.7411731470666,
+        "short_form": false
       }
     }
   }

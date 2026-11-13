@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 6.533183021355686e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 104,
-          "blocks_examined": 18790,
-          "blocks_pruned": 13693,
-          "circles_evaluated": 5097,
-          "kernels_built": 4789
-        }
+      "nearest_settlement": {
+        "name": "Podgorica",
+        "country": "Montenegro",
+        "country_iso_alpha2": "ME",
+        "distance_km": 17.00275156263155,
+        "short_form": false
       }
     }
   }

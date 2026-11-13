@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00042633507825531587,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 214,
-          "blocks_examined": 64866,
-          "blocks_pruned": 47587,
-          "circles_evaluated": 17279,
-          "kernels_built": 14355
-        }
+      "nearest_settlement": {
+        "name": "Kropyvnytskyi",
+        "country": "Ukraine",
+        "country_iso_alpha2": "UA",
+        "distance_km": 39.44086991586341,
+        "short_form": false
       }
     }
   }

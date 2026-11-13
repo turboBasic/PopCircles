@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.6895169704932524e-08,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 182,
-          "blocks_examined": 173078,
-          "blocks_pruned": 112259,
-          "circles_evaluated": 60819,
-          "kernels_built": 34654
-        }
+      "nearest_settlement": {
+        "name": "Longyearbyen",
+        "country": "Svalbard and Jan Mayen Islands",
+        "country_iso_alpha2": "SJ",
+        "distance_km": 54.227137704743384,
+        "short_form": false
       }
     }
   }

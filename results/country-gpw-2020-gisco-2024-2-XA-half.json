@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,16 +57,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.7178804525885807e-09,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 64,
-          "blocks_examined": 2394,
-          "blocks_pruned": 1708,
-          "circles_evaluated": 686,
-          "kernels_built": 1122
-        }
+      "nearest_settlement": {
+        "name": "Sanya",
+        "country": "China",
+        "country_iso_alpha2": "CN",
+        "distance_km": 329.88701347537585,
+        "short_form": false
       }
     }
   }

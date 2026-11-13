@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.775055171826772e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 171,
-          "blocks_examined": 24052,
-          "blocks_pruned": 17858,
-          "circles_evaluated": 6194,
-          "kernels_built": 11543
-        }
+      "nearest_settlement": {
+        "name": "Luang Prabang",
+        "country": "Laos",
+        "country_iso_alpha2": "LA",
+        "distance_km": 28.095821242836813,
+        "short_form": false
       }
     }
   }

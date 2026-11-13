@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.463886755402406e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 168,
-          "blocks_examined": 17848,
-          "blocks_pruned": 13237,
-          "circles_evaluated": 4611,
-          "kernels_built": 6691
-        }
+      "nearest_settlement": {
+        "name": "Lambaréné",
+        "country": "Gabon",
+        "country_iso_alpha2": "GA",
+        "distance_km": 13.664118661024013,
+        "short_form": false
       }
     }
   }

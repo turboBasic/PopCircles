@@ -19,12 +19,12 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
       "id": "CI",
-      "name": "C\u00f4te D\u2019Ivoire",
+      "name": "Côte D’Ivoire",
       "iso_alpha2": "CI",
       "boundary_dataset": "gisco-countries-2024-1m",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -58,16 +58,12 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00022208443683635504,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 168,
-          "blocks_examined": 33306,
-          "blocks_pruned": 24694,
-          "circles_evaluated": 8612,
-          "kernels_built": 11266
-        }
+      "nearest_settlement": {
+        "name": "Dimbokro",
+        "country": "Ivory Coast",
+        "country_iso_alpha2": "CI",
+        "distance_km": 23.966080954807637,
+        "short_form": false
       }
     }
   }
