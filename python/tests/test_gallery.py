@@ -13,6 +13,7 @@ from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
+import population_circles.dataset_registry as dataset_registry_module
 import population_circles.gallery as gallery_module
 import population_circles.render_map as render_map_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
@@ -352,6 +353,43 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
 
     render.assert_called_once()
     assert {one.figure.name: one.figure.read_bytes() for one in third} == original_bytes
+
+
+def test_text_placement_change_misses_the_gallery_map_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    config_root = tmp_path / "config-root"
+    config_path = config_root / "data" / "config.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        '[map_text]\ntitle = "metadata"\ncredits = "metadata"\n', encoding="utf-8"
+    )
+    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", config_root)
+    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (config_path,))
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    output = tmp_path / "build" / "gallery"
+    render = Mock(wraps=render_map_module.render)
+    monkeypatch.setattr(gallery_module, "render", render)
+    invoke = country_cli([], [])[0]
+
+    first, _ = build(corpus, output, invoke)
+    first_bytes = first[0].figure.read_bytes()
+    render.reset_mock()
+    second, _ = build(corpus, output, country_cli([], [])[0])
+    render.assert_not_called()
+    assert second[0].figure.read_bytes() == first_bytes
+
+    config_path.write_text('[map_text]\ntitle = "raster"\ncredits = "metadata"\n', encoding="utf-8")
+    third, _ = build(corpus, output, country_cli([], [])[0])
+
+    render.assert_called_once()
+    assert third[0].figure.read_bytes() != first_bytes
+    with Image.open(third[0].figure) as image:
+        assert "Title" not in image.info
+        assert "Copyright" in image.info
 
 
 def test_gallery_data_uses_only_the_current_maps(
