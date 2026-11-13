@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import {
     countryFromHash,
     countryUrl,
@@ -25,6 +26,7 @@
   let browserOpen = $state(false);
   let themeLight = $state(false);
   let copyStatus = $state('');
+  let copyTimeout = null;
   let mobileNavigation = $state(null);
   let browser = $state(null);
   let browserTrigger = $state(null);
@@ -80,7 +82,14 @@
     selectedCountry = country;
     allOpen = false;
     copyStatus = '';
+    window.clearTimeout(copyTimeout);
     closeBrowser();
+  }
+
+  function showCopyStatus(message) {
+    copyStatus = message;
+    window.clearTimeout(copyTimeout);
+    copyTimeout = window.setTimeout(() => (copyStatus = ''), 2400);
   }
 
   function toggleTheme() {
@@ -93,9 +102,9 @@
     const url = countryUrl(window.location.href, anchor);
     try {
       await navigator.clipboard.writeText(url);
-      copyStatus = 'Country URL copied.';
+      showCopyStatus('Country URL copied');
     } catch {
-      copyStatus = `Copy failed. Copy this URL: ${url}`;
+      showCopyStatus('Could not copy URL. Use the link menu to copy it.');
     }
   }
 
@@ -130,6 +139,7 @@
 
     return () => {
       active = false;
+      window.clearTimeout(copyTimeout);
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
       window.removeEventListener('scroll', handleScroll);
@@ -181,7 +191,6 @@
     </p>
     <h1>One circle, half the population.</h1>
     <p class="intro">Explore country and world population circles.</p>
-    <p class="attribution">© EuroGeographics for the administrative boundaries</p>
     {#if data}
       <div class="map-actions" aria-label="Gallery controls">
         <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
@@ -196,7 +205,6 @@
           {allOpen ? 'Collapse all country maps' : 'Expand all country maps'}
         </button>
       </div>
-      <p class="copy-status" role="status" aria-live="polite">{copyStatus}</p>
     {/if}
   </header>
 
@@ -316,7 +324,18 @@
       </div>
     </div>
   {/if}
+  <footer class="site-footer">
+    © Andrii Melnyk, 2026,
+    <a href="https://github.com/turboBasic/PopCircles">https://github.com/turboBasic/PopCircles</a>
+    · © EuroGeographics for the administrative boundaries
+  </footer>
 </main>
+
+{#if copyStatus}
+  <p class="copy-toast" role="status" aria-live="polite" aria-atomic="true" transition:fade={{ duration: 150 }}>
+    {copyStatus}
+  </p>
+{/if}
 
 <style>
   :global(:root) { color-scheme: dark; --bg: #0b1020; --surface: #121a2b; --surface-2: #19243a; --text: #eef3ff; --muted: #a4b0c5; --accent: #80e0c0; --line: #29364d; --glow: #203456; }
@@ -329,8 +348,8 @@
   .repository-link svg { width: 1.33em; height: 1.33em; overflow: visible; vertical-align: -.285em; }
   .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
   h1 { max-width: 850px; margin: calc(.7rem - .5rem * var(--header-shrink)) 0 calc(1rem - .5rem * var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink)) + 1.35rem * var(--header-shrink)); line-height: 1.08; letter-spacing: -.045em; }
-  header .intro, header .attribution { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
-  .intro, .attribution, .status, .empty, figcaption, .copy-status { color: var(--muted); }
+  header .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
+  .intro, .status, .empty, figcaption, .site-footer { color: var(--muted); }
   .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
   aside { position: sticky; top: calc(7rem + 3rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (7rem + 3rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
@@ -345,7 +364,7 @@
   nav { display: grid; flex: 1; gap: .35rem; min-height: 0; margin-top: 1rem; overflow-y: auto; }
   nav a { padding: .25rem 0; color: var(--muted); text-decoration: none; }
   nav a:hover, nav a.active { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
-  .status, .copy-status { font-size: .85rem; }
+  .status { font-size: .85rem; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
   .world, .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
@@ -360,7 +379,9 @@
   header .map-actions { margin-top: .75rem; }
   button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
   button:hover { border-color: var(--accent); }
-  .copy-status { width: 100%; margin: 0; overflow-wrap: anywhere; }
+  .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
+  .site-footer { margin-top: 2rem; padding: 1.25rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
+  .site-footer a { color: inherit; }
   .country-results { display: block; }
   .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
   .gallery-mode .country { margin: 0; }
