@@ -299,6 +299,34 @@ def test_persist_keeps_existing_country_bytes_when_only_stats_differ(
     assert (results / name).read_bytes() == previous
 
 
+def test_publish_keeps_existing_render_metadata_when_country_answer_is_unchanged(
+    layout: tuple[Path, Path], tmp_path: Path
+) -> None:
+    results, site = layout
+    name = "country.json"
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    original = {
+        "document": "country-smallest",
+        "result": {"circle": {"answer": 1}},
+        "render_metadata": {"Description": "same", "Title": "same"},
+    }
+    refreshed = {"document": "country-smallest", "result": {"circle": {"answer": 1}}}
+    rendered = {
+        **refreshed,
+        "render_metadata": {"Title": "same", "Description": "same"},
+    }
+    write_json(results / name, original)
+    write_json(corpus / name, refreshed)
+    write_json(site / name, rendered)
+    previous = (results / name).read_bytes()
+
+    pg.persist_country_results(corpus)
+    pg.persist_rendered_results(site)
+
+    assert (results / name).read_bytes() == previous
+
+
 def test_persist_still_updates_country_answers_when_answer_data_changes(
     layout: tuple[Path, Path], tmp_path: Path
 ) -> None:

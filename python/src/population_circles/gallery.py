@@ -627,6 +627,7 @@ def same_country_answer(existing: bytes, generated: bytes) -> bool:
         if previous.get("document") != document:
             return False
         for payload in (previous, current):
+            payload.pop("render_metadata", None)
             result = payload["result"]
             if document == "country-smallest":
                 result["circle"].pop("stats", None)
