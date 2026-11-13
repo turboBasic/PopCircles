@@ -14,7 +14,7 @@ from shapely.geometry.base import BaseGeometry
 from population_circles import circle_map, render_map
 from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
-from population_circles.dataset_registry import load
+from population_circles.dataset_registry import MapTextPlacement, load
 from population_circles.map_frame import ORTHOGRAPHIC
 from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
 
@@ -301,6 +301,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
         coastline_attribution: str | None = None,
         outline_and_credit: tuple[BaseGeometry, str] | None = None,
         other_countries: Sequence[BaseGeometry] = (),
+        text_placement: tuple[MapTextPlacement, MapTextPlacement] = ("raster", "raster"),
     ) -> Figure:
         seen.append((answer.circle.earth_radius_km, attribution))
         return original(
@@ -311,6 +312,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
             coastline_attribution=coastline_attribution,
             outline_and_credit=outline_and_credit,
             other_countries=other_countries,
+            text_placement=text_placement,
         )
 
     monkeypatch.setattr(render_map, "render", capture)
