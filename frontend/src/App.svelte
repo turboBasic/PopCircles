@@ -298,7 +298,6 @@
 
       <div class="results">
         <section class="map-results" aria-label="Maps">
-          <h2 class="maps-title">Maps</h2>
           <div id="map-results-list" class:gallery-mode={selectedEntry === null} class:single-map={selectedEntry !== null}>
             {#each visibleMapEntries as entry (entry.anchor)}
               <section class="country" id={entry.anchor}>
@@ -348,7 +347,7 @@
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
   header { position: sticky; top: 0; z-index: 4; isolation: isolate; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
   .header-art { position: absolute; inset: 0; z-index: -1; overflow: hidden; opacity: calc(.16 * (1 - var(--header-shrink))); pointer-events: none; }
-  .header-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; filter: grayscale(1) brightness(.65); }
+  .header-art img { position: absolute; top: 50%; left: 50%; width: 104vw; height: auto; max-width: none; transform: translate(-50%, -50%); filter: grayscale(1) brightness(.65); }
   @supports (animation-timeline: scroll()) {
     main { animation: shrink-header linear both; animation-timeline: scroll(root); animation-range: 0px 120px; }
     @keyframes shrink-header { to { --header-shrink: 1; } }
@@ -375,11 +374,10 @@
   .status { font-size: .85rem; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
-  .maps-title { margin: 0 0 .75rem; }
   .country { scroll-margin-top: calc(5rem + 4rem * (1 - var(--header-shrink))); margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .map-actions { display: flex; align-items: center; gap: .5rem; }
   .icon-control { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; padding: .45rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; text-decoration: none; }
-  .icon-control svg { width: 100%; height: 100%; }
+  .icon-control svg { width: 1.25rem; height: 1.25rem; }
   .mobile-browser-toggle { display: none; }
   button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
   button:hover { border-color: var(--accent); }
