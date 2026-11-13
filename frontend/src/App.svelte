@@ -124,18 +124,19 @@
   onMount(() => {
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
+    const supportsScrollTimeline = CSS.supports('animation-timeline: scroll()');
     const handleHistory = () => restoreEntry();
     const handleScroll = () => (headerShrink = Math.min(window.scrollY / 120, 1));
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
     };
     browserOpen = !mobileNavigation.matches;
-    handleScroll();
+    if (!supportsScrollTimeline) handleScroll();
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     document.addEventListener('pointerdown', handlePointerdown);
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    if (!supportsScrollTimeline) window.addEventListener('scroll', handleScroll, { passive: true });
     fetch('./gallery-data.json')
       .then((response) => {
         if (!response.ok) throw new Error(`Gallery data request failed (${response.status})`);
@@ -155,7 +156,7 @@
       window.clearTimeout(copyTimeout);
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
-      window.removeEventListener('scroll', handleScroll);
+      if (!supportsScrollTimeline) window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('pointerdown', handlePointerdown);
       mobileNavigation.removeEventListener('change', handleNavigationChange);
     };
@@ -195,6 +196,9 @@
 
 <main style:--header-shrink={headerShrink}>
   <header>
+    {#if data?.world[0]}
+      <div class="header-art" aria-hidden="true"><img src={data.world[0].map} alt="" /></div>
+    {/if}
     <div class="top-bar">
       <a class="home-link" href="./">PopCircles</a>
       {#if data}
@@ -336,12 +340,19 @@
 {/if}
 
 <style>
+  @property --header-shrink { syntax: '<number>'; inherits: true; initial-value: 0; }
   :global(:root) { color-scheme: dark; --bg: #0b1020; --surface: #121a2b; --surface-2: #19243a; --text: #eef3ff; --muted: #a4b0c5; --accent: #80e0c0; --line: #29364d; --glow: #203456; }
   :global(:root[data-theme="light"]) { color-scheme: light; --bg: #f5f7fb; --surface: #fff; --surface-2: #e9eef5; --text: #172033; --muted: #4b596e; --accent: #145c4e; --line: #cbd5e1; --glow: #e5edf7; }
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
-  header { position: sticky; top: 0; z-index: 4; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
+  header { position: sticky; top: 0; z-index: 4; isolation: isolate; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
+  .header-art { position: absolute; inset: 0; z-index: -1; overflow: hidden; opacity: calc(.16 * (1 - var(--header-shrink))); pointer-events: none; }
+  .header-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 45%; filter: grayscale(1) brightness(.65); }
+  @supports (animation-timeline: scroll()) {
+    main { animation: shrink-header linear both; animation-timeline: scroll(root); animation-range: 0px 120px; }
+    @keyframes shrink-header { to { --header-shrink: 1; } }
+  }
   .top-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .home-link { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-decoration: none; text-transform: uppercase; }
   h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
@@ -352,7 +363,7 @@
   aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .country-browser-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; max-height: none; overflow: hidden; }
+  .country-browser-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; max-height: calc(100vh - (8rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; }
   .zero-population-filter { display: flex; align-items: center; gap: .5rem; margin: .75rem 0; color: var(--muted); }
   .zero-population-filter input { width: auto; padding: 0; }
   .drawer-title { display: none; }
