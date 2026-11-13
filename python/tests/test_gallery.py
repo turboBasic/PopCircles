@@ -136,10 +136,10 @@ def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None
         ("nearestSettlementCountry", "Fixture Country"),
     ):
         assert f'pc:{name}="{value}"' in xmp
-    assert "Title" not in metadata
-    assert "Copyright" not in metadata
-    assert "Title" not in document_payload["render_metadata"]
-    assert "Copyright" not in document_payload["render_metadata"]
+    assert "Title" in metadata
+    assert "Copyright" in metadata
+    assert "Title" in document_payload["render_metadata"]
+    assert "Copyright" in document_payload["render_metadata"]
     properties = document_payload["render_metadata"]["XML:com.adobe.xmp"]
     assert properties["countryCode"] == "AA"
     assert properties["nearestSettlement"] == "Fixture Place"
@@ -154,6 +154,9 @@ def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None
     assert properties["Iptc4xmpExt:LocationShown"][0]["Iptc4xmpExt:City"] == "Fixture Place"
     assert properties["dc:rights"] == "© Andrii Melnyk, 2026"
     assert properties["photoshop:Credit"].startswith("© Andrii Melnyk, 2026,")
+    assert metadata["Title"] == properties["dc:title"]
+    assert metadata["Description"] == properties["dc:description"]
+    assert metadata["Copyright"] == properties["fullAttribution"]
 
 
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
@@ -354,7 +357,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     copied_document = json.loads(
         (tmp_path / "gallery" / "drawable.json").read_text(encoding="utf-8")
     )
-    assert annotations == []
+    assert annotations == [VISIBLE_FOOTER]
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert "© Andrii Melnyk, 2026" in metadata["Copyright"]
@@ -423,7 +426,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     assert {one.figure.name: one.figure.read_bytes() for one in third} == original_bytes
 
 
-def test_text_placement_change_misses_the_gallery_map_cache(
+def test_map_text_rendering_change_misses_the_gallery_map_cache(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
@@ -431,7 +434,7 @@ def test_text_placement_change_misses_the_gallery_map_cache(
     config_path = config_root / "data" / "config.toml"
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
-        '[map_text]\ntitle = "metadata"\ncredits = "metadata"\n', encoding="utf-8"
+        "[map_text]\nrender_title = false\nrender_description = false\n", encoding="utf-8"
     )
     monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", config_root)
     monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (config_path,))
@@ -450,13 +453,16 @@ def test_text_placement_change_misses_the_gallery_map_cache(
     render.assert_not_called()
     assert second[0].figure.read_bytes() == first_bytes
 
-    config_path.write_text('[map_text]\ntitle = "raster"\ncredits = "metadata"\n', encoding="utf-8")
+    config_path.write_text(
+        "[map_text]\nrender_title = true\nrender_description = false\n", encoding="utf-8"
+    )
     third, _ = build(corpus, output, country_cli([], [])[0])
 
     render.assert_called_once()
     assert third[0].figure.read_bytes() != first_bytes
     with Image.open(third[0].figure) as image:
-        assert "Title" not in image.info
+        assert "Title" in image.info
+        assert "Description" in image.info
         assert "Copyright" in image.info
 
 
@@ -753,7 +759,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
-    monkeypatch.setattr(gallery_module, "map_text_placement", lambda: ("raster", "raster"))
+    monkeypatch.setattr(gallery_module, "map_text_rendering", lambda: (True, True))
 
     drawn, skipped = build(corpus, output, invoke)
 
@@ -851,8 +857,9 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     assert VISIBLE_FOOTER in annotations
     assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
     with Image.open(drawn[0].figure) as image:
-        assert "Title" not in image.info
-        assert "Copyright" not in image.info
+        assert "Title" in image.info
+        assert "Description" in image.info
+        assert "Copyright" in image.info
 
 
 def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: Path) -> None:

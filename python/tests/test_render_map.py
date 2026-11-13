@@ -79,32 +79,35 @@ def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
 @pytest.mark.parametrize(
     ("settings", "expected"),
     [
-        ("", ("metadata", "metadata")),
-        ('[map_text]\ntitle = "raster"\ncredits = "metadata"\n', ("raster", "metadata")),
+        ("", (False, False)),
+        (
+            "[map_text]\nrender_title = true\nrender_description = false\n",
+            (True, False),
+        ),
     ],
 )
-def test_map_text_placement_defaults_to_metadata_and_accepts_raster(
+def test_map_text_rendering_defaults_to_false_and_accepts_booleans(
     settings: str,
-    expected: tuple[str, str],
+    expected: tuple[bool, bool],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     (tmp_path / "data").mkdir()
     (tmp_path / "data" / "config.toml").write_text(settings, encoding="utf-8")
     monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    assert dataset_registry_module.map_text_placement() == expected
+    assert dataset_registry_module.map_text_rendering() == expected
 
 
-def test_map_text_placement_rejects_unsupported_values(
+def test_map_text_rendering_rejects_non_boolean_values(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     (tmp_path / "data").mkdir()
     (tmp_path / "data" / "config.toml").write_text(
-        '[map_text]\ntitle = "pixels"\n', encoding="utf-8"
+        '[map_text]\nrender_title = "yes"\n', encoding="utf-8"
     )
     monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    with pytest.raises(ValueError, match=r"config.toml: map_text\.title"):
-        dataset_registry_module.map_text_placement()
+    with pytest.raises(TypeError, match=r"config.toml: map_text\.render_title"):
+        dataset_registry_module.map_text_rendering()
 
 
 @pytest.fixture(autouse=True)
@@ -730,6 +733,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
     assert "1,254,363,868 people" in drawn_text
     assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
     assert "Center:" in drawn_text
+    assert f"Answered from population dataset {DATASET} at decimation k=10" in drawn_text
 
 
 def test_measured_and_nested_documents_use_the_one_line_title() -> None:
@@ -806,12 +810,13 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
         raise AssertionError(message)
 
     monkeypatch.setattr(render_map_module, "registered_coastline", refuse_coastline)
-    monkeypatch.setattr(render_map_module, "map_text_placement", lambda: ("raster", "raster"))
+    monkeypatch.setattr(render_map_module, "map_text_rendering", lambda: (True, True))
     render_file(source, output, no_coastlines=True)
     assert annotations[-1] == VISIBLE_FOOTER
     assert output.read_bytes().startswith(PNG_MAGIC)
-    assert "Title" not in png_info(output)
-    assert "Copyright" not in png_info(output)
+    assert "Title" in png_info(output)
+    assert "Description" in png_info(output)
+    assert "Copyright" in png_info(output)
 
 
 def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:

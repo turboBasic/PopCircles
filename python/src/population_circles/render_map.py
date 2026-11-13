@@ -10,8 +10,10 @@ from typing import cast
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
+from matplotlib.font_manager import FontProperties
 from matplotlib.image import AxesImage
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path as DrawPath
@@ -29,11 +31,10 @@ from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
-    MapTextPlacement,
     Registry,
     coastline_dataset_key,
     load,
-    map_text_placement,
+    map_text_rendering,
 )
 from population_circles.map_frame import (
     PLATE_CARREE,
@@ -344,22 +345,17 @@ def description_of(answer: Answer) -> str:
 def metadata_json_fields(
     answer: Answer,
     properties: Mapping[str, object],
-    placement: tuple[MapTextPlacement, MapTextPlacement],
 ) -> dict[str, object]:
     title = cast(str, properties["dc:title"])
     description = cast(str, properties["dc:description"])
     copyright_text = cast(str, properties["fullAttribution"])
-    title_placement, credits_placement = placement
-    values: dict[str, object] = {
+    return {
+        "Title": title,
         "Description": description,
+        "Copyright": copyright_text,
         "XML:com.adobe.xmp": dict(properties),
         "EXIF:GPSInfo": exif_gps_values(answer.circle.centre.lat, answer.circle.centre.lon),
     }
-    if title_placement == "metadata":
-        values["Title"] = title
-    if credits_placement == "metadata":
-        values["Copyright"] = copyright_text
-    return values
 
 
 def exif_gps_values(latitude: float, longitude: float) -> dict[str, object]:
@@ -403,21 +399,17 @@ def exif_gps_packet(latitude: float, longitude: float) -> bytes:
 def png_metadata(
     title: str,
     copyright_text: str,
-    placement: tuple[MapTextPlacement, MapTextPlacement],
     description: str,
     properties: Mapping[str, object],
 ) -> dict[str, str]:
-    title_placement, credits_placement = placement
-    metadata: dict[str, str] = {}
-    if title_placement == "metadata":
-        metadata["Title"] = title
-    metadata["Description"] = description
-    if credits_placement == "metadata":
-        metadata["Copyright"] = copyright_text
-    metadata["XML:com.adobe.xmp"] = xmp_packet(
-        {name: value for name, value in properties.items() if value is not None}
-    )
-    return metadata
+    return {
+        "Title": title,
+        "Description": description,
+        "Copyright": copyright_text,
+        "XML:com.adobe.xmp": xmp_packet(
+            {name: value for name, value in properties.items() if value is not None}
+        ),
+    }
 
 
 def other_countries(
@@ -450,6 +442,26 @@ def annotate(
         fontsize=size,
         parse_math=False,
     )
+
+
+def wrap_to_width(figure: Figure, text: str, size: float) -> str:
+    canvas = cast(FigureCanvasAgg, figure.canvas)
+    renderer = canvas.get_renderer()
+    font = FontProperties(size=size)
+    max_width = figure.bbox.width * 0.94
+    lines: list[str] = []
+    line = ""
+    for word in text.split():
+        candidate = f"{line} {word}".strip()
+        width, _, _ = renderer.get_text_width_height_descent(candidate, font, ismath=False)
+        if line and width > max_width:
+            lines.append(line)
+            line = word
+        else:
+            line = candidate
+    if line:
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def draw(
@@ -506,7 +518,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     coastline: BaseGeometry | None,
     country_outline: BaseGeometry | None = None,
     other_countries: Sequence[BaseGeometry] = (),
-    text_placement: tuple[MapTextPlacement, MapTextPlacement] = ("raster", "raster"),
+    render_text: tuple[bool, bool] = (True, True),
 ) -> Figure:
     if answer.country is not None and country_outline is None:
         raise MissingCountryOutlineError
@@ -525,11 +537,27 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     try:
         title = title_of(answer)
         footer = footer_text()
-        # Keep room for the title and centered footer, since both use figure coordinates.
-        title_lines = title.count("\n") + 1
-        title_top = 0.87 - 0.035 * max(0, title_lines - 3)
-        top = title_top if text_placement[0] == "raster" else 0.98
-        bottom = 0.16 if text_placement[1] == "raster" else 0.03
+        canvas = cast(FigureCanvasAgg, figure.canvas)
+        header_bottom = 0.985
+        if render_text[0]:
+            annotate(figure, 0.985, wrap_to_width(figure, title, 12.0), 12.0, "top")
+            canvas.draw()
+            header_bottom = figure.texts[-1].get_window_extent(canvas.get_renderer()).y0
+            header_bottom /= figure.bbox.height
+        if render_text[1]:
+            description_top = header_bottom - 0.015 if render_text[0] else 0.985
+            annotate(
+                figure,
+                description_top,
+                wrap_to_width(figure, description_of(answer), 7.0),
+                7.0,
+                "top",
+            )
+            canvas.draw()
+            header_bottom = figure.texts[-1].get_window_extent(canvas.get_renderer()).y0
+            header_bottom /= figure.bbox.height
+        top = min(0.87, header_bottom - 0.05) if any(render_text) else 0.98
+        bottom = 0.16
         figure.subplots_adjust(left=0.03, right=0.97, top=top, bottom=bottom)
         axes = figure.add_subplot(1, 1, 1)
         # Equal: degrees of longitude and latitude have the same length on the
@@ -554,12 +582,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
             zorder=CENTRE_LAYER,
         )
 
-        # Anchored at its top, so an added title line grows into the margin rather than off
-        # the top of the figure — which is silent, since nothing about a clipped artist fails.
-        if text_placement[0] == "raster":
-            annotate(figure, 0.985, title, 12.0, "top")
-        if text_placement[1] == "raster":
-            annotate(figure, 0.04, footer, 6.5, "bottom")
+        annotate(figure, 0.04, footer, 6.5, "bottom")
     except BaseException:
         plt.close(figure)
         raise
@@ -594,7 +617,7 @@ def render_file(
     coastline, coastline_attribution = (
         (None, None) if no_coastlines else registered_coastline(registry)
     )
-    text_placement = map_text_placement()
+    render_text = map_text_rendering()
     boundaries = load_map_boundaries(answer, registry)
     selected = boundaries.get(answer.country.id) if answer.country is not None else None
     country_boundary_attribution = None
@@ -608,7 +631,7 @@ def render_file(
         projection,
         coastline=coastline,
         country_outline=selected,
-        text_placement=text_placement,
+        render_text=render_text,
         **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
     title = title_of(answer)
@@ -620,7 +643,7 @@ def render_file(
     )
     description = description_of(answer)
     properties = xmp_properties(answer, title, description, copyright_text)
-    metadata_values = metadata_json_fields(answer, properties, text_placement)
+    metadata_values = metadata_json_fields(answer, properties)
     sidecar_path = output_path.with_suffix(".json")
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -629,7 +652,7 @@ def render_file(
         figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
             output_path,
             dpi=200,
-            metadata=png_metadata(title, copyright_text, text_placement, description, properties),
+            metadata=png_metadata(title, copyright_text, description, properties),
             pil_kwargs={
                 "exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)
             },

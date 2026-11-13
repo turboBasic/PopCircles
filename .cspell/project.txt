@@ -19,6 +19,7 @@ flycheck
 hardlink
 getrusage
 imshow
+ismath
 iostat
 jactionlint
 loadgroup

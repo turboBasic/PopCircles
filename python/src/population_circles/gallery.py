@@ -26,10 +26,9 @@ from population_circles.circle_map import Invoke, child, invoke_cli, require_suc
 from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
-    MapTextPlacement,
     Registry,
     load,
-    map_text_placement,
+    map_text_rendering,
 )
 from population_circles.map_frame import PLATE_CARREE
 from population_circles.render_map import (
@@ -125,7 +124,7 @@ class MapRenderContext:
     output: Path
     cache_directory: Path | None
     digest: str
-    text_placement: tuple[MapTextPlacement, MapTextPlacement] = ("metadata", "metadata")
+    render_text: tuple[bool, bool] = (False, False)
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
@@ -301,9 +300,7 @@ def render_document(
         )
         description = description_of(answer)
         properties = xmp_properties(answer, title, description, copyright_text)
-        payload["render_metadata"] = metadata_json_fields(
-            answer, properties, context.text_placement
-        )
+        payload["render_metadata"] = metadata_json_fields(answer, properties)
         target = context.output / f"{source.stem}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
         cache_key = (
@@ -350,7 +347,7 @@ def render_document(
             coastline=context.coastline,
             country_outline=outline,
             other_countries=other_countries(boundaries, answer),
-            text_placement=context.text_placement,
+            render_text=context.render_text,
         )
     except Exception as error:
         # The early-built page is removed by `build_gallery_output` if a map fails.
@@ -363,7 +360,6 @@ def render_document(
         metadata=png_metadata(
             title,
             copyright_text,
-            context.text_placement,
             description,
             properties,
         ),
@@ -835,7 +831,7 @@ def build(
         output,
         cache_directory,
         context_digest,
-        map_text_placement(),
+        map_text_rendering(),
     )
     (output / "index.html").unlink(missing_ok=True)
     (output / "gallery-data.json").unlink(missing_ok=True)

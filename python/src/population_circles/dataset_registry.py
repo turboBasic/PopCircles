@@ -144,10 +144,7 @@ def load() -> Registry:
     return parse(REGISTRY.read_text(encoding="utf-8"))
 
 
-MapTextPlacement = Literal["metadata", "raster"]
-
-
-def map_text_placement() -> tuple[MapTextPlacement, MapTextPlacement]:
+def map_text_rendering() -> tuple[bool, bool]:
     path = REPO_ROOT / "data" / "config.toml"
     config = tomllib.loads(path.read_text(encoding="utf-8"))
     settings = config.get("map_text", {})
@@ -155,14 +152,14 @@ def map_text_placement() -> tuple[MapTextPlacement, MapTextPlacement]:
         message = f"{path}: map_text must be a table"
         raise TypeError(message)
     values = cast(dict[str, object], settings)
-    placements: list[MapTextPlacement] = []
-    for field in ("title", "credits"):
-        value = values.get(field, "metadata")
-        if value not in ("metadata", "raster"):
-            message = f"{path}: map_text.{field} must be 'metadata' or 'raster'"
-            raise ValueError(message)
-        placements.append(value)
-    return placements[0], placements[1]
+    rendering: list[bool] = []
+    for field in ("render_title", "render_description"):
+        value = values.get(field, False)
+        if not isinstance(value, bool):
+            message = f"{path}: map_text.{field} must be a boolean"
+            raise TypeError(message)
+        rendering.append(value)
+    return rendering[0], rendering[1]
 
 
 @functools.cache
