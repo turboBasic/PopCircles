@@ -30,6 +30,8 @@ from test_render_map import country_circle_document
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
 WORLD_POPULATION = 1_254_363_867.93
+WORLD_SHARE = 0.1616868627727305
+WORLD_RADIUS_KM = 1000.0
 VISIBLE_FOOTER = (
     "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
     "© EuroGeographics for the administrative boundaries · "
@@ -336,6 +338,14 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
             "document": "drawable.json",
             "country_id": None,
             "alt": "drawable",
+            "caption": {
+                "radius_km": WORLD_RADIUS_KM,
+                "share": WORLD_SHARE,
+                "population": WORLD_POPULATION,
+                "centre_lat": 25.125,
+                "centre_lon": 79.708,
+                "settlement": None,
+            },
         },
     ]
     assert "not-drawable.json" not in json.dumps(data)
@@ -478,6 +488,14 @@ def test_gallery_data_uses_only_the_current_maps(
             "document": "current.json",
             "country_id": None,
             "alt": "current",
+            "caption": {
+                "radius_km": WORLD_RADIUS_KM,
+                "share": WORLD_SHARE,
+                "population": WORLD_POPULATION,
+                "centre_lat": 25.125,
+                "centre_lon": 79.708,
+                "settlement": None,
+            },
         },
     ]
     assert "old.png" not in json.dumps(data)
@@ -503,8 +521,8 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
     ]
 
 
-def test_country_caption_omits_settlement_when_the_answer_has_none() -> None:
-    caption = gallery_module.country_caption(circle_of(country_circle_document()))
+def test_figure_caption_includes_country_and_world_answers() -> None:
+    caption = gallery_module.figure_caption(circle_of(country_circle_document()))
 
     assert caption == {
         "radius_km": 200.0,
@@ -514,6 +532,11 @@ def test_country_caption_omits_settlement_when_the_answer_has_none() -> None:
         "centre_lon": 10.0,
         "settlement": None,
     }
+
+    world = gallery_module.figure_caption(circle_of(document("most-populous")))
+    assert world["radius_km"] == WORLD_RADIUS_KM
+    assert world["share"] == WORLD_SHARE
+    assert world["population"] == WORLD_POPULATION
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
@@ -775,6 +798,14 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                 "document": "world.json",
                 "country_id": None,
                 "alt": "world",
+                "caption": {
+                    "radius_km": WORLD_RADIUS_KM,
+                    "share": WORLD_SHARE,
+                    "population": WORLD_POPULATION,
+                    "centre_lat": 25.125,
+                    "centre_lon": 79.708,
+                    "settlement": None,
+                },
             },
         ],
         "countries": [

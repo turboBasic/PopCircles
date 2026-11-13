@@ -73,7 +73,7 @@ class SettlementCaption(TypedDict):
     distance_km: float
 
 
-class CountryCaption(TypedDict):
+class FigureCaption(TypedDict):
     radius_km: float
     share: float
     population: float
@@ -88,7 +88,7 @@ class Drawn:
     figure: Path
     country_name: str | None = None
     country_id: str | None = None
-    caption: CountryCaption | None = None
+    caption: FigureCaption | None = None
 
 
 @dataclass(frozen=True)
@@ -102,7 +102,7 @@ class PageFigure(TypedDict):
     document: str
     country_id: str | None
     alt: str
-    caption: NotRequired[CountryCaption]
+    caption: NotRequired[FigureCaption]
 
 
 class PageCountry(TypedDict):
@@ -217,9 +217,7 @@ def map_cache_key(
     return digest.hexdigest()
 
 
-def country_caption(answer: Answer) -> CountryCaption | None:
-    if answer.country is None:
-        return None
+def figure_caption(answer: Answer) -> FigureCaption:
     settlement = answer.caption.settlement
     return {
         "radius_km": answer.circle.radius_km,
@@ -337,7 +335,7 @@ def render_document(
                     target,
                     answer.country.name if answer.country is not None else None,
                     answer.country.id if answer.country is not None else None,
-                    country_caption(answer),
+                    figure_caption(answer),
                 ),
                 True,
             )
@@ -394,7 +392,7 @@ def render_document(
             target,
             answer.country.name if answer.country is not None else None,
             answer.country.id if answer.country is not None else None,
-            country_caption(answer),
+            figure_caption(answer),
         ),
         False,
     )

@@ -9,6 +9,7 @@ from typing import Any, NoReturn
 import pytest
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
 from PIL import Image
 from shapely.geometry import box
@@ -23,6 +24,7 @@ from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
 from population_circles.render_map import (
     COASTLINE_DATASET,
+    COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
@@ -675,7 +677,7 @@ def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
     assert MARKER not in drawn_text
 
 
-def test_world_country_boundaries_share_one_standard_width_patch() -> None:
+def test_world_country_boundaries_use_the_world_highlight_fill() -> None:
     figure = render(
         circle_of(document()),
         PLATE_CARREE,
@@ -688,7 +690,7 @@ def test_world_country_boundaries_share_one_standard_width_patch() -> None:
         ]
         assert len(country_patches) == 1
         assert country_patches[0].get_linewidth() == OUTLINE_WIDTH
-        assert country_patches[0].get_facecolor()[:3] == (1.0, 1.0, 1.0)
+        assert country_patches[0].get_facecolor()[:3] == to_rgb(COUNTRY)
     finally:
         plt.close(figure)
 

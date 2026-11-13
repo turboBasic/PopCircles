@@ -468,10 +468,11 @@ def draw(
         if all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
             country_paths.extend(compound(polygon) for polygon in polygons(projected))
     if country_paths:
+        facecolor = COUNTRY if view.country_outline is None else "white"
         axes.add_patch(
             PathPatch(
                 DrawPath.make_compound_path(*country_paths),
-                facecolor="white",
+                facecolor=facecolor,
                 edgecolor="0.4",
                 linewidth=OUTLINE_WIDTH,
                 zorder=COUNTRY_LAYER,
