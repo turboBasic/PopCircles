@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  countryFromHash,
+  entryFromHash,
   countryUrl,
-  defaultCountry,
   filterCountries,
-  visibleCountries
+  visibleEntries
 } from '../src/gallery.js';
 
 const countries = [
@@ -17,6 +16,7 @@ const countries = [
     missing: true
   }
 ];
+const entries = [{ name: 'World', anchor: 'world-result' }, ...countries];
 
 test('filters countries by trimmed, case-insensitive names', () => {
   assert.deepEqual(filterCountries(countries, '  ALP '), [countries[0]]);
@@ -26,27 +26,23 @@ test('filters countries by trimmed, case-insensitive names', () => {
   assert.deepEqual(filterCountries(countries, '', true), countries);
 });
 
-test('restores countries from stable URL anchors and falls back when unmatched', () => {
-  assert.equal(countryFromHash(countries, '#country-result-AA', null), countries[0]);
+test('resolves World and country entries from URL fragments, with the base URL unselected', () => {
+  assert.equal(entryFromHash(entries, '#world-result'), entries[0]);
+  assert.equal(entryFromHash(entries, '#country-result-AA'), countries[0]);
   assert.equal(
-    countryFromHash(countries, '#country-missing-No%20population%20%3C' + 'yet%3E', null),
+    entryFromHash(entries, '#country-missing-No%20population%20%3C' + 'yet%3E'),
     countries[2]
   );
-  assert.equal(countryFromHash(countries, '#unknown', countries[1]), countries[1]);
-  assert.equal(countryFromHash(countries, '', countries[1]), countries[1]);
+  assert.equal(entryFromHash(entries, '#unknown'), null);
+  assert.equal(entryFromHash(entries, ''), null);
 });
 
-test('defaults to Germany or the first available country', () => {
-  assert.equal(defaultCountry(countries), countries[1]);
-  assert.equal(defaultCountry([countries[0]]), countries[0]);
-  assert.equal(defaultCountry([]), null);
-});
-
-test('shows maps for the selected country or every country when expanded', () => {
-  assert.deepEqual(visibleCountries(countries, 'country-result-AA', false), [countries[0]]);
-  assert.deepEqual(visibleCountries(countries, null, false), []);
-  assert.deepEqual(visibleCountries(countries, 'country-result-AA', true), countries.slice(0, 2));
-  assert.deepEqual(visibleCountries(countries, 'country-result-AA', true, true), countries);
+test('shows all available entries by default or only a selected fragment entry', () => {
+  assert.deepEqual(visibleEntries(entries, null), entries.slice(0, 3));
+  assert.deepEqual(visibleEntries(entries, 'world-result'), [entries[0]]);
+  assert.deepEqual(visibleEntries(entries, 'country-result-AA'), [countries[0]]);
+  assert.deepEqual(visibleEntries(entries, null, true), entries);
+  assert.deepEqual(visibleEntries(entries, countries[2].anchor, true), [countries[2]]);
 });
 
 test('copies the selected country fragment without keeping an old fragment', () => {
