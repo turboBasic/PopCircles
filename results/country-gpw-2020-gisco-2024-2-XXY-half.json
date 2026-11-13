@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,17 +57,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.6256988962320542e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 147,
-          "blocks_examined": 12092,
-          "blocks_pruned": 8856,
-          "circles_evaluated": 3236,
-          "kernels_built": 4327
-        }
+      "nearest_settlement": {
+        "name": "Anna Regina",
+        "country": "Guyana",
+        "country_iso_alpha2": "GY",
+        "distance_km": 63.19988302839621,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 76944.18647473905,
+      "populationShare": 0.5008461630123561,
+      "radiusKm": 81.0,
+      "centerLatitude": 7.00833333333334,
+      "centerLongitude": -59.00833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Essequibo",
+      "Iptc4xmpCore:CountryCode": "XXY",
+      "countryName": "Essequibo",
+      "countryCode": "XXY",
+      "nearestSettlement": "Anna Regina",
+      "nearestSettlementCountry": "Guyana",
+      "distanceToSettlementKm": 63.19988302839621,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "7,0.5N",
+          "exif:GPSLongitude": "59,0.5W",
+          "Iptc4xmpExt:CountryName": "Essequibo",
+          "Iptc4xmpExt:CountryCode": "XXY",
+          "Iptc4xmpExt:City": "Anna Regina"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Essequibo: 81 km circle holding 50.1% of the population (76,944 people); Center: 7.0083, -59.0083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          7,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          59,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Essequibo: 81 km circle holding 50.1% of the population (76,944 people); Center: 7.0083, -59.0083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

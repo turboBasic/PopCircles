@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 3.163842753323953e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 88,
-          "blocks_examined": 6588,
-          "blocks_pruned": 4859,
-          "circles_evaluated": 1729,
-          "kernels_built": 3124
-        }
+      "nearest_settlement": {
+        "name": "Noumea",
+        "country": "New Caledonia",
+        "country_iso_alpha2": "NC",
+        "distance_km": 9.26669382835048,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 142132.9264441412,
+      "populationShare": 0.524967161076467,
+      "radiusKm": 14.0,
+      "centerLatitude": -22.191666666666663,
+      "centerLongitude": 166.49166666666667,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "New Caledonia",
+      "Iptc4xmpCore:CountryCode": "NC",
+      "countryName": "New Caledonia",
+      "countryCode": "NC",
+      "nearestSettlement": "Noumea",
+      "nearestSettlementCountry": "New Caledonia",
+      "distanceToSettlementKm": 9.26669382835048,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "22,11.5S",
+          "exif:GPSLongitude": "166,29.5E",
+          "Iptc4xmpExt:CountryName": "New Caledonia",
+          "Iptc4xmpExt:CountryCode": "NC",
+          "Iptc4xmpExt:City": "Noumea"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "New Caledonia: 14 km circle holding 52.5% of the population (142,133 people); Center: -22.1917, 166.4917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          22,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          166,
+          1
+        ],
+        [
+          29,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "New Caledonia: 14 km circle holding 52.5% of the population (142,133 people); Center: -22.1917, 166.4917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

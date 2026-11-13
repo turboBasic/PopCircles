@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010111452311563728,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 141,
-          "blocks_examined": 31224,
-          "blocks_pruned": 22773,
-          "circles_evaluated": 8451,
-          "kernels_built": 10539
-        }
+      "nearest_settlement": {
+        "name": "Santa Bárbara",
+        "country": "Honduras",
+        "country_iso_alpha2": "HN",
+        "distance_km": 42.41392828804488,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 4377399.477916032,
+      "populationShare": 0.5083898330389307,
+      "radiusKm": 99.0,
+      "centerLatitude": 14.808333333333337,
+      "centerLongitude": -87.85833333333333,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Honduras",
+      "Iptc4xmpCore:CountryCode": "HN",
+      "countryName": "Honduras",
+      "countryCode": "HN",
+      "nearestSettlement": "Santa Bárbara",
+      "nearestSettlementCountry": "Honduras",
+      "distanceToSettlementKm": 42.41392828804488,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "14,48.5N",
+          "exif:GPSLongitude": "87,51.5W",
+          "Iptc4xmpExt:CountryName": "Honduras",
+          "Iptc4xmpExt:CountryCode": "HN",
+          "Iptc4xmpExt:City": "Santa Bárbara"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Honduras: 99 km circle holding 50.8% of the population (4,377,399 people); Center: 14.8083, -87.8583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          14,
+          1
+        ],
+        [
+          48,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          87,
+          1
+        ],
+        [
+          51,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Honduras: 99 km circle holding 50.8% of the population (4,377,399 people); Center: 14.8083, -87.8583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

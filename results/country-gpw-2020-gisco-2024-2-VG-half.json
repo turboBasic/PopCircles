@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.3506434018914347e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 6,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 42,
-          "blocks_examined": 1018,
-          "blocks_pruned": 738,
-          "circles_evaluated": 280,
-          "kernels_built": 580
-        }
+      "nearest_settlement": {
+        "name": "Christiansted",
+        "country": "United States Virgin Islands",
+        "country_iso_alpha2": "VI",
+        "distance_km": 76.16939065289971,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 16457.401733636856,
+      "populationShare": 0.5066025991597771,
+      "radiusKm": 5.0,
+      "centerLatitude": 18.424999999999997,
+      "centerLongitude": -64.625,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "British Virgin Islands",
+      "Iptc4xmpCore:CountryCode": "VG",
+      "countryName": "British Virgin Islands",
+      "countryCode": "VG",
+      "nearestSettlement": "Christiansted",
+      "nearestSettlementCountry": "United States Virgin Islands",
+      "distanceToSettlementKm": 76.16939065289971,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,25.5N",
+          "exif:GPSLongitude": "64,37.5W",
+          "Iptc4xmpExt:CountryName": "British Virgin Islands",
+          "Iptc4xmpExt:CountryCode": "VG",
+          "Iptc4xmpExt:City": "Christiansted"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "British Virgin Islands: 5 km circle holding 50.7% of the population (16,457 people); Center: 18.4250, -64.6250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          25,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          64,
+          1
+        ],
+        [
+          37,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "British Virgin Islands: 5 km circle holding 50.7% of the population (16,457 people); Center: 18.4250, -64.6250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

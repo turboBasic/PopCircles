@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00021163347897600558,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 115,
-          "blocks_examined": 17220,
-          "blocks_pruned": 12621,
-          "circles_evaluated": 4599,
-          "kernels_built": 4426
-        }
+      "nearest_settlement": {
+        "name": "Ratnapura",
+        "country": "Sri Lanka",
+        "country_iso_alpha2": "LK",
+        "distance_km": 39.35025657194416,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 10703506.923662186,
+      "populationShare": 0.5062605428122249,
+      "radiusKm": 63.0,
+      "centerLatitude": 7.041666666666671,
+      "centerLongitude": 80.32499999999999,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Sri Lanka",
+      "Iptc4xmpCore:CountryCode": "LK",
+      "countryName": "Sri Lanka",
+      "countryCode": "LK",
+      "nearestSettlement": "Ratnapura",
+      "nearestSettlementCountry": "Sri Lanka",
+      "distanceToSettlementKm": 39.35025657194416,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "7,2.5N",
+          "exif:GPSLongitude": "80,19.5E",
+          "Iptc4xmpExt:CountryName": "Sri Lanka",
+          "Iptc4xmpExt:CountryCode": "LK",
+          "Iptc4xmpExt:City": "Ratnapura"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Sri Lanka: 63 km circle holding 50.6% of the population (10,703,507 people); Center: 7.0417, 80.3250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          7,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          80,
+          1
+        ],
+        [
+          19,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Sri Lanka: 63 km circle holding 50.6% of the population (10,703,507 people); Center: 7.0417, 80.3250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00043006197647154525,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 212,
-          "blocks_examined": 76814,
-          "blocks_pruned": 57101,
-          "circles_evaluated": 19713,
-          "kernels_built": 14108
-        }
+      "nearest_settlement": {
+        "name": "Wad Madani",
+        "country": "Sudan",
+        "country_iso_alpha2": "SD",
+        "distance_km": 23.336454223627072,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 22573207.896075543,
+      "populationShare": 0.5003137813979575,
+      "radiusKm": 335.0,
+      "centerLatitude": 14.208333333333329,
+      "centerLongitude": 33.60833333333332,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Sudan",
+      "Iptc4xmpCore:CountryCode": "SD",
+      "countryName": "Sudan",
+      "countryCode": "SD",
+      "nearestSettlement": "Wad Madani",
+      "nearestSettlementCountry": "Sudan",
+      "distanceToSettlementKm": 23.336454223627072,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "14,12.5N",
+          "exif:GPSLongitude": "33,36.5E",
+          "Iptc4xmpExt:CountryName": "Sudan",
+          "Iptc4xmpExt:CountryCode": "SD",
+          "Iptc4xmpExt:City": "Wad Madani"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Sudan: 335 km circle holding 50.0% of the population (22,573,208 people); Center: 14.2083, 33.6083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          14,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          33,
+          1
+        ],
+        [
+          36,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Sudan: 335 km circle holding 50.0% of the population (22,573,208 people); Center: 14.2083, 33.6083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

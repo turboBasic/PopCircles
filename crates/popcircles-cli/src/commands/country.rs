@@ -822,6 +822,7 @@ pub(crate) fn sweep(
     let boundary_digest = boundary_digest.to_owned();
     let mut countries = Vec::with_capacity(features.len());
     let mut countries_without_population_cells = Vec::new();
+    let places = settlement_places()?;
     for feature in features {
         let started = std::time::Instant::now();
         let Some(table) = prepared.country_table(feature.id.as_str())? else {
@@ -855,9 +856,15 @@ pub(crate) fn sweep(
                 index + 1,
                 walk.len()
             );
+            let centre = table
+                .effective_grid()
+                .centre_of(found.centre.row, found.centre.col)
+                .map_err(|error| Failure::grid_index(&error))?;
+            let context = settlement_context(centre, &places)?;
             records.push(CountrySweepRecord::new(
                 SmallestReport::new(&found, table.effective_grid())
-                    .map_err(|error| Failure::grid_index(&error))?,
+                    .map_err(|error| Failure::grid_index(&error))?
+                    .with_nearest_settlement(context.as_ref()),
             ));
         }
         progress.finish();

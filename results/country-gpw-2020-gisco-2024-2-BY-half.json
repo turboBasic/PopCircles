@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010291124524565865,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 176,
-          "blocks_examined": 18574,
-          "blocks_pruned": 13570,
-          "circles_evaluated": 5004,
-          "kernels_built": 6761
-        }
+      "nearest_settlement": {
+        "name": "Barysaw",
+        "country": "Belarus",
+        "country_iso_alpha2": "BY",
+        "distance_km": 23.47340538663828,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 4699048.811396306,
+      "populationShare": 0.5020590675174608,
+      "radiusKm": 138.0,
+      "centerLatitude": 54.30833333333334,
+      "centerLongitude": 28.82499999999999,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Belarus",
+      "Iptc4xmpCore:CountryCode": "BY",
+      "countryName": "Belarus",
+      "countryCode": "BY",
+      "nearestSettlement": "Barysaw",
+      "nearestSettlementCountry": "Belarus",
+      "distanceToSettlementKm": 23.47340538663828,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "54,18.5N",
+          "exif:GPSLongitude": "28,49.5E",
+          "Iptc4xmpExt:CountryName": "Belarus",
+          "Iptc4xmpExt:CountryCode": "BY",
+          "Iptc4xmpExt:City": "Barysaw"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Belarus: 138 km circle holding 50.2% of the population (4,699,049 people); Center: 54.3083, 28.8250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          54,
+          1
+        ],
+        [
+          18,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          28,
+          1
+        ],
+        [
+          49,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Belarus: 138 km circle holding 50.2% of the population (4,699,049 people); Center: 54.3083, 28.8250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

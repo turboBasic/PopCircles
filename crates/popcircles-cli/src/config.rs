@@ -36,6 +36,8 @@ struct Document {
     defaults: Defaults,
     #[serde(default)]
     combinations: BTreeMap<String, PartialCombination>,
+    #[serde(default, rename = "map_text")]
+    _map_text: Option<toml::Table>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -661,6 +663,14 @@ mod tests {
 
     fn document(text: &str) -> Document {
         toml::from_str(text).expect("the fixture is TOML")
+    }
+
+    #[test]
+    fn shared_map_text_settings_are_accepted_for_the_python_renderer() {
+        let config = document(&format!(
+            "{VALID}\n[map_text]\ntitle = \"metadata\"\ncredits = \"raster\"\n"
+        ));
+        assert_eq!(config.combinations.len(), 1);
     }
 
     const VALID: &str = r#"

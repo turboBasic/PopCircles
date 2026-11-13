@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 3.422506487821246e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 144,
-          "blocks_examined": 10264,
-          "blocks_pruned": 7376,
-          "circles_evaluated": 2888,
-          "kernels_built": 2462
-        }
+      "nearest_settlement": {
+        "name": "Malé",
+        "country": "Maldives",
+        "country_iso_alpha2": "MV",
+        "distance_km": 87.64811325206301,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 196117.3937214315,
+      "populationShare": 0.5179944176764408,
+      "radiusKm": 88.0,
+      "centerLatitude": 4.924999999999997,
+      "centerLongitude": 73.275,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Maldives",
+      "Iptc4xmpCore:CountryCode": "MV",
+      "countryName": "Maldives",
+      "countryCode": "MV",
+      "nearestSettlement": "Malé",
+      "nearestSettlementCountry": "Maldives",
+      "distanceToSettlementKm": 87.64811325206301,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "4,55.5N",
+          "exif:GPSLongitude": "73,16.5E",
+          "Iptc4xmpExt:CountryName": "Maldives",
+          "Iptc4xmpExt:CountryCode": "MV",
+          "Iptc4xmpExt:City": "Malé"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Maldives: 88 km circle holding 51.8% of the population (196,117 people); Center: 4.9250, 73.2750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          4,
+          1
+        ],
+        [
+          55,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          73,
+          1
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Maldives: 88 km circle holding 51.8% of the population (196,117 people); Center: 4.9250, 73.2750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

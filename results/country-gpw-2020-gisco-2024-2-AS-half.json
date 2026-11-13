@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 4.476613326364834e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 6,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 54,
-          "blocks_examined": 4704,
-          "blocks_pruned": 3504,
-          "circles_evaluated": 1200,
-          "kernels_built": 2837
-        }
+      "nearest_settlement": {
+        "name": "Pago Pago",
+        "country": "American Samoa",
+        "country_iso_alpha2": "AS",
+        "distance_km": 6.571973667524222,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 29472.894576072693,
+      "populationShare": 0.5300617170119404,
+      "radiusKm": 5.0,
+      "centerLatitude": -14.325000000000003,
+      "centerLongitude": -170.74166666666667,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "American Samoa",
+      "Iptc4xmpCore:CountryCode": "AS",
+      "countryName": "American Samoa",
+      "countryCode": "AS",
+      "nearestSettlement": "Pago Pago",
+      "nearestSettlementCountry": "American Samoa",
+      "distanceToSettlementKm": 6.571973667524222,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "14,19.5S",
+          "exif:GPSLongitude": "170,44.5W",
+          "Iptc4xmpExt:CountryName": "American Samoa",
+          "Iptc4xmpExt:CountryCode": "AS",
+          "Iptc4xmpExt:City": "Pago Pago"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "American Samoa: 5 km circle holding 53.0% of the population (29,473 people); Center: -14.3250, -170.7417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          14,
+          1
+        ],
+        [
+          19,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          170,
+          1
+        ],
+        [
+          44,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "American Samoa: 5 km circle holding 53.0% of the population (29,473 people); Center: -14.3250, -170.7417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

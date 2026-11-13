@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 6.543425584548551e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 80,
-          "blocks_examined": 3120,
-          "blocks_pruned": 2253,
-          "circles_evaluated": 867,
-          "kernels_built": 1049
-        }
+      "nearest_settlement": {
+        "name": "Georgetown",
+        "country": "Guyana",
+        "country_iso_alpha2": "GY",
+        "distance_km": 9.32598203363105,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 322702.2541576382,
+      "populationShare": 0.511044522466456,
+      "radiusKm": 15.0,
+      "centerLatitude": 6.741666666666674,
+      "centerLongitude": -58.108333333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Guyana",
+      "Iptc4xmpCore:CountryCode": "GY",
+      "countryName": "Guyana",
+      "countryCode": "GY",
+      "nearestSettlement": "Georgetown",
+      "nearestSettlementCountry": "Guyana",
+      "distanceToSettlementKm": 9.32598203363105,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "6,44.5N",
+          "exif:GPSLongitude": "58,6.5W",
+          "Iptc4xmpExt:CountryName": "Guyana",
+          "Iptc4xmpExt:CountryCode": "GY",
+          "Iptc4xmpExt:City": "Georgetown"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Guyana: 15 km circle holding 51.1% of the population (322,702 people); Center: 6.7417, -58.1083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          6,
+          1
+        ],
+        [
+          44,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          58,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Guyana: 15 km circle holding 51.1% of the population (322,702 people); Center: 6.7417, -58.1083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

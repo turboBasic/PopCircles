@@ -85,7 +85,10 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
             Settlement(
                 name="Fixture Place", country="Fixture Country", distance_km=10, short_form=True
             ),
-            "25.1250, 79.7080, Fixture Place, Fixture Country",
+            (
+                "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+                "Center: 25.1250, 79.7080"
+            ),
         ),
         (
             CENTRE_LAT,
@@ -93,9 +96,20 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
             Settlement(
                 name="Fixture Place", country="Fixture Country", distance_km=500, short_form=False
             ),
-            "25.1250, 79.7080, 500 km from Fixture Place, Fixture Country",
+            (
+                "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+                "Center: 25.1250, 79.7080"
+            ),
         ),
-        (CENTRE_LAT, CENTRE_LON, None, "25.1250, 79.7080"),
+        (
+            CENTRE_LAT,
+            CENTRE_LON,
+            None,
+            (
+                "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+                "Center: 25.1250, 79.7080"
+            ),
+        ),
         (
             -12.345,
             -0.5,
@@ -105,11 +119,14 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
                 distance_km=12.345,
                 short_form=False,
             ),
-            "-12.3450, -0.5000, 12 km from Fixture Place, Fixture Country",
+            (
+                "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+                "Center: -12.3450, -0.5000"
+            ),
         ),
     ],
 )
-def test_figure_title_uses_the_answer_centre_and_settlement_decision(
+def test_figure_title_uses_the_answer_centre_without_settlement_details(
     latitude: float,
     longitude: float,
     settlement: Settlement | None,
@@ -117,10 +134,10 @@ def test_figure_title_uses_the_answer_centre_and_settlement_decision(
 ) -> None:
     answer = answer_with_settlement(latitude=latitude, longitude=longitude, settlement=settlement)
     title = title_of(answer)
-    assert f"centred {expected}" in " ".join(title.split())
+    assert title == expected
 
 
-def test_long_figure_place_wraps_inside_the_centre_title() -> None:
+def test_long_figure_place_stays_in_the_one_line_title() -> None:
     answer = answer_with_settlement(
         settlement=Settlement(
             name="An exceptionally long settlement name that should wrap rather than clip",
@@ -130,7 +147,8 @@ def test_long_figure_place_wraps_inside_the_centre_title() -> None:
         ),
     )
     title = title_of(answer)
-    assert any(line.startswith("         ") for line in title.splitlines())
+    assert "\n" not in title
+    assert "An exceptionally long settlement name that should wrap rather than clip" not in title
 
 
 def test_country_figure_title_uses_nested_nearest_settlement() -> None:
@@ -139,6 +157,7 @@ def test_country_figure_title_uses_nested_nearest_settlement() -> None:
 
     title = title_of(circle_of(payload))
 
-    assert "centred 51.0000, 10.0000, 12 km from Fixture Place, Fixture Country" in " ".join(
-        title.split()
+    assert title == (
+        "Germany: 200 km circle holding 50.0% of the population (40 people); "
+        "Center: 51.0000, 10.0000"
     )

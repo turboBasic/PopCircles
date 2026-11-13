@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.639165204427326e-08,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 4,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 36,
-          "blocks_examined": 4166,
-          "blocks_pruned": 3098,
-          "circles_evaluated": 1068,
-          "kernels_built": 2279
-        }
+      "nearest_settlement": {
+        "name": "Stanley",
+        "country": "Falkland Islands",
+        "country_iso_alpha2": "FK",
+        "distance_km": 1.0902616971954828,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 1638.4399809292518,
+      "populationShare": 0.582387055306042,
+      "radiusKm": 4.0,
+      "centerLatitude": -51.70833333333334,
+      "centerLongitude": -57.858333333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Falkland Islands",
+      "Iptc4xmpCore:CountryCode": "FK",
+      "countryName": "Falkland Islands",
+      "countryCode": "FK",
+      "nearestSettlement": "Stanley",
+      "nearestSettlementCountry": "Falkland Islands",
+      "distanceToSettlementKm": 1.0902616971954828,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "51,42.5S",
+          "exif:GPSLongitude": "57,51.5W",
+          "Iptc4xmpExt:CountryName": "Falkland Islands",
+          "Iptc4xmpExt:CountryCode": "FK",
+          "Iptc4xmpExt:City": "Stanley"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Falkland Islands: 4 km circle holding 58.2% of the population (1,638 people); Center: -51.7083, -57.8583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          51,
+          1
+        ],
+        [
+          42,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          57,
+          1
+        ],
+        [
+          51,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Falkland Islands: 4 km circle holding 58.2% of the population (1,638 people); Center: -51.7083, -57.8583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

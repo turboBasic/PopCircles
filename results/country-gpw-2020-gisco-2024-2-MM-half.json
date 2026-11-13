@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00045630842059697315,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 212,
-          "blocks_examined": 58270,
-          "blocks_pruned": 42375,
-          "circles_evaluated": 15895,
-          "kernels_built": 11607
-        }
+      "nearest_settlement": {
+        "name": "Pyu",
+        "country": "Myanmar",
+        "country_iso_alpha2": "MM",
+        "distance_km": 62.28376657931505,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 28033545.35139788,
+      "populationShare": 0.5000376635902019,
+      "radiusKm": 267.0,
+      "centerLatitude": 18.691666666666663,
+      "centerLongitude": 95.89166666666665,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Myanmar/Burma",
+      "Iptc4xmpCore:CountryCode": "MM",
+      "countryName": "Myanmar/Burma",
+      "countryCode": "MM",
+      "nearestSettlement": "Pyu",
+      "nearestSettlementCountry": "Myanmar",
+      "distanceToSettlementKm": 62.28376657931505,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,41.5N",
+          "exif:GPSLongitude": "95,53.5E",
+          "Iptc4xmpExt:CountryName": "Myanmar/Burma",
+          "Iptc4xmpExt:CountryCode": "MM",
+          "Iptc4xmpExt:City": "Pyu"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Myanmar/Burma: 267 km circle holding 50.0% of the population (28,033,545 people); Center: 18.6917, 95.8917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          41,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          95,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Myanmar/Burma: 267 km circle holding 50.0% of the population (28,033,545 people); Center: 18.6917, 95.8917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

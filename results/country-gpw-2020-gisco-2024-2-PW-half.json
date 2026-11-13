@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.0881943921324408e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 80,
-          "blocks_examined": 5744,
-          "blocks_pruned": 4258,
-          "circles_evaluated": 1486,
-          "kernels_built": 1912
-        }
+      "nearest_settlement": {
+        "name": "Koror",
+        "country": "Palau",
+        "country_iso_alpha2": "PW",
+        "distance_km": 3.365803309442201,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 10859.795335132629,
+      "populationShare": 0.5041290086640937,
+      "radiusKm": 15.0,
+      "centerLatitude": 7.375,
+      "centerLongitude": 134.47500000000002,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Palau",
+      "Iptc4xmpCore:CountryCode": "PW",
+      "countryName": "Palau",
+      "countryCode": "PW",
+      "nearestSettlement": "Koror",
+      "nearestSettlementCountry": "Palau",
+      "distanceToSettlementKm": 3.365803309442201,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "7,22.5N",
+          "exif:GPSLongitude": "134,28.5E",
+          "Iptc4xmpExt:CountryName": "Palau",
+          "Iptc4xmpExt:CountryCode": "PW",
+          "Iptc4xmpExt:City": "Koror"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Palau: 15 km circle holding 50.4% of the population (10,860 people); Center: 7.3750, 134.4750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          7,
+          1
+        ],
+        [
+          22,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          134,
+          1
+        ],
+        [
+          28,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Palau: 15 km circle holding 50.4% of the population (10,860 people); Center: 7.3750, 134.4750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

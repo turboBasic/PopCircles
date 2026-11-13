@@ -144,6 +144,24 @@ def load() -> Registry:
     return parse(REGISTRY.read_text(encoding="utf-8"))
 
 
+def map_text_rendering() -> tuple[bool, bool]:
+    path = REPO_ROOT / "data" / "config.toml"
+    config = tomllib.loads(path.read_text(encoding="utf-8"))
+    settings = config.get("map_text", {})
+    if not isinstance(settings, dict):
+        message = f"{path}: map_text must be a table"
+        raise TypeError(message)
+    values = cast(dict[str, object], settings)
+    rendering: list[bool] = []
+    for field in ("render_title", "render_description"):
+        value = values.get(field, False)
+        if not isinstance(value, bool):
+            message = f"{path}: map_text.{field} must be a boolean"
+            raise TypeError(message)
+        rendering.append(value)
+    return rendering[0], rendering[1]
+
+
 @functools.cache
 def coastline_dataset_key() -> str:
     config = tomllib.loads((REPO_ROOT / "data" / "config.toml").read_text(encoding="utf-8"))

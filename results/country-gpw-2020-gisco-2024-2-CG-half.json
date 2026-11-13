@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.248736217220621e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 171,
-          "blocks_examined": 27224,
-          "blocks_pruned": 20321,
-          "circles_evaluated": 6903,
-          "kernels_built": 13627
-        }
+      "nearest_settlement": {
+        "name": "Madingou",
+        "country": "Congo (Brazzaville)",
+        "country_iso_alpha2": "CG",
+        "distance_km": 37.27534022390034,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 2557448.073205677,
+      "populationShare": 0.5004778786579561,
+      "radiusKm": 198.0,
+      "centerLatitude": -4.49166666666666,
+      "centerLongitude": 13.625,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Congo",
+      "Iptc4xmpCore:CountryCode": "CG",
+      "countryName": "Congo",
+      "countryCode": "CG",
+      "nearestSettlement": "Madingou",
+      "nearestSettlementCountry": "Congo (Brazzaville)",
+      "distanceToSettlementKm": 37.27534022390034,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "4,29.5S",
+          "exif:GPSLongitude": "13,37.5E",
+          "Iptc4xmpExt:CountryName": "Congo",
+          "Iptc4xmpExt:CountryCode": "CG",
+          "Iptc4xmpExt:City": "Madingou"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Congo: 198 km circle holding 50.0% of the population (2,557,448 people); Center: -4.4917, 13.6250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          4,
+          1
+        ],
+        [
+          29,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          13,
+          1
+        ],
+        [
+          37,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Congo: 198 km circle holding 50.0% of the population (2,557,448 people); Center: -4.4917, 13.6250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

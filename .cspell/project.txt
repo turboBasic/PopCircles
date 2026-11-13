@@ -16,15 +16,17 @@ cspell
 deepseek
 fignums
 flycheck
-hardlink
 getrusage
+hardlink
 imshow
 iostat
+ismath
 jactionlint
 loadgroup
 machdep
 maxrss
 mise
+noopener
 notarytool
 numprocesses
 opencode
@@ -43,6 +45,7 @@ turboBasic
 ureq
 vite
 xdist
+xmpmeta
 
 # --- Domain vocabulary ---
 antimeridian
@@ -76,8 +79,8 @@ Valeriepieris
 # --- Geospatial tooling and standards ---
 AEQD
 Carree
-EPSG
 ENGL
+EPSG
 featurecla
 GDAL
 grib
@@ -123,6 +126,7 @@ horizontalalignment
 indicatif
 initargs
 insta
+Iptc
 Ivoire
 keepends
 libc
@@ -146,6 +150,7 @@ socketpair
 splitmix
 thiserror
 tmpg
+tobytes
 verticalalignment
 weezl
 wght

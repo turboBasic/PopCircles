@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010264794086845194,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 120,
-          "blocks_examined": 24262,
-          "blocks_pruned": 17422,
-          "circles_evaluated": 6840,
-          "kernels_built": 7746
-        }
+      "nearest_settlement": {
+        "name": "Dubai",
+        "country": "United Arab Emirates",
+        "country_iso_alpha2": "AE",
+        "distance_km": 30.747930340657188,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 4715258.960238442,
+      "populationShare": 0.509771183362313,
+      "radiusKm": 42.0,
+      "centerLatitude": 25.04166666666667,
+      "centerLongitude": 55.525000000000006,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "United Arab Emirates",
+      "Iptc4xmpCore:CountryCode": "AE",
+      "countryName": "United Arab Emirates",
+      "countryCode": "AE",
+      "nearestSettlement": "Dubai",
+      "nearestSettlementCountry": "United Arab Emirates",
+      "distanceToSettlementKm": 30.747930340657188,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "25,2.5N",
+          "exif:GPSLongitude": "55,31.5E",
+          "Iptc4xmpExt:CountryName": "United Arab Emirates",
+          "Iptc4xmpExt:CountryCode": "AE",
+          "Iptc4xmpExt:City": "Dubai"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "United Arab Emirates: 42 km circle holding 51.0% of the population (4,715,259 people); Center: 25.0417, 55.5250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          25,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          55,
+          1
+        ],
+        [
+          31,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "United Arab Emirates: 42 km circle holding 51.0% of the population (4,715,259 people); Center: 25.0417, 55.5250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

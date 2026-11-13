@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 8.839813327098691e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 88,
-          "blocks_examined": 18126,
-          "blocks_pruned": 13539,
-          "circles_evaluated": 4587,
-          "kernels_built": 5078
-        }
+      "nearest_settlement": {
+        "name": "South Tarawa",
+        "country": "Kiribati",
+        "country_iso_alpha2": "KI",
+        "distance_km": 3.4917984696140683,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 61445.4513913393,
+      "populationShare": 0.5770816380460909,
+      "radiusKm": 13.0,
+      "centerLatitude": 1.3583333333333343,
+      "centerLongitude": 173.04166666666669,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Kiribati",
+      "Iptc4xmpCore:CountryCode": "KI",
+      "countryName": "Kiribati",
+      "countryCode": "KI",
+      "nearestSettlement": "South Tarawa",
+      "nearestSettlementCountry": "Kiribati",
+      "distanceToSettlementKm": 3.4917984696140683,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "1,21.5N",
+          "exif:GPSLongitude": "173,2.5E",
+          "Iptc4xmpExt:CountryName": "Kiribati",
+          "Iptc4xmpExt:CountryCode": "KI",
+          "Iptc4xmpExt:City": "South Tarawa"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Kiribati: 13 km circle holding 57.7% of the population (61,445 people); Center: 1.3583, 173.0417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          1,
+          1
+        ],
+        [
+          21,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          173,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Kiribati: 13 km circle holding 57.7% of the population (61,445 people); Center: 1.3583, 173.0417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

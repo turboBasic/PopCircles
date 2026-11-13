@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.7754004227568798e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 144,
-          "blocks_examined": 24430,
-          "blocks_pruned": 18082,
-          "circles_evaluated": 6348,
-          "kernels_built": 7993
-        }
+      "nearest_settlement": {
+        "name": "Ulaanbaatar",
+        "country": "Mongolia",
+        "country_iso_alpha2": "MN",
+        "distance_km": 6.092080430807984,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 1606846.68315053,
+      "populationShare": 0.5045344233550242,
+      "radiusKm": 34.0,
+      "centerLatitude": 47.958333333333336,
+      "centerLongitude": 106.85833333333335,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Mongolia",
+      "Iptc4xmpCore:CountryCode": "MN",
+      "countryName": "Mongolia",
+      "countryCode": "MN",
+      "nearestSettlement": "Ulaanbaatar",
+      "nearestSettlementCountry": "Mongolia",
+      "distanceToSettlementKm": 6.092080430807984,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "47,57.5N",
+          "exif:GPSLongitude": "106,51.5E",
+          "Iptc4xmpExt:CountryName": "Mongolia",
+          "Iptc4xmpExt:CountryCode": "MN",
+          "Iptc4xmpExt:City": "Ulaanbaatar"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Mongolia: 34 km circle holding 50.5% of the population (1,606,847 people); Center: 47.9583, 106.8583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          47,
+          1
+        ],
+        [
+          57,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          106,
+          1
+        ],
+        [
+          51,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Mongolia: 34 km circle holding 50.5% of the population (1,606,847 people); Center: 47.9583, 106.8583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

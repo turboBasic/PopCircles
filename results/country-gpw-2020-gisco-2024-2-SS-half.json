@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0001142968135936303,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 176,
-          "blocks_examined": 185572,
-          "blocks_pruned": 135037,
-          "circles_evaluated": 50535,
-          "kernels_built": 82760
-        }
+      "nearest_settlement": {
+        "name": "Bor",
+        "country": "South Sudan",
+        "country_iso_alpha2": "SS",
+        "distance_km": 115.5942117950437,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 7069155.668309445,
+      "populationShare": 0.5010978689778676,
+      "radiusKm": 240.0,
+      "centerLatitude": 5.625,
+      "centerLongitude": 32.42499999999998,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "South Sudan",
+      "Iptc4xmpCore:CountryCode": "SS",
+      "countryName": "South Sudan",
+      "countryCode": "SS",
+      "nearestSettlement": "Bor",
+      "nearestSettlementCountry": "South Sudan",
+      "distanceToSettlementKm": 115.5942117950437,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "5,37.5N",
+          "exif:GPSLongitude": "32,25.5E",
+          "Iptc4xmpExt:CountryName": "South Sudan",
+          "Iptc4xmpExt:CountryCode": "SS",
+          "Iptc4xmpExt:City": "Bor"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "South Sudan: 240 km circle holding 50.1% of the population (7,069,156 people); Center: 5.6250, 32.4250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          5,
+          1
+        ],
+        [
+          37,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          32,
+          1
+        ],
+        [
+          25,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "South Sudan: 240 km circle holding 50.1% of the population (7,069,156 people); Center: 5.6250, 32.4250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010480492792930701,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 168,
-          "blocks_examined": 19578,
-          "blocks_pruned": 14369,
-          "circles_evaluated": 5209,
-          "kernels_built": 9906
-        }
+      "nearest_settlement": {
+        "name": "Leiria",
+        "country": "Portugal",
+        "country_iso_alpha2": "PT",
+        "distance_km": 29.25326929145233,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 5090664.55817091,
+      "populationShare": 0.5015818845189768,
+      "radiusKm": 128.0,
+      "centerLatitude": 39.608333333333334,
+      "centerLongitude": -8.508333333333326,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Portugal",
+      "Iptc4xmpCore:CountryCode": "PT",
+      "countryName": "Portugal",
+      "countryCode": "PT",
+      "nearestSettlement": "Leiria",
+      "nearestSettlementCountry": "Portugal",
+      "distanceToSettlementKm": 29.25326929145233,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "39,36.5N",
+          "exif:GPSLongitude": "8,30.5W",
+          "Iptc4xmpExt:CountryName": "Portugal",
+          "Iptc4xmpExt:CountryCode": "PT",
+          "Iptc4xmpExt:City": "Leiria"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Portugal: 128 km circle holding 50.2% of the population (5,090,665 people); Center: 39.6083, -8.5083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          39,
+          1
+        ],
+        [
+          36,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          8,
+          1
+        ],
+        [
+          30,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Portugal: 128 km circle holding 50.2% of the population (5,090,665 people); Center: 39.6083, -8.5083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

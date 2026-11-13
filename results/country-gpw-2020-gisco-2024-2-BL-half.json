@@ -19,12 +19,12 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
       "id": "BL",
-      "name": "Saint Barth\u00e9lemy",
+      "name": "Saint Barthélemy",
       "iso_alpha2": "BL",
       "boundary_dataset": "gisco-countries-2024-1m",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.0538080125414038e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 4,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 20,
-          "blocks_examined": 234,
-          "blocks_pruned": 165,
-          "circles_evaluated": 69,
-          "kernels_built": 179
-        }
+      "nearest_settlement": {
+        "name": "Basseterre",
+        "country": "Saint Kitts and Nevis",
+        "country_iso_alpha2": "KN",
+        "distance_km": 66.55620423037855,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 7221.743188858032,
+      "populationShare": 0.6461952912615541,
+      "radiusKm": 3.0,
+      "centerLatitude": 17.891666666666666,
+      "centerLongitude": -62.825,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Saint Barthélemy",
+      "Iptc4xmpCore:CountryCode": "BL",
+      "countryName": "Saint Barthélemy",
+      "countryCode": "BL",
+      "nearestSettlement": "Basseterre",
+      "nearestSettlementCountry": "Saint Kitts and Nevis",
+      "distanceToSettlementKm": 66.55620423037855,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "17,53.5N",
+          "exif:GPSLongitude": "62,49.5W",
+          "Iptc4xmpExt:CountryName": "Saint Barthélemy",
+          "Iptc4xmpExt:CountryCode": "BL",
+          "Iptc4xmpExt:City": "Basseterre"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Saint Barthélemy: 3 km circle holding 64.6% of the population (7,222 people); Center: 17.8917, -62.8250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          17,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          62,
+          1
+        ],
+        [
+          49,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Saint Barthélemy: 3 km circle holding 64.6% of the population (7,222 people); Center: 17.8917, -62.8250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

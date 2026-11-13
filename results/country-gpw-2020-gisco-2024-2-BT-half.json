@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 6.9544970147773124e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 113,
-          "blocks_examined": 11918,
-          "blocks_pruned": 8551,
-          "circles_evaluated": 3367,
-          "kernels_built": 4328
-        }
+      "nearest_settlement": {
+        "name": "Thimphu",
+        "country": "Bhutan",
+        "country_iso_alpha2": "BT",
+        "distance_km": 36.965581505794496,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 403329.50913095474,
+      "populationShare": 0.5023577844672681,
+      "radiusKm": 57.0,
+      "centerLatitude": 27.141666666666666,
+      "centerLongitude": 89.60833333333335,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Bhutan",
+      "Iptc4xmpCore:CountryCode": "BT",
+      "countryName": "Bhutan",
+      "countryCode": "BT",
+      "nearestSettlement": "Thimphu",
+      "nearestSettlementCountry": "Bhutan",
+      "distanceToSettlementKm": 36.965581505794496,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "27,8.5N",
+          "exif:GPSLongitude": "89,36.5E",
+          "Iptc4xmpExt:CountryName": "Bhutan",
+          "Iptc4xmpExt:CountryCode": "BT",
+          "Iptc4xmpExt:City": "Thimphu"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Bhutan: 57 km circle holding 50.2% of the population (403,330 people); Center: 27.1417, 89.6083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          27,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          89,
+          1
+        ],
+        [
+          36,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Bhutan: 57 km circle holding 50.2% of the population (403,330 people); Center: 27.1417, 89.6083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

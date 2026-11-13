@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 3.3264950327690466e-06,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 8,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 88,
-          "blocks_examined": 5054,
-          "blocks_pruned": 3481,
-          "circles_evaluated": 1573,
-          "kernels_built": 2454
-        }
+      "nearest_settlement": {
+        "name": "Reykjavík",
+        "country": "Iceland",
+        "country_iso_alpha2": "IS",
+        "distance_km": 11.259358939515604,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 176378.06505613675,
+      "populationShare": 0.5209465092666901,
+      "radiusKm": 16.0,
+      "centerLatitude": 64.125,
+      "centerLongitude": -21.708333333333343,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Iceland",
+      "Iptc4xmpCore:CountryCode": "IS",
+      "countryName": "Iceland",
+      "countryCode": "IS",
+      "nearestSettlement": "Reykjavík",
+      "nearestSettlementCountry": "Iceland",
+      "distanceToSettlementKm": 11.259358939515604,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "64,7.5N",
+          "exif:GPSLongitude": "21,42.5W",
+          "Iptc4xmpExt:CountryName": "Iceland",
+          "Iptc4xmpExt:CountryCode": "IS",
+          "Iptc4xmpExt:City": "Reykjavík"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Iceland: 16 km circle holding 52.1% of the population (176,378 people); Center: 64.1250, -21.7083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          64,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          21,
+          1
+        ],
+        [
+          42,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Iceland: 16 km circle holding 52.1% of the population (176,378 people); Center: 64.1250, -21.7083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

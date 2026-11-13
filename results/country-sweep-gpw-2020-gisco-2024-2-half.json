@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "shares": {
@@ -64,7 +64,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.230046602490852e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Gogrial",
+                "country": "South Sudan",
+                "country_iso_alpha2": "SS",
+                "distance_km": 134.4234623152328,
+                "short_form": false
+              }
             }
           }
         ]
@@ -106,7 +113,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004088074306596867,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Charikar",
+                "country": "Afghanistan",
+                "country_iso_alpha2": "AF",
+                "distance_km": 1.4070644848479879,
+                "short_form": true
+              }
             }
           }
         ]
@@ -147,7 +161,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.3000998851204146e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Leh",
+                "country": "India",
+                "country_iso_alpha2": "IN",
+                "distance_km": 206.3183135538893,
+                "short_form": false
+              }
             }
           }
         ]
@@ -189,7 +210,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.7127505840378824e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tirana",
+                "country": "Albania",
+                "country_iso_alpha2": "AL",
+                "distance_km": 10.228608354505509,
+                "short_form": false
+              }
             }
           }
         ]
@@ -231,7 +259,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.000424913957543255,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bordj Bou Arréridj",
+                "country": "Algeria",
+                "country_iso_alpha2": "DZ",
+                "distance_km": 19.16878284254472,
+                "short_form": false
+              }
             }
           }
         ]
@@ -273,7 +308,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.476613326364834e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Pago Pago",
+                "country": "American Samoa",
+                "country_iso_alpha2": "AS",
+                "distance_km": 6.571973667524222,
+                "short_form": true
+              }
             }
           }
         ]
@@ -315,7 +357,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.6888444026344775e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Andorra la Vella",
+                "country": "Andorra",
+                "country_iso_alpha2": "AD",
+                "distance_km": 2.615520014345095,
+                "short_form": true
+              }
             }
           }
         ]
@@ -357,7 +406,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00023086849666554518,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dondo",
+                "country": "Angola",
+                "country_iso_alpha2": "AO",
+                "distance_km": 35.922030747070835,
+                "short_form": false
+              }
             }
           }
         ]
@@ -399,7 +455,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.147776636728814e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Basseterre",
+                "country": "Saint Kitts and Nevis",
+                "country_iso_alpha2": "KN",
+                "distance_km": 107.68704885148856,
+                "short_form": false
+              }
             }
           }
         ]
@@ -479,7 +542,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.595081624168291e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Saint John's",
+                "country": "Antigua and Barbuda",
+                "country_iso_alpha2": "AG",
+                "distance_km": 2.770703132478569,
+                "short_form": true
+              }
             }
           }
         ]
@@ -521,7 +591,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00043079210039410497,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "San Nicolás de los Arroyos",
+                "country": "Argentina",
+                "country_iso_alpha2": "AR",
+                "distance_km": 24.419044215097355,
+                "short_form": false
+              }
             }
           }
         ]
@@ -563,7 +640,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.738830101072251e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Yerevan",
+                "country": "Armenia",
+                "country_iso_alpha2": "AM",
+                "distance_km": 4.624548173047175,
+                "short_form": true
+              }
             }
           }
         ]
@@ -605,7 +689,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.813901064674595e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Oranjestad",
+                "country": "Aruba",
+                "country_iso_alpha2": "AW",
+                "distance_km": 2.917139204547999,
+                "short_form": true
+              }
             }
           }
         ]
@@ -646,7 +737,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.3124243403514082e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Itanagar",
+                "country": "India",
+                "country_iso_alpha2": "IN",
+                "distance_km": 56.772200023029015,
+                "short_form": false
+              }
             }
           }
         ]
@@ -688,7 +786,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00022226122934615745,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tumut",
+                "country": "Australia",
+                "country_iso_alpha2": "AU",
+                "distance_km": 57.91889639831908,
+                "short_form": false
+              }
             }
           }
         ]
@@ -730,7 +835,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010104343584373677,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Wiener Neustadt",
+                "country": "Austria",
+                "country_iso_alpha2": "AT",
+                "distance_km": 52.96838461811474,
+                "short_form": false
+              }
             }
           }
         ]
@@ -772,7 +884,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010467005435763401,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Şirvan",
+                "country": "Azerbaijan",
+                "country_iso_alpha2": "AZ",
+                "distance_km": 60.08712729822337,
+                "short_form": false
+              }
             }
           }
         ]
@@ -814,7 +933,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.4612693811969813e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Nassau",
+                "country": "The Bahamas",
+                "country_iso_alpha2": "BS",
+                "distance_km": 6.2530872426705075,
+                "short_form": true
+              }
             }
           }
         ]
@@ -856,7 +982,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.360065606032045e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Manama",
+                "country": "Bahrain",
+                "country_iso_alpha2": "BH",
+                "distance_km": 5.525526759027938,
+                "short_form": true
+              }
             }
           }
         ]
@@ -898,7 +1031,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00169190453641093,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dhaka",
+                "country": "Bangladesh",
+                "country_iso_alpha2": "BD",
+                "distance_km": 34.2078033958272,
+                "short_form": false
+              }
             }
           }
         ]
@@ -940,7 +1080,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.204248650535074e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bridgetown",
+                "country": "Barbados",
+                "country_iso_alpha2": "BB",
+                "distance_km": 5.173363102986296,
+                "short_form": true
+              }
             }
           }
         ]
@@ -1019,7 +1166,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010291124524565865,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Barysaw",
+                "country": "Belarus",
+                "country_iso_alpha2": "BY",
+                "distance_km": 23.47340538663828,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1061,7 +1215,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010802007312950697,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Brussels",
+                "country": "Belgium",
+                "country_iso_alpha2": "BE",
+                "distance_km": 3.788315572808185,
+                "short_form": true
+              }
             }
           }
         ]
@@ -1103,7 +1264,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.17187359461359e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Belmopan",
+                "country": "Belize",
+                "country_iso_alpha2": "BZ",
+                "distance_km": 44.834614293027904,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1144,7 +1312,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 9.102949326500671e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dangriga",
+                "country": "Belize",
+                "country_iso_alpha2": "BZ",
+                "distance_km": 25.532693540540077,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1186,7 +1361,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010968202036843636,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ouidah",
+                "country": "Benin",
+                "country_iso_alpha2": "BJ",
+                "distance_km": 46.696894064203924,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1228,7 +1410,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.557915754486064e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hamilton",
+                "country": "Bermuda",
+                "country_iso_alpha2": "BM",
+                "distance_km": 0.7788554553612778,
+                "short_form": true
+              }
             }
           }
         ]
@@ -1270,7 +1459,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.9544970147773124e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Thimphu",
+                "country": "Bhutan",
+                "country_iso_alpha2": "BT",
+                "distance_km": 36.965581505794496,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1311,7 +1507,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.4590145334071076e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Wadi Halfa",
+                "country": "Sudan",
+                "country_iso_alpha2": "SD",
+                "distance_km": 236.68524846934355,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1353,7 +1556,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010811693026109035,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Aiquile",
+                "country": "Bolivia",
+                "country_iso_alpha2": "BO",
+                "distance_km": 43.33425190406081,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1395,7 +1605,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.204347127079664e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Willemstad",
+                "country": "Curacao",
+                "country_iso_alpha2": "CW",
+                "distance_km": 63.508889000632756,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1437,7 +1654,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.903103102623041e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tuzla",
+                "country": "Bosnia and Herzegovina",
+                "country_iso_alpha2": "BA",
+                "distance_km": 34.272208987632844,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1479,7 +1703,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.5946953337779367e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Molepolole",
+                "country": "Botswana",
+                "country_iso_alpha2": "BW",
+                "distance_km": 27.01869537824212,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1559,7 +1790,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.001804805406657133,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Guaxupé",
+                "country": "Brazil",
+                "country_iso_alpha2": "BR",
+                "distance_km": 21.7200950914428,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1601,7 +1839,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.3506434018914347e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Christiansted",
+                "country": "United States Virgin Islands",
+                "country_iso_alpha2": "VI",
+                "distance_km": 76.16939065289971,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1643,7 +1888,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.591548416665298e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bandar Seri Begawan",
+                "country": "Brunei",
+                "country_iso_alpha2": "BN",
+                "distance_km": 4.723407693293265,
+                "short_form": true
+              }
             }
           }
         ]
@@ -1685,7 +1937,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.658280562767565e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Plovdiv",
+                "country": "Bulgaria",
+                "country_iso_alpha2": "BG",
+                "distance_km": 58.63546975946546,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1727,7 +1986,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00021063437396190763,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ziniaré",
+                "country": "Burkina Faso",
+                "country_iso_alpha2": "BF",
+                "distance_km": 23.730412116748518,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1769,7 +2035,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00011130983083664895,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Muramvya",
+                "country": "Burundi",
+                "country_iso_alpha2": "BI",
+                "distance_km": 14.478926409445753,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1811,7 +2084,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00012045999431261752,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Phnom Penh",
+                "country": "Cambodia",
+                "country_iso_alpha2": "KH",
+                "distance_km": 17.65064448347725,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1853,7 +2133,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00022366245539792576,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Baham",
+                "country": "Cameroon",
+                "country_iso_alpha2": "CM",
+                "distance_km": 64.03622575908771,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1895,7 +2182,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004118949056494125,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Belleville",
+                "country": "Canada",
+                "country_iso_alpha2": "CA",
+                "distance_km": 45.5250040637697,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1937,7 +2231,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.354208068425311e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Praia",
+                "country": "Cape Verde",
+                "country_iso_alpha2": "CV",
+                "distance_km": 30.03411905171656,
+                "short_form": false
+              }
             }
           }
         ]
@@ -1979,7 +2280,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.655936980279244e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "George Town",
+                "country": "Cayman Islands",
+                "country_iso_alpha2": "KY",
+                "distance_km": 3.1570139130636985,
+                "short_form": true
+              }
             }
           }
         ]
@@ -2021,7 +2329,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.29600609098698e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bossembélé",
+                "country": "Central African Republic",
+                "country_iso_alpha2": "CF",
+                "distance_km": 72.79270783706632,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2063,7 +2378,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00011942599596602576,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Laï",
+                "country": "Chad",
+                "country_iso_alpha2": "TD",
+                "distance_km": 108.42670864839477,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2142,7 +2464,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020605637252731928,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Santiago",
+                "country": "Chile",
+                "country_iso_alpha2": "CL",
+                "distance_km": 34.364571887110074,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2184,7 +2513,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.013717381617001787,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Zhoukou",
+                "country": "China",
+                "country_iso_alpha2": "CN",
+                "distance_km": 15.759656070158348,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2225,7 +2561,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.046828916545111e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Gar",
+                "country": "China",
+                "country_iso_alpha2": "CN",
+                "distance_km": 137.91399543462762,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2267,7 +2610,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.5563755058372426e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Sukabumi",
+                "country": "Indonesia",
+                "country_iso_alpha2": "ID",
+                "distance_km": 413.42902411408164,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2388,7 +2738,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00044210886245499867,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ibagué",
+                "country": "Colombia",
+                "country_iso_alpha2": "CO",
+                "distance_km": 20.87360286486253,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2430,7 +2787,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 7.1436644369347255e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Moroni",
+                "country": "Comoros",
+                "country_iso_alpha2": "KM",
+                "distance_km": 19.578736600623625,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2472,7 +2836,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.248736217220621e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Madingou",
+                "country": "Congo (Brazzaville)",
+                "country_iso_alpha2": "CG",
+                "distance_km": 37.27534022390034,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2514,7 +2885,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.0840067975861635e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Avarua",
+                "country": "Cook Islands",
+                "country_iso_alpha2": "CK",
+                "distance_km": 3.2640479380451657,
+                "short_form": true
+              }
             }
           }
         ]
@@ -2556,7 +2934,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.2299466350201256e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "San José",
+                "country": "Costa Rica",
+                "country_iso_alpha2": "CR",
+                "distance_km": 3.468572312238159,
+                "short_form": true
+              }
             }
           }
         ]
@@ -2598,7 +2983,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.9939218337009502e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Zagreb",
+                "country": "Croatia",
+                "country_iso_alpha2": "HR",
+                "distance_km": 41.98861562325562,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2640,7 +3032,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010768845827261985,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Güines",
+                "country": "Cuba",
+                "country_iso_alpha2": "CU",
+                "distance_km": 82.85215268618758,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2648,7 +3047,7 @@
       {
         "country": {
           "id": "CW",
-          "name": "Cura\u00e7ao",
+          "name": "Curaçao",
           "iso_alpha2": "CW",
           "boundary_dataset": "gisco-countries-2024-1m",
           "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -2682,7 +3081,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.6499300000638805e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Willemstad",
+                "country": "Curacao",
+                "country_iso_alpha2": "CW",
+                "distance_km": 5.095880732331478,
+                "short_form": true
+              }
             }
           }
         ]
@@ -2724,7 +3130,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.2977314502856105e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Nicosia",
+                "country": "Cyprus",
+                "country_iso_alpha2": "CY",
+                "distance_km": 21.466442502755644,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2766,7 +3179,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010567887683308704,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Prague",
+                "country": "Czechia",
+                "country_iso_alpha2": "CZ",
+                "distance_km": 15.864846176589172,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2774,7 +3194,7 @@
       {
         "country": {
           "id": "CI",
-          "name": "C\u00f4te D\u2019Ivoire",
+          "name": "Côte D’Ivoire",
           "iso_alpha2": "CI",
           "boundary_dataset": "gisco-countries-2024-1m",
           "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -2808,7 +3228,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00022208443683635504,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dimbokro",
+                "country": "Ivory Coast",
+                "country_iso_alpha2": "CI",
+                "distance_km": 23.966080954807637,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2850,7 +3277,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008594624888063718,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kabinda",
+                "country": "Congo (Kinshasa)",
+                "country_iso_alpha2": "CD",
+                "distance_km": 152.7813462253538,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2892,7 +3326,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.4067832864307166e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Sorø",
+                "country": "Denmark",
+                "country_iso_alpha2": "DK",
+                "distance_km": 47.58613639571121,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2934,7 +3375,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 7.2791191845757025e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Djibouti",
+                "country": "Djibouti",
+                "country_iso_alpha2": "DJ",
+                "distance_km": 10.58524258458662,
+                "short_form": false
+              }
             }
           }
         ]
@@ -2976,7 +3424,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.06792573176931e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Roseau",
+                "country": "Dominica",
+                "country_iso_alpha2": "DM",
+                "distance_km": 5.546513862541849,
+                "short_form": true
+              }
             }
           }
         ]
@@ -3018,7 +3473,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010709538419597866,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Monte Plata",
+                "country": "Dominican Republic",
+                "country_iso_alpha2": "DO",
+                "distance_km": 31.96553752336067,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3060,7 +3522,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020246899469692278,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Babahoyo",
+                "country": "Ecuador",
+                "country_iso_alpha2": "EC",
+                "distance_km": 41.37248156143048,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3102,7 +3571,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008846618775120996,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tanta",
+                "country": "Egypt",
+                "country_iso_alpha2": "EG",
+                "distance_km": 20.464278289672027,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3144,7 +3620,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.5133269590204736e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Santa Tecla",
+                "country": "El Salvador",
+                "country_iso_alpha2": "SV",
+                "distance_km": 17.082161612924708,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3186,7 +3669,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 7.3327958062409925e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Evinayong",
+                "country": "Equatorial Guinea",
+                "country_iso_alpha2": "GQ",
+                "distance_km": 27.012144036140118,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3227,7 +3717,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.5600023569652522e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bitam",
+                "country": "Gabon",
+                "country_iso_alpha2": "GA",
+                "distance_km": 22.299145484179284,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3269,7 +3766,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.426503638836317e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Asmara",
+                "country": "Eritrea",
+                "country_iso_alpha2": "ER",
+                "distance_km": 10.33292779105319,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3310,7 +3814,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.6256988962320542e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Anna Regina",
+                "country": "Guyana",
+                "country_iso_alpha2": "GY",
+                "distance_km": 63.19988302839621,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3352,7 +3863,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.3145028421230676e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tallinn",
+                "country": "Estonia",
+                "country_iso_alpha2": "EE",
+                "distance_km": 33.3621290228467,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3394,7 +3912,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.3298244526803168e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Manzini",
+                "country": "eSwatini",
+                "country_iso_alpha2": "SZ",
+                "distance_km": 13.406203168090393,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3436,7 +3961,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.000911855683436336,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Waliso",
+                "country": "Ethiopia",
+                "country_iso_alpha2": "ET",
+                "distance_km": 53.67470033989971,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3478,7 +4010,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.639165204427326e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Stanley",
+                "country": "Falkland Islands",
+                "country_iso_alpha2": "FK",
+                "distance_km": 1.0902616971954828,
+                "short_form": true
+              }
             }
           }
         ]
@@ -3520,7 +4059,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.301868536145613e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tórshavn",
+                "country": "Faroe Islands",
+                "country_iso_alpha2": "FO",
+                "distance_km": 5.007801332019626,
+                "short_form": true
+              }
             }
           }
         ]
@@ -3562,7 +4108,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 7.214235816377072e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Suva",
+                "country": "Fiji",
+                "country_iso_alpha2": "FJ",
+                "distance_km": 50.62526711209274,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3604,7 +4157,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.359153978418283e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hämeenlinna",
+                "country": "Finland",
+                "country_iso_alpha2": "FI",
+                "distance_km": 37.38500577682772,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3646,7 +4206,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008063268269964743,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Troyes",
+                "country": "France",
+                "country_iso_alpha2": "FR",
+                "distance_km": 19.5829883057243,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3688,7 +4255,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.214187206297573e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Papeete",
+                "country": "French Polynesia",
+                "country_iso_alpha2": "PF",
+                "distance_km": 11.919142072227878,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3768,7 +4342,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.463886755402406e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Lambaréné",
+                "country": "Gabon",
+                "country_iso_alpha2": "GA",
+                "distance_km": 13.664118661024013,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3810,7 +4391,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.5522838919173984e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Brikama",
+                "country": "The Gambia",
+                "country_iso_alpha2": "GM",
+                "distance_km": 8.821420431337092,
+                "short_form": true
+              }
             }
           }
         ]
@@ -3852,7 +4440,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.9591309081314343e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Tbilisi",
+                "country": "Georgia",
+                "country_iso_alpha2": "GE",
+                "distance_km": 38.64222029513185,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3894,7 +4489,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008359381412078348,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Gießen",
+                "country": "Germany",
+                "country_iso_alpha2": "DE",
+                "distance_km": 20.790422000221085,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3936,7 +4538,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00023417470286122438,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Nkawkaw",
+                "country": "Ghana",
+                "country_iso_alpha2": "GH",
+                "distance_km": 54.05387933286647,
+                "short_form": false
+              }
             }
           }
         ]
@@ -3978,7 +4587,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.244361683866492e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Gibraltar",
+                "country": "Gibraltar",
+                "country_iso_alpha2": "GI",
+                "distance_km": 1.5322105659853014,
+                "short_form": true
+              }
             }
           }
         ]
@@ -4020,7 +4636,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010638951881485544,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Lamia",
+                "country": "Greece",
+                "country_iso_alpha2": "GR",
+                "distance_km": 43.80599124168932,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4062,7 +4685,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.4632512277649706e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Sisimiut",
+                "country": "Greenland",
+                "country_iso_alpha2": "GL",
+                "distance_km": 97.2493571583999,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4104,7 +4734,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.89836403417878e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "St. George's",
+                "country": "Grenada",
+                "country_iso_alpha2": "GD",
+                "distance_km": 5.976480914809984,
+                "short_form": true
+              }
             }
           }
         ]
@@ -4146,7 +4783,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.6897166242260505e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hagåtña",
+                "country": "Guam",
+                "country_iso_alpha2": "GU",
+                "distance_km": 6.749760957755851,
+                "short_form": true
+              }
             }
           }
         ]
@@ -4188,7 +4832,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0002038910235383766,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Sololá",
+                "country": "Guatemala",
+                "country_iso_alpha2": "GT",
+                "distance_km": 10.419972019506092,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4230,7 +4881,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.6457549694353045e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Cherbourg-Octeville",
+                "country": "France",
+                "country_iso_alpha2": "FR",
+                "distance_km": 68.91562015068848,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4272,7 +4930,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00011471766008927471,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Télimélé",
+                "country": "Guinea",
+                "country_iso_alpha2": "GN",
+                "distance_km": 27.23809824547264,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4314,7 +4979,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.5007124789446555e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bissau",
+                "country": "Guinea Bissau",
+                "country_iso_alpha2": "GW",
+                "distance_km": 30.63771053895299,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4356,7 +5028,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.543425584548551e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Georgetown",
+                "country": "Guyana",
+                "country_iso_alpha2": "GY",
+                "distance_km": 9.32598203363105,
+                "short_form": true
+              }
             }
           }
         ]
@@ -4398,7 +5077,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010760207542547098,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Port-au-Prince",
+                "country": "Haiti",
+                "country_iso_alpha2": "HT",
+                "distance_km": 23.378587374179254,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4439,7 +5125,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.114682981952661e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Berenice Troglodytica",
+                "country": "Egypt",
+                "country_iso_alpha2": "EG",
+                "distance_km": 151.85049521494773,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4519,7 +5212,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010111452311563728,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Santa Bárbara",
+                "country": "Honduras",
+                "country_iso_alpha2": "HN",
+                "distance_km": 42.41392828804488,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4561,7 +5261,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.825074364204282e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hong Kong",
+                "country": "Hong Kong S.A.R.",
+                "country_iso_alpha2": "HK",
+                "distance_km": 2.195839154147972,
+                "short_form": true
+              }
             }
           }
         ]
@@ -4603,7 +5310,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010354102660572816,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kecskemét",
+                "country": "Hungary",
+                "country_iso_alpha2": "HU",
+                "distance_km": 45.27496913099651,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4645,7 +5359,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.3264950327690466e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Reykjavík",
+                "country": "Iceland",
+                "country_iso_alpha2": "IS",
+                "distance_km": 11.259358939515604,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4686,7 +5407,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.2933276675443105e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kapoeta",
+                "country": "South Sudan",
+                "country_iso_alpha2": "SS",
+                "distance_km": 183.00431836649358,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4728,7 +5456,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.01358570075710314,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Mirzapur",
+                "country": "India",
+                "country_iso_alpha2": "IN",
+                "distance_km": 58.90737052312862,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4770,7 +5505,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00322633314017161,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Pekalongan",
+                "country": "Indonesia",
+                "country_iso_alpha2": "ID",
+                "distance_km": 18.41599875648971,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4812,7 +5554,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008436114692263369,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Arak",
+                "country": "Iran",
+                "country_iso_alpha2": "IR",
+                "distance_km": 49.93326726466748,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4854,7 +5603,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004220592999990665,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kut",
+                "country": "Iraq",
+                "country_iso_alpha2": "IQ",
+                "distance_km": 39.9677365020974,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4896,7 +5652,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.189803654742529e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dublin",
+                "country": "Ireland",
+                "country_iso_alpha2": "IE",
+                "distance_km": 47.05576820180331,
+                "short_form": false
+              }
             }
           }
         ]
@@ -4938,7 +5701,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.456867209366555e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Douglas",
+                "country": "Isle of Man",
+                "country_iso_alpha2": "IM",
+                "distance_km": 5.071196117458045,
+                "short_form": true
+              }
             }
           }
         ]
@@ -4980,7 +5750,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.0040091851799795e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ramla",
+                "country": "Israel",
+                "country_iso_alpha2": "IL",
+                "distance_km": 5.578944149021735,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5022,7 +5799,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00046501121500818984,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Parma",
+                "country": "Italy",
+                "country_iso_alpha2": "IT",
+                "distance_km": 9.507380687301454,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5064,7 +5848,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.6923528805746936e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Spanish Town",
+                "country": "Jamaica",
+                "country_iso_alpha2": "JM",
+                "distance_km": 12.332667430233101,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5105,7 +5896,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020696668086832743,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Baramulla",
+                "country": "India",
+                "country_iso_alpha2": "IN",
+                "distance_km": 30.865854189730058,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5147,7 +5945,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0009432638912141346,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Matsumoto",
+                "country": "Japan",
+                "country_iso_alpha2": "JP",
+                "distance_km": 46.22669976285393,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5189,7 +5994,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.775434055892379e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Cherbourg-Octeville",
+                "country": "France",
+                "country_iso_alpha2": "FR",
+                "distance_km": 60.18662672017228,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5231,7 +6043,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.9665673673792456e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Amman",
+                "country": "Jordan",
+                "country_iso_alpha2": "JO",
+                "distance_km": 8.509766192915793,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5273,7 +6092,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0002054762546661736,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Saryshaghan",
+                "country": "Kazakhstan",
+                "country_iso_alpha2": "KZ",
+                "distance_km": 122.63019156507971,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5315,7 +6141,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00044644011073049117,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Nakuru",
+                "country": "Kenya",
+                "country_iso_alpha2": "KE",
+                "distance_km": 36.548875704308955,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5357,7 +6190,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.839813327098691e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "South Tarawa",
+                "country": "Kiribati",
+                "country_iso_alpha2": "KI",
+                "distance_km": 3.4917984696140683,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5398,7 +6238,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.092662180907718e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kitami",
+                "country": "Japan",
+                "country_iso_alpha2": "JP",
+                "distance_km": 191.32213816974325,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5440,7 +6287,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.0550740021875615e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hawalli",
+                "country": "Kuwait",
+                "country_iso_alpha2": "KW",
+                "distance_km": 4.703750704457245,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5482,7 +6336,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.599975006801529e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Toktogul",
+                "country": "Kyrgyzstan",
+                "country_iso_alpha2": "KG",
+                "distance_km": 61.242046727140234,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5524,7 +6385,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.775055171826772e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Luang Prabang",
+                "country": "Laos",
+                "country_iso_alpha2": "LA",
+                "distance_km": 28.095821242836813,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5566,7 +6434,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.4642200660446975e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Riga",
+                "country": "Latvia",
+                "country_iso_alpha2": "LV",
+                "distance_km": 20.211480832709576,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5608,7 +6483,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.4281939859422105e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Baabda",
+                "country": "Lebanon",
+                "country_iso_alpha2": "LB",
+                "distance_km": 10.05268360465065,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5650,7 +6532,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.5355204797503558e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Teyateyaneng",
+                "country": "Lesotho",
+                "country_iso_alpha2": "LS",
+                "distance_km": 31.24543336724757,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5691,7 +6580,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.9986278418192879e-10,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Matsue",
+                "country": "Japan",
+                "country_iso_alpha2": "JP",
+                "distance_km": 225.0497358906905,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5733,7 +6629,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.235800088981783e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kakata",
+                "country": "Liberia",
+                "country_iso_alpha2": "LR",
+                "distance_km": 25.847131991580603,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5775,7 +6678,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.628617542487528e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bani Walid",
+                "country": "Libya",
+                "country_iso_alpha2": "LY",
+                "distance_km": 39.44864042374927,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5817,7 +6727,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.2839677059417513e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Vaduz",
+                "country": "Liechtenstein",
+                "country_iso_alpha2": "LI",
+                "distance_km": 4.963652666973062,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5859,7 +6776,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.678171890403636e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kaunas",
+                "country": "Lithuania",
+                "country_iso_alpha2": "LT",
+                "distance_km": 38.27411036782813,
+                "short_form": false
+              }
             }
           }
         ]
@@ -5901,7 +6825,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.390569733794047e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Luxembourg",
+                "country": "Luxembourg",
+                "country_iso_alpha2": "LU",
+                "distance_km": 7.56020594178622,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5943,7 +6874,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.539685215841012e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Macau",
+                "country": "Macau S.A.R",
+                "country_iso_alpha2": "MO",
+                "distance_km": 2.152892984069253,
+                "short_form": true
+              }
             }
           }
         ]
@@ -5985,7 +6923,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00022757525207105878,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Fianarantsoa",
+                "country": "Madagascar",
+                "country_iso_alpha2": "MG",
+                "distance_km": 87.38217691930068,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6027,7 +6972,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020843841039002668,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ntcheu",
+                "country": "Malawi",
+                "country_iso_alpha2": "MW",
+                "distance_km": 7.882941487950593,
+                "short_form": true
+              }
             }
           }
         ]
@@ -6069,7 +7021,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00023838093351876587,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kuala Lipis",
+                "country": "Malaysia",
+                "country_iso_alpha2": "MY",
+                "distance_km": 56.93203586799575,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6111,7 +7070,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.422506487821246e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Malé",
+                "country": "Maldives",
+                "country_iso_alpha2": "MV",
+                "distance_km": 87.64811325206301,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6153,7 +7119,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.000209906857973945,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ségou",
+                "country": "Mali",
+                "country_iso_alpha2": "ML",
+                "distance_km": 86.92032267804959,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6195,7 +7168,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.5278603982628837e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Valletta",
+                "country": "Malta",
+                "country_iso_alpha2": "MT",
+                "distance_km": 3.68777972076633,
+                "short_form": true
+              }
             }
           }
         ]
@@ -6237,7 +7217,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.0052853092037167e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Majuro",
+                "country": "Marshall Islands",
+                "country_iso_alpha2": "MH",
+                "distance_km": 19.91500003842835,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6279,7 +7266,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.099589468015465e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Aleg",
+                "country": "Mauritania",
+                "country_iso_alpha2": "MR",
+                "distance_km": 47.94506177101434,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6321,7 +7315,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.3153971712199468e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Port Louis",
+                "country": "Mauritius",
+                "country_iso_alpha2": "MU",
+                "distance_km": 6.547551411853396,
+                "short_form": true
+              }
             }
           }
         ]
@@ -6363,7 +7364,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0016100639122006368,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Santiago de Querétaro",
+                "country": "Mexico",
+                "country_iso_alpha2": "MX",
+                "distance_km": 49.05743756739454,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6405,7 +7413,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.784866894949036e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Palikir",
+                "country": "Federated States of Micronesia",
+                "country_iso_alpha2": "FM",
+                "distance_km": 345.77569525468425,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6447,7 +7462,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.9589583549875215e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Chișinău",
+                "country": "Moldova",
+                "country_iso_alpha2": "MD",
+                "distance_km": 4.116355276674908,
+                "short_form": true
+              }
             }
           }
         ]
@@ -6489,7 +7511,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 9.970625775208332e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Monaco",
+                "country": "Monaco",
+                "country_iso_alpha2": "MC",
+                "distance_km": 2.1826853382575204,
+                "short_form": true
+              }
             }
           }
         ]
@@ -6531,7 +7560,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.7754004227568798e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ulaanbaatar",
+                "country": "Mongolia",
+                "country_iso_alpha2": "MN",
+                "distance_km": 6.092080430807984,
+                "short_form": true
+              }
             }
           }
         ]
@@ -6573,7 +7609,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.533183021355686e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Podgorica",
+                "country": "Montenegro",
+                "country_iso_alpha2": "ME",
+                "distance_km": 17.00275156263155,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6615,7 +7658,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.187290621251497e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Saint John's",
+                "country": "Antigua and Barbuda",
+                "country_iso_alpha2": "AG",
+                "distance_km": 52.624471227062585,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6657,7 +7707,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00040916492844877983,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kenitra",
+                "country": "Morocco",
+                "country_iso_alpha2": "MA",
+                "distance_km": 29.648516206258265,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6699,7 +7756,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00023737762383372498,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ligonha",
+                "country": "Mozambique",
+                "country_iso_alpha2": "MZ",
+                "distance_km": 62.6854179870093,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6741,7 +7805,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00045630842059697315,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Pyu",
+                "country": "Myanmar",
+                "country_iso_alpha2": "MM",
+                "distance_km": 62.28376657931505,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6783,7 +7854,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.659945207226716e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Outjo",
+                "country": "Namibia",
+                "country_iso_alpha2": "NA",
+                "distance_km": 37.160507567106684,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6904,7 +7982,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0002318867449627326,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ramechhap",
+                "country": "Nepal",
+                "country_iso_alpha2": "NP",
+                "distance_km": 33.268170584037804,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6946,7 +8031,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0002017331514931763,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Utrecht",
+                "country": "Netherlands",
+                "country_iso_alpha2": "NL",
+                "distance_km": 15.747108402228376,
+                "short_form": false
+              }
             }
           }
         ]
@@ -6988,7 +8080,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.163842753323953e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Noumea",
+                "country": "New Caledonia",
+                "country_iso_alpha2": "NC",
+                "distance_km": 9.26669382835048,
+                "short_form": true
+              }
             }
           }
         ]
@@ -7030,7 +8129,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.154639173897475e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hamilton",
+                "country": "New Zealand",
+                "country_iso_alpha2": "NZ",
+                "distance_km": 44.66427392614336,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7072,7 +8178,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.5569561513098127e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Managua",
+                "country": "Nicaragua",
+                "country_iso_alpha2": "NI",
+                "distance_km": 41.57108900300697,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7114,7 +8227,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00021891291258584064,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Niamey",
+                "country": "Niger",
+                "country_iso_alpha2": "NE",
+                "distance_km": 105.22661936007663,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7156,7 +8276,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.001783081781214183,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Owo",
+                "country": "Nigeria",
+                "country_iso_alpha2": "NG",
+                "distance_km": 52.02894382538402,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7198,7 +8325,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.3709101826992071e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Alofi",
+                "country": "Niue",
+                "country_iso_alpha2": "NZ",
+                "distance_km": 3.671199378236611,
+                "short_form": true
+              }
             }
           }
         ]
@@ -7239,7 +8373,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.0989355342893251e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Jerusalem",
+                "country": "Israel",
+                "country_iso_alpha2": "IL",
+                "distance_km": 7.37629554244313,
+                "short_form": true
+              }
             }
           }
         ]
@@ -7323,7 +8464,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00022237848744403112,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Pyongyang",
+                "country": "North Korea",
+                "country_iso_alpha2": "KP",
+                "distance_km": 50.012324967550114,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7365,7 +8513,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.5076892022298132e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Skopje",
+                "country": "North Macedonia",
+                "country_iso_alpha2": "MK",
+                "distance_km": 13.289020802179492,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7407,7 +8562,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.480313515963021e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Capitol Hill",
+                "country": "Northern Mariana Islands",
+                "country_iso_alpha2": "MP",
+                "distance_km": 4.876835297564416,
+                "short_form": true
+              }
             }
           }
         ]
@@ -7449,7 +8611,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.331697095155653e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Drammen",
+                "country": "Norway",
+                "country_iso_alpha2": "NO",
+                "distance_km": 39.89842680454996,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7491,7 +8660,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.202443031233504e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "'Alayat Sama’il",
+                "country": "Oman",
+                "country_iso_alpha2": "OM",
+                "distance_km": 12.966562432743418,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7533,7 +8709,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.001774132299975566,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Sargodha",
+                "country": "Pakistan",
+                "country_iso_alpha2": "PK",
+                "distance_km": 31.04946884766573,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7575,7 +8758,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.0881943921324408e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Koror",
+                "country": "Palau",
+                "country_iso_alpha2": "PW",
+                "distance_km": 3.365803309442201,
+                "short_form": true
+              }
             }
           }
         ]
@@ -7617,7 +8807,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.2398706071318446e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ramallah",
+                "country": "Palestine",
+                "country_iso_alpha2": "PS",
+                "distance_km": 10.417243776735626,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7659,7 +8856,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.034543653173365e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Balboa",
+                "country": "Panama",
+                "country_iso_alpha2": "PA",
+                "distance_km": 22.8100951624661,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7701,7 +8905,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0001006232822173896,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Mount Hagen",
+                "country": "Papua New Guinea",
+                "country_iso_alpha2": "PG",
+                "distance_km": 15.44390292160744,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7742,7 +8953,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.7178804525885807e-09,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Sanya",
+                "country": "China",
+                "country_iso_alpha2": "CN",
+                "distance_km": 329.88701347537585,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7784,7 +9002,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.7085152661065375e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Caacupé",
+                "country": "Paraguay",
+                "country_iso_alpha2": "PY",
+                "distance_km": 25.4565625596942,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7826,7 +9051,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00024075593525153114,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "La Oroya",
+                "country": "Peru",
+                "country_iso_alpha2": "PE",
+                "distance_km": 18.774836361084105,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7868,7 +9100,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0009031195953316255,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Quezon City",
+                "country": "Philippines",
+                "country_iso_alpha2": "PH",
+                "distance_km": 102.46763472981459,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7952,7 +9191,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004137106077011186,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kielce",
+                "country": "Poland",
+                "country_iso_alpha2": "PL",
+                "distance_km": 36.05720683730771,
+                "short_form": false
+              }
             }
           }
         ]
@@ -7994,7 +9240,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010480492792930701,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Leiria",
+                "country": "Portugal",
+                "country_iso_alpha2": "PT",
+                "distance_km": 29.25326929145233,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8036,7 +9289,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.8926396582969542e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "San Juan",
+                "country": "Puerto Rico",
+                "country_iso_alpha2": "PR",
+                "distance_km": 24.603665412287505,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8078,7 +9338,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.601516793431561e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Doha",
+                "country": "Qatar",
+                "country_iso_alpha2": "QA",
+                "distance_km": 7.674282214556924,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8120,7 +9387,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0002061120781147536,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Slobozia",
+                "country": "Romania",
+                "country_iso_alpha2": "RO",
+                "distance_km": 47.67808337196418,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8162,7 +9436,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0016294022594548925,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Penza",
+                "country": "Russia",
+                "country_iso_alpha2": "RU",
+                "distance_km": 26.40479651341523,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8204,7 +9485,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00011115203017022745,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Muhanga",
+                "country": "Rwanda",
+                "country_iso_alpha2": "RW",
+                "distance_km": 21.734520048456602,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8212,7 +9500,7 @@
       {
         "country": {
           "id": "BL",
-          "name": "Saint Barth\u00e9lemy",
+          "name": "Saint Barthélemy",
           "iso_alpha2": "BL",
           "boundary_dataset": "gisco-countries-2024-1m",
           "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -8246,7 +9534,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.0538080125414038e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Basseterre",
+                "country": "Saint Kitts and Nevis",
+                "country_iso_alpha2": "KN",
+                "distance_km": 66.55620423037855,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8330,7 +9625,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.5426523751552906e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Basseterre",
+                "country": "Saint Kitts and Nevis",
+                "country_iso_alpha2": "KN",
+                "distance_km": 7.570924304819806,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8372,7 +9674,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.71605519018604e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Castries",
+                "country": "Saint Lucia",
+                "country_iso_alpha2": "LC",
+                "distance_km": 5.220424671582829,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8414,7 +9723,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.4552977336901e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Argentia",
+                "country": "Canada",
+                "country_iso_alpha2": "CA",
+                "distance_km": 176.77166977150623,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8456,7 +9772,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.929771364450316e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kingstown",
+                "country": "Saint Vincent and the Grenadines",
+                "country_iso_alpha2": "VC",
+                "distance_km": 3.761282651605961,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8498,7 +9821,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.7346524820832865e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Apia",
+                "country": "Samoa",
+                "country_iso_alpha2": "WS",
+                "distance_km": 8.705248578839164,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8540,7 +9870,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.1366972510774803e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "San Marino",
+                "country": "San Marino",
+                "country_iso_alpha2": "SM",
+                "distance_km": 1.4637430170411623,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8581,7 +9918,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.705718057857502e-12,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Punta Gorda",
+                "country": "Belize",
+                "country_iso_alpha2": "BZ",
+                "distance_km": 59.110990420146315,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8623,7 +9967,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004050491736592531,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Al-Quway'iyah governorate",
+                "country": "Saudi Arabia",
+                "country_iso_alpha2": "SA",
+                "distance_km": 270.86106276317776,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8702,7 +10053,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020262072578546535,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Thiès",
+                "country": "Senegal",
+                "country_iso_alpha2": "SN",
+                "distance_km": 31.76526073589575,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8743,7 +10101,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.283232732901445e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Keelung",
+                "country": "Taiwan",
+                "country_iso_alpha2": "TW",
+                "distance_km": 187.5210676647675,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8785,7 +10150,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0001010388983253093,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Belgrade",
+                "country": "Serbia",
+                "country_iso_alpha2": "RS",
+                "distance_km": 34.726872146523064,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8827,7 +10199,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.642080791419327e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Victoria",
+                "country": "Seychelles",
+                "country_iso_alpha2": "SC",
+                "distance_km": 5.4023102422433436,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8869,7 +10248,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.727019642380638e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Makeni",
+                "country": "Sierra Leone",
+                "country_iso_alpha2": "SL",
+                "distance_km": 72.28172123483762,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8911,7 +10297,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.463418809040564e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Singapore",
+                "country": "Singapore",
+                "country_iso_alpha2": "SG",
+                "distance_km": 8.20226038235662,
+                "short_form": true
+              }
             }
           }
         ]
@@ -8953,7 +10346,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.936457677598915e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Basseterre",
+                "country": "Saint Kitts and Nevis",
+                "country_iso_alpha2": "KN",
+                "distance_km": 89.8429682370488,
+                "short_form": false
+              }
             }
           }
         ]
@@ -8995,7 +10395,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.310857876491792e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Trnava",
+                "country": "Slovakia",
+                "country_iso_alpha2": "SK",
+                "distance_km": 39.213860919661975,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9037,7 +10444,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.4961408978004867e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ljubljana",
+                "country": "Slovenia",
+                "country_iso_alpha2": "SI",
+                "distance_km": 30.066072446685627,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9079,7 +10493,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.542313074431513e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Honiara",
+                "country": "Solomon Islands",
+                "country_iso_alpha2": "SB",
+                "distance_km": 69.49093356152179,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9121,7 +10542,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00011030475628130244,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Burhakaba",
+                "country": "Somalia",
+                "country_iso_alpha2": "SO",
+                "distance_km": 60.28882372635141,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9163,7 +10591,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004577149554924763,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Volksrust",
+                "country": "South Africa",
+                "country_iso_alpha2": "ZA",
+                "distance_km": 33.10834084798061,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9243,7 +10678,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00044464214954720944,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Seongnam",
+                "country": "South Korea",
+                "country_iso_alpha2": "KR",
+                "distance_km": 12.728451603515598,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9285,7 +10727,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0001142968135936303,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Bor",
+                "country": "South Sudan",
+                "country_iso_alpha2": "SS",
+                "distance_km": 115.5942117950437,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9327,7 +10776,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004323587125813268,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Castelló de la Plana",
+                "country": "Spain",
+                "country_iso_alpha2": "ES",
+                "distance_km": 64.12076513470296,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9406,7 +10862,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00021163347897600558,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Ratnapura",
+                "country": "Sri Lanka",
+                "country_iso_alpha2": "LK",
+                "distance_km": 39.35025657194416,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9448,7 +10911,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00043006197647154525,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Wad Madani",
+                "country": "Sudan",
+                "country_iso_alpha2": "SD",
+                "distance_km": 23.336454223627072,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9490,7 +10960,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.37995486294432e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Paramaribo",
+                "country": "Suriname",
+                "country_iso_alpha2": "SR",
+                "distance_km": 7.066395313785619,
+                "short_form": true
+              }
             }
           }
         ]
@@ -9532,7 +11009,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.6895169704932524e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Longyearbyen",
+                "country": "Svalbard and Jan Mayen Islands",
+                "country_iso_alpha2": "SJ",
+                "distance_km": 54.227137704743384,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9574,7 +11058,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010464836147614882,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Örebro",
+                "country": "Sweden",
+                "country_iso_alpha2": "SE",
+                "distance_km": 25.279337296815136,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9616,7 +11107,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0001007239280749374,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Lucerne",
+                "country": "Switzerland",
+                "country_iso_alpha2": "CH",
+                "distance_km": 21.755038746446164,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9658,7 +11156,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00021134202143665112,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hama",
+                "country": "Syria",
+                "country_iso_alpha2": "SY",
+                "distance_km": 49.86871569546721,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9666,7 +11171,7 @@
       {
         "country": {
           "id": "ST",
-          "name": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+          "name": "São Tomé and Príncipe",
           "iso_alpha2": "ST",
           "boundary_dataset": "gisco-countries-2024-1m",
           "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -9700,7 +11205,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.7599759310230454e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "São Tomé",
+                "country": "Sao Tome and Principe",
+                "country_iso_alpha2": "ST",
+                "distance_km": 4.445142827650165,
+                "short_form": true
+              }
             }
           }
         ]
@@ -9742,7 +11254,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0001025488202774165,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kuybyshevsk",
+                "country": "Tajikistan",
+                "country_iso_alpha2": "TJ",
+                "distance_km": 29.821890232003522,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9784,7 +11303,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008078201644350554,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Nakhon Nayok",
+                "country": "Thailand",
+                "country_iso_alpha2": "TH",
+                "distance_km": 20.152359930830997,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9826,7 +11352,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.319300251856902e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dili",
+                "country": "East Timor",
+                "country_iso_alpha2": "TL",
+                "distance_km": 25.844299916236068,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9868,7 +11401,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.9238986324733236e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Lokossa",
+                "country": "Benin",
+                "country_iso_alpha2": "BJ",
+                "distance_km": 51.89790185829632,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9910,7 +11450,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.3076739052164655e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Atafu",
+                "country": "Tokelau",
+                "country_iso_alpha2": "NZ",
+                "distance_km": 136.88116764031025,
+                "short_form": false
+              }
             }
           }
         ]
@@ -9952,7 +11499,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.899058624653944e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Nuku'alofa",
+                "country": "Tonga",
+                "country_iso_alpha2": "TO",
+                "distance_km": 6.227931396621257,
+                "short_form": true
+              }
             }
           }
         ]
@@ -9994,7 +11548,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.336014938413197e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Port of Spain",
+                "country": "Trinidad and Tobago",
+                "country_iso_alpha2": "TT",
+                "distance_km": 16.910121376099358,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10036,7 +11597,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010880832771019082,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Zaghouan",
+                "country": "Tunisia",
+                "country_iso_alpha2": "TN",
+                "distance_km": 29.95249509374726,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10078,7 +11646,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 5.3874576916773996e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Khiva",
+                "country": "Uzbekistan",
+                "country_iso_alpha2": "UZ",
+                "distance_km": 192.7411731470666,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10120,7 +11695,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 4.023414972825416e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Cockburn Town",
+                "country": "Turks and Caicos Islands",
+                "country_iso_alpha2": "TC",
+                "distance_km": 119.87525230459178,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10162,7 +11744,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 9.954920592322959e-08,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Funafuti",
+                "country": "Tuvalu",
+                "country_iso_alpha2": "TV",
+                "distance_km": 2.899626738928862,
+                "short_form": true
+              }
             }
           }
         ]
@@ -10170,7 +11759,7 @@
       {
         "country": {
           "id": "TR",
-          "name": "T\u00fcrkiye",
+          "name": "Türkiye",
           "iso_alpha2": "TR",
           "boundary_dataset": "gisco-countries-2024-1m",
           "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
@@ -10204,7 +11793,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008404688100500946,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kütahya",
+                "country": "Turkey",
+                "country_iso_alpha2": "TR",
+                "distance_km": 31.676198728850498,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10246,7 +11842,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004312230119945022,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kamuli",
+                "country": "Uganda",
+                "country_iso_alpha2": "UG",
+                "distance_km": 29.45693351840416,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10288,7 +11891,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00042633507825531587,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Kropyvnytskyi",
+                "country": "Ukraine",
+                "country_iso_alpha2": "UA",
+                "distance_km": 39.44086991586341,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10330,7 +11940,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00010264794086845194,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dubai",
+                "country": "United Arab Emirates",
+                "country_iso_alpha2": "AE",
+                "distance_km": 30.747930340657188,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10372,7 +11989,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004817700948416935,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Oxford",
+                "country": "United Kingdom",
+                "country_iso_alpha2": "GB",
+                "distance_km": 11.182426303357738,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10414,7 +12038,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0004706008001253531,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dodoma",
+                "country": "Tanzania",
+                "country_iso_alpha2": "TZ",
+                "distance_km": 63.88517213532877,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10456,7 +12087,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0033738363933100025,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Charleston",
+                "country": "United States of America",
+                "country_iso_alpha2": "US",
+                "distance_km": 73.16555194744896,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10536,7 +12174,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 2.8433103548358253e-05,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Montevideo",
+                "country": "Uruguay",
+                "country_iso_alpha2": "UY",
+                "distance_km": 13.845441023178683,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10578,7 +12223,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 8.83240754875418e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Christiansted",
+                "country": "United States Virgin Islands",
+                "country_iso_alpha2": "VI",
+                "distance_km": 67.43344074628494,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10620,7 +12272,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00023509017555179345,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Khujand",
+                "country": "Tajikistan",
+                "country_iso_alpha2": "TJ",
+                "distance_km": 4.159105754151103,
+                "short_form": true
+              }
             }
           }
         ]
@@ -10662,7 +12321,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 3.217536263705975e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Port Vila",
+                "country": "Vanuatu",
+                "country_iso_alpha2": "VU",
+                "distance_km": 104.10696708923415,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10704,7 +12370,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00024021678404470253,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "San Carlos",
+                "country": "Venezuela",
+                "country_iso_alpha2": "VE",
+                "distance_km": 16.643463451165296,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10746,7 +12419,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.0008783476840957914,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Hớn Quản",
+                "country": "Vietnam",
+                "country_iso_alpha2": "VN",
+                "distance_km": 44.924069438737064,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10788,7 +12468,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 1.0918732736024251e-07,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Apia",
+                "country": "Samoa",
+                "country_iso_alpha2": "WS",
+                "distance_km": 483.94897347774935,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10830,7 +12517,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 6.55065887454929e-06,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Laayoune",
+                "country": "Morocco",
+                "country_iso_alpha2": "MA",
+                "distance_km": 3.7193552183544565,
+                "short_form": true
+              }
             }
           }
         ]
@@ -10872,7 +12566,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00023281896420440038,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Dhamar",
+                "country": "Yemen",
+                "country_iso_alpha2": "YE",
+                "distance_km": 53.3599730851903,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10914,7 +12615,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020591699252091512,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Mumbwa",
+                "country": "Zambia",
+                "country_iso_alpha2": "ZM",
+                "distance_km": 41.01504225001339,
+                "short_form": false
+              }
             }
           }
         ]
@@ -10956,7 +12664,14 @@
               },
               "covers_whole_grid": false,
               "predicate_slack_persons": 0.00020270170361069844,
-              "tolerance_persons": 0.0
+              "tolerance_persons": 0.0,
+              "nearest_settlement": {
+                "name": "Chitungwiza",
+                "country": "Zimbabwe",
+                "country_iso_alpha2": "ZW",
+                "distance_km": 63.943108781650935,
+                "short_form": false
+              }
             }
           }
         ]

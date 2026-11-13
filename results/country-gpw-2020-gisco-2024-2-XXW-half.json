@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,17 +57,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 9.102949326500671e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 10,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 80,
-          "blocks_examined": 11136,
-          "blocks_pruned": 7903,
-          "circles_evaluated": 3233,
-          "kernels_built": 4327
-        }
+      "nearest_settlement": {
+        "name": "Dangriga",
+        "country": "Belize",
+        "country_iso_alpha2": "BZ",
+        "distance_km": 25.532693540540077,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 60311.1114063859,
+      "populationShare": 0.5135091337834647,
+      "radiusKm": 32.0,
+      "centerLatitude": 17.058333333333337,
+      "centerLongitude": -88.44166666666666,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Belize/Guatemala",
+      "Iptc4xmpCore:CountryCode": "XXW",
+      "countryName": "Belize/Guatemala",
+      "countryCode": "XXW",
+      "nearestSettlement": "Dangriga",
+      "nearestSettlementCountry": "Belize",
+      "distanceToSettlementKm": 25.532693540540077,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "17,3.5N",
+          "exif:GPSLongitude": "88,26.5W",
+          "Iptc4xmpExt:CountryName": "Belize/Guatemala",
+          "Iptc4xmpExt:CountryCode": "XXW",
+          "Iptc4xmpExt:City": "Dangriga"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Belize/Guatemala: 32 km circle holding 51.4% of the population (60,311 people); Center: 17.0583, -88.4417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          17,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          88,
+          1
+        ],
+        [
+          26,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Belize/Guatemala: 32 km circle holding 51.4% of the population (60,311 people); Center: 17.0583, -88.4417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

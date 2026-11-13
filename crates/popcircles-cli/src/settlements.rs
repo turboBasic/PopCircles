@@ -51,8 +51,10 @@ struct Geometry<'a> {
 
 #[derive(Deserialize)]
 struct Properties<'a> {
-    #[serde(rename = "NAME", borrow)]
-    name: Option<&'a str>,
+    #[serde(rename = "NAME_EN")]
+    english_name: Option<String>,
+    #[serde(rename = "NAME")]
+    name: Option<String>,
     #[serde(rename = "ADM0NAME", borrow)]
     country: Option<&'a str>,
     #[serde(rename = "ISO_A2", borrow)]
@@ -104,8 +106,9 @@ pub(crate) fn decode(text: &str) -> Result<Vec<Place>, SettlementsError> {
             };
             let name = feature
                 .properties
-                .name
-                .ok_or_else(|| feature_error(index, "properties must contain NAME"))?;
+                .english_name
+                .or(feature.properties.name)
+                .ok_or_else(|| feature_error(index, "properties must contain NAME_EN or NAME"))?;
             let country = feature
                 .properties
                 .country
@@ -144,7 +147,7 @@ fn feature_error(index: usize, reason: &str) -> SettlementsError {
 mod tests {
     use super::*;
 
-    const VALID: &str = r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"NAME":"Example","ADM0NAME":"Example","irrelevant":{"field":true}},"geometry":{"type":"Point","coordinates":[190,45]}}]}"#;
+    const VALID: &str = r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"NAME":"Example","NAME_EN":"Example","ADM0NAME":"Example","irrelevant":{"field":true}},"geometry":{"type":"Point","coordinates":[190,45]}}]}"#;
 
     #[test]
     fn decodes_only_the_required_properties_and_wraps_longitude() {
@@ -187,7 +190,7 @@ mod tests {
     fn refuses_wrong_geometry_missing_properties_and_invalid_coordinates() {
         for text in [
             VALID.replace("\"Point\"", "\"Polygon\""),
-            VALID.replace("\"NAME\":\"Example\",", ""),
+            VALID.replace("\"NAME\":\"Example\",\"NAME_EN\":\"Example\",", ""),
             VALID.replace("\"ADM0NAME\":\"Example\",", ""),
             VALID.replace("[190,45]", "[190,91]"),
         ] {

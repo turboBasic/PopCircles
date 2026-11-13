@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0016100639122006368,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 226,
-          "blocks_examined": 51324,
-          "blocks_pruned": 38058,
-          "circles_evaluated": 13266,
-          "kernels_built": 22559
-        }
+      "nearest_settlement": {
+        "name": "Santiago de Querétaro",
+        "country": "Mexico",
+        "country_iso_alpha2": "MX",
+        "distance_km": 49.05743756739454,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 67360044.00977871,
+      "populationShare": 0.5007225541545367,
+      "radiusKm": 320.0,
+      "centerLatitude": 20.141666666666666,
+      "centerLongitude": -100.45833333333333,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Mexico",
+      "Iptc4xmpCore:CountryCode": "MX",
+      "countryName": "Mexico",
+      "countryCode": "MX",
+      "nearestSettlement": "Santiago de Querétaro",
+      "nearestSettlementCountry": "Mexico",
+      "distanceToSettlementKm": 49.05743756739454,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "20,8.5N",
+          "exif:GPSLongitude": "100,27.5W",
+          "Iptc4xmpExt:CountryName": "Mexico",
+          "Iptc4xmpExt:CountryCode": "MX",
+          "Iptc4xmpExt:City": "Santiago de Querétaro"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Mexico: 320 km circle holding 50.1% of the population (67,360,044 people); Center: 20.1417, -100.4583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          20,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          100,
+          1
+        ],
+        [
+          27,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Mexico: 320 km circle holding 50.1% of the population (67,360,044 people); Center: 20.1417, -100.4583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

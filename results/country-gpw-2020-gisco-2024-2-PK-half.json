@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.001774132299975566,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 185,
-          "blocks_examined": 57180,
-          "blocks_pruned": 42632,
-          "circles_evaluated": 14548,
-          "kernels_built": 25660
-        }
+      "nearest_settlement": {
+        "name": "Sargodha",
+        "country": "Pakistan",
+        "country_iso_alpha2": "PK",
+        "distance_km": 31.04946884766573,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 101703784.0557045,
+      "populationShare": 0.5011465635128195,
+      "radiusKm": 229.0,
+      "centerLatitude": 32.00833333333333,
+      "centerLongitude": 72.35833333333332,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Pakistan",
+      "Iptc4xmpCore:CountryCode": "PK",
+      "countryName": "Pakistan",
+      "countryCode": "PK",
+      "nearestSettlement": "Sargodha",
+      "nearestSettlementCountry": "Pakistan",
+      "distanceToSettlementKm": 31.04946884766573,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "32,0.5N",
+          "exif:GPSLongitude": "72,21.5E",
+          "Iptc4xmpExt:CountryName": "Pakistan",
+          "Iptc4xmpExt:CountryCode": "PK",
+          "Iptc4xmpExt:City": "Sargodha"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Pakistan: 229 km circle holding 50.1% of the population (101,703,784 people); Center: 32.0083, 72.3583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          32,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          72,
+          1
+        ],
+        [
+          21,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Pakistan: 229 km circle holding 50.1% of the population (101,703,784 people); Center: 32.0083, 72.3583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

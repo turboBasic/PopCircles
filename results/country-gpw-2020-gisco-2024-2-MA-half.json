@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00040916492844877983,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 177,
-          "blocks_examined": 23036,
-          "blocks_pruned": 17012,
-          "circles_evaluated": 6024,
-          "kernels_built": 11636
-        }
+      "nearest_settlement": {
+        "name": "Kenitra",
+        "country": "Morocco",
+        "country_iso_alpha2": "MA",
+        "distance_km": 29.648516206258265,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 18295827.26541137,
+      "populationShare": 0.5025769326815128,
+      "radiusKm": 171.0,
+      "centerLatitude": 34.291666666666664,
+      "centerLongitude": -6.258333333333326,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Morocco",
+      "Iptc4xmpCore:CountryCode": "MA",
+      "countryName": "Morocco",
+      "countryCode": "MA",
+      "nearestSettlement": "Kenitra",
+      "nearestSettlementCountry": "Morocco",
+      "distanceToSettlementKm": 29.648516206258265,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "34,17.5N",
+          "exif:GPSLongitude": "6,15.5W",
+          "Iptc4xmpExt:CountryName": "Morocco",
+          "Iptc4xmpExt:CountryCode": "MA",
+          "Iptc4xmpExt:City": "Kenitra"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Morocco: 171 km circle holding 50.3% of the population (18,295,827 people); Center: 34.2917, -6.2583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          34,
+          1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          6,
+          1
+        ],
+        [
+          15,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Morocco: 171 km circle holding 50.3% of the population (18,295,827 people); Center: 34.2917, -6.2583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 4.4632512277649706e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 218,
-          "blocks_examined": 39640,
-          "blocks_pruned": 18090,
-          "circles_evaluated": 21550,
-          "kernels_built": 12149
-        }
+      "nearest_settlement": {
+        "name": "Sisimiut",
+        "country": "Greenland",
+        "country_iso_alpha2": "GL",
+        "distance_km": 97.2493571583999,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 27725.974543648772,
+      "populationShare": 0.5036913811308321,
+      "radiusKm": 236.0,
+      "centerLatitude": 66.24166666666667,
+      "centerLongitude": -52.375,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Greenland",
+      "Iptc4xmpCore:CountryCode": "GL",
+      "countryName": "Greenland",
+      "countryCode": "GL",
+      "nearestSettlement": "Sisimiut",
+      "nearestSettlementCountry": "Greenland",
+      "distanceToSettlementKm": 97.2493571583999,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "66,14.5N",
+          "exif:GPSLongitude": "52,22.5W",
+          "Iptc4xmpExt:CountryName": "Greenland",
+          "Iptc4xmpExt:CountryCode": "GL",
+          "Iptc4xmpExt:City": "Sisimiut"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Greenland: 236 km circle holding 50.4% of the population (27,726 people); Center: 66.2417, -52.3750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          66,
+          1
+        ],
+        [
+          14,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          52,
+          1
+        ],
+        [
+          22,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Greenland: 236 km circle holding 50.4% of the population (27,726 people); Center: 66.2417, -52.3750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

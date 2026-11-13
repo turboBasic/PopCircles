@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0004817700948416935,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 0,
-        "radii_reused": 16,
-        "searched": {
-          "levels": 0,
-          "blocks_examined": 0,
-          "blocks_pruned": 0,
-          "circles_evaluated": 0,
-          "kernels_built": 0
-        }
+      "nearest_settlement": {
+        "name": "Oxford",
+        "country": "United Kingdom",
+        "country_iso_alpha2": "GB",
+        "distance_km": 11.182426303357738,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 33447718.49388475,
+      "populationShare": 0.5016125586362798,
+      "radiusKm": 137.0,
+      "centerLatitude": 51.84166666666667,
+      "centerLongitude": -1.1750000000000114,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "United Kingdom",
+      "Iptc4xmpCore:CountryCode": "UK",
+      "countryName": "United Kingdom",
+      "countryCode": "UK",
+      "nearestSettlement": "Oxford",
+      "nearestSettlementCountry": "United Kingdom",
+      "distanceToSettlementKm": 11.182426303357738,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "51,50.5N",
+          "exif:GPSLongitude": "1,10.5W",
+          "Iptc4xmpExt:CountryName": "United Kingdom",
+          "Iptc4xmpExt:CountryCode": "UK",
+          "Iptc4xmpExt:City": "Oxford"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "United Kingdom: 137 km circle holding 50.2% of the population (33,447,718 people); Center: 51.8417, -1.1750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          51,
+          1
+        ],
+        [
+          50,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          1,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "United Kingdom: 137 km circle holding 50.2% of the population (33,447,718 people); Center: 51.8417, -1.1750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

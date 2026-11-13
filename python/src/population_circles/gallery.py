@@ -12,7 +12,7 @@ import time
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, NotRequired, TypedDict, cast
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -21,12 +21,29 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.circle_document import CIRCLE_KINDS, Answer, Envelope, circle_of
 from population_circles.circle_map import Invoke, child, invoke_cli, require_success
 from population_circles.country_outline import load_map_boundaries
-from population_circles.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.dataset_registry import (
+    REPO_ROOT,
+    Registry,
+    load,
+    map_text_rendering,
+)
 from population_circles.map_frame import PLATE_CARREE
-from population_circles.render_map import citation, other_countries, registered_coastline, render
+from population_circles.render_map import (
+    citation,
+    copyright_of,
+    description_of,
+    exif_gps_packet,
+    metadata_json_fields,
+    other_countries,
+    png_metadata,
+    registered_coastline,
+    render,
+    title_of,
+    xmp_properties,
+)
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
@@ -49,12 +66,28 @@ def excluded_country_ids() -> set[str]:
     return set(config["excluded_country_ids"])
 
 
+class SettlementCaption(TypedDict):
+    name: str
+    country: str
+    distance_km: float
+
+
+class FigureCaption(TypedDict):
+    radius_km: float
+    share: float
+    population: float
+    centre_lat: float
+    centre_lon: float
+    settlement: SettlementCaption | None
+
+
 @dataclass(frozen=True)
 class Drawn:
     document: Path
     figure: Path
     country_name: str | None = None
     country_id: str | None = None
+    caption: FigureCaption | None = None
 
 
 @dataclass(frozen=True)
@@ -68,6 +101,7 @@ class PageFigure(TypedDict):
     document: str
     country_id: str | None
     alt: str
+    caption: NotRequired[FigureCaption]
 
 
 class PageCountry(TypedDict):
@@ -90,6 +124,7 @@ class MapRenderContext:
     output: Path
     cache_directory: Path | None
     digest: str
+    render_text: tuple[bool, bool] = (False, False)
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
@@ -181,6 +216,26 @@ def map_cache_key(
     return digest.hexdigest()
 
 
+def figure_caption(answer: Answer) -> FigureCaption:
+    settlement = answer.caption.settlement
+    return {
+        "radius_km": answer.circle.radius_km,
+        "share": answer.caption.share,
+        "population": answer.caption.population,
+        "centre_lat": answer.circle.centre.lat,
+        "centre_lon": answer.circle.centre.lon,
+        "settlement": (
+            {
+                "name": settlement.name,
+                "country": settlement.country,
+                "distance_km": settlement.distance_km,
+            }
+            if settlement is not None
+            else None
+        ),
+    }
+
+
 def reuse_cached_map(cache: Path, key: str, target: Path) -> bool:
     entry = cache / target.stem
     image_path = entry / "map.png"
@@ -236,6 +291,16 @@ def render_document(
                 else None
             ) or citation(context.registry, answer.country.boundary_dataset)
             outline_and_credit = (selected, boundary_attribution)
+        title = title_of(answer)
+        copyright_text = copyright_of(
+            answer,
+            population_attribution,
+            context.coastline_attribution,
+            outline_and_credit[1] if outline_and_credit is not None else None,
+        )
+        description = description_of(answer)
+        properties = xmp_properties(answer, title, description, copyright_text)
+        payload["render_metadata"] = metadata_json_fields(answer, properties)
         target = context.output / f"{source.stem}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
         cache_key = (
@@ -254,7 +319,7 @@ def render_document(
             and reuse_cached_map(context.cache_directory, cache_key, target)
         ):
             (context.output / source.name).write_text(
-                json.dumps(payload, indent=2), encoding="utf-8"
+                json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
             print(
                 f"Gallery: [{index}/{total}] reused {target.name}",
@@ -267,6 +332,7 @@ def render_document(
                     target,
                     answer.country.name if answer.country is not None else None,
                     answer.country.id if answer.country is not None else None,
+                    figure_caption(answer),
                 ),
                 True,
             )
@@ -278,11 +344,10 @@ def render_document(
         figure = render(
             answer,
             PLATE_CARREE,
-            population_attribution,
             coastline=context.coastline,
-            coastline_attribution=context.coastline_attribution,
-            outline_and_credit=outline_and_credit,
+            country_outline=outline,
             other_countries=other_countries(boundaries, answer),
+            render_text=context.render_text,
         )
     except Exception as error:
         # The early-built page is removed by `build_gallery_output` if a map fails.
@@ -292,13 +357,22 @@ def render_document(
     figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
         target,
         dpi=200,
+        metadata=png_metadata(
+            title,
+            copyright_text,
+            description,
+            properties,
+        ),
+        pil_kwargs={"exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)},
     )
     plt.close(figure)
     if context.cache_directory is not None and cache_key is not None:
         store_cached_map(context.cache_directory, cache_key, target)
     # The document travels beside its figure, so the caption's link resolves on the published
     # site rather than pointing back into a tree the reader does not have.
-    (context.output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    (context.output / source.name).write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(
         f"Gallery: [{index}/{total}] wrote {target.name}",
         file=sys.stderr,
@@ -310,18 +384,22 @@ def render_document(
             target,
             answer.country.name if answer.country is not None else None,
             answer.country.id if answer.country is not None else None,
+            figure_caption(answer),
         ),
         False,
     )
 
 
 def page_figure(one: Drawn) -> PageFigure:
-    return {
+    figure: PageFigure = {
         "map": one.figure.name,
         "document": one.document.name,
         "country_id": one.country_id,
         "alt": one.figure.stem,
     }
+    if one.caption is not None:
+        figure["caption"] = one.caption
+    return figure
 
 
 def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
@@ -416,7 +494,8 @@ def build_gallery_output(
                 skipped.append(Skipped(source, envelope.document))
                 if source.name in generated:
                     (output / source.name).write_text(
-                        json.dumps(payload, indent=2), encoding="utf-8"
+                        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8",
                     )
                 continue
             if (
@@ -450,13 +529,13 @@ def build_gallery_output(
 
         for name, payload in generated.items():
             destination = corpus / name
-            content = (json.dumps(payload, indent=2) + "\n").encode()
+            content = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
             if destination.is_file() and same_country_answer(destination.read_bytes(), content):
                 continue
             destination.write_bytes(content)
         data = page_data(drawn, sorted(unavailable))
         (output / "gallery-data.json").write_text(
-            json.dumps(data, indent=2) + "\n", encoding="utf-8"
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     except Exception:
         (output / "index.html").unlink(missing_ok=True)
@@ -752,6 +831,7 @@ def build(
         output,
         cache_directory,
         context_digest,
+        map_text_rendering(),
     )
     (output / "index.html").unlink(missing_ok=True)
     (output / "gallery-data.json").unlink(missing_ok=True)

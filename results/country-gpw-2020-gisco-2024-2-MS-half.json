@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.187290621251497e-08,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 2,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 10,
-          "blocks_examined": 124,
-          "blocks_pruned": 89,
-          "circles_evaluated": 35,
-          "kernels_built": 94
-        }
+      "nearest_settlement": {
+        "name": "Saint John's",
+        "country": "Antigua and Barbuda",
+        "country_iso_alpha2": "AG",
+        "distance_km": 52.624471227062585,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 3017.7577953636646,
+      "populationShare": 0.5751396488191466,
+      "radiusKm": 2.0,
+      "centerLatitude": 16.79166666666667,
+      "centerLongitude": -62.20833333333333,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Montserrat",
+      "Iptc4xmpCore:CountryCode": "MS",
+      "countryName": "Montserrat",
+      "countryCode": "MS",
+      "nearestSettlement": "Saint John's",
+      "nearestSettlementCountry": "Antigua and Barbuda",
+      "distanceToSettlementKm": 52.624471227062585,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "16,47.5N",
+          "exif:GPSLongitude": "62,12.5W",
+          "Iptc4xmpExt:CountryName": "Montserrat",
+          "Iptc4xmpExt:CountryCode": "MS",
+          "Iptc4xmpExt:City": "Saint John's"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Montserrat: 2 km circle holding 57.5% of the population (3,018 people); Center: 16.7917, -62.2083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          16,
+          1
+        ],
+        [
+          47,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          62,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Montserrat: 2 km circle holding 57.5% of the population (3,018 people); Center: 16.7917, -62.2083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

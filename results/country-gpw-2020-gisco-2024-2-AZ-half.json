@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00010467005435763401,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 141,
-          "blocks_examined": 18818,
-          "blocks_pruned": 13707,
-          "circles_evaluated": 5111,
-          "kernels_built": 6431
-        }
+      "nearest_settlement": {
+        "name": "Şirvan",
+        "country": "Azerbaijan",
+        "country_iso_alpha2": "AZ",
+        "distance_km": 60.08712729822337,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 5049294.644299175,
+      "populationShare": 0.5002780266336087,
+      "radiusKm": 113.0,
+      "centerLatitude": 40.458333333333336,
+      "centerLongitude": 48.758333333333326,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Azerbaijan",
+      "Iptc4xmpCore:CountryCode": "AZ",
+      "countryName": "Azerbaijan",
+      "countryCode": "AZ",
+      "nearestSettlement": "Şirvan",
+      "nearestSettlementCountry": "Azerbaijan",
+      "distanceToSettlementKm": 60.08712729822337,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "40,27.5N",
+          "exif:GPSLongitude": "48,45.5E",
+          "Iptc4xmpExt:CountryName": "Azerbaijan",
+          "Iptc4xmpExt:CountryCode": "AZ",
+          "Iptc4xmpExt:City": "Şirvan"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Azerbaijan: 113 km circle holding 50.0% of the population (5,049,295 people); Center: 40.4583, 48.7583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          40,
+          1
+        ],
+        [
+          27,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          48,
+          1
+        ],
+        [
+          45,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Azerbaijan: 113 km circle holding 50.0% of the population (5,049,295 people); Center: 40.4583, 48.7583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

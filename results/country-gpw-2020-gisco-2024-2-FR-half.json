@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0008063268269964743,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 252,
-          "blocks_examined": 60722,
-          "blocks_pruned": 45067,
-          "circles_evaluated": 15655,
-          "kernels_built": 21801
-        }
+      "nearest_settlement": {
+        "name": "Troyes",
+        "country": "France",
+        "country_iso_alpha2": "FR",
+        "distance_km": 19.5829883057243,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 33931789.87845139,
+      "populationShare": 0.5004481873693191,
+      "radiusKm": 290.0,
+      "centerLatitude": 48.19166666666667,
+      "centerLongitude": 3.941666666666663,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "France",
+      "Iptc4xmpCore:CountryCode": "FR",
+      "countryName": "France",
+      "countryCode": "FR",
+      "nearestSettlement": "Troyes",
+      "nearestSettlementCountry": "France",
+      "distanceToSettlementKm": 19.5829883057243,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "48,11.5N",
+          "exif:GPSLongitude": "3,56.5E",
+          "Iptc4xmpExt:CountryName": "France",
+          "Iptc4xmpExt:CountryCode": "FR",
+          "Iptc4xmpExt:City": "Troyes"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "France: 290 km circle holding 50.0% of the population (33,931,790 people); Center: 48.1917, 3.9417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          48,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          3,
+          1
+        ],
+        [
+          56,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "France: 290 km circle holding 50.0% of the population (33,931,790 people); Center: 48.1917, 3.9417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

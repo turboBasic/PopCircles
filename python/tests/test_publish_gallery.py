@@ -147,6 +147,14 @@ def successful_build(
         output.mkdir()
         (output / "index.html").write_text("new site", encoding="utf-8")
         (output / "map.png").write_bytes(b"map")
+        write_json(
+            output / "world.json",
+            {"document": "most-populous", "render_metadata": {"Title": "World"}},
+        )
+        write_json(
+            output / "country-fixture-10-AA-half.json",
+            {"document": "country-smallest", "render_metadata": {"Title": "Alpha"}},
+        )
         write_json(corpus / "country-sweep-fixture-10-half.json", country_result("country-sweep"))
         write_json(corpus / "country-fixture-10-AA-half.json", country_result("country-smallest"))
         return [], []
@@ -154,7 +162,7 @@ def successful_build(
     return build
 
 
-def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for_run_id(
+def test_publish_builds_in_isolation_persists_rendered_results_and_waits_for_run_id(
     layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     results, site = layout
@@ -177,7 +185,7 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert seen[0][0] != results
     assert (site / "index.html").read_text(encoding="utf-8") == "new site"
     assert (site / ".nojekyll").is_file()
-    assert (results / "world.json").read_bytes() == previous["world.json"]
+    assert json.loads((results / "world.json").read_text())["render_metadata"] == {"Title": "World"}
     assert (results / "country-sweep-other.json").read_bytes() == previous[
         "country-sweep-other.json"
     ]
@@ -187,6 +195,9 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     assert json.loads((results / "country-fixture-10-AA-half.json").read_text())["document"] == (
         "country-smallest"
     )
+    assert json.loads((results / "country-fixture-10-AA-half.json").read_text())[
+        "render_metadata"
+    ] == {"Title": "Alpha"}
     assert len(github.uploaded) == 1
     assert re.fullmatch(r"gallery-\d{8}T\d{12}Z-[0-9a-f]{32}\.zip", github.uploaded[0])
     assert ".nojekyll" in github.zip_files[0]
@@ -197,6 +208,38 @@ def test_publish_builds_in_isolation_persists_only_country_outputs_and_waits_for
     )
     assert f"asset_name={github.uploaded[0]}" in dispatch
     assert not any(command[:3] == ("gh", "release", "create") for command in github.commands)
+
+
+def test_rendered_results_keep_existing_json_key_order_when_values_match(
+    layout: tuple[Path, Path],
+) -> None:
+    results, site = layout
+    previous = (
+        json.dumps(
+            {
+                "document": "most-populous",
+                "render_metadata": {"Description": "same", "Title": "same"},
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    generated = (
+        json.dumps(
+            {
+                "document": "most-populous",
+                "render_metadata": {"Title": "same", "Description": "same"},
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    (results / "world.json").write_text(previous, encoding="utf-8")
+    (site / "world.json").write_text(generated, encoding="utf-8")
+
+    pg.persist_rendered_results(site)
+
+    assert (results / "world.json").read_text(encoding="utf-8") == previous
 
 
 def test_publish_reuses_one_cache_across_temporary_build_workspaces(
@@ -475,6 +518,13 @@ def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy(
     assert "run-name: Gallery ${{ inputs.asset_name }}" in triggers
     assert "\non:\n  workflow_dispatch:\n    inputs:\n      asset_name:" in triggers
     assert not any(f"\n  {event}:" in triggers for event in ("push", "pull_request", "schedule"))
+    assert re.search(
+        (
+            r"name: Cache UV packages\n\s+uses: actions/cache@[^\n]+\n\s+with:\n"
+            r"\s+path: ~/.cache/uv\n\s+key: uv-"
+        ),
+        workflow,
+    )
     assert 'run: mise run gallery:stage -- "$ASSET_NAME"' in workflow
     assert "ASSET_NAME: ${{ inputs.asset_name }}" in workflow
     assert re.search(

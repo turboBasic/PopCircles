@@ -144,6 +144,13 @@ repos:
           - --gitignore
           - --files
 
+      - id: cspell-dictionary-order
+        name: cspell dictionary order
+        entry: uv run python python/tests/test_cspell_dictionary.py
+        language: system
+        files: ^\.cspell/project\.txt$
+        pass_filenames: false
+
       # `.markdownlint-cli2.jsonc` owns which files and rules apply, so no args are needed here.
       - id: markdownlint-cli2
         name: markdownlint-cli2

@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.7085152661065375e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 14,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 148,
-          "blocks_examined": 13062,
-          "blocks_pruned": 9711,
-          "circles_evaluated": 3351,
-          "kernels_built": 4363
-        }
+      "nearest_settlement": {
+        "name": "Caacupé",
+        "country": "Paraguay",
+        "country_iso_alpha2": "PY",
+        "distance_km": 25.4565625596942,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 3527161.201442361,
+      "populationShare": 0.5019233381687461,
+      "radiusKm": 79.0,
+      "centerLatitude": -25.508333333333326,
+      "centerLongitude": -56.925,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Paraguay",
+      "Iptc4xmpCore:CountryCode": "PY",
+      "countryName": "Paraguay",
+      "countryCode": "PY",
+      "nearestSettlement": "Caacupé",
+      "nearestSettlementCountry": "Paraguay",
+      "distanceToSettlementKm": 25.4565625596942,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "25,30.5S",
+          "exif:GPSLongitude": "56,55.5W",
+          "Iptc4xmpExt:CountryName": "Paraguay",
+          "Iptc4xmpExt:CountryCode": "PY",
+          "Iptc4xmpExt:City": "Caacupé"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Paraguay: 79 km circle holding 50.2% of the population (3,527,161 people); Center: -25.5083, -56.9250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          25,
+          1
+        ],
+        [
+          30,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          56,
+          1
+        ],
+        [
+          55,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Paraguay: 79 km circle holding 50.2% of the population (3,527,161 people); Center: -25.5083, -56.9250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -9,12 +9,14 @@ from unittest.mock import Mock
 
 import pytest
 from matplotlib.figure import Figure
+from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
+import population_circles.dataset_registry as dataset_registry_module
 import population_circles.gallery as gallery_module
 import population_circles.render_map as render_map_module
-from population_circles.circle_document import CIRCLE_KINDS, Answer
+from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.circle_map import Invoke, WorkflowError
 from population_circles.dataset_registry import Registry, country_boundary_dataset_key, load
 from population_circles.gallery import build, country_documents
@@ -23,9 +25,18 @@ from population_circles.render_map import (
     UnregisteredDatasetError,
     registered_coastline,
 )
+from test_render_map import country_circle_document
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
+WORLD_POPULATION = 1_254_363_867.93
+WORLD_SHARE = 0.1616868627727305
+WORLD_RADIUS_KM = 1000.0
+VISIBLE_FOOTER = (
+    "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
+    "© EuroGeographics for the administrative boundaries · "
+    "See full attribution in image metadata"
+)
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 EXPECTED_COUNTRY_CLI_CALLS = 2
@@ -100,8 +111,52 @@ def assert_built_site(output: Path) -> None:
     assert len(assets) == 1
     bundle = assets[0].read_text(encoding="utf-8")
     assert "gallery-data.json" in bundle
+    assert "nearest city:" in bundle
+    assert "Math.round" in bundle
+    assert ".toFixed(1)" in bundle
+    assert "maximumFractionDigits:0" in bundle
+    assert "https://www.openstreetmap.org/" in bundle
+    assert "_blank" in bundle
+    assert "noopener" in bundle
+    assert "View result data" in bundle
     assert "cdn.jsdelivr.net" not in bundle
+    assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
+
+
+def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None:
+    document_payload = json.loads((output / result_name).read_text(encoding="utf-8"))
+    with Image.open(output / result_name.replace(".json", ".png")) as image:
+        metadata = image.info
+    xmp = str(metadata["XML:com.adobe.xmp"])
+    for name, value in (
+        ("countryName", "Alpha"),
+        ("countryCode", "AA"),
+        ("nearestSettlement", "Fixture Place"),
+        ("nearestSettlementCountry", "Fixture Country"),
+    ):
+        assert f'pc:{name}="{value}"' in xmp
+    assert "Title" in metadata
+    assert "Copyright" in metadata
+    assert "Title" in document_payload["render_metadata"]
+    assert "Copyright" in document_payload["render_metadata"]
+    properties = document_payload["render_metadata"]["XML:com.adobe.xmp"]
+    assert properties["countryCode"] == "AA"
+    assert properties["nearestSettlement"] == "Fixture Place"
+    assert properties["photoshop:Country"] == "Alpha"
+    assert properties["dc:creator"] == ["Andrii Melnyk"]
+    assert properties["Iptc4xmpCore:CreatorContactInfo"]["Iptc4xmpCore:CiUrlWork"] == (
+        "https://github.com/turboBasic/PopCircles"
+    )
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"]
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"] == "25,0N"
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLongitude"] == "79,0E"
+    assert properties["Iptc4xmpExt:LocationShown"][0]["Iptc4xmpExt:City"] == "Fixture Place"
+    assert properties["dc:rights"] == "© Andrii Melnyk, 2026"
+    assert properties["photoshop:Credit"].startswith("© Andrii Melnyk, 2026,")
+    assert metadata["Title"] == properties["dc:title"]
+    assert metadata["Description"] == properties["dc:description"]
+    assert metadata["Copyright"] == properties["fullAttribution"]
 
 
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
@@ -192,8 +247,10 @@ def country_sweep(
     }
 
 
-def swept_country(identifier: str, name: str) -> dict[str, Any]:
-    return {
+def swept_country(
+    identifier: str, name: str, settlement: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    country: dict[str, Any] = {
         "country": {
             "id": identifier,
             "name": name,
@@ -232,6 +289,9 @@ def swept_country(identifier: str, name: str) -> dict[str, Any]:
             },
         ],
     }
+    if settlement is not None:
+        country["records"][0]["circle"]["nearest_settlement"] = settlement
+    return country
 
 
 def configured_country(identifier: str, name: str) -> dict[str, str]:
@@ -281,13 +341,46 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
             "document": "drawable.json",
             "country_id": None,
             "alt": "drawable",
+            "caption": {
+                "radius_km": WORLD_RADIUS_KM,
+                "share": WORLD_SHARE,
+                "population": WORLD_POPULATION,
+                "centre_lat": 25.125,
+                "centre_lon": 79.708,
+                "settlement": None,
+            },
         },
     ]
     assert "not-drawable.json" not in json.dumps(data)
-    footer = annotations[-1]
+    with Image.open(drawn[0].figure) as image:
+        metadata = image.info
+    copied_document = json.loads(
+        (tmp_path / "gallery" / "drawable.json").read_text(encoding="utf-8")
+    )
+    assert annotations == [
+        (
+            "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+            "Center: 25.1250, 79.7080"
+        ),
+        "Answered from population dataset population-count-2020-30arcsec at decimation k=10",
+        VISIBLE_FOOTER,
+    ]
+    assert "Title" in metadata
+    assert "Copyright" in metadata
+    assert "© Andrii Melnyk, 2026" in metadata["Copyright"]
+    assert "Population data:" in metadata["Copyright"]
+    assert metadata["Description"] == (
+        f"Answered from population dataset {DATASET} at decimation k=10"
+    )
+    assert 'pc:population="1254363867.93"' in metadata["XML:com.adobe.xmp"]
+    assert copied_document["result"] == document("most-populous")["result"]
+    assert copied_document["render_metadata"]["Title"] == metadata["Title"]
+    assert copied_document["render_metadata"]["Description"] == metadata["Description"]
+    assert copied_document["render_metadata"]["Copyright"] == metadata["Copyright"]
+    assert copied_document["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
     assert basemap_paths == [coastline_path]
-    assert "Coastline credit:" in footer
-    assert footer.count(COASTLINE_CREDIT) == 1
+    assert "Coastline data:" in metadata["Copyright"]
+    assert metadata["Copyright"].count(COASTLINE_CREDIT) == 1
 
 
 def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
@@ -340,6 +433,46 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     assert {one.figure.name: one.figure.read_bytes() for one in third} == original_bytes
 
 
+def test_map_text_rendering_change_misses_the_gallery_map_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    config_root = tmp_path / "config-root"
+    config_path = config_root / "data" / "config.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        "[map_text]\nrender_title = false\nrender_description = false\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", config_root)
+    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (config_path,))
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    output = tmp_path / "build" / "gallery"
+    render = Mock(wraps=render_map_module.render)
+    monkeypatch.setattr(gallery_module, "render", render)
+    invoke = country_cli([], [])[0]
+
+    first, _ = build(corpus, output, invoke)
+    first_bytes = first[0].figure.read_bytes()
+    render.reset_mock()
+    second, _ = build(corpus, output, country_cli([], [])[0])
+    render.assert_not_called()
+    assert second[0].figure.read_bytes() == first_bytes
+
+    config_path.write_text(
+        "[map_text]\nrender_title = true\nrender_description = false\n", encoding="utf-8"
+    )
+    third, _ = build(corpus, output, country_cli([], [])[0])
+
+    render.assert_called_once()
+    assert third[0].figure.read_bytes() != first_bytes
+    with Image.open(third[0].figure) as image:
+        assert "Title" in image.info
+        assert "Description" in image.info
+        assert "Copyright" in image.info
+
+
 def test_gallery_data_uses_only_the_current_maps(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -368,6 +501,14 @@ def test_gallery_data_uses_only_the_current_maps(
             "document": "current.json",
             "country_id": None,
             "alt": "current",
+            "caption": {
+                "radius_km": WORLD_RADIUS_KM,
+                "share": WORLD_SHARE,
+                "population": WORLD_POPULATION,
+                "centre_lat": 25.125,
+                "centre_lon": 79.708,
+                "settlement": None,
+            },
         },
     ]
     assert "old.png" not in json.dumps(data)
@@ -391,6 +532,24 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
         "france.png",
         "germany.png",
     ]
+
+
+def test_figure_caption_includes_country_and_world_answers() -> None:
+    caption = gallery_module.figure_caption(circle_of(country_circle_document()))
+
+    assert caption == {
+        "radius_km": 200.0,
+        "share": 0.5,
+        "population": 40.0,
+        "centre_lat": 51.0,
+        "centre_lon": 10.0,
+        "settlement": None,
+    }
+
+    world = gallery_module.figure_caption(circle_of(document("most-populous")))
+    assert world["radius_km"] == WORLD_RADIUS_KM
+    assert world["share"] == WORLD_SHARE
+    assert world["population"] == WORLD_POPULATION
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
@@ -573,7 +732,19 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     zero_population["records"][0]["circle"]["target"]["total"] = 0
     invoke, calls = country_cli(
         countries,
-        [swept_country("AA", "Alpha"), zero_population],
+        [
+            swept_country(
+                "AA",
+                "Alpha",
+                {
+                    "name": "Fixture Place",
+                    "country": "Fixture Country",
+                    "distance_km": 0.5,
+                    "short_form": True,
+                },
+            ),
+            zero_population,
+        ],
         countries_without_population_cells=[{"id": "CC", "name": "No population <yet>"}],
     )
     corpus = tmp_path / "corpus"
@@ -595,6 +766,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(gallery_module, "map_text_rendering", lambda: (True, True))
 
     drawn, skipped = build(corpus, output, invoke)
 
@@ -628,6 +800,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         assert result["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
         assert (corpus / name).is_file()
     assert (output / result_names[0]).is_file()
+    assert_country_metadata_mirrors_json(output, result_names[0])
     assert not (output / result_names[1]).exists()
     assert not (output / result_names[1].replace(".json", ".png")).exists()
     assert_built_site(output)
@@ -638,6 +811,14 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                 "document": "world.json",
                 "country_id": None,
                 "alt": "world",
+                "caption": {
+                    "radius_km": WORLD_RADIUS_KM,
+                    "share": WORLD_SHARE,
+                    "population": WORLD_POPULATION,
+                    "centre_lat": 25.125,
+                    "centre_lon": 79.708,
+                    "settlement": None,
+                },
             },
         ],
         "countries": [
@@ -650,6 +831,18 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                         "document": result_names[0],
                         "country_id": "AA",
                         "alt": result_names[0].removesuffix(".json"),
+                        "caption": {
+                            "radius_km": 100,
+                            "share": 0.5,
+                            "population": 50,
+                            "centre_lat": 25.0,
+                            "centre_lon": 79.0,
+                            "settlement": {
+                                "name": "Fixture Place",
+                                "country": "Fixture Country",
+                                "distance_km": 0.5,
+                            },
+                        },
                     },
                 ],
                 "missing": False,
@@ -668,8 +861,12 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
             },
         ],
     }
-    assert "Population credit: Population fixture credit" in " ".join(annotations)
-    assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
+    assert VISIBLE_FOOTER in annotations
+    assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
+    with Image.open(drawn[0].figure) as image:
+        assert "Title" in image.info
+        assert "Description" in image.info
+        assert "Copyright" in image.info
 
 
 def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: Path) -> None:

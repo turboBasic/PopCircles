@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.2398706071318446e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 102,
-          "blocks_examined": 9876,
-          "blocks_pruned": 7275,
-          "circles_evaluated": 2601,
-          "kernels_built": 3968
-        }
+      "nearest_settlement": {
+        "name": "Ramallah",
+        "country": "Palestine",
+        "country_iso_alpha2": "PS",
+        "distance_km": 10.417243776735626,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 2591858.565560341,
+      "populationShare": 0.5109080994864177,
+      "radiusKm": 51.0,
+      "centerLatitude": 31.991666666666667,
+      "centerLongitude": 35.241666666666674,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Palestine",
+      "Iptc4xmpCore:CountryCode": "PS",
+      "countryName": "Palestine",
+      "countryCode": "PS",
+      "nearestSettlement": "Ramallah",
+      "nearestSettlementCountry": "Palestine",
+      "distanceToSettlementKm": 10.417243776735626,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "31,59.5N",
+          "exif:GPSLongitude": "35,14.5E",
+          "Iptc4xmpExt:CountryName": "Palestine",
+          "Iptc4xmpExt:CountryCode": "PS",
+          "Iptc4xmpExt:City": "Ramallah"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Palestine: 51 km circle holding 51.1% of the population (2,591,859 people); Center: 31.9917, 35.2417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          31,
+          1
+        ],
+        [
+          59,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          35,
+          1
+        ],
+        [
+          14,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Palestine: 51 km circle holding 51.1% of the population (2,591,859 people); Center: 31.9917, 35.2417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

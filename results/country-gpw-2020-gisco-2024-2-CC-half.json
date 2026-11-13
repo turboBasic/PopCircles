@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,18 +57,83 @@
       },
       "covers_whole_grid": false,
       "predicate_slack_persons": 6.4770574357881354e-09,
-      "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 2,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 12,
-          "blocks_examined": 160,
-          "blocks_pruned": 112,
-          "circles_evaluated": 48,
-          "kernels_built": 111
-        }
-      }
+      "tolerance_persons": 0.0
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 487.0961608886719,
+      "populationShare": 0.7460127828820735,
+      "radiusKm": 2.0,
+      "centerLatitude": -12.125,
+      "centerLongitude": 96.89166666666665,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Cocos (Keeling) Islands",
+      "Iptc4xmpCore:CountryCode": "CC",
+      "countryName": "Cocos (Keeling) Islands",
+      "countryCode": "CC",
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "12,7.5S",
+          "exif:GPSLongitude": "96,53.5E",
+          "Iptc4xmpExt:CountryName": "Cocos (Keeling) Islands",
+          "Iptc4xmpExt:CountryCode": "CC"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Cocos (Keeling) Islands: 2 km circle holding 74.6% of the population (487 people); Center: -12.1250, 96.8917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          12,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          96,
+          1
+        ],
+        [
+          53,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Cocos (Keeling) Islands: 2 km circle holding 74.6% of the population (487 people); Center: -12.1250, 96.8917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

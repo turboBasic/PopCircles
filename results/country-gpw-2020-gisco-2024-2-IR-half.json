@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.0008436114692263369,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 216,
-          "blocks_examined": 91346,
-          "blocks_pruned": 67692,
-          "circles_evaluated": 23654,
-          "kernels_built": 18230
-        }
+      "nearest_settlement": {
+        "name": "Arak",
+        "country": "Iran",
+        "country_iso_alpha2": "IR",
+        "distance_km": 49.93326726466748,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 41689711.73292324,
+      "populationShare": 0.5001735196922089,
+      "radiusKm": 353.0,
+      "centerLatitude": 34.34166666666667,
+      "centerLongitude": 50.14166666666665,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Iran",
+      "Iptc4xmpCore:CountryCode": "IR",
+      "countryName": "Iran",
+      "countryCode": "IR",
+      "nearestSettlement": "Arak",
+      "nearestSettlementCountry": "Iran",
+      "distanceToSettlementKm": 49.93326726466748,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "34,20.5N",
+          "exif:GPSLongitude": "50,8.5E",
+          "Iptc4xmpExt:CountryName": "Iran",
+          "Iptc4xmpExt:CountryCode": "IR",
+          "Iptc4xmpExt:City": "Arak"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Iran: 353 km circle holding 50.0% of the population (41,689,712 people); Center: 34.3417, 50.1417",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          34,
+          1
+        ],
+        [
+          20,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          50,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Iran: 353 km circle holding 50.0% of the population (41,689,712 people); Center: 34.3417, 50.1417",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

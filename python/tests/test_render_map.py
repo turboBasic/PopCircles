@@ -2,16 +2,20 @@ import hashlib
 import json
 import re
 import socket
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, NoReturn
 
 import pytest
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
+from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
+import population_circles.dataset_registry as dataset_registry_module
 import population_circles.render_map as render_map_module
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap
@@ -20,6 +24,7 @@ from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
 from population_circles.render_map import (
     COASTLINE_DATASET,
+    COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
@@ -39,11 +44,19 @@ PROSE = Path(__file__).resolve().parents[2] / "data" / "README.md"
 CENTRE_LAT = 25.125
 CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
+WORLD_POPULATION = 1_254_363_867.93
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MAX_LOCAL_EXTENT_METRES = 5_000_000
 NO_NETWORK = "a figure is drawn from the committed basemap and reaches no network"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
+FOOTER_SIZE = 6.5
+FOOTER_BOTTOM = 0.04
+VISIBLE_FOOTER = (
+    "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
+    "© EuroGeographics for the administrative boundaries · "
+    "See full attribution in image metadata"
+)
 # Handed to `render` in place of a citation, so the footer assertion is about what the caller passed
 # rather than about a value the test could also have read.
 MARKER = "attribution handed to render by its caller"
@@ -56,6 +69,45 @@ def empty_boundaries(
     _answer: Answer, _registry: Registry, _root: Path = Path()
 ) -> dict[str, BaseGeometry]:
     return {}
+
+
+def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
+    with Image.open(path) as image:
+        return image.info
+
+
+@pytest.mark.parametrize(
+    ("settings", "expected"),
+    [
+        ("", (False, False)),
+        (
+            "[map_text]\nrender_title = true\nrender_description = false\n",
+            (True, False),
+        ),
+    ],
+)
+def test_map_text_rendering_defaults_to_false_and_accepts_booleans(
+    settings: str,
+    expected: tuple[bool, bool],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "config.toml").write_text(settings, encoding="utf-8")
+    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
+    assert dataset_registry_module.map_text_rendering() == expected
+
+
+def test_map_text_rendering_rejects_non_boolean_values(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "config.toml").write_text(
+        '[map_text]\nrender_title = "yes"\n', encoding="utf-8"
+    )
+    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
+    with pytest.raises(TypeError, match=r"config.toml: map_text\.render_title"):
+        dataset_registry_module.map_text_rendering()
 
 
 @pytest.fixture(autouse=True)
@@ -239,7 +291,7 @@ def polygon_feature(identifier: str, coordinates: list[list[list[float]]]) -> di
 def test_an_unknown_projection_is_refused_before_a_figure_is_created() -> None:
     before = plt.get_fignums()
     with pytest.raises(ValueError, match="unsupported projection 'unknown'"):
-        render(circle_of(document()), "unknown", MARKER, coastline=None)
+        render(circle_of(document()), "unknown", coastline=None)
     assert plt.get_fignums() == before
 
 
@@ -284,7 +336,7 @@ def test_a_country_result_is_not_rendered_without_its_outline() -> None:
     with pytest.raises(
         MissingCountryOutlineError, match="requires its registered boundary outline"
     ):
-        render(circle_of(country_circle_document()), PLATE_CARREE, MARKER, coastline=None)
+        render(circle_of(country_circle_document()), PLATE_CARREE, coastline=None)
     assert plt.get_fignums() == before
 
 
@@ -307,9 +359,8 @@ def test_country_figure_renders_zero_radius_as_only_its_centre_marker(
     figure = render(
         answer,
         ORTHOGRAPHIC,
-        MARKER,
         coastline=None,
-        outline_and_credit=(country, citation(registry, answer.country.boundary_dataset)),
+        country_outline=country,
     )
     try:
         axes = figure.axes[0]
@@ -365,9 +416,8 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
     figure = render(
         answer,
         ORTHOGRAPHIC,
-        MARKER,
         coastline=None,
-        outline_and_credit=(country, citation(registry, answer.country.boundary_dataset)),
+        country_outline=country,
     )
     try:
         output = tmp_path / f"country-{name}.png"
@@ -386,7 +436,7 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
         plt.close(figure)
 
 
-def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
+def test_country_figure_shows_only_the_approved_visible_footer(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
@@ -407,14 +457,23 @@ def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
     assert boundary is not None
     population_credit = citation(REGISTRY, DATASET)
     boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
-    coastline, coastline_credit = registered_coastline(REGISTRY)
+    coastline, _ = registered_coastline(REGISTRY)
+    footer_calls: list[tuple[float, str, float]] = []
+    current_annotate = render_map_module.annotate
+
+    def capture_annotate(
+        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
+    ) -> None:
+        if text == VISIBLE_FOOTER:
+            footer_calls.append((y, alignment, size))
+        current_annotate(figure, y, text, size, alignment)
+
+    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
     figure = render(
         answer,
         ORTHOGRAPHIC,
-        population_credit,
         coastline=coastline,
-        coastline_attribution=coastline_credit,
-        outline_and_credit=(boundary, boundary_credit),
+        country_outline=boundary,
     )
     try:
         canvas = FigureCanvasAgg(figure)
@@ -422,16 +481,17 @@ def test_country_figure_shows_both_registry_credits_and_grows_its_footer(
         footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
         axes = figure.axes[0].get_window_extent()
         rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
-        assert "A country with an exceptionally long published name (DE)" in rendered_text
-        assert normalised(boundary_credit) in normalised(rendered_text)
-        assert normalised(population_credit) in normalised(rendered_text)
-        assert normalised(COASTLINE_CREDIT) in normalised(rendered_text)
-        assert normalised(rendered_text).count(normalised(COASTLINE_CREDIT)) == 1
-        assert "Coastline credit:" not in rendered_text
+        assert "A country with an exceptionally long published name:" in rendered_text
+        assert rendered_text.count(VISIBLE_FOOTER) == 1
+        assert "Population credit:" not in rendered_text
+        assert normalised(population_credit) not in normalised(rendered_text)
+        assert normalised(boundary_credit) not in normalised(rendered_text)
         assert citation(REGISTRY, "coastline-1to110m") == ""
-        assert "Basemap credit:" not in rendered_text
+        assert footer_calls == [(FOOTER_BOTTOM, "bottom", FOOTER_SIZE)]
+        assert figure.texts[-1].get_position() == (0.5, FOOTER_BOTTOM)
         assert footer.x0 >= 0
         assert footer.x1 <= figure.bbox.x1
+        assert (footer.x0 + footer.x1) / 2 == pytest.approx(figure.bbox.width / 2, abs=1)
         assert footer.y0 >= 0
         assert footer.y1 <= axes.y0
     finally:
@@ -529,6 +589,33 @@ def test_the_credit_is_the_one_the_named_dataset_owes_and_not_a_neighbours() -> 
     assert citation(registry, "second-raster") == "the credit the second dataset requires"
 
 
+def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
+    payload = country_circle_document()
+    payload["result"]["country"]["id"] = "AD"
+    payload["result"]["country"]["name"] = "Andorra"
+    payload["result"]["circle"].update(
+        {
+            "radius_km": 6,
+            "centre": {"lat": 42.5083, "lon": 1.5583},
+            "population": 33892,
+            "share_achieved": 0.5258,
+            "nearest_settlement": {
+                "name": "Andorra la Vella",
+                "country": "Andorra",
+                "distance_km": 5,
+                "short_form": False,
+            },
+        }
+    )
+    title = title_of(circle_of(payload))
+
+    assert title == (
+        "Andorra: 6 km circle holding 52.6% of the population "
+        "(33,892 people); Center: 42.5083, 1.5583"
+    )
+    assert "\n" not in title
+
+
 def test_a_document_naming_a_dataset_the_registry_lacks_is_refused() -> None:
     with pytest.raises(UnregisteredDatasetError) as caught:
         citation(REGISTRY, "gpw-v4")
@@ -551,47 +638,52 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
-    source = tmp_path / "circle.json"
+    source = tmp_path / "map.json"
     source.write_text(json.dumps(document()), encoding="utf-8")
     basemap_paths: list[Path] = []
-    annotations: list[str] = []
     current_basemap = render_map_module.basemap
-    current_annotate = render_map_module.annotate
 
     def capture_basemap(path: Path) -> BaseGeometry:
         basemap_paths.append(path)
         return current_basemap(path)
 
-    def capture_annotate(
-        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
-    ) -> None:
-        annotations.append(text)
-        current_annotate(figure, y, text, size, alignment)
-
     monkeypatch.setattr(render_map_module, "basemap", capture_basemap)
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
-    render_file(source, tmp_path / "map.png")
+    output = tmp_path / "map.png"
+    render_file(source, output)
 
-    footer = normalised(annotations[-1])
+    metadata = png_info(output)
     assert basemap_paths == [coastline_path]
-    assert normalised(citation(REGISTRY, DATASET)) in footer
-    assert "Coastline credit:" in footer
-    assert footer.count(normalised(COASTLINE_CREDIT)) == 1
+    assert "Title" in metadata
+    assert "Copyright" in metadata
+    assert normalised(citation(REGISTRY, DATASET)) in normalised(str(metadata["Copyright"]))
+    assert "Coastline data:" in str(metadata["Copyright"])
+    assert str(metadata["Copyright"]).count(COASTLINE_CREDIT) == 1
+    assert "© Andrii Melnyk, 2026" in str(metadata["Copyright"])
+    assert metadata["Title"] == title_of(circle_of(document()))
+    assert metadata["Description"] == (
+        f"Answered from population dataset {DATASET} at decimation k=10"
+    )
+    xmp = str(metadata["XML:com.adobe.xmp"])
+    assert 'pc:population="1254363867.93"' in xmp
+    sidecar = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
+    assert sidecar["result"] == document()["result"]
+    assert sidecar["render_metadata"]["Title"] == metadata["Title"]
+    assert sidecar["render_metadata"]["Description"] == metadata["Description"]
+    assert sidecar["render_metadata"]["Copyright"] == metadata["Copyright"]
+    assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
 
 
-def test_the_footer_artist_carries_the_citation() -> None:
-    figure = render(circle_of(document()), PLATE_CARREE, MARKER, coastline=None)
+def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
+    figure = render(circle_of(document()), PLATE_CARREE, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
-    # The string handed in, not the one the registry holds: `render` draws what it is given, which
-    # is the whole of what this test can prove about it.
-    assert MARKER in drawn_text
+    assert normalised(VISIBLE_FOOTER) in drawn_text
+    assert MARKER not in drawn_text
 
 
-def test_world_country_boundaries_share_one_standard_width_patch() -> None:
+def test_world_country_boundaries_use_the_world_highlight_fill() -> None:
     figure = render(
         circle_of(document()),
         PLATE_CARREE,
-        MARKER,
         coastline=None,
         other_countries=[box(-20, -10, -10, 0), box(10, 0, 20, 10)],
     )
@@ -601,18 +693,18 @@ def test_world_country_boundaries_share_one_standard_width_patch() -> None:
         ]
         assert len(country_patches) == 1
         assert country_patches[0].get_linewidth() == OUTLINE_WIDTH
-        assert country_patches[0].get_facecolor()[:3] == (1.0, 1.0, 1.0)
+        assert country_patches[0].get_facecolor()[:3] == to_rgb(COUNTRY)
     finally:
         plt.close(figure)
 
 
 @pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
-def test_long_country_captions_grow_the_figure_and_keep_every_line_inside(
+def test_country_breakdown_maps_keep_the_approved_footer_inside_the_figure(
     projection: str,
     tmp_path: Path,
 ) -> None:
     answer = circle_of(country_document(18))
-    figure = render(answer, projection, MARKER, coastline=None)
+    figure = render(answer, projection, coastline=None)
     try:
         output = tmp_path / f"countries-{projection}.png"
         figure.savefig(output, dpi=120)  # pyright: ignore[reportUnknownMemberType] — matplotlib kwargs
@@ -621,37 +713,33 @@ def test_long_country_captions_grow_the_figure_and_keep_every_line_inside(
         footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
         axes = figure.axes[0].get_window_extent()
         rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
-        assert figure.get_size_inches()[1] > 6.0  # noqa: PLR2004 — initial figure height
         assert footer.x0 >= 0
         assert footer.x1 <= figure.bbox.x1
         assert footer.y0 >= 0
         assert footer.y1 <= axes.y0
-        assert "$ literal \\ alpha" in rendered_text
-        assert "C17" in rendered_text
-        assert "Boundary credit: © EuroGeographics" in rendered_text
+        assert VISIBLE_FOOTER in rendered_text
+        assert "Boundary credit: © EuroGeographics" not in rendered_text
         assert output.read_bytes().startswith(PNG_MAGIC)
     finally:
         plt.close(figure)
 
 
-def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> None:
+def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() -> None:
     answer = circle_of(document())
-    figure = render(answer, ORTHOGRAPHIC, MARKER, coastline=None)
+    figure = render(answer, ORTHOGRAPHIC, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert "1,000 km circle" in drawn_text
-    assert "16.17% of the population" in drawn_text
+    assert "16.2% of the population" in drawn_text
     assert "1,254,363,868 people" in drawn_text
     assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
-    # The decimation as well as the digest: the fixture's digest is the one both committed tables
-    # carry, so a caption dropping the decimation would read the same for either of them.
-    assert "0xf17aa802a6890f0c at decimation 10" in drawn_text
+    assert "Center:" in drawn_text
+    assert f"Answered from population dataset {DATASET} at decimation k=10" in drawn_text
 
 
-def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
+def test_measured_and_nested_documents_use_the_one_line_title() -> None:
     assert title_of(circle_of(document())) == (
-        "1,000 km circle holding 16.17% of the population\n"
-        "1,254,363,868 people, centred 25.1250, 79.7080\n"
-        "answered from table 0xf17aa802a6890f0c at decimation 10"
+        "1,000 km circle holding 16.2% of the population "
+        "(1,254,363,868 people); Center: 25.1250, 79.7080"
     )
 
     nested = document()
@@ -667,18 +755,16 @@ def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
         },
     }
     assert title_of(circle_of(nested)) == (
-        "2,639 km circle holding 25.03% of the population\n"
-        "52,635 people, centred -85.0000, 105.0000\n"
-        "answered from table 0xf17aa802a6890f0c at decimation 10"
+        "2,639 km circle holding 25.0% of the population (52,635 people); "
+        "Center: -85.0000, 105.0000"
     )
 
 
-def test_country_title_names_the_population_dataset_and_decimation() -> None:
+def test_country_title_names_the_country_and_population_dataset() -> None:
     answer = circle_of(country_circle_document())
     assert title_of(answer) == (
-        "200 km circle holding 50.00% of the population\n"
-        "40 people, centred 51.0000, 10.0000\n"
-        f"answered from population dataset {DATASET} at decimation k=10"
+        "Germany: 200 km circle holding 50.0% of the population "
+        "(40 people); Center: 51.0000, 10.0000"
     )
 
 
@@ -714,19 +800,23 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
 
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
+    def selected_outline(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
+        return {"DE": box(5, 47, 15, 55)}
+
+    monkeypatch.setattr(render_map_module, "load_map_boundaries", selected_outline)
 
     def refuse_coastline(_registry: Registry) -> tuple[BaseGeometry, str]:
         message = "no-coastlines loaded coastline"
         raise AssertionError(message)
 
     monkeypatch.setattr(render_map_module, "registered_coastline", refuse_coastline)
+    monkeypatch.setattr(render_map_module, "map_text_rendering", lambda: (True, True))
     render_file(source, output, no_coastlines=True)
-    footer = normalised(annotations[-1])
-    assert "Selected population credit" in footer
-    assert "Selected boundary credit" in footer
-    assert COASTLINE_CREDIT not in footer
+    assert annotations[-1] == VISIBLE_FOOTER
     assert output.read_bytes().startswith(PNG_MAGIC)
+    assert "Title" in png_info(output)
+    assert "Description" in png_info(output)
+    assert "Copyright" in png_info(output)
 
 
 def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:
@@ -802,11 +892,18 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
-    def capture(_answer: Answer, _projection: str, attribution: str, **_options: object) -> Figure:
-        drawn.append(attribution)
-        return Figure()
+    original_copyright = render_map_module.copyright_of
 
-    monkeypatch.setattr("population_circles.render_map.render", capture)
+    def capture_copyright(
+        answer: Answer,
+        attribution: str,
+        coastline_attribution: str | None,
+        boundary_attribution: str | None,
+    ) -> str:
+        drawn.append(attribution)
+        return original_copyright(answer, attribution, coastline_attribution, boundary_attribution)
+
+    monkeypatch.setattr("population_circles.render_map.copyright_of", capture_copyright)
 
     named = document()
     named["provenance"]["dataset"] = "second-raster"

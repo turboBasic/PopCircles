@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,17 +57,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 6.705718057857502e-12,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 2,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 3,
-          "blocks_examined": 17,
-          "blocks_pruned": 11,
-          "circles_evaluated": 6,
-          "kernels_built": 15
-        }
+      "nearest_settlement": {
+        "name": "Punta Gorda",
+        "country": "Belize",
+        "country_iso_alpha2": "BZ",
+        "distance_km": 59.110990420146315,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 0.7962841987609863,
+      "populationShare": 1.0,
+      "radiusKm": 1.0,
+      "centerLatitude": 16.141666666666666,
+      "centerLongitude": -88.25833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Sapodilla Cayes",
+      "Iptc4xmpCore:CountryCode": "XXT",
+      "countryName": "Sapodilla Cayes",
+      "countryCode": "XXT",
+      "nearestSettlement": "Punta Gorda",
+      "nearestSettlementCountry": "Belize",
+      "distanceToSettlementKm": 59.110990420146315,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "16,8.5N",
+          "exif:GPSLongitude": "88,15.5W",
+          "Iptc4xmpExt:CountryName": "Sapodilla Cayes",
+          "Iptc4xmpExt:CountryCode": "XXT",
+          "Iptc4xmpExt:City": "Punta Gorda"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Sapodilla Cayes: 1 km circle holding 100.0% of the population (1 people); Center: 16.1417, -88.2583",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          16,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          88,
+          1
+        ],
+        [
+          15,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Sapodilla Cayes: 1 km circle holding 100.0% of the population (1 people); Center: 16.1417, -88.2583",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

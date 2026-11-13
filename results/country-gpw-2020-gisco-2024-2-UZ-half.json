@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00023509017555179345,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 16,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 187,
-          "blocks_examined": 55250,
-          "blocks_pruned": 40165,
-          "circles_evaluated": 15085,
-          "kernels_built": 14690
-        }
+      "nearest_settlement": {
+        "name": "Khujand",
+        "country": "Tajikistan",
+        "country_iso_alpha2": "TJ",
+        "distance_km": 4.159105754151103,
+        "short_form": true
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 15541120.994563386,
+      "populationShare": 0.5025629328945004,
+      "radiusKm": 239.0,
+      "centerLatitude": 40.275,
+      "centerLongitude": 69.57499999999999,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Uzbekistan",
+      "Iptc4xmpCore:CountryCode": "UZ",
+      "countryName": "Uzbekistan",
+      "countryCode": "UZ",
+      "nearestSettlement": "Khujand",
+      "nearestSettlementCountry": "Tajikistan",
+      "distanceToSettlementKm": 4.159105754151103,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "40,16.5N",
+          "exif:GPSLongitude": "69,34.5E",
+          "Iptc4xmpExt:CountryName": "Uzbekistan",
+          "Iptc4xmpExt:CountryCode": "UZ",
+          "Iptc4xmpExt:City": "Khujand"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Uzbekistan: 239 km circle holding 50.3% of the population (15,541,121 people); Center: 40.2750, 69.5750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          40,
+          1
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          69,
+          1
+        ],
+        [
+          34,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Uzbekistan: 239 km circle holding 50.3% of the population (15,541,121 people); Center: 40.2750, 69.5750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

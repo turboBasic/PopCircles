@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 2.6923528805746936e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 10,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 90,
-          "blocks_examined": 7538,
-          "blocks_pruned": 5486,
-          "circles_evaluated": 2052,
-          "kernels_built": 2802
-        }
+      "nearest_settlement": {
+        "name": "Spanish Town",
+        "country": "Jamaica",
+        "country_iso_alpha2": "JM",
+        "distance_km": 12.332667430233101,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 1423298.4608912468,
+      "populationShare": 0.5014258114066232,
+      "radiusKm": 32.0,
+      "centerLatitude": 18.09166666666667,
+      "centerLongitude": -76.925,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Jamaica",
+      "Iptc4xmpCore:CountryCode": "JM",
+      "countryName": "Jamaica",
+      "countryCode": "JM",
+      "nearestSettlement": "Spanish Town",
+      "nearestSettlementCountry": "Jamaica",
+      "distanceToSettlementKm": 12.332667430233101,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "18,5.5N",
+          "exif:GPSLongitude": "76,55.5W",
+          "Iptc4xmpExt:CountryName": "Jamaica",
+          "Iptc4xmpExt:CountryCode": "JM",
+          "Iptc4xmpExt:City": "Spanish Town"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Jamaica: 32 km circle holding 50.1% of the population (1,423,298 people); Center: 18.0917, -76.9250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          18,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          76,
+          1
+        ],
+        [
+          55,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Jamaica: 32 km circle holding 50.1% of the population (1,423,298 people); Center: 18.0917, -76.9250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

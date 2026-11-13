@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 0.00022226122934615745,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 18,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 234,
-          "blocks_examined": 49232,
-          "blocks_pruned": 36431,
-          "circles_evaluated": 12801,
-          "kernels_built": 24704
-        }
+      "nearest_settlement": {
+        "name": "Tumut",
+        "country": "Australia",
+        "country_iso_alpha2": "AU",
+        "distance_km": 57.91889639831908,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 12800337.014860587,
+      "populationShare": 0.5005203135517987,
+      "radiusKm": 415.0,
+      "centerLatitude": -35.70833333333333,
+      "centerLongitude": 147.80833333333334,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Australia",
+      "Iptc4xmpCore:CountryCode": "AU",
+      "countryName": "Australia",
+      "countryCode": "AU",
+      "nearestSettlement": "Tumut",
+      "nearestSettlementCountry": "Australia",
+      "distanceToSettlementKm": 57.91889639831908,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "35,42.5S",
+          "exif:GPSLongitude": "147,48.5E",
+          "Iptc4xmpExt:CountryName": "Australia",
+          "Iptc4xmpExt:CountryCode": "AU",
+          "Iptc4xmpExt:City": "Tumut"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Australia: 415 km circle holding 50.1% of the population (12,800,337 people); Center: -35.7083, 147.8083",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "S",
+      "GPSLatitude": [
+        [
+          35,
+          1
+        ],
+        [
+          42,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          147,
+          1
+        ],
+        [
+          48,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Australia: 415 km circle holding 50.1% of the population (12,800,337 people); Center: -35.7083, 147.8083",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

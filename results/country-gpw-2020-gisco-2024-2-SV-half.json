@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -58,17 +58,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 5.5133269590204736e-05,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 108,
-          "blocks_examined": 9824,
-          "blocks_pruned": 7069,
-          "circles_evaluated": 2755,
-          "kernels_built": 4142
-        }
+      "nearest_settlement": {
+        "name": "Santa Tecla",
+        "country": "El Salvador",
+        "country_iso_alpha2": "SV",
+        "distance_km": 17.082161612924708,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 3138877.538240373,
+      "populationShare": 0.5051823494920712,
+      "radiusKm": 37.0,
+      "centerLatitude": 13.791666666666671,
+      "centerLongitude": -89.39166666666667,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "El Salvador",
+      "Iptc4xmpCore:CountryCode": "SV",
+      "countryName": "El Salvador",
+      "countryCode": "SV",
+      "nearestSettlement": "Santa Tecla",
+      "nearestSettlementCountry": "El Salvador",
+      "distanceToSettlementKm": 17.082161612924708,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "13,47.5N",
+          "exif:GPSLongitude": "89,23.5W",
+          "Iptc4xmpExt:CountryName": "El Salvador",
+          "Iptc4xmpExt:CountryCode": "SV",
+          "Iptc4xmpExt:City": "Santa Tecla"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "El Salvador: 37 km circle holding 50.5% of the population (3,138,878 people); Center: 13.7917, -89.3917",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          13,
+          1
+        ],
+        [
+          47,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "W",
+      "GPSLongitude": [
+        [
+          89,
+          1
+        ],
+        [
+          23,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "El Salvador: 37 km circle holding 50.5% of the population (3,138,878 people); Center: 13.7917, -89.3917",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

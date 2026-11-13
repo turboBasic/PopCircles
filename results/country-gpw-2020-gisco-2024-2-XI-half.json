@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,17 +57,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 1.092662180907718e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 115,
-          "blocks_examined": 15636,
-          "blocks_pruned": 10949,
-          "circles_evaluated": 4687,
-          "kernels_built": 7103
-        }
+      "nearest_settlement": {
+        "name": "Kitami",
+        "country": "Japan",
+        "country_iso_alpha2": "JP",
+        "distance_km": 191.32213816974325,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 6537.50807320929,
+      "populationShare": 0.5109021089606411,
+      "radiusKm": 51.0,
+      "centerLatitude": 44.041666666666664,
+      "centerLongitude": 146.27499999999998,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Kuril Islands",
+      "Iptc4xmpCore:CountryCode": "XI",
+      "countryName": "Kuril Islands",
+      "countryCode": "XI",
+      "nearestSettlement": "Kitami",
+      "nearestSettlementCountry": "Japan",
+      "distanceToSettlementKm": 191.32213816974325,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "44,2.5N",
+          "exif:GPSLongitude": "146,16.5E",
+          "Iptc4xmpExt:CountryName": "Kuril Islands",
+          "Iptc4xmpExt:CountryCode": "XI",
+          "Iptc4xmpExt:City": "Kitami"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Kuril Islands: 51 km circle holding 51.1% of the population (6,538 people); Center: 44.0417, 146.2750",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          44,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          146,
+          1
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Kuril Islands: 51 km circle holding 51.1% of the population (6,538 people); Center: 44.0417, 146.2750",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

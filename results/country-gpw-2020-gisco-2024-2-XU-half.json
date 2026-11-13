@@ -19,7 +19,7 @@
       "boundary_source": {
         "name": "gisco-countries-2024-1m",
         "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "\u00a9 EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
       }
     },
     "country": {
@@ -57,17 +57,93 @@
       "covers_whole_grid": false,
       "predicate_slack_persons": 8.230046602490852e-07,
       "tolerance_persons": 0.0,
-      "stats": {
-        "radii_evaluated": 12,
-        "radii_reused": 0,
-        "searched": {
-          "levels": 97,
-          "blocks_examined": 29894,
-          "blocks_pruned": 20384,
-          "circles_evaluated": 9510,
-          "kernels_built": 9284
-        }
+      "nearest_settlement": {
+        "name": "Gogrial",
+        "country": "South Sudan",
+        "country_iso_alpha2": "SS",
+        "distance_km": 134.4234623152328,
+        "short_form": false
       }
     }
+  },
+  "render_metadata": {
+    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+    "XML:com.adobe.xmp": {
+      "population": 41675.710119724274,
+      "populationShare": 0.5142044178724398,
+      "radiusKm": 41.0,
+      "centerLatitude": 9.724999999999994,
+      "centerLongitude": 28.32499999999999,
+      "populationDataset": "population-count-2020-30arcsec",
+      "decimation": 2,
+      "photoshop:Country": "Abyei",
+      "Iptc4xmpCore:CountryCode": "XU",
+      "countryName": "Abyei",
+      "countryCode": "XU",
+      "nearestSettlement": "Gogrial",
+      "nearestSettlementCountry": "South Sudan",
+      "distanceToSettlementKm": 134.4234623152328,
+      "Iptc4xmpExt:LocationShown": [
+        {
+          "exif:GPSLatitude": "9,43.5N",
+          "exif:GPSLongitude": "28,19.5E",
+          "Iptc4xmpExt:CountryName": "Abyei",
+          "Iptc4xmpExt:CountryCode": "XU",
+          "Iptc4xmpExt:City": "Gogrial"
+        }
+      ],
+      "dc:creator": [
+        "Andrii Melnyk"
+      ],
+      "Iptc4xmpCore:CreatorContactInfo": {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      },
+      "dc:rights": "© Andrii Melnyk, 2026",
+      "dc:title": "Abyei: 41 km circle holding 51.4% of the population (41,676 people); Center: 9.7250, 28.3250",
+      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
+      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
+      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+    },
+    "EXIF:GPSInfo": {
+      "GPSVersionID": [
+        2,
+        3,
+        0,
+        0
+      ],
+      "GPSLatitudeRef": "N",
+      "GPSLatitude": [
+        [
+          9,
+          1
+        ],
+        [
+          43,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSLongitudeRef": "E",
+      "GPSLongitude": [
+        [
+          28,
+          1
+        ],
+        [
+          19,
+          1
+        ],
+        [
+          30000,
+          1000
+        ]
+      ],
+      "GPSMapDatum": "WGS-84"
+    },
+    "Title": "Abyei: 41 km circle holding 51.4% of the population (41,676 people); Center: 9.7250, 28.3250",
+    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }
