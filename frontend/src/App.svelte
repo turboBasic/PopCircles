@@ -36,7 +36,11 @@
   let headerShrink = $state(0);
 
   function restoreEntry(availableEntries = entries) {
-    selectedEntry = entryFromHash(availableEntries, window.location.hash);
+    const entry = entryFromHash(availableEntries, window.location.hash);
+    selectedEntry = entry;
+    if (entry) {
+      requestAnimationFrame(() => document.getElementById(entry.anchor)?.scrollIntoView());
+    }
   }
 
   function closeBrowser() {
@@ -89,7 +93,10 @@
     copyStatus = '';
     window.clearTimeout(copyTimeout);
     closeBrowser();
-    if (returnFocus) requestAnimationFrame(() => browserTrigger.focus());
+    requestAnimationFrame(() => {
+      document.getElementById(entry.anchor)?.scrollIntoView();
+      if (returnFocus) browserTrigger.focus();
+    });
   }
 
   function showCopyStatus(message) {
@@ -287,6 +294,7 @@
 
       <div class="results">
         <section class="map-results" aria-label="Maps">
+          <h2 class="maps-title">Maps</h2>
           <div id="map-results-list" class:gallery-mode={selectedEntry === null} class:single-map={selectedEntry !== null}>
             {#each visibleMapEntries as entry (entry.anchor)}
               <section class="country" id={entry.anchor}>
@@ -358,7 +366,8 @@
   .status { font-size: .85rem; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
-  .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  .maps-title { margin: 0 0 .75rem; }
+  .country { scroll-margin-top: calc(5rem + 4rem * (1 - var(--header-shrink))); margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .map-actions { display: flex; align-items: center; gap: .5rem; }
   .mobile-browser-toggle { display: none; }
   button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
