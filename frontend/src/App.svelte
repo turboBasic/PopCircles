@@ -33,6 +33,7 @@
   let browserTrigger = $state(null);
   let browserPanel = $state(null);
   let countrySearch = $state(null);
+  let resultsPanel = $state(null);
   let headerShrink = $state(0);
 
   function restoreEntry(availableEntries = entries) {
@@ -110,6 +111,10 @@
     document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
   }
 
+  function handleScroll() {
+    headerShrink = Math.min(Math.max(window.scrollY, resultsPanel?.scrollTop ?? 0) / 120, 1);
+  }
+
   async function copyCountryUrl(event, anchor) {
     event.preventDefault();
     const url = countryUrl(window.location.href, anchor);
@@ -124,19 +129,17 @@
   onMount(() => {
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
-    const supportsScrollTimeline = CSS.supports('animation-timeline: scroll()');
     const handleHistory = () => restoreEntry();
-    const handleScroll = () => (headerShrink = Math.min(window.scrollY / 120, 1));
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
     };
     browserOpen = !mobileNavigation.matches;
-    if (!supportsScrollTimeline) handleScroll();
+    handleScroll();
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     document.addEventListener('pointerdown', handlePointerdown);
-    if (!supportsScrollTimeline) window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
     fetch('./gallery-data.json')
       .then((response) => {
         if (!response.ok) throw new Error(`Gallery data request failed (${response.status})`);
@@ -156,7 +159,7 @@
       window.clearTimeout(copyTimeout);
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
-      if (!supportsScrollTimeline) window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('pointerdown', handlePointerdown);
       mobileNavigation.removeEventListener('change', handleNavigationChange);
     };
@@ -296,7 +299,15 @@
         </details>
       </aside>
 
-      <div class="results">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex: keyboard users need to focus this scroll region. -->
+      <div
+        bind:this={resultsPanel}
+        class="results"
+        role="region"
+        aria-label="Map results"
+        tabindex="0"
+        onscroll={handleScroll}
+      >
         <section class="map-results" aria-label="Maps">
           <div id="map-results-list" class:gallery-mode={selectedEntry === null} class:single-map={selectedEntry !== null}>
             {#each visibleMapEntries as entry (entry.anchor)}
@@ -348,10 +359,6 @@
   header { position: sticky; top: 0; z-index: 4; isolation: isolate; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
   .header-art { position: absolute; inset: 0; z-index: -1; overflow: hidden; opacity: calc(.16 * (1 - var(--header-shrink))); pointer-events: none; }
   .header-art img { position: absolute; top: 50%; left: 50%; width: 104vw; height: auto; max-width: none; transform: translate(-50%, -50%); filter: grayscale(1) brightness(.65); }
-  @supports (animation-timeline: scroll()) {
-    main { animation: shrink-header linear both; animation-timeline: scroll(root); animation-range: 0px 120px; }
-    @keyframes shrink-header { to { --header-shrink: 1; } }
-  }
   .top-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .home-link { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-decoration: none; text-transform: uppercase; }
   h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
@@ -373,7 +380,7 @@
   nav a:hover, nav a.active { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
   .status { font-size: .85rem; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  .results { min-width: 0; padding-bottom: 4rem; }
+  .results { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); min-width: 0; height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow-y: auto; padding-bottom: 4rem; }
   .country { scroll-margin-top: calc(5rem + 4rem * (1 - var(--header-shrink))); margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .map-actions { display: flex; align-items: center; gap: .5rem; }
   .icon-control { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; padding: .45rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; text-decoration: none; }
@@ -398,6 +405,7 @@
   figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
     .explorer { min-height: 0; grid-template-columns: 1fr; }
+    .results { position: static; height: auto; overflow: visible; }
     aside { position: static; z-index: auto; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
     aside summary { display: none; }
     .mobile-browser-toggle { display: block; }
