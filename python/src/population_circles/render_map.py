@@ -2,6 +2,7 @@ import argparse
 import json
 import math
 import textwrap
+import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import cast
@@ -21,7 +22,6 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
 
-from population_circles.centre_caption import plain_centre
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_caption import lines_for
@@ -156,21 +156,17 @@ def stroke(axes: Axes, geometry: BaseGeometry, colour: str, width: float, layer:
 
 
 def title_of(answer: Answer) -> str:
-    # The table is in the caption because a reader cannot otherwise tell a 30 arc-second answer
-    # from a decimated one, and the two differ by more than rounding.
     circle = answer.circle
-    source = (
-        f"population dataset {answer.provenance.dataset} "
-        f"at decimation k={answer.provenance.decimation}"
-        if answer.country is not None
-        else f"table {answer.provenance.table}"
-    )
+    country = f"{answer.country.name} ({answer.country.id}): " if answer.country else ""
+    centre = f"{circle.centre.lat}, {circle.centre.lon}"
+    settlement = answer.caption.settlement
+    if settlement is not None:
+        distance = int(settlement.distance_km + 0.5)
+        centre += f", {distance} km from {settlement.name}"
     return (
-        f"{answer.country.name + ': ' if answer.country is not None else ''}"
-        f"{circle.radius_km:,.0f} km circle holding {answer.caption.share:.2%} of the population\n"
-        f"{answer.caption.population:,.0f} people, "
-        f"centred {textwrap.fill(plain_centre(answer), width=44, subsequent_indent='         ')}\n"
-        f"answered from {source}"
+        f"{country}{circle.radius_km:,.0f} km circle holding "
+        f"{answer.caption.share:.1%} of the population "
+        f"({answer.caption.population:,.0f} people); Center: {centre}"
     )
 
 
@@ -199,17 +195,108 @@ def credits_of(
     return "\n".join(textwrap.fill(part, width=118) for part in parts)
 
 
+def copyright_of(
+    answer: Answer,
+    attribution: str,
+    coastline_attribution: str | None,
+    boundary_attribution: str | None,
+) -> str:
+    parts = ["© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles"]
+    country_lines = lines_for(answer)
+    if answer.country is not None:
+        parts.append(f"Population data: {attribution}")
+        parts.append(f"Administrative boundaries: {boundary_attribution}")
+    elif country_lines:
+        parts.extend(country_lines)
+        parts.append(f"Population data: {attribution}")
+    else:
+        parts.append(f"Population data: {attribution}")
+    if coastline_attribution:
+        parts.append(f"Coastline data: {coastline_attribution}")
+    return "\n".join(textwrap.fill(part, width=118) for part in parts)
+
+
+def xmp_properties(answer: Answer) -> dict[str, str | float | int | None]:
+    circle = answer.circle
+    properties: dict[str, str | float | int | None] = {
+        "population": answer.caption.population,
+        "populationShare": answer.caption.share,
+        "radiusKm": circle.radius_km,
+        "centerLatitude": circle.centre.lat,
+        "centerLongitude": circle.centre.lon,
+        "populationDataset": answer.provenance.dataset,
+        "decimation": answer.provenance.decimation,
+    }
+    if answer.country is not None:
+        properties["countryName"] = answer.country.name
+        properties["countryCode"] = answer.country.id
+    if answer.caption.settlement is not None:
+        properties["nearestSettlement"] = answer.caption.settlement.name
+        properties["nearestSettlementCountry"] = answer.caption.settlement.country
+        properties["distanceToSettlementKm"] = answer.caption.settlement.distance_km
+    return properties
+
+
+def xmp_packet(properties: Mapping[str, str | float | int]) -> str:
+    namespaces = {
+        "x": "adobe:ns:meta/",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "pc": "https://github.com/turboBasic/PopCircles/ns/1.0/",
+    }
+    for prefix, uri in namespaces.items():
+        ET.register_namespace(prefix, uri)
+    xmp = ET.Element(f"{{{namespaces['x']}}}xmpmeta")
+    rdf = ET.SubElement(xmp, f"{{{namespaces['rdf']}}}RDF")
+    description = ET.SubElement(rdf, f"{{{namespaces['rdf']}}}Description")
+    for name, value in properties.items():
+        if value is not None:
+            description.set(f"{{{namespaces['pc']}}}{name}", str(value))
+    return ET.tostring(xmp, encoding="unicode", xml_declaration=True)
+
+
+def description_of(answer: Answer) -> str:
+    return (
+        f"Answered from population dataset {answer.provenance.dataset} "
+        f"at decimation k={answer.provenance.decimation}"
+    )
+
+
+def metadata_json_fields(
+    title: str,
+    description: str,
+    copyright_text: str,
+    properties: Mapping[str, str | float | int | None],
+    placement: tuple[MapTextPlacement, MapTextPlacement],
+) -> dict[str, object]:
+    title_placement, credits_placement = placement
+    values: dict[str, object] = {
+        "Description": description,
+        "XML:com.adobe.xmp": dict(properties),
+    }
+    if title_placement == "metadata":
+        values["Title"] = title
+    if credits_placement == "metadata":
+        values["Copyright"] = copyright_text
+    return values
+
+
 def png_metadata(
     title: str,
     copyright_text: str,
     placement: tuple[MapTextPlacement, MapTextPlacement],
+    description: str,
+    properties: Mapping[str, str | float | int | None],
 ) -> dict[str, str]:
     title_placement, credits_placement = placement
     metadata: dict[str, str] = {}
     if title_placement == "metadata":
         metadata["Title"] = title
+    metadata["Description"] = description
     if credits_placement == "metadata":
         metadata["Copyright"] = copyright_text
+    metadata["XML:com.adobe.xmp"] = xmp_packet(
+        {name: value for name, value in properties.items() if value is not None}
+    )
     return metadata
 
 
@@ -428,6 +515,19 @@ def render_file(
         outline_and_credit=outline_and_credit,
         **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
+    title = title_of(answer)
+    copyright_text = copyright_of(
+        answer,
+        population_attribution,
+        coastline_attribution,
+        country_boundary_attribution,
+    )
+    description = description_of(answer)
+    properties = xmp_properties(answer)
+    metadata_values = metadata_json_fields(
+        title, description, copyright_text, properties, text_placement
+    )
+    sidecar_path = output_path.with_suffix(".json")
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         # No bbox_inches="tight": the title and citation use figure coordinates; cropping
@@ -435,17 +535,10 @@ def render_file(
         figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
             output_path,
             dpi=200,
-            metadata=png_metadata(
-                title_of(answer),
-                credits_of(
-                    answer,
-                    population_attribution,
-                    coastline_attribution,
-                    country_boundary_attribution,
-                ),
-                text_placement,
-            ),
+            metadata=png_metadata(title, copyright_text, text_placement, description, properties),
         )
+        document["render_metadata"] = metadata_values
+        sidecar_path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     finally:
         plt.close(figure)
 

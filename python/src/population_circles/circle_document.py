@@ -362,5 +362,6 @@ def circle_of(document: Mapping[str, object]) -> Answer:
         Provenance(
             dataset=dataset,
             table=f"{provenance.digest} at decimation {provenance.decimation}",
+            decimation=provenance.decimation,
         ),
     )

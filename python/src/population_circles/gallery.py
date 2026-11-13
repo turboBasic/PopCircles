@@ -34,12 +34,15 @@ from population_circles.dataset_registry import (
 from population_circles.map_frame import PLATE_CARREE
 from population_circles.render_map import (
     citation,
-    credits_of,
+    copyright_of,
+    description_of,
+    metadata_json_fields,
     other_countries,
     png_metadata,
     registered_coastline,
     render,
     title_of,
+    xmp_properties,
 )
 
 HALF_SHARE = 0.5
@@ -290,6 +293,18 @@ def render_document(
                 else None
             ) or citation(context.registry, answer.country.boundary_dataset)
             outline_and_credit = (selected, boundary_attribution)
+        title = title_of(answer)
+        copyright_text = copyright_of(
+            answer,
+            population_attribution,
+            context.coastline_attribution,
+            outline_and_credit[1] if outline_and_credit is not None else None,
+        )
+        description = description_of(answer)
+        properties = xmp_properties(answer)
+        payload["render_metadata"] = metadata_json_fields(
+            title, description, copyright_text, properties, context.text_placement
+        )
         target = context.output / f"{source.stem}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
         cache_key = (
@@ -349,14 +364,11 @@ def render_document(
         target,
         dpi=200,
         metadata=png_metadata(
-            title_of(answer),
-            credits_of(
-                answer,
-                population_attribution,
-                context.coastline_attribution,
-                outline_and_credit[1] if outline_and_credit is not None else None,
-            ),
+            title,
+            copyright_text,
             context.text_placement,
+            description,
+            properties,
         ),
     )
     plt.close(figure)

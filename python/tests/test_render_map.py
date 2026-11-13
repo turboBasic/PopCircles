@@ -42,6 +42,7 @@ PROSE = Path(__file__).resolve().parents[2] / "data" / "README.md"
 CENTRE_LAT = 25.125
 CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
+WORLD_POPULATION = 1_254_363_867.93
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MAX_LOCAL_EXTENT_METRES = 5_000_000
@@ -568,6 +569,33 @@ def test_the_credit_is_the_one_the_named_dataset_owes_and_not_a_neighbours() -> 
     assert citation(registry, "second-raster") == "the credit the second dataset requires"
 
 
+def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
+    payload = country_circle_document()
+    payload["result"]["country"]["id"] = "AD"
+    payload["result"]["country"]["name"] = "Andorra"
+    payload["result"]["circle"].update(
+        {
+            "radius_km": 6,
+            "centre": {"lat": 42.5083, "lon": 1.5583},
+            "population": 33892,
+            "share_achieved": 0.5258,
+            "nearest_settlement": {
+                "name": "Andorra la Vella",
+                "country": "Andorra",
+                "distance_km": 5,
+                "short_form": False,
+            },
+        }
+    )
+    title = title_of(circle_of(payload))
+
+    assert title == (
+        "Andorra (AD): 6 km circle holding 52.6% of the population "
+        "(33,892 people); Center: 42.5083, 1.5583, 5 km from Andorra la Vella"
+    )
+    assert "\n" not in title
+
+
 def test_a_document_naming_a_dataset_the_registry_lacks_is_refused() -> None:
     with pytest.raises(UnregisteredDatasetError) as caught:
         citation(REGISTRY, "gpw-v4")
@@ -590,7 +618,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
-    source = tmp_path / "circle.json"
+    source = tmp_path / "map.json"
     source.write_text(json.dumps(document()), encoding="utf-8")
     basemap_paths: list[Path] = []
     current_basemap = render_map_module.basemap
@@ -608,9 +636,21 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert normalised(citation(REGISTRY, DATASET)) in normalised(str(metadata["Copyright"]))
-    assert "Coastline credit:" in str(metadata["Copyright"])
+    assert "Coastline data:" in str(metadata["Copyright"])
     assert str(metadata["Copyright"]).count(COASTLINE_CREDIT) == 1
-    assert "Created by Andrii Melnyk with PopCircles" in str(metadata["Copyright"])
+    assert "© Andrii Melnyk, 2026" in str(metadata["Copyright"])
+    assert metadata["Title"] == title_of(circle_of(document()))
+    assert metadata["Description"] == (
+        f"Answered from population dataset {DATASET} at decimation k=10"
+    )
+    xmp = str(metadata["XML:com.adobe.xmp"])
+    assert 'pc:population="1254363867.93"' in xmp
+    sidecar = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
+    assert sidecar["result"] == document()["result"]
+    assert sidecar["render_metadata"]["Title"] == metadata["Title"]
+    assert sidecar["render_metadata"]["Description"] == metadata["Description"]
+    assert sidecar["render_metadata"]["Copyright"] == metadata["Copyright"]
+    assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
 
 
 def test_the_footer_artist_carries_the_citation() -> None:
@@ -668,24 +708,21 @@ def test_long_country_captions_grow_the_figure_and_keep_every_line_inside(
         plt.close(figure)
 
 
-def test_the_title_states_the_radius_the_share_the_centre_and_the_table() -> None:
+def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() -> None:
     answer = circle_of(document())
     figure = render(answer, ORTHOGRAPHIC, MARKER, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert "1,000 km circle" in drawn_text
-    assert "16.17% of the population" in drawn_text
+    assert "16.2% of the population" in drawn_text
     assert "1,254,363,868 people" in drawn_text
-    assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
-    # The decimation as well as the digest: the fixture's digest is the one both committed tables
-    # carry, so a caption dropping the decimation would read the same for either of them.
-    assert "0xf17aa802a6890f0c at decimation 10" in drawn_text
+    assert f"{CENTRE_LAT}, {CENTRE_LON}" in drawn_text
+    assert "Center:" in drawn_text
 
 
-def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
+def test_measured_and_nested_documents_use_the_one_line_title() -> None:
     assert title_of(circle_of(document())) == (
-        "1,000 km circle holding 16.17% of the population\n"
-        "1,254,363,868 people, centred 25.1250, 79.7080\n"
-        "answered from table 0xf17aa802a6890f0c at decimation 10"
+        "1,000 km circle holding 16.2% of the population "
+        "(1,254,363,868 people); Center: 25.125, 79.708"
     )
 
     nested = document()
@@ -701,18 +738,15 @@ def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
         },
     }
     assert title_of(circle_of(nested)) == (
-        "2,639 km circle holding 25.03% of the population\n"
-        "52,635 people, centred -85.0000, 105.0000\n"
-        "answered from table 0xf17aa802a6890f0c at decimation 10"
+        "2,639 km circle holding 25.0% of the population (52,635 people); Center: -85.0, 105.0"
     )
 
 
 def test_country_title_names_the_country_and_population_dataset() -> None:
     answer = circle_of(country_circle_document())
     assert title_of(answer) == (
-        "Germany: 200 km circle holding 50.00% of the population\n"
-        "40 people, centred 51.0000, 10.0000\n"
-        f"answered from population dataset {DATASET} at decimation k=10"
+        "Germany (DE): 200 km circle holding 50.0% of the population "
+        "(40 people); Center: 51.0, 10.0"
     )
 
 

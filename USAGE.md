@@ -277,7 +277,8 @@ includes the credit required by the population data's CC BY licence. The require
 Map titles and credits are stored in PNG metadata by default, under `Title` and `Copyright`. Set
 `map_text.title` or `map_text.credits` in `data/config.toml` to `raster` to draw that field on the
 image; `metadata` keeps it in the PNG metadata. The standalone renderer and Gallery use the same
-settings.
+settings. Rendered maps include descriptive metadata in the PNG and matching JSON, alongside the
+original result data.
 
 Circles are drawn on the curved Earth, then transformed to fit the flat map. A circle that crosses the
 180° longitude line appears at both edges of a rectangular map. A circle that covers a pole closes across

@@ -43,6 +43,7 @@ turboBasic
 ureq
 vite
 xdist
+xmpmeta
 
 # --- Domain vocabulary ---
 antimeridian

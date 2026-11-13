@@ -29,6 +29,7 @@ from test_render_map import country_circle_document
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
+WORLD_POPULATION = 1_254_363_867.93
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 EXPECTED_COUNTRY_CLI_CALLS = 2
@@ -107,6 +108,27 @@ def assert_built_site(output: Path) -> None:
     assert "Math.round" in bundle
     assert "cdn.jsdelivr.net" not in bundle
     assert (output / "gallery-data.json").is_file()
+
+
+def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None:
+    document_payload = json.loads((output / result_name).read_text(encoding="utf-8"))
+    with Image.open(output / result_name.replace(".json", ".png")) as image:
+        metadata = image.info
+    xmp = str(metadata["XML:com.adobe.xmp"])
+    for name, value in (
+        ("countryName", "Alpha"),
+        ("countryCode", "AA"),
+        ("nearestSettlement", "Fixture Place"),
+        ("nearestSettlementCountry", "Fixture Country"),
+    ):
+        assert f'pc:{name}="{value}"' in xmp
+    assert "Title" not in metadata
+    assert "Copyright" not in metadata
+    assert "Title" not in document_payload["render_metadata"]
+    assert "Copyright" not in document_payload["render_metadata"]
+    properties = document_payload["render_metadata"]["XML:com.adobe.xmp"]
+    assert properties["countryCode"] == "AA"
+    assert properties["nearestSettlement"] == "Fixture Place"
 
 
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:
@@ -296,12 +318,25 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     assert "not-drawable.json" not in json.dumps(data)
     with Image.open(drawn[0].figure) as image:
         metadata = image.info
+    copied_document = json.loads(
+        (tmp_path / "gallery" / "drawable.json").read_text(encoding="utf-8")
+    )
     assert annotations == []
     assert "Title" in metadata
     assert "Copyright" in metadata
-    assert "Created by Andrii Melnyk with PopCircles" in metadata["Copyright"]
+    assert "© Andrii Melnyk, 2026" in metadata["Copyright"]
+    assert "Population data:" in metadata["Copyright"]
+    assert metadata["Description"] == (
+        f"Answered from population dataset {DATASET} at decimation k=10"
+    )
+    assert 'pc:population="1254363867.93"' in metadata["XML:com.adobe.xmp"]
+    assert copied_document["result"] == document("most-populous")["result"]
+    assert copied_document["render_metadata"]["Title"] == metadata["Title"]
+    assert copied_document["render_metadata"]["Description"] == metadata["Description"]
+    assert copied_document["render_metadata"]["Copyright"] == metadata["Copyright"]
+    assert copied_document["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
     assert basemap_paths == [coastline_path]
-    assert "Coastline credit:" in metadata["Copyright"]
+    assert "Coastline data:" in metadata["Copyright"]
     assert metadata["Copyright"].count(COASTLINE_CREDIT) == 1
 
 
@@ -706,6 +741,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         assert result["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
         assert (corpus / name).is_file()
     assert (output / result_names[0]).is_file()
+    assert_country_metadata_mirrors_json(output, result_names[0])
     assert not (output / result_names[1]).exists()
     assert not (output / result_names[1].replace(".json", ".png")).exists()
     assert_built_site(output)
@@ -760,7 +796,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     }
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
-    assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
+    assert any("Alpha (AA): 100 km circle" in annotation for annotation in annotations)
     with Image.open(drawn[0].figure) as image:
         assert "Title" not in image.info
         assert "Copyright" not in image.info
