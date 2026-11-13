@@ -87,7 +87,7 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
             ),
             (
                 "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
-                "Center: 25.125, 79.708, 10 km from Fixture Place"
+                "Center: 25.1250, 79.7080"
             ),
         ),
         (
@@ -98,7 +98,7 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
             ),
             (
                 "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
-                "Center: 25.125, 79.708, 500 km from Fixture Place"
+                "Center: 25.1250, 79.7080"
             ),
         ),
         (
@@ -107,7 +107,7 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
             None,
             (
                 "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
-                "Center: 25.125, 79.708"
+                "Center: 25.1250, 79.7080"
             ),
         ),
         (
@@ -121,12 +121,12 @@ def test_figure_centre_uses_four_decimal_coordinates_and_the_documented_place_de
             ),
             (
                 "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
-                "Center: -12.345, -0.5, 12 km from Fixture Place"
+                "Center: -12.3450, -0.5000"
             ),
         ),
     ],
 )
-def test_figure_title_uses_the_answer_centre_and_settlement_decision(
+def test_figure_title_uses_the_answer_centre_without_settlement_details(
     latitude: float,
     longitude: float,
     settlement: Settlement | None,
@@ -148,7 +148,7 @@ def test_long_figure_place_stays_in_the_one_line_title() -> None:
     )
     title = title_of(answer)
     assert "\n" not in title
-    assert "An exceptionally long settlement name that should wrap rather than clip" in title
+    assert "An exceptionally long settlement name that should wrap rather than clip" not in title
 
 
 def test_country_figure_title_uses_nested_nearest_settlement() -> None:
@@ -158,6 +158,6 @@ def test_country_figure_title_uses_nested_nearest_settlement() -> None:
     title = title_of(circle_of(payload))
 
     assert title == (
-        "Germany (DE): 200 km circle holding 50.0% of the population (40 people); "
-        "Center: 51.0, 10.0, 12 km from Fixture Place"
+        "Germany: 200 km circle holding 50.0% of the population (40 people); "
+        "Center: 51.0000, 10.0000"
     )

@@ -15,6 +15,8 @@ from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path as DrawPath
+from PIL import ExifTags, Image
+from PIL.TiffImagePlugin import IFDRational
 from shapely import get_coordinates
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
@@ -83,6 +85,7 @@ COUNTRY = "#65CBC1"
 OUTLINE_WIDTH = 0.6
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
+MINUTES_PER_DEGREE = 60
 
 
 def basemap(path: Path) -> BaseGeometry:
@@ -155,12 +158,8 @@ def stroke(axes: Axes, geometry: BaseGeometry, colour: str, width: float, layer:
 
 def title_of(answer: Answer) -> str:
     circle = answer.circle
-    country = f"{answer.country.name} ({answer.country.id}): " if answer.country else ""
-    centre = f"{circle.centre.lat}, {circle.centre.lon}"
-    settlement = answer.caption.settlement
-    if settlement is not None:
-        distance = int(settlement.distance_km + 0.5)
-        centre += f", {distance} km from {settlement.name}"
+    country = f"{answer.country.name}: " if answer.country else ""
+    centre = f"{circle.centre.lat:.4f}, {circle.centre.lon:.4f}"
     return (
         f"{country}{circle.radius_km:,.0f} km circle holding "
         f"{answer.caption.share:.1%} of the population "
@@ -198,9 +197,11 @@ def copyright_of(
     return "\n".join(textwrap.fill(part, width=118) for part in parts)
 
 
-def xmp_properties(answer: Answer) -> dict[str, str | float | int | None]:
+def xmp_properties(
+    answer: Answer, title: str, description: str, copyright_text: str
+) -> dict[str, object]:
     circle = answer.circle
-    properties: dict[str, str | float | int | None] = {
+    properties: dict[str, object] = {
         "population": answer.caption.population,
         "populationShare": answer.caption.share,
         "radiusKm": circle.radius_km,
@@ -210,19 +211,107 @@ def xmp_properties(answer: Answer) -> dict[str, str | float | int | None]:
         "decimation": answer.provenance.decimation,
     }
     if answer.country is not None:
+        properties["photoshop:Country"] = answer.country.name
+        properties["Iptc4xmpCore:CountryCode"] = answer.country.id
         properties["countryName"] = answer.country.name
         properties["countryCode"] = answer.country.id
-    if answer.caption.settlement is not None:
-        properties["nearestSettlement"] = answer.caption.settlement.name
-        properties["nearestSettlementCountry"] = answer.caption.settlement.country
-        properties["distanceToSettlementKm"] = answer.caption.settlement.distance_km
-    return properties
+    settlement = answer.caption.settlement
+    place: dict[str, object] = {
+        "exif:GPSLatitude": gps_coordinate(circle.centre.lat, "N", "S"),
+        "exif:GPSLongitude": gps_coordinate(circle.centre.lon, "E", "W"),
+    }
+    if answer.country is not None:
+        place["Iptc4xmpExt:CountryName"] = answer.country.name
+        place["Iptc4xmpExt:CountryCode"] = answer.country.id
+    if settlement is not None:
+        place["Iptc4xmpExt:City"] = settlement.name
+        if answer.country is None:
+            place["Iptc4xmpExt:CountryName"] = settlement.country
+        properties["nearestSettlement"] = settlement.name
+        properties["nearestSettlementCountry"] = settlement.country
+        properties["distanceToSettlementKm"] = settlement.distance_km
+    properties["Iptc4xmpExt:LocationShown"] = [place]
+    properties["dc:creator"] = ["Andrii Melnyk"]
+    properties["Iptc4xmpCore:CreatorContactInfo"] = {
+        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+    }
+    properties["dc:rights"] = "© Andrii Melnyk, 2026"
+    properties["dc:title"] = title
+    properties["dc:description"] = description
+    properties["photoshop:Credit"] = footer_text()
+    properties["fullAttribution"] = copyright_text
+    return {name: value for name, value in properties.items() if value is not None}
 
 
-def xmp_packet(properties: Mapping[str, str | float | int]) -> str:
+def gps_coordinate(value: float, positive: str, negative: str) -> str:
+    degrees = int(abs(value))
+    minutes = round((abs(value) - degrees) * MINUTES_PER_DEGREE, 5)
+    if minutes == MINUTES_PER_DEGREE:
+        degrees += 1
+        minutes = 0
+    hemisphere = positive if value >= 0 else negative
+    return f"{degrees},{minutes:g}{hemisphere}"
+
+
+def _xmp_creator(description: ET.Element, value: object, namespaces: Mapping[str, str]) -> None:
+    sequence = ET.SubElement(description, f"{{{namespaces['dc']}}}creator")
+    items = ET.SubElement(sequence, f"{{{namespaces['rdf']}}}Seq")
+    for creator in cast(list[str], value):
+        ET.SubElement(items, f"{{{namespaces['rdf']}}}li").text = creator
+
+
+def _xmp_alt_text(
+    description: ET.Element, name: str, value: object, namespaces: Mapping[str, str]
+) -> None:
+    local_name = name.split(":", maxsplit=1)[1]
+    prop = ET.SubElement(description, f"{{{namespaces['dc']}}}{local_name}")
+    items = ET.SubElement(prop, f"{{{namespaces['rdf']}}}Alt")
+    item = ET.SubElement(items, f"{{{namespaces['rdf']}}}li")
+    item.set("{http://www.w3.org/XML/1998/namespace}lang", "x-default")
+    item.text = cast(str, value)
+
+
+def _xmp_creator_contact(
+    description: ET.Element, value: object, namespaces: Mapping[str, str]
+) -> None:
+    prop = ET.SubElement(description, f"{{{namespaces['Iptc4xmpCore']}}}CreatorContactInfo")
+    prop.set(f"{{{namespaces['rdf']}}}parseType", "Resource")
+    for field, text in cast(dict[str, str], value).items():
+        _, local_name = field.split(":", maxsplit=1)
+        ET.SubElement(prop, f"{{{namespaces['Iptc4xmpCore']}}}{local_name}").text = text
+
+
+def _xmp_location_shown(
+    description: ET.Element, value: object, namespaces: Mapping[str, str]
+) -> None:
+    prop = ET.SubElement(description, f"{{{namespaces['Iptc4xmpExt']}}}LocationShown")
+    bag = ET.SubElement(prop, f"{{{namespaces['rdf']}}}Bag")
+    for location in cast(list[dict[str, object]], value):
+        item = ET.SubElement(bag, f"{{{namespaces['rdf']}}}li")
+        item.set(f"{{{namespaces['rdf']}}}parseType", "Resource")
+        for field, text in location.items():
+            prefix, local_name = field.split(":", maxsplit=1)
+            ET.SubElement(item, f"{{{namespaces[prefix]}}}{local_name}").text = str(text)
+
+
+def _xmp_scalar(
+    description: ET.Element, name: str, value: object, namespaces: Mapping[str, str]
+) -> None:
+    prefix, separator, local_name = name.partition(":")
+    if not separator:
+        prefix, local_name = "pc", name
+    description.set(f"{{{namespaces[prefix]}}}{local_name}", str(value))
+
+
+def xmp_packet(properties: Mapping[str, object]) -> str:
     namespaces = {
         "x": "adobe:ns:meta/",
         "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "dc": "http://purl.org/dc/elements/1.1/",
+        "photoshop": "http://ns.adobe.com/photoshop/1.0/",
+        "Iptc4xmpCore": "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
+        "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+        "exif": "http://ns.adobe.com/exif/1.0/",
         "pc": "https://github.com/turboBasic/PopCircles/ns/1.0/",
     }
     for prefix, uri in namespaces.items():
@@ -230,8 +319,18 @@ def xmp_packet(properties: Mapping[str, str | float | int]) -> str:
     xmp = ET.Element(f"{{{namespaces['x']}}}xmpmeta")
     rdf = ET.SubElement(xmp, f"{{{namespaces['rdf']}}}RDF")
     description = ET.SubElement(rdf, f"{{{namespaces['rdf']}}}Description")
+    description.set(f"{{{namespaces['rdf']}}}about", "")
     for name, value in properties.items():
-        description.set(f"{{{namespaces['pc']}}}{name}", str(value))
+        if name == "dc:creator":
+            _xmp_creator(description, value, namespaces)
+        elif name in {"dc:rights", "dc:title", "dc:description"}:
+            _xmp_alt_text(description, name, value, namespaces)
+        elif name == "Iptc4xmpCore:CreatorContactInfo":
+            _xmp_creator_contact(description, value, namespaces)
+        elif name == "Iptc4xmpExt:LocationShown":
+            _xmp_location_shown(description, value, namespaces)
+        else:
+            _xmp_scalar(description, name, value, namespaces)
     return ET.tostring(xmp, encoding="unicode", xml_declaration=True)
 
 
@@ -246,13 +345,16 @@ def metadata_json_fields(
     title: str,
     description: str,
     copyright_text: str,
-    properties: Mapping[str, str | float | int | None],
+    properties: Mapping[str, object],
     placement: tuple[MapTextPlacement, MapTextPlacement],
 ) -> dict[str, object]:
     title_placement, credits_placement = placement
     values: dict[str, object] = {
         "Description": description,
         "XML:com.adobe.xmp": dict(properties),
+        "EXIF:GPSInfo": exif_gps_values(
+            float(properties["centerLatitude"]), float(properties["centerLongitude"])
+        ),
     }
     if title_placement == "metadata":
         values["Title"] = title
@@ -261,12 +363,50 @@ def metadata_json_fields(
     return values
 
 
+def exif_gps_values(latitude: float, longitude: float) -> dict[str, object]:
+    def dms(value: float) -> list[list[int]]:
+        total = round(abs(value) * 3_600_000)
+        degrees, remainder = divmod(total, 3_600_000)
+        minutes, seconds = divmod(remainder, 60_000)
+        return [[degrees, 1], [minutes, 1], [seconds, 1000]]
+
+    return {
+        "GPSVersionID": [2, 3, 0, 0],
+        "GPSLatitudeRef": "N" if latitude >= 0 else "S",
+        "GPSLatitude": dms(latitude),
+        "GPSLongitudeRef": "E" if longitude >= 0 else "W",
+        "GPSLongitude": dms(longitude),
+        "GPSMapDatum": "WGS-84",
+    }
+
+
+def exif_gps_packet(latitude: float, longitude: float) -> bytes:
+    values = exif_gps_values(latitude, longitude)
+    gps = {
+        ExifTags.GPS.GPSVersionID: bytes(cast(list[int], values["GPSVersionID"])),
+        ExifTags.GPS.GPSLatitudeRef: cast(str, values["GPSLatitudeRef"]),
+        ExifTags.GPS.GPSLatitude: tuple(
+            IFDRational(numerator, denominator)
+            for numerator, denominator in cast(list[list[int]], values["GPSLatitude"])
+        ),
+        ExifTags.GPS.GPSLongitudeRef: cast(str, values["GPSLongitudeRef"]),
+        ExifTags.GPS.GPSLongitude: tuple(
+            IFDRational(numerator, denominator)
+            for numerator, denominator in cast(list[list[int]], values["GPSLongitude"])
+        ),
+        ExifTags.GPS.GPSMapDatum: "WGS-84",
+    }
+    exif = Image.Exif()
+    exif[ExifTags.IFD.GPSInfo] = gps
+    return exif.tobytes()
+
+
 def png_metadata(
     title: str,
     copyright_text: str,
     placement: tuple[MapTextPlacement, MapTextPlacement],
     description: str,
-    properties: Mapping[str, str | float | int | None],
+    properties: Mapping[str, object],
 ) -> dict[str, str]:
     title_placement, credits_placement = placement
     metadata: dict[str, str] = {}
@@ -479,7 +619,7 @@ def render_file(
         country_boundary_attribution,
     )
     description = description_of(answer)
-    properties = xmp_properties(answer)
+    properties = xmp_properties(answer, title, description, copyright_text)
     metadata_values = metadata_json_fields(
         title, description, copyright_text, properties, text_placement
     )
@@ -492,9 +632,16 @@ def render_file(
             output_path,
             dpi=200,
             metadata=png_metadata(title, copyright_text, text_placement, description, properties),
+            pil_kwargs={
+                "exif": exif_gps_packet(
+                    float(properties["centerLatitude"]), float(properties["centerLongitude"])
+                )
+            },
         )
         document["render_metadata"] = metadata_values
-        sidecar_path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        sidecar_path.write_text(
+            json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
     finally:
         plt.close(figure)
 

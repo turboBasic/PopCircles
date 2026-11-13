@@ -109,7 +109,7 @@ def assert_built_site(output: Path) -> None:
     assert len(assets) == 1
     bundle = assets[0].read_text(encoding="utf-8")
     assert "gallery-data.json" in bundle
-    assert "nearest settlement:" in bundle
+    assert "nearest city:" in bundle
     assert "Math.round" in bundle
     assert ".toFixed(1)" in bundle
     assert "maximumFractionDigits:0" in bundle
@@ -141,6 +141,17 @@ def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None
     properties = document_payload["render_metadata"]["XML:com.adobe.xmp"]
     assert properties["countryCode"] == "AA"
     assert properties["nearestSettlement"] == "Fixture Place"
+    assert properties["photoshop:Country"] == "Alpha"
+    assert properties["dc:creator"] == ["Andrii Melnyk"]
+    assert properties["Iptc4xmpCore:CreatorContactInfo"]["Iptc4xmpCore:CiUrlWork"] == (
+        "https://github.com/turboBasic/PopCircles"
+    )
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"]
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLatitude"] == "51,0N"
+    assert properties["Iptc4xmpExt:LocationShown"][0]["exif:GPSLongitude"] == "10,0E"
+    assert properties["Iptc4xmpExt:LocationShown"][0]["Iptc4xmpExt:City"] == "Fixture Place"
+    assert properties["dc:rights"] == "© Andrii Melnyk, 2026"
+    assert properties["photoshop:Credit"].startswith("© Andrii Melnyk, 2026,")
 
 
 def fixture_outline(answer: Answer, _registry: Registry) -> BaseGeometry:

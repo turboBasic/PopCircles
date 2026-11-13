@@ -1,4 +1,5 @@
 import argparse
+import json
 import subprocess
 import sys
 from collections.abc import Callable
@@ -114,7 +115,10 @@ def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
     result = child("search", search, invoke)
     require_success("search", result)
     try:
-        publish(options.document, result.stdout)
+        publish(
+            options.document,
+            (json.dumps(json.loads(result.stdout), indent=2, ensure_ascii=False) + "\n").encode(),
+        )
     except OSError as error:
         message = f"document publication: could not replace {options.document}: {error}"
         raise WorkflowError(message) from error

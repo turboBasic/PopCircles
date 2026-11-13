@@ -125,6 +125,7 @@ horizontalalignment
 indicatif
 initargs
 insta
+Iptc
 Ivoire
 keepends
 libc
@@ -147,6 +148,7 @@ skia
 socketpair
 splitmix
 thiserror
+tobytes
 tmpg
 verticalalignment
 weezl

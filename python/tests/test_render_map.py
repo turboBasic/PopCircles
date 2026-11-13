@@ -605,8 +605,8 @@ def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
     title = title_of(circle_of(payload))
 
     assert title == (
-        "Andorra (AD): 6 km circle holding 52.6% of the population "
-        "(33,892 people); Center: 42.5083, 1.5583, 5 km from Andorra la Vella"
+        "Andorra: 6 km circle holding 52.6% of the population "
+        "(33,892 people); Center: 42.5083, 1.5583"
     )
     assert "\n" not in title
 
@@ -733,7 +733,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
 def test_measured_and_nested_documents_use_the_one_line_title() -> None:
     assert title_of(circle_of(document())) == (
         "1,000 km circle holding 16.2% of the population "
-        "(1,254,363,868 people); Center: 25.125, 79.708"
+        "(1,254,363,868 people); Center: 25.1250, 79.7080"
     )
 
     nested = document()
@@ -749,15 +749,16 @@ def test_measured_and_nested_documents_use_the_one_line_title() -> None:
         },
     }
     assert title_of(circle_of(nested)) == (
-        "2,639 km circle holding 25.0% of the population (52,635 people); Center: -85.0, 105.0"
+        "2,639 km circle holding 25.0% of the population (52,635 people); "
+        "Center: -85.0000, 105.0000"
     )
 
 
 def test_country_title_names_the_country_and_population_dataset() -> None:
     answer = circle_of(country_circle_document())
     assert title_of(answer) == (
-        "Germany (DE): 200 km circle holding 50.0% of the population "
-        "(40 people); Center: 51.0, 10.0"
+        "Germany: 200 km circle holding 50.0% of the population "
+        "(40 people); Center: 51.0000, 10.0000"
     )
 
 

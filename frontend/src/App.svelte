@@ -289,7 +289,7 @@
                                 {figure.caption.centre_lat.toFixed(4)}, {figure.caption.centre_lon.toFixed(4)}
                               </a>
                               {#if figure.caption.settlement}
-                                · nearest settlement: {figure.caption.settlement.name},
+                                · nearest city: {figure.caption.settlement.name},
                                 {figure.caption.settlement.country}
                                 ({Math.round(figure.caption.settlement.distance_km).toLocaleString()} km away)
                               {/if}

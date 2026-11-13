@@ -36,6 +36,7 @@ from population_circles.render_map import (
     citation,
     copyright_of,
     description_of,
+    exif_gps_packet,
     metadata_json_fields,
     other_countries,
     png_metadata,
@@ -301,7 +302,7 @@ def render_document(
             outline_and_credit[1] if outline_and_credit is not None else None,
         )
         description = description_of(answer)
-        properties = xmp_properties(answer)
+        properties = xmp_properties(answer, title, description, copyright_text)
         payload["render_metadata"] = metadata_json_fields(
             title, description, copyright_text, properties, context.text_placement
         )
@@ -323,7 +324,7 @@ def render_document(
             and reuse_cached_map(context.cache_directory, cache_key, target)
         ):
             (context.output / source.name).write_text(
-                json.dumps(payload, indent=2), encoding="utf-8"
+                json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
             )
             print(
                 f"Gallery: [{index}/{total}] reused {target.name}",
@@ -368,13 +369,20 @@ def render_document(
             description,
             properties,
         ),
+        pil_kwargs={
+            "exif": exif_gps_packet(
+                float(properties["centerLatitude"]), float(properties["centerLongitude"])
+            )
+        },
     )
     plt.close(figure)
     if context.cache_directory is not None and cache_key is not None:
         store_cached_map(context.cache_directory, cache_key, target)
     # The document travels beside its figure, so the caption's link resolves on the published
     # site rather than pointing back into a tree the reader does not have.
-    (context.output / source.name).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    (context.output / source.name).write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(
         f"Gallery: [{index}/{total}] wrote {target.name}",
         file=sys.stderr,
@@ -496,7 +504,8 @@ def build_gallery_output(
                 skipped.append(Skipped(source, envelope.document))
                 if source.name in generated:
                     (output / source.name).write_text(
-                        json.dumps(payload, indent=2), encoding="utf-8"
+                        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8",
                     )
                 continue
             if (
@@ -530,13 +539,13 @@ def build_gallery_output(
 
         for name, payload in generated.items():
             destination = corpus / name
-            content = (json.dumps(payload, indent=2) + "\n").encode()
+            content = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
             if destination.is_file() and same_country_answer(destination.read_bytes(), content):
                 continue
             destination.write_bytes(content)
         data = page_data(drawn, sorted(unavailable))
         (output / "gallery-data.json").write_text(
-            json.dumps(data, indent=2) + "\n", encoding="utf-8"
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     except Exception:
         (output / "index.html").unlink(missing_ok=True)
