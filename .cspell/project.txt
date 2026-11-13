@@ -27,6 +27,7 @@ maxrss
 mise
 notarytool
 numprocesses
+noopener
 opencode
 OpenRouter
 ponytail

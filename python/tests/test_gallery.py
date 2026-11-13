@@ -109,8 +109,14 @@ def assert_built_site(output: Path) -> None:
     assert len(assets) == 1
     bundle = assets[0].read_text(encoding="utf-8")
     assert "gallery-data.json" in bundle
-    assert "Nearest settlement:" in bundle
+    assert "nearest settlement:" in bundle
     assert "Math.round" in bundle
+    assert ".toFixed(1)" in bundle
+    assert "maximumFractionDigits:0" in bundle
+    assert "https://www.openstreetmap.org/" in bundle
+    assert "_blank" in bundle
+    assert "noopener" in bundle
+    assert "View result data" in bundle
     assert "cdn.jsdelivr.net" not in bundle
     assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
