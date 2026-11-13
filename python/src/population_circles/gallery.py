@@ -24,9 +24,23 @@ from shapely.geometry.base import BaseGeometry
 from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.circle_map import Invoke, child, invoke_cli, require_success
 from population_circles.country_outline import load_map_boundaries
-from population_circles.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.dataset_registry import (
+    REPO_ROOT,
+    MapTextPlacement,
+    Registry,
+    load,
+    map_text_placement,
+)
 from population_circles.map_frame import PLATE_CARREE
-from population_circles.render_map import citation, other_countries, registered_coastline, render
+from population_circles.render_map import (
+    citation,
+    credits_of,
+    other_countries,
+    png_metadata,
+    registered_coastline,
+    render,
+    title_of,
+)
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
@@ -90,6 +104,7 @@ class MapRenderContext:
     output: Path
     cache_directory: Path | None
     digest: str
+    text_placement: tuple[MapTextPlacement, MapTextPlacement] = ("metadata", "metadata")
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
@@ -283,6 +298,7 @@ def render_document(
             coastline_attribution=context.coastline_attribution,
             outline_and_credit=outline_and_credit,
             other_countries=other_countries(boundaries, answer),
+            text_placement=context.text_placement,
         )
     except Exception as error:
         # The early-built page is removed by `build_gallery_output` if a map fails.
@@ -292,6 +308,16 @@ def render_document(
     figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
         target,
         dpi=200,
+        metadata=png_metadata(
+            title_of(answer),
+            credits_of(
+                answer,
+                population_attribution,
+                context.coastline_attribution,
+                outline_and_credit[1] if outline_and_credit is not None else None,
+            ),
+            context.text_placement,
+        ),
     )
     plt.close(figure)
     if context.cache_directory is not None and cache_key is not None:
@@ -752,6 +778,7 @@ def build(
         output,
         cache_directory,
         context_digest,
+        map_text_placement(),
     )
     (output / "index.html").unlink(missing_ok=True)
     (output / "gallery-data.json").unlink(missing_ok=True)

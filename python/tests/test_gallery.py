@@ -9,6 +9,7 @@ from unittest.mock import Mock
 
 import pytest
 from matplotlib.figure import Figure
+from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
@@ -284,10 +285,15 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         },
     ]
     assert "not-drawable.json" not in json.dumps(data)
-    footer = annotations[-1]
+    with Image.open(drawn[0].figure) as image:
+        metadata = image.info
+    assert annotations == []
+    assert "Title" in metadata
+    assert "Copyright" in metadata
+    assert "Created by Andrii Melnyk with PopCircles" in metadata["Copyright"]
     assert basemap_paths == [coastline_path]
-    assert "Coastline credit:" in footer
-    assert footer.count(COASTLINE_CREDIT) == 1
+    assert "Coastline credit:" in metadata["Copyright"]
+    assert metadata["Copyright"].count(COASTLINE_CREDIT) == 1
 
 
 def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
@@ -595,6 +601,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(gallery_module, "map_text_placement", lambda: ("raster", "raster"))
 
     drawn, skipped = build(corpus, output, invoke)
 
@@ -670,6 +677,10 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     }
     assert "Population credit: Population fixture credit" in " ".join(annotations)
     assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
+    assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
+    with Image.open(drawn[0].figure) as image:
+        assert "Title" not in image.info
+        assert "Copyright" not in image.info
 
 
 def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: Path) -> None:

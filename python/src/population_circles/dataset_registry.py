@@ -147,7 +147,6 @@ def load() -> Registry:
 MapTextPlacement = Literal["metadata", "raster"]
 
 
-@functools.cache
 def map_text_placement() -> tuple[MapTextPlacement, MapTextPlacement]:
     path = REPO_ROOT / "data" / "config.toml"
     config = tomllib.loads(path.read_text(encoding="utf-8"))

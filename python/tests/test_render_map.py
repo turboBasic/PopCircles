@@ -9,6 +9,7 @@ import pytest
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
+from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
@@ -59,6 +60,11 @@ def empty_boundaries(
     return {}
 
 
+def png_info(path: Path) -> dict[str, object]:
+    with Image.open(path) as image:
+        return image.info
+
+
 @pytest.mark.parametrize(
     ("settings", "expected"),
     [
@@ -75,11 +81,7 @@ def test_map_text_placement_defaults_to_metadata_and_accepts_raster(
     (tmp_path / "data").mkdir()
     (tmp_path / "data" / "config.toml").write_text(settings, encoding="utf-8")
     monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    dataset_registry_module.map_text_placement.cache_clear()
-    try:
-        assert dataset_registry_module.map_text_placement() == expected
-    finally:
-        dataset_registry_module.map_text_placement.cache_clear()
+    assert dataset_registry_module.map_text_placement() == expected
 
 
 def test_map_text_placement_rejects_unsupported_values(
@@ -90,12 +92,8 @@ def test_map_text_placement_rejects_unsupported_values(
         '[map_text]\ntitle = "pixels"\n', encoding="utf-8"
     )
     monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    dataset_registry_module.map_text_placement.cache_clear()
-    try:
-        with pytest.raises(ValueError, match=r"config.toml: map_text\.title"):
-            dataset_registry_module.map_text_placement()
-    finally:
-        dataset_registry_module.map_text_placement.cache_clear()
+    with pytest.raises(ValueError, match=r"config.toml: map_text\.title"):
+        dataset_registry_module.map_text_placement()
 
 
 @pytest.fixture(autouse=True)
@@ -594,29 +592,24 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     source = tmp_path / "circle.json"
     source.write_text(json.dumps(document()), encoding="utf-8")
     basemap_paths: list[Path] = []
-    annotations: list[str] = []
     current_basemap = render_map_module.basemap
-    current_annotate = render_map_module.annotate
 
     def capture_basemap(path: Path) -> BaseGeometry:
         basemap_paths.append(path)
         return current_basemap(path)
 
-    def capture_annotate(
-        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
-    ) -> None:
-        annotations.append(text)
-        current_annotate(figure, y, text, size, alignment)
-
     monkeypatch.setattr(render_map_module, "basemap", capture_basemap)
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
-    render_file(source, tmp_path / "map.png")
+    output = tmp_path / "map.png"
+    render_file(source, output)
 
-    footer = normalised(annotations[-1])
+    metadata = png_info(output)
     assert basemap_paths == [coastline_path]
-    assert normalised(citation(REGISTRY, DATASET)) in footer
-    assert "Coastline credit:" in footer
-    assert footer.count(normalised(COASTLINE_CREDIT)) == 1
+    assert "Title" in metadata
+    assert "Copyright" in metadata
+    assert normalised(citation(REGISTRY, DATASET)) in normalised(str(metadata["Copyright"]))
+    assert "Coastline credit:" in str(metadata["Copyright"])
+    assert str(metadata["Copyright"]).count(COASTLINE_CREDIT) == 1
+    assert "Created by Andrii Melnyk with PopCircles" in str(metadata["Copyright"])
 
 
 def test_the_footer_artist_carries_the_citation() -> None:
@@ -713,10 +706,10 @@ def test_measured_and_nested_documents_keep_their_existing_title_text() -> None:
     )
 
 
-def test_country_title_names_the_population_dataset_and_decimation() -> None:
+def test_country_title_names_the_country_and_population_dataset() -> None:
     answer = circle_of(country_circle_document())
     assert title_of(answer) == (
-        "200 km circle holding 50.00% of the population\n"
+        "Germany: 200 km circle holding 50.00% of the population\n"
         "40 people, centred 51.0000, 10.0000\n"
         f"answered from population dataset {DATASET} at decimation k=10"
     )
@@ -761,12 +754,15 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
         raise AssertionError(message)
 
     monkeypatch.setattr(render_map_module, "registered_coastline", refuse_coastline)
+    monkeypatch.setattr(render_map_module, "map_text_placement", lambda: ("raster", "raster"))
     render_file(source, output, no_coastlines=True)
     footer = normalised(annotations[-1])
     assert "Selected population credit" in footer
     assert "Selected boundary credit" in footer
     assert COASTLINE_CREDIT not in footer
     assert output.read_bytes().startswith(PNG_MAGIC)
+    assert "Title" not in png_info(output)
+    assert "Copyright" not in png_info(output)
 
 
 def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:

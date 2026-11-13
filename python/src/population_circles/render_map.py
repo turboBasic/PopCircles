@@ -29,9 +29,11 @@ from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
+    MapTextPlacement,
     Registry,
     coastline_dataset_key,
     load,
+    map_text_placement,
 )
 from population_circles.map_frame import (
     PLATE_CARREE,
@@ -164,11 +166,51 @@ def title_of(answer: Answer) -> str:
         else f"table {answer.provenance.table}"
     )
     return (
+        f"{answer.country.name + ': ' if answer.country is not None else ''}"
         f"{circle.radius_km:,.0f} km circle holding {answer.caption.share:.2%} of the population\n"
         f"{answer.caption.population:,.0f} people, "
         f"centred {textwrap.fill(plain_centre(answer), width=44, subsequent_indent='         ')}\n"
         f"answered from {source}"
     )
+
+
+def credits_of(
+    answer: Answer,
+    attribution: str,
+    coastline_attribution: str | None,
+    boundary_attribution: str | None,
+) -> str:
+    country_lines = lines_for(answer)
+    if answer.country is not None:
+        parts = [
+            f"Country: {answer.country.name} ({answer.country.id})",
+            f"Boundary credit: {boundary_attribution}",
+            f"Population credit: {attribution}",
+        ]
+    elif country_lines:
+        parts = [*country_lines, f"Population credit: {attribution}"]
+    else:
+        parts = [attribution]
+    if coastline_attribution and not any(coastline_attribution in part for part in parts):
+        parts.append(f"Coastline credit: {coastline_attribution}")
+    parts.append(
+        "Created by Andrii Melnyk with PopCircles — https://github.com/turboBasic/PopCircles"
+    )
+    return "\n".join(textwrap.fill(part, width=118) for part in parts)
+
+
+def png_metadata(
+    title: str,
+    copyright_text: str,
+    placement: tuple[MapTextPlacement, MapTextPlacement],
+) -> dict[str, str]:
+    title_placement, credits_placement = placement
+    metadata = {}
+    if title_placement == "metadata":
+        metadata["Title"] = title
+    if credits_placement == "metadata":
+        metadata["Copyright"] = copyright_text
+    return metadata
 
 
 def other_countries(
@@ -258,6 +300,7 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
     coastline_attribution: str | None = None,
     outline_and_credit: tuple[BaseGeometry | None, str] | None = None,
     other_countries: Sequence[BaseGeometry] = (),
+    text_placement: tuple[MapTextPlacement, MapTextPlacement] = ("raster", "raster"),
 ) -> Figure:
     if answer.country is not None and outline_and_credit is None:
         raise MissingCountryOutlineError
@@ -276,28 +319,15 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
     )
     try:
         title = title_of(answer)
-        country_lines = lines_for(answer)
-        if answer.country is not None:
-            footer_parts = [
-                f"Country: {answer.country.name} ({answer.country.id})",
-                f"Boundary credit: {boundary_attribution}",
-                f"Population credit: {attribution}",
-            ]
-        elif country_lines:
-            footer_parts = [*country_lines, f"Population credit: {attribution}"]
-        else:
-            footer_parts = [attribution]
-        if coastline_attribution and not any(
-            coastline_attribution in part for part in footer_parts
-        ):
-            footer_parts.append(f"Coastline credit: {coastline_attribution}")
-        footer = "\n".join(textwrap.fill(part, width=118) for part in footer_parts)
-        has_country_footer = answer.country is not None or bool(country_lines)
+        footer = credits_of(answer, attribution, coastline_attribution, boundary_attribution)
+        has_country_footer = answer.country is not None or bool(lines_for(answer))
         # Room for the title above and the wrapped citation below, since both are placed at figure
         # coordinates rather than left to a layout engine.
         title_lines = title.count("\n") + 1
-        top = 0.87 - 0.035 * max(0, title_lines - 3)
-        figure.subplots_adjust(left=0.03, right=0.97, top=top, bottom=0.16)
+        title_top = 0.87 - 0.035 * max(0, title_lines - 3)
+        top = title_top if text_placement[0] == "raster" else 0.98
+        bottom = 0.16 if text_placement[1] == "raster" else 0.03
+        figure.subplots_adjust(left=0.03, right=0.97, top=top, bottom=bottom)
         axes = figure.add_subplot(1, 1, 1)
         # Equal: degrees of longitude and latitude have the same length on the
         # frame stated in degrees, and the other frame is metres in both directions.
@@ -323,11 +353,13 @@ def render(  # noqa: PLR0913 — distinct source credits must remain distinguish
 
         # Anchored at its top, so an added title line grows into the margin rather than off
         # the top of the figure — which is silent, since nothing about a clipped artist fails.
-        annotate(figure, 0.985, title, 12.0, "top")
+        if text_placement[0] == "raster":
+            annotate(figure, 0.985, title, 12.0, "top")
         # Wrapped: at this width a one-line citation runs off both edges of the figure,
         # which is an attribution nobody can read and so not an attribution.
-        annotate(figure, 0.04 / 6.0 if has_country_footer else 0.055, footer, 6.5, "bottom")
-        if has_country_footer:
+        if text_placement[1] == "raster":
+            annotate(figure, 0.04 / 6.0 if has_country_footer else 0.055, footer, 6.5, "bottom")
+        if has_country_footer and text_placement[1] == "raster":
             canvas = cast(FigureCanvasAgg, figure.canvas)
             canvas.draw()
             footer_height = figure.texts[-1].get_window_extent(canvas.get_renderer()).height
@@ -375,21 +407,23 @@ def render_file(
     coastline, coastline_attribution = (
         (None, None) if no_coastlines else registered_coastline(registry)
     )
+    text_placement = map_text_placement()
     boundaries = load_map_boundaries(answer, registry)
     selected = boundaries.get(answer.country.id) if answer.country is not None else None
+    country_boundary_attribution = (
+        boundary_attribution or citation(registry, answer.country.boundary_dataset)
+        if answer.country is not None
+        else None
+    )
     figure = render(
         answer,
         projection,
         population_attribution,
         coastline=coastline,
         coastline_attribution=coastline_attribution,
+        text_placement=text_placement,
         outline_and_credit=(
-            (
-                selected,
-                boundary_attribution or citation(registry, answer.country.boundary_dataset),
-            )
-            if answer.country is not None
-            else None
+            (selected, country_boundary_attribution) if answer.country is not None else None
         ),
         **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
@@ -400,6 +434,16 @@ def render_file(
         figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
             output_path,
             dpi=200,
+            metadata=png_metadata(
+                title_of(answer),
+                credits_of(
+                    answer,
+                    population_attribution,
+                    coastline_attribution,
+                    country_boundary_attribution,
+                ),
+                text_placement,
+            ),
         )
     finally:
         plt.close(figure)
