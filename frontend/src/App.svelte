@@ -376,6 +376,7 @@
   .site-footer { margin-top: 2rem; padding: 1.25rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
   .site-footer a { color: inherit; }
   .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
+  .gallery-mode #world-result { grid-column: 1 / -1; }
   .gallery-mode .country { margin: 0; }
   .gallery-mode .figure-grid { grid-template-columns: minmax(0, 1fr); }
   .country h2 a { color: inherit; text-decoration: none; }
