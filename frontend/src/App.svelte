@@ -30,7 +30,7 @@
   let browserTrigger = $state(null);
   let browserPanel = $state(null);
   let countrySearch = $state(null);
-  let compactHeader = $state(false);
+  let headerShrink = $state(0);
 
   function restoreCountry(countries = data?.countries) {
     if (countries) {
@@ -103,7 +103,7 @@
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
     const handleHistory = () => restoreCountry();
-    const handleScroll = () => (compactHeader = window.scrollY > 40);
+    const handleScroll = () => (headerShrink = Math.min(window.scrollY / 120, 1));
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
     };
@@ -171,7 +171,7 @@
 </svelte:head>
 
 <main>
-  <header class:compact={compactHeader}>
+  <header style:--header-shrink={headerShrink}>
     <p class="eyebrow">
       PopCircles · Map gallery ·
       <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="turbobasic/PopCircles on GitHub">
@@ -324,26 +324,25 @@
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
-  header { position: sticky; top: 0; z-index: 4; padding: 4rem 0 1rem; background: var(--bg); border-bottom: 1px solid transparent; }
-  header.compact { padding: .6rem 0; border-color: var(--line); }
+  header { position: sticky; top: 0; z-index: 4; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
   .repository-link { color: var(--muted); font: inherit; letter-spacing: inherit; text-decoration: none; text-transform: inherit; }
   .repository-link svg { width: 1.33em; height: 1.33em; overflow: visible; vertical-align: -.285em; }
   .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
-  h1 { max-width: 850px; margin: .7rem 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.045em; }
-  header.compact h1 { margin: .2rem 0 .5rem; font-size: 1.35rem; }
-  header.compact .intro, header.compact .attribution { display: none; }
+  h1 { max-width: 850px; margin: calc(.7rem - .5rem * var(--header-shrink)) 0 calc(1rem - .5rem * var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink)) + 1.35rem * var(--header-shrink)); line-height: 1.08; letter-spacing: -.045em; }
+  header .intro, header .attribution { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
   .intro, .attribution, .status, .empty, figcaption, .copy-status { color: var(--muted); }
   .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-  aside { position: sticky; top: 1rem; z-index: 2; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  aside { position: sticky; top: calc(7rem + 3rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (7rem + 3rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .country-browser-panel { max-height: calc(100vh - 10rem); overflow: auto; }
+  .country-browser-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; max-height: none; overflow: hidden; }
   .zero-population-filter { display: flex; align-items: center; gap: .5rem; margin: .75rem 0; color: var(--muted); }
   .zero-population-filter input { width: auto; padding: 0; }
   .drawer-title { display: none; }
   label { display: block; margin: .8rem 0 .5rem; font-weight: 600; }
   input { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
-  nav { display: grid; gap: .35rem; margin-top: 1rem; }
+  nav { display: grid; flex: 1; gap: .35rem; min-height: 0; margin-top: 1rem; overflow-y: auto; }
   nav a { padding: .25rem 0; color: var(--muted); text-decoration: none; }
   nav a:hover, nav a.active { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
   .status, .copy-status { font-size: .85rem; }
@@ -374,7 +373,7 @@
   figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
     .explorer { grid-template-columns: 1fr; }
-    aside { position: static; padding: 0; border: 0; background: transparent; }
+    aside { position: static; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
     summary { padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; }
     .country-browser-panel { display: none; }
     details[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; }
