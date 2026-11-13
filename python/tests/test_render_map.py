@@ -453,6 +453,17 @@ def test_country_figure_shows_only_the_approved_visible_footer(
     population_credit = citation(REGISTRY, DATASET)
     boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
     coastline, _ = registered_coastline(REGISTRY)
+    footer_calls: list[tuple[float, str, float]] = []
+    current_annotate = render_map_module.annotate
+
+    def capture_annotate(
+        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
+    ) -> None:
+        if text == VISIBLE_FOOTER:
+            footer_calls.append((y, alignment, size))
+        current_annotate(figure, y, text, size, alignment)
+
+    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
     figure = render(
         answer,
         ORTHOGRAPHIC,
@@ -471,13 +482,11 @@ def test_country_figure_shows_only_the_approved_visible_footer(
         assert normalised(population_credit) not in normalised(rendered_text)
         assert normalised(boundary_credit) not in normalised(rendered_text)
         assert citation(REGISTRY, "coastline-1to110m") == ""
-        footer_artist = figure.texts[-1]
-        assert footer_artist.get_ha() == "center"
-        assert footer_artist.get_va() == "bottom"
-        assert footer_artist.get_fontsize() == FOOTER_SIZE
-        assert footer_artist.get_position()[1] <= FOOTER_BOTTOM
+        assert footer_calls == [(FOOTER_BOTTOM, "bottom", FOOTER_SIZE)]
+        assert figure.texts[-1].get_position() == (0.5, FOOTER_BOTTOM)
         assert footer.x0 >= 0
         assert footer.x1 <= figure.bbox.x1
+        assert (footer.x0 + footer.x1) / 2 == pytest.approx(figure.bbox.width / 2, abs=1)
         assert footer.y0 >= 0
         assert footer.y1 <= axes.y0
     finally:

@@ -231,8 +231,7 @@ def xmp_packet(properties: Mapping[str, str | float | int]) -> str:
     rdf = ET.SubElement(xmp, f"{{{namespaces['rdf']}}}RDF")
     description = ET.SubElement(rdf, f"{{{namespaces['rdf']}}}Description")
     for name, value in properties.items():
-        if value is not None:
-            description.set(f"{{{namespaces['pc']}}}{name}", str(value))
+        description.set(f"{{{namespaces['pc']}}}{name}", str(value))
     return ET.tostring(xmp, encoding="unicode", xml_declaration=True)
 
 

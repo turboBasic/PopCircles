@@ -1,22 +1,23 @@
 import json
 import subprocess
 import sys
-from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import Literal
+from unittest.mock import Mock
 
 import pytest
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
-from shapely.geometry.base import BaseGeometry
 
 from population_circles import circle_map, render_map
 from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
-from population_circles.dataset_registry import MapTextPlacement, load
+from population_circles.dataset_registry import load
 from population_circles.map_frame import ORTHOGRAPHIC
 from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
+
+CUSTOM_EARTH_RADIUS_KM = 7000.0
 
 
 @pytest.fixture(autouse=True)
@@ -70,7 +71,12 @@ def test_reuse_forwards_every_parameter_and_draws_this_document(options: Options
             "4",
         ],
     ]
-    assert options.document.read_bytes() == children.stdout
+    published = json.loads(options.document.read_bytes())
+    original = json.loads(children.stdout)
+    assert published["result"] == original["result"]
+    assert published["render_metadata"]["Description"] == (
+        f"Answered from population dataset {DATASET} at decimation k=10"
+    )
     assert options.output.read_bytes().startswith(PNG_MAGIC)
 
 
@@ -289,34 +295,27 @@ def test_success_uses_the_documents_credit_and_earth_model(
     options: Options,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seen: list[tuple[float, str]] = []
+    seen_credits: list[str] = []
     original = render_map.render
+    original_copyright = render_map.copyright_of
+    render_spy = Mock(wraps=original)
 
-    def capture(  # noqa: PLR0913 — mirror the renderer call to assert its earth model
+    def capture_copyright(
         answer: Answer,
-        projection: str,
         attribution: str,
-        *,
-        coastline: BaseGeometry | None,
-        coastline_attribution: str | None = None,
-        outline_and_credit: tuple[BaseGeometry, str] | None = None,
-        other_countries: Sequence[BaseGeometry] = (),
-        text_placement: tuple[MapTextPlacement, MapTextPlacement] = ("raster", "raster"),
-    ) -> Figure:
-        seen.append((answer.circle.earth_radius_km, attribution))
-        return original(
-            answer,
-            projection,
-            attribution,
-            coastline=coastline,
-            coastline_attribution=coastline_attribution,
-            outline_and_credit=outline_and_credit,
-            other_countries=other_countries,
-            text_placement=text_placement,
-        )
+        coastline_attribution: str | None,
+        boundary_attribution: str | None,
+    ) -> str:
+        seen_credits.append(attribution)
+        return original_copyright(answer, attribution, coastline_attribution, boundary_attribution)
 
-    monkeypatch.setattr(render_map, "render", capture)
+    monkeypatch.setattr(render_map, "render", render_spy)
+    monkeypatch.setattr(render_map, "copyright_of", capture_copyright)
     payload = document()
-    payload["earth_model"]["radius_km"] = 7000.0
+    payload["earth_model"]["radius_km"] = CUSTOM_EARTH_RADIUS_KM
     workflow(options, Children([0, 0], json.dumps(payload).encode()))
-    assert seen == [(7000.0, render_map.citation(load(), DATASET))]
+    assert render_spy.call_args is not None
+    render_answer = render_spy.call_args.args[0]
+    assert isinstance(render_answer, Answer)
+    assert render_answer.circle.earth_radius_km == CUSTOM_EARTH_RADIUS_KM
+    assert seen_credits == [render_map.citation(load(), DATASET)]
