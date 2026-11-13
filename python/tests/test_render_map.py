@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
+import population_circles.dataset_registry as dataset_registry_module
 import population_circles.render_map as render_map_module
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap
@@ -56,6 +57,45 @@ def empty_boundaries(
     _answer: Answer, _registry: Registry, _root: Path = Path()
 ) -> dict[str, BaseGeometry]:
     return {}
+
+
+@pytest.mark.parametrize(
+    ("settings", "expected"),
+    [
+        ("", ("metadata", "metadata")),
+        ('[map_text]\ntitle = "raster"\ncredits = "metadata"\n', ("raster", "metadata")),
+    ],
+)
+def test_map_text_placement_defaults_to_metadata_and_accepts_raster(
+    settings: str,
+    expected: tuple[str, str],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "config.toml").write_text(settings, encoding="utf-8")
+    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
+    dataset_registry_module.map_text_placement.cache_clear()
+    try:
+        assert dataset_registry_module.map_text_placement() == expected
+    finally:
+        dataset_registry_module.map_text_placement.cache_clear()
+
+
+def test_map_text_placement_rejects_unsupported_values(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "config.toml").write_text(
+        '[map_text]\ntitle = "pixels"\n', encoding="utf-8"
+    )
+    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
+    dataset_registry_module.map_text_placement.cache_clear()
+    try:
+        with pytest.raises(ValueError, match=r"config.toml: map_text\.title"):
+            dataset_registry_module.map_text_placement()
+    finally:
+        dataset_registry_module.map_text_placement.cache_clear()
 
 
 @pytest.fixture(autouse=True)

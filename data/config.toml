@@ -6,6 +6,10 @@ country_combination = "gpw-2020-gisco-2024"
 coastline_dataset = "CNTR_BN_01M_2024_4326_COASTL"
 # coastline_dataset = "coastline-1to110m"
 
+[map_text]
+title = "metadata"
+credits = "metadata"
+
 [combinations.gpw-2020-gisco-2024]
 population_source = "dataset:population-count-2020-30arcsec"
 boundary_source = "dataset:gisco-countries-2024-1m"
