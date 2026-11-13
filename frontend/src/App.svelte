@@ -149,6 +149,7 @@
     </p>
     <h1>One circle, half the population.</h1>
     <p class="intro">Explore country and world population circles.</p>
+    <p class="attribution">© EuroGeographics for the administrative boundaries</p>
   </header>
 
   {#if error}
@@ -315,7 +316,7 @@
   .repository-link svg { width: 1.33em; height: 1.33em; overflow: visible; vertical-align: -.285em; }
   .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
   h1 { max-width: 850px; margin: .7rem 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.045em; }
-  .intro, .status, .empty, figcaption, .copy-status { color: var(--muted); }
+  .intro, .attribution, .status, .empty, figcaption, .copy-status { color: var(--muted); }
   .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
   aside { position: sticky; top: 1rem; z-index: 2; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }

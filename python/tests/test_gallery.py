@@ -30,6 +30,11 @@ from test_render_map import country_circle_document
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
 WORLD_POPULATION = 1_254_363_867.93
+VISIBLE_FOOTER = (
+    "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
+    "© EuroGeographics for the administrative boundaries · "
+    "See full attribution in image metadata"
+)
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 EXPECTED_COUNTRY_CLI_CALLS = 2
@@ -107,6 +112,7 @@ def assert_built_site(output: Path) -> None:
     assert "Nearest settlement:" in bundle
     assert "Math.round" in bundle
     assert "cdn.jsdelivr.net" not in bundle
+    assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
 
 
@@ -794,8 +800,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
             },
         ],
     }
-    assert "Population credit: Population fixture credit" in " ".join(annotations)
-    assert "Boundary credit: Boundary fixture credit" in " ".join(annotations)
+    assert VISIBLE_FOOTER in annotations
     assert any("Alpha (AA): 100 km circle" in annotation for annotation in annotations)
     with Image.open(drawn[0].figure) as image:
         assert "Title" not in image.info

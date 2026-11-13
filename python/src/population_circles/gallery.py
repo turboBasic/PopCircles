@@ -348,10 +348,8 @@ def render_document(
         figure = render(
             answer,
             PLATE_CARREE,
-            population_attribution,
             coastline=context.coastline,
-            coastline_attribution=context.coastline_attribution,
-            outline_and_credit=outline_and_credit,
+            country_outline=outline,
             other_countries=other_countries(boundaries, answer),
             text_placement=context.text_placement,
         )
