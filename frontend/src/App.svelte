@@ -2,26 +2,27 @@
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import {
-    countryFromHash,
+    entryFromHash,
     countryUrl,
-    defaultCountry,
     filterCountries,
-    visibleCountries
+    visibleEntries
   } from './gallery.js';
 
   let data = $state(null);
   let error = $state('');
   let query = $state('');
   let includeZeroPopulation = $state(false);
-  let selectedCountry = $state(null);
-  let allOpen = $state(false);
-  let matches = $derived(
-    data ? filterCountries(data.countries, query, includeZeroPopulation) : []
-  );
-  let visibleCountryResults = $derived(
+  let selectedEntry = $state(null);
+  let entries = $derived(
     data
-      ? visibleCountries(data.countries, selectedCountry?.anchor, allOpen, includeZeroPopulation)
+      ? [{ name: 'World', anchor: 'world-result', figures: data.world }, ...data.countries]
       : []
+  );
+  let matches = $derived(
+    data ? [entries[0], ...filterCountries(data.countries, query, includeZeroPopulation)] : []
+  );
+  let visibleMapEntries = $derived(
+    visibleEntries(entries, selectedEntry?.anchor ?? null, includeZeroPopulation)
   );
   let browserOpen = $state(false);
   let themeLight = $state(false);
@@ -34,14 +35,8 @@
   let countrySearch = $state(null);
   let headerShrink = $state(0);
 
-  function restoreCountry(countries = data?.countries) {
-    if (countries) {
-      selectedCountry = countryFromHash(
-        countries,
-        window.location.hash,
-        defaultCountry(countries)
-      );
-    }
+  function restoreEntry(availableEntries = entries) {
+    selectedEntry = entryFromHash(availableEntries, window.location.hash);
   }
 
   function closeBrowser() {
@@ -78,9 +73,8 @@
     }
   }
 
-  function selectCountry(country) {
-    selectedCountry = country;
-    allOpen = false;
+  function selectEntry(entry) {
+    selectedEntry = entry;
     copyStatus = '';
     window.clearTimeout(copyTimeout);
     closeBrowser();
@@ -111,7 +105,7 @@
   onMount(() => {
     let active = true;
     mobileNavigation = window.matchMedia('(max-width: 800px)');
-    const handleHistory = () => restoreCountry();
+    const handleHistory = () => restoreEntry();
     const handleScroll = () => (headerShrink = Math.min(window.scrollY / 120, 1));
     const handleNavigationChange = () => {
       browserOpen = !mobileNavigation.matches;
@@ -131,7 +125,7 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        restoreCountry(value.countries);
+        restoreEntry([{ name: 'World', anchor: 'world-result', figures: value.world }, ...value.countries]);
       })
       .catch((cause) => {
         if (active) error = cause.message;
@@ -196,14 +190,6 @@
         <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
           Use {themeLight ? 'dark' : 'light'} theme
         </button>
-        <button
-          type="button"
-          aria-controls="country-results-list"
-          aria-expanded={allOpen}
-          onclick={() => (allOpen = !allOpen)}
-        >
-          {allOpen ? 'Collapse all country maps' : 'Expand all country maps'}
-        </button>
       </div>
     {/if}
   </header>
@@ -214,7 +200,7 @@
     <p role="status">Loading gallery…</p>
   {:else}
     <div class="explorer">
-      <aside aria-label="Country navigation">
+      <aside aria-label="Map navigation">
         <details
           bind:this={browser}
           bind:open={browserOpen}
@@ -228,7 +214,7 @@
             aria-controls="country-browser-panel"
             aria-expanded={browserOpen}
           >
-            Browse countries <span class="status">{data.countries.length} countries</span>
+            Browse maps <span class="status">{matches.length} maps</span>
           </summary>
           <div
             bind:this={browserPanel}
@@ -239,14 +225,14 @@
             aria-labelledby={mobileNavigation?.matches && browserOpen ? 'country-browser-title' : undefined}
             onkeydown={handleBrowserKeydown}
           >
-            <h2 class="drawer-title" id="country-browser-title">Browse countries</h2>
-            <label for="country-search">Search countries</label>
+            <h2 class="drawer-title" id="country-browser-title">Browse maps</h2>
+            <label for="country-search">Search maps</label>
             <input
               bind:this={countrySearch}
               id="country-search"
               type="search"
               bind:value={query}
-              placeholder="Search countries"
+              placeholder="Search maps"
               autocomplete="off"
             />
             <label class="zero-population-filter">
@@ -254,65 +240,47 @@
               Include territories with zero population
             </label>
             <p class="visually-hidden" role="status" aria-live="polite">
-              {query ? `${matches.length} matching countries` : ''}
+              {query ? `${matches.length} matching maps` : ''}
             </p>
-            <nav aria-label="Countries">
-              {#each matches as country (country.anchor)}
+            <nav aria-label="Maps">
+              {#each matches as entry (entry.anchor)}
                 <a
-                  class:active={selectedCountry?.anchor === country.anchor}
-                  aria-current={selectedCountry?.anchor === country.anchor ? 'page' : undefined}
-                  href={`#${country.anchor}`}
-                  onclick={() => selectCountry(country)}
+                  class:active={selectedEntry?.anchor === entry.anchor}
+                  aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
+                  href={`#${entry.anchor}`}
+                  onclick={() => selectEntry(entry)}
                 >
-                  {country.name}
+                  {entry.name}
                 </a>
               {:else}
-                <p class="empty">No matching countries.</p>
+                <p class="empty">No matching maps.</p>
               {/each}
             </nav>
           </div>
         </details>
-        <p class="status" role="status" aria-live="polite">{matches.length} countries</p>
+        <p class="status" role="status" aria-live="polite">{matches.length} maps</p>
       </aside>
 
       <div class="results">
-        {#if data.world.length}
-          <details class="world">
-            <summary>World</summary>
-            <div class="figure-grid">
-              {#each data.world as figure (figure.map)}
-                <figure>
-                  <a href={figure.map}><img src={figure.map} alt={figure.alt} loading="eager" /></a>
-                  <figcaption>{@render figureCaption(figure)}</figcaption>
-                </figure>
-              {/each}
-            </div>
-          </details>
-        {/if}
-
-        <section class="country-results" aria-label="Country maps">
-          <div class="country-actions">
-            <h2>Countries</h2>
-          </div>
-
-          <div id="country-results-list" class:gallery-mode={allOpen} class:single-map={!allOpen}>
-            {#each visibleCountryResults as country (country.anchor)}
-              <section class="country" id={country.anchor}>
-                <h3>{country.name}</h3>
-                {#if country.missing}
+        <section class="map-results" aria-label="Maps">
+          <div id="map-results-list" class:gallery-mode={selectedEntry === null} class:single-map={selectedEntry !== null}>
+            {#each visibleMapEntries as entry (entry.anchor)}
+              <section class="country" id={entry.anchor}>
+                <h2><a href={`#${entry.anchor}`} onclick={() => selectEntry(entry)}>{entry.name}</a></h2>
+                {#if entry.missing}
                   <p class="empty">No 50% result is available for this country.</p>
                 {:else}
                   <div class="figure-grid">
-                    {#each country.figures as figure (figure.map)}
+                    {#each entry.figures as figure (figure.map)}
                       <figure>
                         <a href={figure.map}>
                           <img
                             src={figure.map}
                             alt={figure.alt}
-                            loading={country.anchor === selectedCountry?.anchor ? 'eager' : 'lazy'}
+                            loading={selectedEntry?.anchor === entry.anchor ? 'eager' : 'lazy'}
                           />
                         </a>
-                        <figcaption>{@render figureCaption(figure, country.anchor)}</figcaption>
+                        <figcaption>{@render figureCaption(figure, entry.anchor === 'world-result' ? null : entry.anchor)}</figcaption>
                       </figure>
                     {/each}
                   </div>
@@ -365,14 +333,7 @@
   .status { font-size: .85rem; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
-  .world, .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
-  .world > summary { justify-content: flex-start; font-size: 1.25rem; list-style: none; }
-  .world > summary::-webkit-details-marker { display: none; }
-  .world > summary::after { content: ''; width: 1rem; height: 1rem; margin-left: auto; background: linear-gradient(var(--accent), var(--accent)) center / .75rem 2px no-repeat, linear-gradient(var(--accent), var(--accent)) center / 2px .75rem no-repeat; }
-  .world[open] > summary::after { background: linear-gradient(var(--accent), var(--accent)) center / .75rem 2px no-repeat; }
-  .world > .figure-grid { margin-top: 1.25rem; }
-  .country-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2rem 0 .75rem; flex-wrap: wrap; }
-  .country-actions h2 { margin: 0; }
+  .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .map-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
   header .map-actions { margin-top: .75rem; }
   button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
@@ -380,10 +341,11 @@
   .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
   .site-footer { margin-top: 2rem; padding: 1.25rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
   .site-footer a { color: inherit; }
-  .country-results { display: block; }
   .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
   .gallery-mode .country { margin: 0; }
   .gallery-mode .figure-grid { grid-template-columns: minmax(0, 1fr); }
+  .country h2 a { color: inherit; text-decoration: none; }
+  .country h2 a:hover { text-decoration: underline; text-underline-offset: .2em; }
   .figure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; }
   figure { min-width: 0; margin: 0; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); border-radius: .8rem; }
   figure img { display: block; width: 100%; height: auto; }
