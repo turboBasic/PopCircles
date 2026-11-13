@@ -210,6 +210,38 @@ def test_publish_builds_in_isolation_persists_rendered_results_and_waits_for_run
     assert not any(command[:3] == ("gh", "release", "create") for command in github.commands)
 
 
+def test_rendered_results_keep_existing_json_key_order_when_values_match(
+    layout: tuple[Path, Path],
+) -> None:
+    results, site = layout
+    previous = (
+        json.dumps(
+            {
+                "document": "most-populous",
+                "render_metadata": {"Description": "same", "Title": "same"},
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    generated = (
+        json.dumps(
+            {
+                "document": "most-populous",
+                "render_metadata": {"Title": "same", "Description": "same"},
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    (results / "world.json").write_text(previous, encoding="utf-8")
+    (site / "world.json").write_text(generated, encoding="utf-8")
+
+    pg.persist_rendered_results(site)
+
+    assert (results / "world.json").read_text(encoding="utf-8") == previous
+
+
 def test_publish_reuses_one_cache_across_temporary_build_workspaces(
     layout: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:

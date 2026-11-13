@@ -123,6 +123,11 @@ def persist_rendered_results(site: Path) -> None:
             previous = destination.read_bytes()
             if previous == content or same_country_answer(previous, content):
                 continue
+            try:
+                if json.loads(previous) == payload:
+                    continue
+            except json.JSONDecodeError:
+                pass
         temporary = RESULTS / f".{source.name}.{uuid4().hex}.tmp"
         try:
             temporary.write_bytes(content)
