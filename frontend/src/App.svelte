@@ -45,6 +45,11 @@
     browserTrigger.focus();
   }
 
+  function toggleBrowser() {
+    if (browserOpen) closeBrowser();
+    else browserOpen = true;
+  }
+
   function handleBrowserKeydown(event) {
     if (!mobileNavigation?.matches || !browserOpen) return;
     if (event.key === 'Escape') {
@@ -68,16 +73,23 @@
   }
 
   function handlePointerdown(event) {
-    if (mobileNavigation?.matches && browserOpen && !browser.contains(event.target)) {
+    if (
+      mobileNavigation?.matches &&
+      browserOpen &&
+      !browser.contains(event.target) &&
+      !browserTrigger.contains(event.target)
+    ) {
       closeBrowser();
     }
   }
 
   function selectEntry(entry) {
+    const returnFocus = mobileNavigation?.matches && browserOpen;
     selectedEntry = entry;
     copyStatus = '';
     window.clearTimeout(copyTimeout);
     closeBrowser();
+    if (returnFocus) requestAnimationFrame(() => browserTrigger.focus());
   }
 
   function showCopyStatus(message) {
@@ -174,24 +186,37 @@
   <title>PopCircles</title>
 </svelte:head>
 
-<main>
-  <header style:--header-shrink={headerShrink}>
-    <p class="eyebrow">
-      PopCircles ·
-      <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="turbobasic/PopCircles on GitHub">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.75 2.05 3.44 1.57.1-.73.39-1.23.7-1.52-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.12-1.44 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.52.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
-        GitHub
-      </a>
-    </p>
+<main style:--header-shrink={headerShrink}>
+  <header>
+    <div class="top-bar">
+      <p class="eyebrow">
+        PopCircles ·
+        <a class="repository-link" href="https://github.com/turboBasic/PopCircles" aria-label="turbobasic/PopCircles on GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.75 2.05 3.44 1.57.1-.73.39-1.23.7-1.52-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.12-1.44 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.52.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
+          GitHub
+        </a>
+      </p>
+      {#if data}
+        <div class="map-actions" aria-label="Gallery controls">
+          <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
+            Use {themeLight ? 'dark' : 'light'} theme
+          </button>
+          <button
+            bind:this={browserTrigger}
+            class="mobile-browser-toggle"
+            type="button"
+            aria-controls="country-browser-panel"
+            aria-expanded={browserOpen}
+            aria-label={browserOpen ? 'Close map navigation' : 'Open map navigation'}
+            onclick={toggleBrowser}
+          >
+            Maps
+          </button>
+        </div>
+      {/if}
+    </div>
     <h1>One circle, half the population.</h1>
     <p class="intro">Explore country and world population circles.</p>
-    {#if data}
-      <div class="map-actions" aria-label="Gallery controls">
-        <button type="button" aria-pressed={themeLight} onclick={toggleTheme}>
-          Use {themeLight ? 'dark' : 'light'} theme
-        </button>
-      </div>
-    {/if}
   </header>
 
   {#if error}
@@ -209,7 +234,6 @@
           }}
         >
           <summary
-            bind:this={browserTrigger}
             id="country-browser-trigger"
             aria-controls="country-browser-panel"
             aria-expanded={browserOpen}
@@ -310,14 +334,15 @@
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
   header { position: sticky; top: 0; z-index: 4; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .repository-link { color: var(--muted); font: inherit; letter-spacing: inherit; text-decoration: none; text-transform: inherit; }
   .repository-link svg { width: 1.33em; height: 1.33em; overflow: visible; vertical-align: -.285em; }
-  .eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
-  h1 { max-width: 850px; margin: calc(.7rem - .5rem * var(--header-shrink)) 0 calc(1rem - .5rem * var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink)) + 1.35rem * var(--header-shrink)); line-height: 1.08; letter-spacing: -.045em; }
+  .eyebrow { margin: 0; color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
   header .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
   .intro, .status, .empty, figcaption, .site-footer { color: var(--muted); }
   .explorer { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-  aside { position: sticky; top: calc(7rem + 3rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (7rem + 3rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  aside { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -334,8 +359,8 @@
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { min-width: 0; padding-bottom: 4rem; }
   .country { margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
-  .map-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
-  header .map-actions { margin-top: .75rem; }
+  .map-actions { display: flex; align-items: center; gap: .5rem; }
+  .mobile-browser-toggle { display: none; }
   button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
   button:hover { border-color: var(--accent); }
   .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
@@ -354,8 +379,9 @@
   figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
     .explorer { grid-template-columns: 1fr; }
-    aside { position: static; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
-    summary { padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; }
+    aside { position: static; z-index: auto; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
+    aside summary { display: none; }
+    .mobile-browser-toggle { display: block; }
     .country-browser-panel { display: none; }
     details[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; }
     .drawer-title { display: block; }
