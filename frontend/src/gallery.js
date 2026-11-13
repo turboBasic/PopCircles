@@ -16,8 +16,9 @@ export function countryFromHash(countries, hash, fallback) {
   return countries.find((country) => country.anchor === anchor) ?? fallback;
 }
 
-export function visibleCountries(countries, selectedAnchor, expanded) {
-  return expanded ? countries : countries.filter((country) => country.anchor === selectedAnchor);
+export function visibleCountries(countries, selectedAnchor, expanded, includeZeroPopulation = false) {
+  return (expanded ? countries : countries.filter((country) => country.anchor === selectedAnchor))
+    .filter((country) => includeZeroPopulation || !country.missing);
 }
 
 export function countryUrl(currentUrl, anchor) {

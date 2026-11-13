@@ -1,0 +1,2 @@
+# Country feature IDs that never appear in Gallery maps or country cards.
+excluded_country_ids = []
