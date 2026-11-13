@@ -348,15 +348,7 @@ The dataset keys are the `dataset:` values for `boundary_source` and `defaults.c
 the `gallery-handoff` draft release and dispatch the Pages workflow. It uses prepared country data, so
 the full-resolution population raster is not required when the selected prepared bundle is available.
 
-By default, publishing reuses the saved 50% country sweep only when its full selection and country list
-still match the configuration. If the sweep is missing or stale, the command runs one batch sweep. To
-deliberately recalculate even a matching sweep, run:
-
-```sh
-mise run gallery:publish -- --refresh-country-sweep
-```
-
-The refreshed sweep and country results are saved under `results/` only after every map renders
+Publishing refreshes the sweep and saves its country results under `results/` only after every map renders
 successfully. A failed render leaves the previous result documents and `build/gallery` in place. After a
 successful local build, the command leaves the site in `build/gallery`, uploads a uniquely named ZIP to
 the draft handoff release, dispatches Pages with that exact asset name, and waits for the deployment.

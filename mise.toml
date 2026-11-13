@@ -91,7 +91,7 @@ run = "python -m http.server --bind 127.0.0.1 --directory build/gallery 8000"
 [tasks."gallery:publish"]
 description = "Build and publish the gallery through the draft release handoff"
 depends = ["deps"]
-run = "uv run publish-gallery publish"
+run = "uv run publish-gallery publish --refresh-country-sweep"
 
 [tasks."gallery:stage"]
 description = "Stage a validated gallery handoff ZIP for Pages"
