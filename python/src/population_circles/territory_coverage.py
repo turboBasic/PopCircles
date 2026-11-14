@@ -2,7 +2,6 @@ import math
 from collections.abc import Iterable
 
 from pyproj import CRS, Transformer
-from shapely import transform
 from shapely.affinity import translate
 from shapely.geometry import MultiPolygon, Polygon, box
 from shapely.geometry.base import BaseGeometry
@@ -15,6 +14,7 @@ from population_circles.circle_geometry import (
     cap,
     geodetic_crs,
     geographic,
+    polygons,
 )
 
 HALF_TURN_DEG = 180.0
@@ -37,17 +37,22 @@ def _unwrap_ring(points: Iterable[tuple[float, float]]) -> list[tuple[float, flo
 
 
 def _world_parts(geometry: BaseGeometry) -> tuple[Polygon, ...]:
-    source = (geometry,) if isinstance(geometry, Polygon) else geometry.geoms
+    if isinstance(geometry, Polygon):
+        source = (geometry,)
+    elif isinstance(geometry, MultiPolygon):
+        source = geometry.geoms
+    else:
+        message = "territory geometry must be a polygon or multipolygon"
+        raise TypeError(message)
     parts: list[Polygon] = []
     for polygon in source:
-        if not isinstance(polygon, Polygon):
-            message = "territory geometry must contain only polygons"
-            raise TypeError(message)
-        exterior = _unwrap_ring(polygon.exterior.coords)
+        exterior = _unwrap_ring(
+            [(float(point[0]), float(point[1])) for point in polygon.exterior.coords]
+        )
         middle = sum(lon for lon, _ in exterior[:-1]) / (len(exterior) - 1)
-        holes = []
+        holes: list[list[tuple[float, float]]] = []
         for ring in polygon.interiors:
-            hole = _unwrap_ring(ring.coords)
+            hole = _unwrap_ring([(float(point[0]), float(point[1])) for point in ring.coords])
             hole_middle = sum(lon for lon, _ in hole[:-1]) / (len(hole) - 1)
             shift = 360.0 * round((middle - hole_middle) / 360.0)
             holes.append([(lon + shift, lat) for lon, lat in hole])
@@ -59,6 +64,23 @@ def _world_parts(geometry: BaseGeometry) -> tuple[Polygon, ...]:
             elif isinstance(clipped, MultiPolygon):
                 parts.extend(clipped.geoms)
     return tuple(parts)
+
+
+def _project_points(
+    points: Iterable[tuple[float, float]], transformer: Transformer
+) -> list[tuple[float, float]]:
+    return [transformer.transform(lon, lat) for lon, lat in points]
+
+
+def _project_polygon(polygon: Polygon, transformer: Transformer) -> Polygon:
+    exterior = _project_points(
+        [(float(point[0]), float(point[1])) for point in polygon.exterior.coords], transformer
+    )
+    holes = [
+        _project_points([(float(point[0]), float(point[1])) for point in ring.coords], transformer)
+        for ring in polygon.interiors
+    ]
+    return Polygon(exterior, holes)
 
 
 def equal_area_crs(earth_radius_km: float) -> CRS:
@@ -85,7 +107,7 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
             message = "territory geometry must be non-empty and valid"
             raise ValueError(message)
         parts = _world_parts(territory)
-        projected = [transform(part, to_equal_area.transform, interleaved=False) for part in parts]
+        projected = [_project_polygon(part, to_equal_area) for part in parts]
         territory_parts.extend(part for part in projected if not part.is_empty)
     land = unary_union(territory_parts)
     territory_area = land.area
@@ -95,7 +117,9 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
 
     built = cap(circle.centre, radius_km, earth_radius_km)
     circle_parts = geographic(built)
-    projected_circle = transform(circle_parts, to_equal_area.transform, interleaved=False)
+    projected_circle = unary_union(
+        [_project_polygon(part, to_equal_area) for part in polygons(circle_parts)]
+    )
     share = land.intersection(projected_circle).area / territory_area
     if not math.isfinite(share) or not 0.0 <= share <= 1.0:
         message = "territory coverage must be finite and within [0, 1]"

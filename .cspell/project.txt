@@ -46,7 +46,6 @@ ureq
 vite
 xdist
 xmpmeta
-xoff
 
 # --- Domain vocabulary ---
 antimeridian
@@ -159,6 +158,7 @@ verticalalignment
 weezl
 wght
 xlim
+xoff
 ylim
 zerocopy
 zorder
