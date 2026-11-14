@@ -15,16 +15,18 @@ geometry. This narrowly supersedes ADR 0014's ban on Python numeric interpretati
 not read population rasters, tables, or ledgers. Rust omits the field because it has no source geometry.
 
 Transform circle and territory geometry to a Mollweide equal-area CRS built with the result's spherical
-radius. GISCO polygon edges are the straight segments between their stored longitude/latitude vertices;
-preserve holes and multipart features. Unwrap rings at the antimeridian before splitting them into the
-world window. For world coverage, union projected source features before measuring so overlaps count
-once. The measured fraction is the intersection area divided by the selected territory area.
+radius. GISCO edges are straight segments between stored longitude/latitude vertices; unwrap rings at
+the projection seam and densify those segments to at most 0.01 degrees before projecting. Preserve
+holes and multipart features. For world coverage, union projected source features before measuring so
+overlaps count once. The measured fraction is the intersection area divided by the selected territory
+area.
 
 Approximate the circle boundary with the existing 720-sided buffer. In its azimuthal-equidistant
-construction, every edge lies at most `r * (1 - cos(pi / 720))` inside the spherical cap of radius
-`r`. Therefore the missed circle area, and the absolute share error, are bounded by the area of the
-spherical annulus of that width divided by the measured territory area. The adapter computes this
-bound, capped at one (the largest possible absolute share error), and checks it is finite.
+construction, each edge lies at most `r * (1 - cos(pi / 720))` inside the spherical cap of radius `r`;
+add the existing 10 m bound for geographic seam and pole cuts. The adapter adds the area difference
+between projections at 0.01-degree and 0.005-degree source-segment spacing to the spherical annulus
+area, then divides by territory area. This is a checkable bound on the circle approximation's effect
+on the share, capped at one (the largest possible absolute share error).
 
 ## Context
 

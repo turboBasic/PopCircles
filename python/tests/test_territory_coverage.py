@@ -24,7 +24,7 @@ def test_share_uses_circle_intersection_over_territory_area() -> None:
 
     assert territory_share(circle, [box(-0.1, -0.1, 0.1, 0.1)]) == pytest.approx(1.0)
     share = territory_share(circle, [box(-2.0, -1.0, 2.0, 1.0)])
-    assert 0.0 < share < 1.0
+    assert share == pytest.approx(0.318, abs=0.01)
     assert territory_share(circle, [box(10.0, 10.0, 11.0, 11.0)]) == pytest.approx(0.0)
 
 

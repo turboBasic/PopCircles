@@ -2,6 +2,7 @@ import math
 from collections.abc import Iterable
 
 from pyproj import CRS, Transformer
+from shapely import segmentize
 from shapely.affinity import scale, translate
 from shapely.geometry import MultiPolygon, Point, Polygon, box
 from shapely.geometry.base import BaseGeometry
@@ -17,6 +18,8 @@ from population_circles.circle_geometry import (
 )
 
 HALF_TURN_DEG = 180.0
+MAX_SOURCE_SEGMENT_DEG = 0.01
+GEOGRAPHIC_CUT_SLACK_KM = 0.01
 WORLD = box(-HALF_TURN_DEG, -90.0, HALF_TURN_DEG, 90.0)
 
 
@@ -83,25 +86,35 @@ def _project_points(
     return [transformer.transform(lon, lat) for lon, lat in points]
 
 
-def _project_polygon(polygon: Polygon, transformer: Transformer) -> Polygon:
+def _project_polygon(
+    polygon: Polygon,
+    transformer: Transformer,
+    max_segment_degrees: float = MAX_SOURCE_SEGMENT_DEG,
+) -> Polygon:
+    densified = segmentize(polygon, max_segment_length=max_segment_degrees)
     exterior = _project_points(
-        [(float(point[0]), float(point[1])) for point in polygon.exterior.coords], transformer
+        [(float(point[0]), float(point[1])) for point in densified.exterior.coords], transformer
     )
     holes = [
         _project_points([(float(point[0]), float(point[1])) for point in ring.coords], transformer)
-        for ring in polygon.interiors
+        for ring in densified.interiors
     ]
     return Polygon(exterior, holes)
 
 
 def _projected_circle(
-    circle: Circle, transformer: Transformer, central_meridian: float
+    circle: Circle,
+    transformer: Transformer,
+    central_meridian: float,
+    max_segment_degrees: float = MAX_SOURCE_SEGMENT_DEG,
 ) -> BaseGeometry:
     earth_radius_km = circle.earth_radius_km
     hemisphere_km = math.pi * earth_radius_km / 2.0
     if circle.radius_km <= hemisphere_km:
         parts = _world_parts(cap_geometry(circle), central_meridian)
-        return unary_union([_project_polygon(part, transformer) for part in parts])
+        return unary_union(
+            [_project_polygon(part, transformer, max_segment_degrees) for part in parts]
+        )
 
     antipode = Coordinate(
         lat=-circle.centre.lat,
@@ -113,7 +126,9 @@ def _projected_circle(
         earth_radius_km=earth_radius_km,
     )
     complement_parts = _world_parts(cap_geometry(complement), central_meridian)
-    excluded = unary_union([_project_polygon(part, transformer) for part in complement_parts])
+    excluded = unary_union(
+        [_project_polygon(part, transformer, max_segment_degrees) for part in complement_parts]
+    )
     radial_m = (
         math.sqrt(2.0) * earth_radius_km * METRES_PER_KM / math.cos(math.pi / (4 * QUAD_SEGS))
     )
@@ -168,17 +183,25 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
         raise ValueError(message)
 
     projected_circle = _projected_circle(circle, to_equal_area, central_meridian)
+    refined_circle = _projected_circle(
+        circle, to_equal_area, central_meridian, MAX_SOURCE_SEGMENT_DEG / 2.0
+    )
     share = land.intersection(projected_circle).area / territory_area
     if not math.isfinite(share) or not 0.0 <= share <= 1.0:
         message = "territory coverage must be finite and within [0, 1]"
         raise ValueError(message)
 
     boundary_radius_km = min(radius_km, math.pi * earth_radius_km - radius_km)
-    sagitta_km = boundary_radius_km * (1.0 - math.cos(math.pi / (4 * QUAD_SEGS)))
+    sagitta_km = (
+        boundary_radius_km * (1.0 - math.cos(math.pi / (4 * QUAD_SEGS))) + GEOGRAPHIC_CUT_SLACK_KM
+    )
     angle = boundary_radius_km / earth_radius_km
     inner_angle = max(0.0, angle - sagitta_km / earth_radius_km)
     annulus_km2 = 2.0 * math.pi * earth_radius_km**2 * (math.cos(inner_angle) - math.cos(angle))
-    error_bound = annulus_km2 / territory_area
+    projection_convergence_km2 = (
+        projected_circle.symmetric_difference(refined_circle).area / METRES_PER_KM**2
+    )
+    error_bound = (annulus_km2 + projection_convergence_km2) / territory_area
     if not math.isfinite(error_bound):
         message = "territory coverage error bound must be finite"
         raise ValueError(message)
