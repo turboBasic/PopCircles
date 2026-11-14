@@ -1,9 +1,10 @@
 ---
 id: 0014
-status: accepted
+status: superseded
 date: 2026-10-21
 scope: architecture
 tags: [adr, popcircles]
+superseded_by: 0020
 ---
 
 # ADR 0014 — Python orchestrates combined execution above the result document

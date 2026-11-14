@@ -63,7 +63,8 @@
         "country_iso_alpha2": "BZ",
         "distance_km": 59.110990420146315,
         "short_form": false
-      }
+      },
+      "territory_share": 1.0
     }
   },
   "render_metadata": {

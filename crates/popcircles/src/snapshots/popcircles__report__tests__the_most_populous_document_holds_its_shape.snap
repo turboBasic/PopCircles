@@ -1,9 +1,9 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(MostPopulousReport::new(&found, &grid, total,\n0.0).expect(\"search centre belongs to the grid\"))"
+expression: "Envelope::new(MostPopulousReport::new(&found, &grid, total,\nNone).expect(\"search centre belongs to the grid\"))"
 ---
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "document": "most-populous",
   "tool": "popcircles",
   "tool_version": "0.3.0",
@@ -22,7 +22,6 @@ expression: "Envelope::new(MostPopulousReport::new(&found, &grid, total,\n0.0).e
     "population": 55986.0,
     "total_population": 210276.0,
     "share_of_total": 0.2662500713348171,
-    "territory_share": 0.0,
     "tolerance_persons": 0.0,
     "stats": {
       "levels": 3,

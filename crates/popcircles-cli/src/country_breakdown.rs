@@ -278,15 +278,6 @@ impl Prepared {
             .map(|mut results| results.remove(0))
     }
 
-    pub(crate) fn territory_share(&self, kernel: &Kernel, centre: Col) -> Result<f64, Failure> {
-        popcircles::territory::territory_share(
-            std::slice::from_ref(&self.world_domain),
-            kernel,
-            centre,
-        )
-        .map_err(|error| Failure::bad_input(error.to_string()))
-    }
-
     pub(crate) fn country_table(
         &self,
         feature: &BoundaryFeature,

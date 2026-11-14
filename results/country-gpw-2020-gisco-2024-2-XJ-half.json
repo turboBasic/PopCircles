@@ -63,7 +63,8 @@
         "country_iso_alpha2": "JP",
         "distance_km": 225.0497358906905,
         "short_form": false
-      }
+      },
+      "territory_share": 0.8756085805342501
     }
   },
   "render_metadata": {

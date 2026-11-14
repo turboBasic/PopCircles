@@ -137,7 +137,9 @@ results; the CLI depends on the domain; the domain depends on neither client. Re
 dependencies changes the architecture.
 
 Python coordinates workflows that combine Rust search and Python rendering
-([ADR 0014](../decisions/0014-python-orchestrates-above-the-result-document.md)).
+([ADR 0014](../decisions/0014-python-orchestrates-above-the-result-document.md)). It also calculates
+geometric territory coverage from published circle answers and registered GISCO geometry, as the
+narrow exception recorded in [ADR 0020](../decisions/0020-python-calculates-territory-coverage.md).
 
 - **Use domain types.** Latitude, longitude, pixel index, radius, and population are different
   quantities. A bare `f64` or `usize` can hide a units error. `Row` and `Col` distinguish index axes,
@@ -218,10 +220,12 @@ Preserve source feature identities and geometric overlaps; GISCO features are no
 
 ## Language split
 
-Rust owns numeric work: geodesy, raster ingest, tables, kernels, search, and the CLI. One-off utilities
-must reuse Rust's raster reader rather than introduce a second raster stack. Python renders figures
-and coordinates combined workflows by invoking the Rust CLI and passing its published JSON to the
-renderer. Python must not read raster pixels, cache headers, or ledger contents. Move any Python helper
-that needs raster pixels into Rust. The static Gallery's browser presentation is Svelte and consumes
-generated Gallery data; it does not calculate population answers or render maps
+Rust owns population numeric work: geodesy, raster ingest, tables, kernels, search, and the CLI. One-off
+utilities must reuse Rust's raster reader rather than introduce a second raster stack. Python renders
+figures, coordinates combined workflows by invoking the Rust CLI, and calculates geometric territory
+coverage from published circle answers and registered GISCO geometry under the narrow exception in
+[ADR 0020](../decisions/0020-python-calculates-territory-coverage.md). Python must not read raster
+pixels, cache headers, or ledger contents. Move any Python helper that needs raster pixels into Rust.
+The static Gallery's browser presentation is Svelte and consumes generated Gallery data; it does not
+calculate population answers or render maps
 ([ADR 0019](../decisions/0019-svelte-presents-the-static-gallery.md)).

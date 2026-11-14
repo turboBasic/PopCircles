@@ -3,7 +3,7 @@ source: crates/popcircles/src/report.rs
 expression: "Envelope::new(DistanceReport::new(from, to, great_circle_km(from, to)))"
 ---
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "document": "distance",
   "tool": "popcircles",
   "tool_version": "0.3.0",

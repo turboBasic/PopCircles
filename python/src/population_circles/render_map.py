@@ -45,6 +45,7 @@ from population_circles.map_frame import (
     graticule,
     project,
 )
+from population_circles.territory_coverage import enrich_document
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
 # for one is what fails on a machine with no display, rather than falling back.
@@ -614,6 +615,7 @@ def render_file(
     projection: str = PLATE_CARREE,
     *,
     no_coastlines: bool = False,
+    coverage_enriched: bool = False,
 ) -> None:
     document = json.loads(input_path.read_text(encoding="utf-8"))
     answer = circle_of(document)
@@ -629,6 +631,9 @@ def render_file(
     )
     render_text = map_text_rendering()
     boundaries = load_map_boundaries(answer, registry)
+    if not coverage_enriched:
+        document = enrich_document(document, boundaries)
+    answer = circle_of(document)
     selected = boundaries.get(answer.country.id) if answer.country is not None else None
     country_boundary_attribution = None
     if answer.country is not None:

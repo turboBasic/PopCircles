@@ -3,7 +3,7 @@ source: crates/popcircles/src/report.rs
 expression: "Envelope::new(GridSummary::from(&grid))"
 ---
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "document": "grid",
   "tool": "popcircles",
   "tool_version": "0.3.0",

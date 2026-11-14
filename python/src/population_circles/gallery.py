@@ -46,6 +46,7 @@ from population_circles.render_map import (
     title_of,
     xmp_properties,
 )
+from population_circles.territory_coverage import enrich_document
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
@@ -503,6 +504,16 @@ def write_header_background(drawn: list[Drawn], output: Path) -> None:
         crop_header_background(world_map, output / "header-background.png")
 
 
+def enrich_source(source: Path, payload: dict[str, Any], registry: Registry) -> dict[str, Any]:
+    answer = circle_of(payload)
+    enriched = enrich_document(payload, load_map_boundaries(answer, registry))
+    if enriched != payload:
+        source.write_text(
+            json.dumps(enriched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    return enriched
+
+
 def build_gallery_output(
     corpus: Path,
     sources: list[tuple[Path, dict[str, Any]]],
@@ -527,8 +538,8 @@ def build_gallery_output(
             file=sys.stderr,
             flush=True,
         )
-        for index, (source, payload) in enumerate(sources, start=1):
-            envelope = Envelope.model_validate(payload)
+        for index, (source, source_payload) in enumerate(sources, start=1):
+            envelope = Envelope.model_validate(source_payload)
             if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
                 print(
                     f"Gallery: [{index}/{len(sources)}] skipping {source.name} "
@@ -539,10 +550,11 @@ def build_gallery_output(
                 skipped.append(Skipped(source, envelope.document))
                 if source.name in generated:
                     (output / source.name).write_text(
-                        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                        json.dumps(source_payload, indent=2, ensure_ascii=False) + "\n",
                         encoding="utf-8",
                     )
                 continue
+            payload = enrich_source(source, source_payload, context.registry)
             if (
                 envelope.document == "country-smallest"
                 and payload["result"]["circle"]["target"]["total"] == 0
@@ -752,24 +764,25 @@ def report_sweep_work(sweep: dict[str, Any]) -> None:
     )
 
 
-def coverage_sweep(invoke: Invoke, path: Path, selection: dict[str, Any]) -> dict[str, Any]:
-    arguments = [
-        "country",
-        "coverage",
-        "--input",
-        str(path),
-        "--combination",
-        selection["combination_id"],
-        "--resolution",
-        str(selection["resolution"]),
-    ]
-    refreshed = child("country coverage", arguments, invoke)
-    require_success("country coverage", refreshed)
-    sweep = json.loads(refreshed.stdout)
+def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
+    sweep = json.loads(path.read_text(encoding="utf-8"))
     if sweep.get("document") != "country-sweep":
-        message = "country coverage: Rust CLI returned a document other than country-sweep"
+        message = "country coverage: saved document is not a country-sweep"
         raise ValueError(message)
-    return sweep
+    if sweep["result"]["selection"] != selection:
+        message = "country coverage: saved sweep selection does not match configuration"
+        raise ValueError(message)
+    return enrich_document(sweep)
+
+
+def refresh_coverage(corpus: Path) -> None:
+    supported = CIRCLE_KINDS | {"country-smallest", "country-sweep"}
+    for path in sorted(corpus.glob("*.json")):
+        document: Any = json.loads(path.read_text(encoding="utf-8"))
+        if Envelope.model_validate(document).document not in supported:
+            continue
+        enriched = enrich_document(document)
+        path.write_text(json.dumps(enriched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def country_sweep(
@@ -789,11 +802,7 @@ def country_sweep(
         if saved is None:
             message = "country coverage refresh requires a valid saved country sweep"
             raise WorkflowError(message)
-        sweep = coverage_sweep(
-            invoke,
-            corpus / filename,
-            selection,
-        )
+        sweep = coverage_sweep(corpus / filename, selection)
         print(
             f"Gallery: refreshed territory coverage for {len(countries)} saved country results",
             file=sys.stderr,
@@ -932,6 +941,8 @@ def build(
     (output / "index.html").unlink(missing_ok=True)
     (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
+    if country_refresh == "coverage":
+        refresh_coverage(corpus)
     missing, generated = country_documents(
         invoke,
         corpus,

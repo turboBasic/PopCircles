@@ -88,12 +88,14 @@ IEEEFP
 IUGG
 libgdal
 mbtiles
+Mollweide
 naturalearth
 nvkelso
 pmtiles
 pyogrio
 RUSAGE
 scalerank
+segmentize
 semiminor
 shapefile
 sysconf
@@ -156,7 +158,10 @@ tobytes
 verticalalignment
 weezl
 wght
+xfact
 xlim
+xoff
+yfact
 ylim
 zerocopy
 zorder

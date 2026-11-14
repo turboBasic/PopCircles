@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # The highest `report::SCHEMA_VERSION` this reader was written against. A document above it may have
 # renamed or removed a field, which is the only thing that constant rises for, so it is refused
 # rather than read optimistically.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # The published `Document::KIND` values. Held as a Literal so an unrecognised kind is a schema
 # refusal naming `document`, not a KeyError three frames later.
