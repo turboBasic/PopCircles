@@ -79,6 +79,7 @@ expression: reports
       },
       "row": 4,
       "share_of_total": 0.0038996366679982498,
+      "territory_share": 0.0,
       "total_population": 210276.0
     },
     "schema_version": 1,
@@ -135,6 +136,7 @@ expression: reports
       },
       "row": 4,
       "share_of_total": 0.0038996366679982498,
+      "territory_share": 0.0,
       "total_population": 210276.0
     },
     "schema_version": 1,
@@ -161,6 +163,7 @@ expression: reports
       },
       "row": 4,
       "share_of_total": 0.0038996366679982498,
+      "territory_share": 0.0,
       "total_population": 210276.0
     },
     "schema_version": 1,
@@ -246,6 +249,7 @@ expression: reports
         "kernels_built": 58,
         "levels": 3
       },
+      "territory_share": 0.0,
       "tolerance_persons": 0.0,
       "total_population": 210276.0
     },
@@ -348,6 +352,7 @@ expression: reports
           "share": 0.2,
           "total": 210276.0
         },
+        "territory_share": 0.0,
         "tolerance_persons": 0.0
       },
       "ledger": {
@@ -453,6 +458,7 @@ expression: reports
         "share": 0.2,
         "total": 210276.0
       },
+      "territory_share": 0.0,
       "tolerance_persons": 0.0
     },
     "schema_version": 1,
@@ -559,6 +565,7 @@ expression: reports
             "share": 0.2,
             "total": 210276.0
           },
+          "territory_share": 0.0,
           "tolerance_persons": 0.0
         }
       ],

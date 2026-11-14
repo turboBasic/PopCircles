@@ -1,8 +1,8 @@
 //! Area-weighted coverage of a circle over one or more effective-grid domains.
 
-use crate::domain::{Domain, DomainError};
+use crate::domain::Domain;
 use crate::grid::{Col, GridIndexError};
-use crate::kernel::{Kernel, KernelError};
+use crate::kernel::Kernel;
 use crate::table::ColSpan;
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
@@ -12,11 +12,7 @@ pub enum TerritoryShareError {
     #[error("the selected domain has zero area on the effective grid")]
     ZeroArea,
     #[error(transparent)]
-    Domain(#[from] DomainError),
-    #[error(transparent)]
     GridIndex(#[from] GridIndexError),
-    #[error(transparent)]
-    Kernel(#[from] KernelError),
 }
 
 /// The fraction of the union of `domains` covered by the existing cell-centre circle kernel.
@@ -25,7 +21,7 @@ pub enum TerritoryShareError {
 /// Returns [`TerritoryShareError::GridMismatch`] for masks on another grid and
 /// [`TerritoryShareError::ZeroArea`] when their union contains no cells.
 pub fn territory_share(
-    domains: &[&Domain],
+    domains: &[Domain],
     kernel: &Kernel,
     centre: Col,
 ) -> Result<f64, TerritoryShareError> {
@@ -78,7 +74,7 @@ fn span_ranges(span: ColSpan, width: u32) -> Vec<(u32, u32)> {
     }
 }
 
-fn union_ranges(domains: &[&Domain], row: crate::grid::Row) -> Vec<(u32, u32)> {
+fn union_ranges(domains: &[Domain], row: crate::grid::Row) -> Vec<(u32, u32)> {
     let mut ranges = domains
         .iter()
         .filter_map(|domain| domain.row_intervals(row))
@@ -150,13 +146,14 @@ mod tests {
         let full = domain(grid, "full", &[&[(0, 4)], &[(0, 4)]]);
         let centre = grid.col(1).unwrap();
         assert_eq!(
-            territory_share(&[&full], &kernel(grid, 0.0), centre),
+            territory_share(std::slice::from_ref(&full), &kernel(grid, 0.0), centre),
             Ok(0.0)
         );
-        let partial = territory_share(&[&full], &kernel(grid, 5_000.0), centre).unwrap();
+        let partial =
+            territory_share(std::slice::from_ref(&full), &kernel(grid, 5_000.0), centre).unwrap();
         assert!(partial > 0.0 && partial < 1.0);
         assert_eq!(
-            territory_share(&[&full], &kernel(grid, 20_016.0), centre),
+            territory_share(std::slice::from_ref(&full), &kernel(grid, 20_016.0), centre),
             Ok(1.0)
         );
     }
@@ -170,8 +167,8 @@ mod tests {
         let centre = grid.col(1).unwrap();
         let circle = kernel(grid, 5_000.0);
         assert_eq!(
-            territory_share(&[&left, &overlap], &circle, centre),
-            territory_share(&[&whole], &circle, centre)
+            territory_share(&[left, overlap], &circle, centre),
+            territory_share(std::slice::from_ref(&whole), &circle, centre)
         );
     }
 
@@ -180,7 +177,11 @@ mod tests {
         let grid = grid();
         let empty = domain(grid, "empty", &[&[], &[]]);
         assert_eq!(
-            territory_share(&[&empty], &kernel(grid, 1.0), grid.col(1).unwrap()),
+            territory_share(
+                std::slice::from_ref(&empty),
+                &kernel(grid, 1.0),
+                grid.col(1).unwrap()
+            ),
             Err(TerritoryShareError::ZeroArea)
         );
     }
@@ -201,7 +202,11 @@ mod tests {
         .unwrap();
         let domain = domain(other, "other", &[&[(0, 1)], &[]]);
         assert_eq!(
-            territory_share(&[&domain], &kernel(grid, 1.0), grid.col(1).unwrap()),
+            territory_share(
+                std::slice::from_ref(&domain),
+                &kernel(grid, 1.0),
+                grid.col(1).unwrap()
+            ),
             Err(TerritoryShareError::GridMismatch)
         );
     }

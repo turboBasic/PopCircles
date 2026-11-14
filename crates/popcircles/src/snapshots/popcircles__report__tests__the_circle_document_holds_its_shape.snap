@@ -1,6 +1,6 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(CircleReport::new(requested, cell, &grid, radius, population,\ntotal,))"
+expression: "Envelope::new(CircleReport::new(requested, cell, &grid, radius, population,\ntotal, 0.0).expect(\"circle indices belong to the grid\"))"
 ---
 {
   "schema_version": 1,
@@ -25,6 +25,7 @@ expression: "Envelope::new(CircleReport::new(requested, cell, &grid, radius, pop
     "radius_km": 1200.0,
     "population": 820.0,
     "total_population": 210276.0,
-    "share_of_total": 0.0038996366679982498
+    "share_of_total": 0.0038996366679982498,
+    "territory_share": 0.0
   }
 }

@@ -469,6 +469,7 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
         "population-at",
         &["--lat", "45", "--lon", "15", "--radius-km", "1"],
     ));
+    assert_territory_share(&population_at["result"]);
     assert_eq!(
         population_at["result"]["country_breakdown"]["entries"][0]["id"],
         "XX"
@@ -476,10 +477,12 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
 
     let most_populous =
         successful_document(&fixture.run_ok("most-populous", &["--radius-km", "0"]));
+    assert_territory_share(&most_populous["result"]);
     assert!(most_populous["result"]["country_breakdown"].is_object());
 
     let smallest_args = ["--share", "10", "--ledger", "smallest.json"];
     let smallest = successful_document(&fixture.run_ok("smallest-for-share", &smallest_args));
+    assert_territory_share(&smallest["result"]["circle"]);
     assert!(smallest["result"]["circle"]["country_breakdown"].is_object());
     let warm = successful_document(&fixture.run_ok("smallest-for-share", &smallest_args));
     for field in ["radius_km", "centre", "population", "country_breakdown"] {
@@ -509,6 +512,29 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
             .iter()
             .all(|record| record["country_breakdown"].is_object())
     );
+    assert!(
+        sweep["result"]["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|record| has_territory_share(&record["territory_share"]))
+    );
+}
+
+fn assert_territory_share(result: &serde_json::Value) {
+    assert!(has_territory_share(&result["territory_share"]), "{result}");
+}
+
+fn has_territory_share(value: &serde_json::Value) -> bool {
+    value
+        .as_f64()
+        .is_some_and(|share| share.is_finite() && (0.0..=1.0).contains(&share))
+}
+
+fn assert_country_sweep_shares(records: &[serde_json::Value]) {
+    for record in records {
+        assert_territory_share(&record["circle"]);
+    }
 }
 
 #[test]
@@ -1137,6 +1163,7 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
         "population-count-2020-30arcsec"
     );
     assert_eq!(document["result"]["decimation"], 1);
+    assert_territory_share(&document["result"]["circle"]);
     document["result"]["ledger"]["path"] = "shared-country.json".into();
     insta::assert_json_snapshot!("country-smallest-command", document);
 
@@ -1347,6 +1374,7 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
         assert_eq!(records.len(), 2);
         assert_eq!(records[0]["share"], 0.1);
         assert_eq!(records[1]["share"], 0.2);
+        assert_country_sweep_shares(records);
     }
     let aa_ledger = countries[0]["ledger"]["path"].as_str().unwrap();
     let bb_ledger = countries[1]["ledger"]["path"].as_str().unwrap();

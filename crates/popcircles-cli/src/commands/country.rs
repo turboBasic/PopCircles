@@ -4,6 +4,10 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use popcircles::domain::Domain;
+use popcircles::geodesy::RadiusKm;
+use popcircles::grid::{Col, Grid, Row};
+use popcircles::kernel::Kernel;
 use popcircles::report::{
     CountryListDocument, CountrySelectionReport, CountrySmallestDocument, CountrySourceReport,
     CountrySweepCountry, CountrySweepDocument, CountrySweepRecord, Document, Envelope,
@@ -26,6 +30,27 @@ use crate::failure::{EXIT_BAD_INPUT, EXIT_MISSING_DATA, Failure};
 use crate::observe::StderrProgress;
 use crate::prepared::{Loaded, PreparedManifest, Request};
 use crate::registry::{REGISTRY_PATH, Registry};
+
+fn selected_domain(
+    feature: &crate::boundaries::BoundaryFeature,
+    grid: Grid,
+) -> Result<Domain, Failure> {
+    Domain::rasterize(feature.id.clone(), &feature.geometry, grid)
+        .map(|(domain, _)| domain)
+        .map_err(|error| Failure::bad_input(error.to_string()))
+}
+
+fn territory_share(
+    domain: &Domain,
+    grid: &Grid,
+    row: Row,
+    col: Col,
+    radius: RadiusKm,
+) -> Result<f64, Failure> {
+    let kernel = Kernel::new(*grid, row, radius).map_err(Failure::kernel)?;
+    popcircles::territory::territory_share(std::slice::from_ref(domain), &kernel, col)
+        .map_err(|error| Failure::bad_input(error.to_string()))
+}
 
 fn country_ledger_path(directory: &Path, id: &str) -> PathBuf {
     let mut file = String::new();
@@ -759,6 +784,7 @@ pub(crate) fn smallest(
                 feature.id.as_str()
             ))
         })?;
+    let domain = selected_domain(&feature, *table.effective_grid())?;
     let path = ledger_path.map_or_else(
         || country_ledger_path(Path::new("out/countries"), feature.id.as_str()),
         Path::to_path_buf,
@@ -778,7 +804,14 @@ pub(crate) fn smallest(
         .centre_of(found.centre.row, found.centre.col)
         .map_err(|error| Failure::grid_index(&error))?;
     let context = settlement_context(centre, &places)?;
-    let circle = SmallestReport::new(&found, table.effective_grid())
+    let territory_share = territory_share(
+        &domain,
+        table.effective_grid(),
+        found.centre.row,
+        found.centre.col,
+        found.radius,
+    )?;
+    let circle = SmallestReport::new(&found, table.effective_grid(), territory_share)
         .map_err(|error| Failure::grid_index(&error))?
         .with_nearest_settlement(context.as_ref());
     let selection = prepared.selection();
@@ -833,6 +866,7 @@ pub(crate) fn sweep(
             countries_without_population_cells.push((feature.id, feature.name));
             continue;
         };
+        let domain = selected_domain(&feature, *table.effective_grid())?;
         let path = country_ledger_path(ledger_dir, feature.id.as_str());
         make_room_for(&path)?;
         let mut ledger = CountryLedger::open_or_empty(&path, table.identity())
@@ -861,8 +895,15 @@ pub(crate) fn sweep(
                 .centre_of(found.centre.row, found.centre.col)
                 .map_err(|error| Failure::grid_index(&error))?;
             let context = settlement_context(centre, &places)?;
+            let territory_share = territory_share(
+                &domain,
+                table.effective_grid(),
+                found.centre.row,
+                found.centre.col,
+                found.radius,
+            )?;
             records.push(CountrySweepRecord::new(
-                SmallestReport::new(&found, table.effective_grid())
+                SmallestReport::new(&found, table.effective_grid(), territory_share)
                     .map_err(|error| Failure::grid_index(&error))?
                     .with_nearest_settlement(context.as_ref()),
             ));

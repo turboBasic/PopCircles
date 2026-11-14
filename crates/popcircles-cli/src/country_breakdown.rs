@@ -36,6 +36,7 @@ pub(crate) struct Prepared {
     tallies: CellTallies,
     ownership: CellOwnership,
     domains: Vec<Domain>,
+    world_domain: Domain,
     features: Vec<BoundaryFeature>,
     boundary_digest: String,
     boundary_revision: String,
@@ -221,6 +222,12 @@ impl Prepared {
                 .map_err(|error| Failure::bad_input(error.to_string()))?;
             domains.push(domain);
         }
+        let world_domain = Domain::union(
+            FeatureId::new("world-union").map_err(|error| Failure::bad_input(error.to_string()))?,
+            effective,
+            &domains,
+        )
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
         let spec = popcircles::raster::RasterSpec {
             grid: source,
             epsg: population.epsg,
@@ -252,6 +259,7 @@ impl Prepared {
             tallies,
             ownership,
             domains,
+            world_domain,
             features,
             boundary_digest,
             boundary_revision: boundary.revision.clone().unwrap_or_default(),
@@ -268,6 +276,15 @@ impl Prepared {
     ) -> Result<CountryBreakdown, Failure> {
         self.for_circles(&[(centre, radius, circle_population)], world_population)
             .map(|mut results| results.remove(0))
+    }
+
+    pub(crate) fn territory_share(&self, kernel: &Kernel, centre: Col) -> Result<f64, Failure> {
+        popcircles::territory::territory_share(
+            std::slice::from_ref(&self.world_domain),
+            kernel,
+            centre,
+        )
+        .map_err(|error| Failure::bad_input(error.to_string()))
     }
 
     pub(crate) fn country_table(
@@ -733,7 +750,7 @@ mod tests {
             .map(|feature| (feature.id.clone(), feature.geometry.clone()))
             .collect::<Vec<_>>();
         let (ownership, _) = CellOwnership::rasterize_features(&geometries, grid).unwrap();
-        let domains = features
+        let domains: Vec<Domain> = features
             .iter()
             .map(|feature| {
                 Domain::rasterize(feature.id.clone(), &feature.geometry, grid)
@@ -741,6 +758,8 @@ mod tests {
                     .0
             })
             .collect();
+        let world_domain =
+            Domain::union(FeatureId::new("world-union").unwrap(), grid, &domains).unwrap();
         let prepared = Prepared {
             source: grid,
             effective: grid,
@@ -750,6 +769,7 @@ mod tests {
             tallies: CellTallies::default(),
             ownership,
             domains,
+            world_domain,
             features: features.clone(),
             boundary_digest: "fixture".to_owned(),
             boundary_revision: "fixture".to_owned(),
@@ -795,7 +815,7 @@ mod tests {
             .map(|feature| (feature.id.clone(), feature.geometry.clone()))
             .collect::<Vec<_>>();
         let (ownership, _) = CellOwnership::rasterize_features(&geometries, grid).unwrap();
-        let domains = features
+        let domains: Vec<Domain> = features
             .iter()
             .map(|feature| {
                 Domain::rasterize(feature.id.clone(), &feature.geometry, grid)
@@ -803,6 +823,8 @@ mod tests {
                     .0
             })
             .collect();
+        let world_domain =
+            Domain::union(FeatureId::new("world-union").unwrap(), grid, &domains).unwrap();
         let prepared = Prepared {
             source: grid,
             effective: grid,
@@ -812,6 +834,7 @@ mod tests {
             tallies: CellTallies::default(),
             ownership,
             domains,
+            world_domain,
             features,
             boundary_digest: "fixture".to_owned(),
             boundary_revision: "fixture".to_owned(),
