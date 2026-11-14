@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "KM",
-      "name": "Comoros",
-      "iso_alpha2": "KM",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "KM",
+      "iso_alpha2": "KM",
+      "name": "Comoros"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 10
     },
     "circle": {
-      "radius_km": 31,
       "centre": {
         "lat": -11.641666666666666,
         "lon": 43.40833333333333
       },
-      "row": 6098,
       "col": 13404,
-      "population": 447063.3205569312,
-      "target": {
-        "share": 0.5,
-        "persons": 440877.91186292097,
-        "total": 881755.8237258419
-      },
-      "share_achieved": 0.5070148770527808,
-      "short_below": {
-        "radius_km": 30,
-        "population": 440208.42885618657
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 7.1436644369347255e-06,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Moroni",
         "country": "Comoros",
         "country_iso_alpha2": "KM",
         "distance_km": 19.578736600623625,
+        "name": "Moroni",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 447063.3205569312,
-      "populationShare": 0.5070148770527808,
-      "radiusKm": 31.0,
-      "centerLatitude": -11.641666666666666,
-      "centerLongitude": 43.40833333333333,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Comoros",
-      "Iptc4xmpCore:CountryCode": "KM",
-      "countryName": "Comoros",
-      "countryCode": "KM",
-      "nearestSettlement": "Moroni",
-      "nearestSettlementCountry": "Comoros",
-      "distanceToSettlementKm": 19.578736600623625,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "11,38.5S",
-          "exif:GPSLongitude": "43,24.5E",
-          "Iptc4xmpExt:CountryName": "Comoros",
-          "Iptc4xmpExt:CountryCode": "KM",
-          "Iptc4xmpExt:City": "Moroni"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Comoros: 31 km circle holding 50.7% of the population (447,063 people); Center: -11.6417, 43.4083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          11,
-          1
-        ],
-        [
-          38,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          43,
-          1
-        ],
-        [
-          24,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Comoros: 31 km circle holding 50.7% of the population (447,063 people); Center: -11.6417, 43.4083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 447063.3205569312,
+      "predicate_slack_persons": 7.1436644369347255e-06,
+      "radius_km": 31,
+      "row": 6098,
+      "share_achieved": 0.5070148770527808,
+      "short_below": {
+        "population": 440208.42885618657,
+        "radius_km": 30
+      },
+      "target": {
+        "persons": 440877.91186292097,
+        "share": 0.5,
+        "total": 881755.8237258419
+      },
+      "territory_share": 0.5984986124369979,
+      "tolerance_persons": 0.0
+    }
   }
 }

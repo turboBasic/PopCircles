@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "CU",
-      "name": "Cuba",
-      "iso_alpha2": "CU",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "CU",
+      "iso_alpha2": "CU",
+      "name": "Cuba"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 225,
       "centre": {
         "lat": 22.241666666666674,
         "lon": -81.54166666666667
       },
-      "row": 4065,
       "col": 5907,
-      "population": 5680747.0368399555,
-      "target": {
-        "share": 0.5,
-        "persons": 5675825.69206824,
-        "total": 11351651.38413648
-      },
-      "share_achieved": 0.5004335355804349,
-      "short_below": {
-        "radius_km": 224,
-        "population": 5667917.753833451
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00010768845827261985,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Güines",
         "country": "Cuba",
         "country_iso_alpha2": "CU",
         "distance_km": 82.85215268618758,
+        "name": "Güines",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 5680747.0368399555,
-      "populationShare": 0.5004335355804349,
-      "radiusKm": 225.0,
-      "centerLatitude": 22.241666666666674,
-      "centerLongitude": -81.54166666666667,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Cuba",
-      "Iptc4xmpCore:CountryCode": "CU",
-      "countryName": "Cuba",
-      "countryCode": "CU",
-      "nearestSettlement": "Güines",
-      "nearestSettlementCountry": "Cuba",
-      "distanceToSettlementKm": 82.85215268618758,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "22,14.5N",
-          "exif:GPSLongitude": "81,32.5W",
-          "Iptc4xmpExt:CountryName": "Cuba",
-          "Iptc4xmpExt:CountryCode": "CU",
-          "Iptc4xmpExt:City": "Güines"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Cuba: 225 km circle holding 50.0% of the population (5,680,747 people); Center: 22.2417, -81.5417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          22,
-          1
-        ],
-        [
-          14,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          81,
-          1
-        ],
-        [
-          32,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Cuba: 225 km circle holding 50.0% of the population (5,680,747 people); Center: 22.2417, -81.5417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 5680747.0368399555,
+      "predicate_slack_persons": 0.00010768845827261985,
+      "radius_km": 225,
+      "row": 4065,
+      "share_achieved": 0.5004335355804349,
+      "short_below": {
+        "population": 5667917.753833451,
+        "radius_km": 224
+      },
+      "target": {
+        "persons": 5675825.69206824,
+        "share": 0.5,
+        "total": 11351651.38413648
+      },
+      "territory_share": 0.38048873892654056,
+      "tolerance_persons": 0.0
+    }
   }
 }

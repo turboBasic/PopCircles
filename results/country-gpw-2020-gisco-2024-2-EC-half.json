@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "EC",
-      "name": "Ecuador",
-      "iso_alpha2": "EC",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "EC",
+      "iso_alpha2": "EC",
+      "name": "Ecuador"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 142,
       "centre": {
         "lat": -1.4416666666666629,
         "lon": -79.64166666666667
       },
-      "row": 5486,
       "col": 6021,
-      "population": 8695713.038468376,
-      "target": {
-        "share": 0.5,
-        "persons": 8660349.901441682,
-        "total": 17320699.802883364
-      },
-      "share_achieved": 0.5020416690681752,
-      "short_below": {
-        "radius_km": 141,
-        "population": 8632052.15709953
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00020246899469692278,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Babahoyo",
         "country": "Ecuador",
         "country_iso_alpha2": "EC",
         "distance_km": 41.37248156143048,
+        "name": "Babahoyo",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 8695713.038468376,
-      "populationShare": 0.5020416690681752,
-      "radiusKm": 142.0,
-      "centerLatitude": -1.4416666666666629,
-      "centerLongitude": -79.64166666666667,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Ecuador",
-      "Iptc4xmpCore:CountryCode": "EC",
-      "countryName": "Ecuador",
-      "countryCode": "EC",
-      "nearestSettlement": "Babahoyo",
-      "nearestSettlementCountry": "Ecuador",
-      "distanceToSettlementKm": 41.37248156143048,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "1,26.5S",
-          "exif:GPSLongitude": "79,38.5W",
-          "Iptc4xmpExt:CountryName": "Ecuador",
-          "Iptc4xmpExt:CountryCode": "EC",
-          "Iptc4xmpExt:City": "Babahoyo"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Ecuador: 142 km circle holding 50.2% of the population (8,695,713 people); Center: -1.4417, -79.6417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          1,
-          1
-        ],
-        [
-          26,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          79,
-          1
-        ],
-        [
-          38,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Ecuador: 142 km circle holding 50.2% of the population (8,695,713 people); Center: -1.4417, -79.6417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 8695713.038468376,
+      "predicate_slack_persons": 0.00020246899469692278,
+      "radius_km": 142,
+      "row": 5486,
+      "share_achieved": 0.5020416690681752,
+      "short_below": {
+        "population": 8632052.15709953,
+        "radius_km": 141
+      },
+      "target": {
+        "persons": 8660349.901441682,
+        "share": 0.5,
+        "total": 17320699.802883364
+      },
+      "territory_share": 0.23538252107355162,
+      "tolerance_persons": 0.0
+    }
   }
 }

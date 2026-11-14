@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "CK",
-      "name": "Cook Islands",
-      "iso_alpha2": "CK",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "CK",
+      "iso_alpha2": "CK",
+      "name": "Cook Islands"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 4
     },
     "circle": {
-      "radius_km": 4,
       "centre": {
         "lat": -21.224999999999994,
         "lon": -159.79166666666666
       },
-      "row": 6673,
       "col": 1212,
-      "population": 12228.069544315338,
-      "target": {
-        "share": 0.5,
-        "persons": 10683.538134475122,
-        "total": 21367.076268950244
-      },
-      "share_achieved": 0.572285575733385,
-      "short_below": {
-        "radius_km": 3,
-        "population": 7343.028755187988
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 2.0840067975861635e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Avarua",
         "country": "Cook Islands",
         "country_iso_alpha2": "CK",
         "distance_km": 3.2640479380451657,
+        "name": "Avarua",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 12228.069544315338,
-      "populationShare": 0.572285575733385,
-      "radiusKm": 4.0,
-      "centerLatitude": -21.224999999999994,
-      "centerLongitude": -159.79166666666666,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Cook Islands",
-      "Iptc4xmpCore:CountryCode": "CK",
-      "countryName": "Cook Islands",
-      "countryCode": "CK",
-      "nearestSettlement": "Avarua",
-      "nearestSettlementCountry": "Cook Islands",
-      "distanceToSettlementKm": 3.2640479380451657,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "21,13.5S",
-          "exif:GPSLongitude": "159,47.5W",
-          "Iptc4xmpExt:CountryName": "Cook Islands",
-          "Iptc4xmpExt:CountryCode": "CK",
-          "Iptc4xmpExt:City": "Avarua"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Cook Islands: 4 km circle holding 57.2% of the population (12,228 people); Center: -21.2250, -159.7917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          21,
-          1
-        ],
-        [
-          13,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          159,
-          1
-        ],
-        [
-          47,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Cook Islands: 4 km circle holding 57.2% of the population (12,228 people); Center: -21.2250, -159.7917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 12228.069544315338,
+      "predicate_slack_persons": 2.0840067975861635e-07,
+      "radius_km": 4,
+      "row": 6673,
+      "share_achieved": 0.572285575733385,
+      "short_below": {
+        "population": 7343.028755187988,
+        "radius_km": 3
+      },
+      "target": {
+        "persons": 10683.538134475122,
+        "share": 0.5,
+        "total": 21367.076268950244
+      },
+      "territory_share": 0.2185542634583592,
+      "tolerance_persons": 0.0
+    }
   }
 }

@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "GN",
-      "name": "Guinea",
-      "iso_alpha2": "GN",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "GN",
+      "iso_alpha2": "GN",
+      "name": "Guinea"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 154,
       "centre": {
         "lat": 10.708333333333329,
         "lon": -13.191666666666663
       },
-      "row": 4757,
       "col": 10008,
-      "population": 7165992.294512031,
-      "target": {
-        "share": 0.5,
-        "persons": 7141414.149577443,
-        "total": 14282828.299154885
-      },
-      "share_achieved": 0.5017208177834107,
-      "short_below": {
-        "radius_km": 153,
-        "population": 7129975.777645406
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00011471766008927471,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Télimélé",
         "country": "Guinea",
         "country_iso_alpha2": "GN",
         "distance_km": 27.23809824547264,
+        "name": "Télimélé",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 7165992.294512031,
-      "populationShare": 0.5017208177834107,
-      "radiusKm": 154.0,
-      "centerLatitude": 10.708333333333329,
-      "centerLongitude": -13.191666666666663,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Guinea",
-      "Iptc4xmpCore:CountryCode": "GN",
-      "countryName": "Guinea",
-      "countryCode": "GN",
-      "nearestSettlement": "Télimélé",
-      "nearestSettlementCountry": "Guinea",
-      "distanceToSettlementKm": 27.23809824547264,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "10,42.5N",
-          "exif:GPSLongitude": "13,11.5W",
-          "Iptc4xmpExt:CountryName": "Guinea",
-          "Iptc4xmpExt:CountryCode": "GN",
-          "Iptc4xmpExt:City": "Télimélé"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Guinea: 154 km circle holding 50.2% of the population (7,165,992 people); Center: 10.7083, -13.1917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          10,
-          1
-        ],
-        [
-          42,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          13,
-          1
-        ],
-        [
-          11,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Guinea: 154 km circle holding 50.2% of the population (7,165,992 people); Center: 10.7083, -13.1917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 7165992.294512031,
+      "predicate_slack_persons": 0.00011471766008927471,
+      "radius_km": 154,
+      "row": 4757,
+      "share_achieved": 0.5017208177834107,
+      "short_below": {
+        "population": 7129975.777645406,
+        "radius_km": 153
+      },
+      "target": {
+        "persons": 7141414.149577443,
+        "share": 0.5,
+        "total": 14282828.299154885
+      },
+      "territory_share": 0.2748790024228669,
+      "tolerance_persons": 0.0
+    }
   }
 }

@@ -24,13 +24,13 @@
       "middle_row_cell_area_km2": 0.8586351267048113
     },
     "cache": {
-      "header": "out/gpw-30arcsec.header.json",
-      "payload": "out/gpw-30arcsec.payload.bin"
+      "header": "tmp/gh-73/results-build.2JHP1r/gpw-30arcsec.header.json",
+      "payload": "tmp/gh-73/results-build.2JHP1r/gpw-30arcsec.payload.bin"
     }
   },
   "result": {
     "ledger": {
-      "path": "tmp/gh-192/flagship-30arcsec.json",
+      "path": "tmp/gh-73/results-build.2JHP1r/flagship-30arcsec.json",
       "radii": 24
     },
     "circle": {
@@ -48,6 +48,7 @@
         "total": 7757982599.323671
       },
       "share_achieved": 0.5000844909794175,
+      "territory_share": 0.1525936389388757,
       "short_below": {
         "radius_km": 3359,
         "population": 3878915902.277099
@@ -69,7 +70,8 @@
       "nearest_settlement": {
         "name": "Xichang",
         "country": "China",
-        "distance_km": 192.37350312808027,
+        "country_iso_alpha2": "CN",
+        "distance_km": 192.3735031280791,
         "short_form": false
       },
       "country_breakdown": {
@@ -77,6 +79,7 @@
           {
             "id": "CN",
             "name": "China",
+            "iso_alpha2": "CN",
             "population_inside": 1423675329.4871452,
             "country_total_population": 1425180365.0026057,
             "fraction_of_country_population": 0.9989439683899534,
@@ -85,6 +88,7 @@
           {
             "id": "IN",
             "name": "India",
+            "iso_alpha2": "IN",
             "population_inside": 1370159485.4954376,
             "country_total_population": 1370269450.9682193,
             "fraction_of_country_population": 0.9999197490152729,
@@ -93,6 +97,7 @@
           {
             "id": "PK",
             "name": "Pakistan",
+            "iso_alpha2": "PK",
             "population_inside": 199787356.2309096,
             "country_total_population": 202942195.87740004,
             "fraction_of_country_population": 0.9844544914237731,
@@ -101,6 +106,7 @@
           {
             "id": "BD",
             "name": "Bangladesh",
+            "iso_alpha2": "BD",
             "population_inside": 168653221.30802923,
             "country_total_population": 168653221.30802923,
             "fraction_of_country_population": 1.0,
@@ -109,6 +115,7 @@
           {
             "id": "VN",
             "name": "Viet nam",
+            "iso_alpha2": "VN",
             "population_inside": 97835497.9625504,
             "country_total_population": 97835497.9625504,
             "fraction_of_country_population": 1.0,
@@ -117,6 +124,7 @@
           {
             "id": "PH",
             "name": "Philippines",
+            "iso_alpha2": "PH",
             "population_inside": 89237139.15369534,
             "country_total_population": 108165384.0931946,
             "fraction_of_country_population": 0.825006446395172,
@@ -125,6 +133,7 @@
           {
             "id": "TH",
             "name": "Thailand",
+            "iso_alpha2": "TH",
             "population_inside": 68425524.69741558,
             "country_total_population": 68425524.69741558,
             "fraction_of_country_population": 1.0,
@@ -133,6 +142,7 @@
           {
             "id": "MM",
             "name": "Myanmar/Burma",
+            "iso_alpha2": "MM",
             "population_inside": 56062867.64505071,
             "country_total_population": 56062867.64505071,
             "fraction_of_country_population": 1.0,
@@ -141,6 +151,7 @@
           {
             "id": "KR",
             "name": "South Korea",
+            "iso_alpha2": "KR",
             "population_inside": 51198033.01981747,
             "country_total_population": 51198033.01981747,
             "fraction_of_country_population": 1.0,
@@ -149,6 +160,7 @@
           {
             "id": "JP",
             "name": "Japan",
+            "iso_alpha2": "JP",
             "population_inside": 40981849.68815378,
             "country_total_population": 124905554.09111303,
             "fraction_of_country_population": 0.3281027011677907,
@@ -157,6 +169,7 @@
           {
             "id": "ID",
             "name": "Indonesia",
+            "iso_alpha2": "ID",
             "population_inside": 38573633.67095092,
             "country_total_population": 271638984.1342542,
             "fraction_of_country_population": 0.14200330557813592,
@@ -165,6 +178,7 @@
           {
             "id": "MY",
             "name": "Malaysia",
+            "iso_alpha2": "MY",
             "population_inside": 32293154.07483804,
             "country_total_population": 32295977.052531954,
             "fraction_of_country_population": 0.9999125904229705,
@@ -173,6 +187,7 @@
           {
             "id": "NP",
             "name": "Nepal",
+            "iso_alpha2": "NP",
             "population_inside": 29587900.64873332,
             "country_total_population": 29587900.64873332,
             "fraction_of_country_population": 1.0,
@@ -181,6 +196,7 @@
           {
             "id": "AF",
             "name": "Afghanistan",
+            "iso_alpha2": "AF",
             "population_inside": 26982336.28515827,
             "country_total_population": 36254956.48011618,
             "fraction_of_country_population": 0.7442385512159303,
@@ -189,6 +205,7 @@
           {
             "id": "KP",
             "name": "North Korea",
+            "iso_alpha2": "KP",
             "population_inside": 25622957.591495663,
             "country_total_population": 25622957.591495663,
             "fraction_of_country_population": 1.0,
@@ -197,6 +214,7 @@
           {
             "id": "UZ",
             "name": "Uzbekistan",
+            "iso_alpha2": "UZ",
             "population_inside": 21877939.680900495,
             "country_total_population": 30923731.093844574,
             "fraction_of_country_population": 0.7074805952266006,
@@ -205,6 +223,7 @@
           {
             "id": "LK",
             "name": "Sri Lanka",
+            "iso_alpha2": "LK",
             "population_inside": 21142289.431061156,
             "country_total_population": 21142289.431061156,
             "fraction_of_country_population": 1.0,
@@ -221,6 +240,7 @@
           {
             "id": "RU",
             "name": "Russian Federation",
+            "iso_alpha2": "RU",
             "population_inside": 17656966.51943452,
             "country_total_population": 142589773.97386095,
             "fraction_of_country_population": 0.12383052463966547,
@@ -229,6 +249,7 @@
           {
             "id": "KH",
             "name": "Cambodia",
+            "iso_alpha2": "KH",
             "population_inside": 16677381.472162623,
             "country_total_population": 16677381.472162623,
             "fraction_of_country_population": 1.0,
@@ -237,6 +258,7 @@
           {
             "id": "KZ",
             "name": "Kazakhstan",
+            "iso_alpha2": "KZ",
             "population_inside": 11393039.271201037,
             "country_total_population": 18574727.106302276,
             "fraction_of_country_population": 0.613362403980377,
@@ -245,6 +267,7 @@
           {
             "id": "TJ",
             "name": "Tajikistan",
+            "iso_alpha2": "TJ",
             "population_inside": 9208422.517468235,
             "country_total_population": 9208422.517468235,
             "fraction_of_country_population": 1.0,
@@ -253,6 +276,7 @@
           {
             "id": "HK",
             "name": "Hong Kong",
+            "iso_alpha2": "HK",
             "population_inside": 7513342.0889220685,
             "country_total_population": 7513342.0889220685,
             "fraction_of_country_population": 1.0,
@@ -261,6 +285,7 @@
           {
             "id": "LA",
             "name": "Laos",
+            "iso_alpha2": "LA",
             "population_inside": 7304762.073965836,
             "country_total_population": 7304762.073965836,
             "fraction_of_country_population": 1.0,
@@ -269,6 +294,7 @@
           {
             "id": "KG",
             "name": "Kyrgyzstan",
+            "iso_alpha2": "KG",
             "population_inside": 6574677.846218016,
             "country_total_population": 6574677.846218016,
             "fraction_of_country_population": 1.0,
@@ -277,6 +303,7 @@
           {
             "id": "SG",
             "name": "Singapore",
+            "iso_alpha2": "SG",
             "population_inside": 6005238.548670411,
             "country_total_population": 6005238.548670411,
             "fraction_of_country_population": 1.0,
@@ -285,6 +312,7 @@
           {
             "id": "MN",
             "name": "Mongolia",
+            "iso_alpha2": "MN",
             "population_inside": 3184810.805307223,
             "country_total_population": 3184810.805307223,
             "fraction_of_country_population": 1.0,
@@ -301,6 +329,7 @@
           {
             "id": "BT",
             "name": "Bhutan",
+            "iso_alpha2": "BT",
             "population_inside": 802873.0152129937,
             "country_total_population": 802873.0152129937,
             "fraction_of_country_population": 1.0,
@@ -309,6 +338,7 @@
           {
             "id": "BN",
             "name": "Brunei",
+            "iso_alpha2": "BN",
             "population_inside": 449099.5658311973,
             "country_total_population": 449099.5658311973,
             "fraction_of_country_population": 1.0,
@@ -317,6 +347,7 @@
           {
             "id": "MO",
             "name": "Macau",
+            "iso_alpha2": "MO",
             "population_inside": 427472.6128768921,
             "country_total_population": 427472.6128768921,
             "fraction_of_country_population": 1.0,
@@ -325,6 +356,7 @@
           {
             "id": "TM",
             "name": "Turkmenistan",
+            "iso_alpha2": "TM",
             "population_inside": 58105.22918534279,
             "country_total_population": 5688480.7154746745,
             "fraction_of_country_population": 0.010214542703340114,
@@ -416,80 +448,5 @@
         }
       }
     }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=1",
-    "XML:com.adobe.xmp": {
-      "population": 3879646779.2099566,
-      "populationShare": 0.5000844909794175,
-      "radiusKm": 3360.0,
-      "centerLatitude": 28.8375,
-      "centerLongitude": 100.66250000000002,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 1,
-      "nearestSettlement": "Xichang",
-      "nearestSettlementCountry": "China",
-      "distanceToSettlementKm": 192.37350312808027,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "28,50.25N",
-          "exif:GPSLongitude": "100,39.75E",
-          "Iptc4xmpExt:City": "Xichang",
-          "Iptc4xmpExt:CountryName": "China"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
-      },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "3,360 km circle holding 50.0% of the population (3,879,646,779 people); Center: 28.8375, 100.6625",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=1",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nPopulation data: Center for International Earth Science Information Network — CIESIN — Columbia University. 2018.\nGridded Population of the World, Version 4 (GPWv4): Population Count Adjusted to Match 2015 Revision of UN WPP Country\nTotals, Revision 11. Palisades, NY: NASA Socioeconomic Data and Applications Center (SEDAC).\nhttps://doi.org/10.7927/H4PN93PB\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          28,
-          1
-        ],
-        [
-          50,
-          1
-        ],
-        [
-          15000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          100,
-          1
-        ],
-        [
-          39,
-          1
-        ],
-        [
-          45000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "3,360 km circle holding 50.0% of the population (3,879,646,779 people); Center: 28.8375, 100.6625",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nPopulation data: Center for International Earth Science Information Network — CIESIN — Columbia University. 2018.\nGridded Population of the World, Version 4 (GPWv4): Population Count Adjusted to Match 2015 Revision of UN WPP Country\nTotals, Revision 11. Palisades, NY: NASA Socioeconomic Data and Applications Center (SEDAC).\nhttps://doi.org/10.7927/H4PN93PB\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "US",
-      "name": "United States",
-      "iso_alpha2": "US",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "US",
+      "iso_alpha2": "US",
+      "name": "United States"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 20
     },
     "circle": {
-      "radius_km": 951,
       "centre": {
         "lat": 38.475,
         "lon": -80.80833333333334
       },
-      "row": 3091,
       "col": 5951,
-      "population": 166624613.2745308,
-      "target": {
-        "share": 0.5,
-        "persons": 166573917.80184928,
-        "total": 333147835.60369855
-      },
-      "share_achieved": 0.5001521711002254,
-      "short_below": {
-        "radius_km": 950,
-        "population": 166540874.72821322
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.0033738363933100025,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Charleston",
         "country": "United States of America",
         "country_iso_alpha2": "US",
         "distance_km": 73.16555194744896,
+        "name": "Charleston",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 166624613.2745308,
-      "populationShare": 0.5001521711002254,
-      "radiusKm": 951.0,
-      "centerLatitude": 38.475,
-      "centerLongitude": -80.80833333333334,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "United States",
-      "Iptc4xmpCore:CountryCode": "US",
-      "countryName": "United States",
-      "countryCode": "US",
-      "nearestSettlement": "Charleston",
-      "nearestSettlementCountry": "United States of America",
-      "distanceToSettlementKm": 73.16555194744896,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "38,28.5N",
-          "exif:GPSLongitude": "80,48.5W",
-          "Iptc4xmpExt:CountryName": "United States",
-          "Iptc4xmpExt:CountryCode": "US",
-          "Iptc4xmpExt:City": "Charleston"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "United States: 951 km circle holding 50.0% of the population (166,624,613 people); Center: 38.4750, -80.8083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          38,
-          1
-        ],
-        [
-          28,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          80,
-          1
-        ],
-        [
-          48,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "United States: 951 km circle holding 50.0% of the population (166,624,613 people); Center: 38.4750, -80.8083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 166624613.2745308,
+      "predicate_slack_persons": 0.0033738363933100025,
+      "radius_km": 951,
+      "row": 3091,
+      "share_achieved": 0.5001521711002254,
+      "short_below": {
+        "population": 166540874.72821322,
+        "radius_km": 950
+      },
+      "target": {
+        "persons": 166573917.80184928,
+        "share": 0.5,
+        "total": 333147835.60369855
+      },
+      "territory_share": 0.2064826087217929,
+      "tolerance_persons": 0.0
+    }
   }
 }

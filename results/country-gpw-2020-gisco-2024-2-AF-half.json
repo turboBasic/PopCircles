@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "AF",
-      "name": "Afghanistan",
-      "iso_alpha2": "AF",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "AF",
+      "iso_alpha2": "AF",
+      "name": "Afghanistan"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 212,
       "centre": {
         "lat": 35.00833333333333,
         "lon": 69.15833333333333
       },
-      "row": 3299,
       "col": 14949,
-      "population": 18154223.93172076,
-      "target": {
-        "share": 0.5,
-        "persons": 18127478.24005809,
-        "total": 36254956.48011618
-      },
-      "share_achieved": 0.5007377113161711,
-      "short_below": {
-        "radius_km": 211,
-        "population": 18073184.514139313
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.0004088074306596867,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Charikar",
         "country": "Afghanistan",
         "country_iso_alpha2": "AF",
         "distance_km": 1.4070644848479879,
+        "name": "Charikar",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 18154223.93172076,
-      "populationShare": 0.5007377113161711,
-      "radiusKm": 212.0,
-      "centerLatitude": 35.00833333333333,
-      "centerLongitude": 69.15833333333333,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Afghanistan",
-      "Iptc4xmpCore:CountryCode": "AF",
-      "countryName": "Afghanistan",
-      "countryCode": "AF",
-      "nearestSettlement": "Charikar",
-      "nearestSettlementCountry": "Afghanistan",
-      "distanceToSettlementKm": 1.4070644848479879,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "35,0.5N",
-          "exif:GPSLongitude": "69,9.5E",
-          "Iptc4xmpExt:CountryName": "Afghanistan",
-          "Iptc4xmpExt:CountryCode": "AF",
-          "Iptc4xmpExt:City": "Charikar"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Afghanistan: 212 km circle holding 50.1% of the population (18,154,224 people); Center: 35.0083, 69.1583",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          35,
-          1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          69,
-          1
-        ],
-        [
-          9,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Afghanistan: 212 km circle holding 50.1% of the population (18,154,224 people); Center: 35.0083, 69.1583",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 18154223.93172076,
+      "predicate_slack_persons": 0.0004088074306596867,
+      "radius_km": 212,
+      "row": 3299,
+      "share_achieved": 0.5007377113161711,
+      "short_below": {
+        "population": 18073184.514139313,
+        "radius_km": 211
+      },
+      "target": {
+        "persons": 18127478.24005809,
+        "share": 0.5,
+        "total": 36254956.48011618
+      },
+      "territory_share": 0.20970089060781247,
+      "tolerance_persons": 0.0
+    }
   }
 }

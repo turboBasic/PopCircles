@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "CF",
-      "name": "Central African Republic",
-      "iso_alpha2": "CF",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "CF",
+      "iso_alpha2": "CF",
+      "name": "Central African Republic"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 207,
       "centre": {
         "lat": 5.125,
         "lon": 17.008333333333326
       },
-      "row": 5092,
       "col": 11820,
-      "population": 2655118.031581551,
-      "target": {
-        "share": 0.5,
-        "persons": 2653563.7860744633,
-        "total": 5307127.572148927
-      },
-      "share_achieved": 0.5002928600237997,
-      "short_below": {
-        "radius_km": 206,
-        "population": 2632354.7351210415
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.29600609098698e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Bossembélé",
         "country": "Central African Republic",
         "country_iso_alpha2": "CF",
         "distance_km": 72.79270783706632,
+        "name": "Bossembélé",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 2655118.031581551,
-      "populationShare": 0.5002928600237997,
-      "radiusKm": 207.0,
-      "centerLatitude": 5.125,
-      "centerLongitude": 17.008333333333326,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Central African Republic",
-      "Iptc4xmpCore:CountryCode": "CF",
-      "countryName": "Central African Republic",
-      "countryCode": "CF",
-      "nearestSettlement": "Bossembélé",
-      "nearestSettlementCountry": "Central African Republic",
-      "distanceToSettlementKm": 72.79270783706632,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "5,7.5N",
-          "exif:GPSLongitude": "17,0.5E",
-          "Iptc4xmpExt:CountryName": "Central African Republic",
-          "Iptc4xmpExt:CountryCode": "CF",
-          "Iptc4xmpExt:City": "Bossembélé"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Central African Republic: 207 km circle holding 50.0% of the population (2,655,118 people); Center: 5.1250, 17.0083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          5,
-          1
-        ],
-        [
-          7,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          17,
-          1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Central African Republic: 207 km circle holding 50.0% of the population (2,655,118 people); Center: 5.1250, 17.0083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 2655118.031581551,
+      "predicate_slack_persons": 5.29600609098698e-05,
+      "radius_km": 207,
+      "row": 5092,
+      "share_achieved": 0.5002928600237997,
+      "short_below": {
+        "population": 2632354.7351210415,
+        "radius_km": 206
+      },
+      "target": {
+        "persons": 2653563.7860744633,
+        "share": 0.5,
+        "total": 5307127.572148927
+      },
+      "territory_share": 0.209019539086147,
+      "tolerance_persons": 0.0
+    }
   }
 }

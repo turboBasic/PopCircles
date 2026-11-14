@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "FK",
-      "name": "Falkland Islands",
-      "iso_alpha2": "FK",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "FK",
+      "iso_alpha2": "FK",
+      "name": "Falkland Islands"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 4
     },
     "circle": {
-      "radius_km": 4,
       "centre": {
         "lat": -51.70833333333334,
         "lon": -57.858333333333334
       },
-      "row": 8502,
       "col": 7328,
-      "population": 1638.4399809292518,
-      "target": {
-        "share": 0.5,
-        "persons": 1406.658995938928,
-        "total": 2813.317991877856
-      },
-      "share_achieved": 0.582387055306042,
-      "short_below": {
-        "radius_km": 3,
-        "population": 1301.263376319781
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 2.639165204427326e-08,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Stanley",
         "country": "Falkland Islands",
         "country_iso_alpha2": "FK",
         "distance_km": 1.0902616971954828,
+        "name": "Stanley",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 1638.4399809292518,
-      "populationShare": 0.582387055306042,
-      "radiusKm": 4.0,
-      "centerLatitude": -51.70833333333334,
-      "centerLongitude": -57.858333333333334,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Falkland Islands",
-      "Iptc4xmpCore:CountryCode": "FK",
-      "countryName": "Falkland Islands",
-      "countryCode": "FK",
-      "nearestSettlement": "Stanley",
-      "nearestSettlementCountry": "Falkland Islands",
-      "distanceToSettlementKm": 1.0902616971954828,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "51,42.5S",
-          "exif:GPSLongitude": "57,51.5W",
-          "Iptc4xmpExt:CountryName": "Falkland Islands",
-          "Iptc4xmpExt:CountryCode": "FK",
-          "Iptc4xmpExt:City": "Stanley"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Falkland Islands: 4 km circle holding 58.2% of the population (1,638 people); Center: -51.7083, -57.8583",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          51,
-          1
-        ],
-        [
-          42,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          57,
-          1
-        ],
-        [
-          51,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Falkland Islands: 4 km circle holding 58.2% of the population (1,638 people); Center: -51.7083, -57.8583",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 1638.4399809292518,
+      "predicate_slack_persons": 2.639165204427326e-08,
+      "radius_km": 4,
+      "row": 8502,
+      "share_achieved": 0.582387055306042,
+      "short_below": {
+        "population": 1301.263376319781,
+        "radius_km": 3
+      },
+      "target": {
+        "persons": 1406.658995938928,
+        "share": 0.5,
+        "total": 2813.317991877856
+      },
+      "territory_share": 0.003019892072424394,
+      "tolerance_persons": 0.0
+    }
   }
 }

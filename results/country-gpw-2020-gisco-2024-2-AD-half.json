@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "AD",
-      "name": "Andorra",
-      "iso_alpha2": "AD",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "AD",
+      "iso_alpha2": "AD",
+      "name": "Andorra"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 6,
       "centre": {
         "lat": 42.50833333333333,
         "lon": 1.5583333333333371
       },
-      "row": 2849,
       "col": 10893,
-      "population": 33892.065967559814,
-      "target": {
-        "share": 0.5,
-        "persons": 32226.3977060318,
-        "total": 64452.7954120636
-      },
-      "share_achieved": 0.5258432276036898,
-      "short_below": {
-        "radius_km": 5,
-        "population": 27919.642974853516
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 4.6888444026344775e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Andorra la Vella",
         "country": "Andorra",
         "country_iso_alpha2": "AD",
         "distance_km": 2.615520014345095,
+        "name": "Andorra la Vella",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 33892.065967559814,
-      "populationShare": 0.5258432276036898,
-      "radiusKm": 6.0,
-      "centerLatitude": 42.50833333333333,
-      "centerLongitude": 1.5583333333333371,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Andorra",
-      "Iptc4xmpCore:CountryCode": "AD",
-      "countryName": "Andorra",
-      "countryCode": "AD",
-      "nearestSettlement": "Andorra la Vella",
-      "nearestSettlementCountry": "Andorra",
-      "distanceToSettlementKm": 2.615520014345095,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "42,30.5N",
-          "exif:GPSLongitude": "1,33.5E",
-          "Iptc4xmpExt:CountryName": "Andorra",
-          "Iptc4xmpExt:CountryCode": "AD",
-          "Iptc4xmpExt:City": "Andorra la Vella"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Andorra: 6 km circle holding 52.6% of the population (33,892 people); Center: 42.5083, 1.5583",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          42,
-          1
-        ],
-        [
-          30,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          1,
-          1
-        ],
-        [
-          33,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Andorra: 6 km circle holding 52.6% of the population (33,892 people); Center: 42.5083, 1.5583",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 33892.065967559814,
+      "predicate_slack_persons": 4.6888444026344775e-07,
+      "radius_km": 6,
+      "row": 2849,
+      "share_achieved": 0.5258432276036898,
+      "short_below": {
+        "population": 27919.642974853516,
+        "radius_km": 5
+      },
+      "target": {
+        "persons": 32226.3977060318,
+        "share": 0.5,
+        "total": 64452.7954120636
+      },
+      "territory_share": 0.2583986155585287,
+      "tolerance_persons": 0.0
+    }
   }
 }

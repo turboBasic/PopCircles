@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "NU",
-      "name": "Niue",
-      "iso_alpha2": "NU",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "NU",
+      "iso_alpha2": "NU",
+      "name": "Niue"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 6,
       "centre": {
         "lat": -19.09166666666667,
         "lon": -169.89166666666668
       },
-      "row": 6545,
       "col": 606,
-      "population": 1011.7549909353256,
-      "target": {
-        "share": 0.5,
-        "persons": 810.3474944271147,
-        "total": 1620.6949888542295
-      },
-      "share_achieved": 0.6242723016319057,
-      "short_below": {
-        "radius_km": 5,
-        "population": 692.5479523986578
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 1.3709101826992071e-08,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Alofi",
         "country": "Niue",
         "country_iso_alpha2": "NZ",
         "distance_km": 3.671199378236611,
+        "name": "Alofi",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 1011.7549909353256,
-      "populationShare": 0.6242723016319057,
-      "radiusKm": 6.0,
-      "centerLatitude": -19.09166666666667,
-      "centerLongitude": -169.89166666666668,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Niue",
-      "Iptc4xmpCore:CountryCode": "NU",
-      "countryName": "Niue",
-      "countryCode": "NU",
-      "nearestSettlement": "Alofi",
-      "nearestSettlementCountry": "Niue",
-      "distanceToSettlementKm": 3.671199378236611,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "19,5.5S",
-          "exif:GPSLongitude": "169,53.5W",
-          "Iptc4xmpExt:CountryName": "Niue",
-          "Iptc4xmpExt:CountryCode": "NU",
-          "Iptc4xmpExt:City": "Alofi"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Niue: 6 km circle holding 62.4% of the population (1,012 people); Center: -19.0917, -169.8917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          19,
-          1
-        ],
-        [
-          5,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          169,
-          1
-        ],
-        [
-          53,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Niue: 6 km circle holding 62.4% of the population (1,012 people); Center: -19.0917, -169.8917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 1011.7549909353256,
+      "predicate_slack_persons": 1.3709101826992071e-08,
+      "radius_km": 6,
+      "row": 6545,
+      "share_achieved": 0.6242723016319057,
+      "short_below": {
+        "population": 692.5479523986578,
+        "radius_km": 5
+      },
+      "target": {
+        "persons": 810.3474944271147,
+        "share": 0.5,
+        "total": 1620.6949888542295
+      },
+      "territory_share": 0.40497486921466325,
+      "tolerance_persons": 0.0
+    }
   }
 }

@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "CR",
-      "name": "Costa Rica",
-      "iso_alpha2": "CR",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "CR",
+      "iso_alpha2": "CR",
+      "name": "Costa Rica"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 10
     },
     "circle": {
-      "radius_km": 28,
       "centre": {
         "lat": 9.941666666666663,
         "lon": -84.10833333333333
       },
-      "row": 4803,
       "col": 5753,
-      "population": 2557853.5954875946,
-      "target": {
-        "share": 0.5,
-        "persons": 2515829.8317797296,
-        "total": 5031659.663559459
-      },
-      "share_achieved": 0.5083518692673537,
-      "short_below": {
-        "radius_km": 27,
-        "population": 2500863.7182807922
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.2299466350201256e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "San José",
         "country": "Costa Rica",
         "country_iso_alpha2": "CR",
         "distance_km": 3.468572312238159,
+        "name": "San José",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 2557853.5954875946,
-      "populationShare": 0.5083518692673537,
-      "radiusKm": 28.0,
-      "centerLatitude": 9.941666666666663,
-      "centerLongitude": -84.10833333333333,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Costa Rica",
-      "Iptc4xmpCore:CountryCode": "CR",
-      "countryName": "Costa Rica",
-      "countryCode": "CR",
-      "nearestSettlement": "San José",
-      "nearestSettlementCountry": "Costa Rica",
-      "distanceToSettlementKm": 3.468572312238159,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "9,56.5N",
-          "exif:GPSLongitude": "84,6.5W",
-          "Iptc4xmpExt:CountryName": "Costa Rica",
-          "Iptc4xmpExt:CountryCode": "CR",
-          "Iptc4xmpExt:City": "San José"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Costa Rica: 28 km circle holding 50.8% of the population (2,557,854 people); Center: 9.9417, -84.1083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          9,
-          1
-        ],
-        [
-          56,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          84,
-          1
-        ],
-        [
-          6,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Costa Rica: 28 km circle holding 50.8% of the population (2,557,854 people); Center: 9.9417, -84.1083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 2557853.5954875946,
+      "predicate_slack_persons": 5.2299466350201256e-05,
+      "radius_km": 28,
+      "row": 4803,
+      "share_achieved": 0.5083518692673537,
+      "short_below": {
+        "population": 2500863.7182807922,
+        "radius_km": 27
+      },
+      "target": {
+        "persons": 2515829.8317797296,
+        "share": 0.5,
+        "total": 5031659.663559459
+      },
+      "territory_share": 0.04823445051752724,
+      "tolerance_persons": 0.0
+    }
   }
 }

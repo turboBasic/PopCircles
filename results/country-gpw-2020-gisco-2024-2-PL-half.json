@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "PL",
-      "name": "Poland",
-      "iso_alpha2": "PL",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "PL",
+      "iso_alpha2": "PL",
+      "name": "Poland"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 181,
       "centre": {
         "lat": 51.025,
         "lon": 20.191666666666663
       },
-      "row": 2338,
       "col": 12011,
-      "population": 19218390.54411763,
-      "target": {
-        "share": 0.5,
-        "persons": 19149790.568610147,
-        "total": 38299581.13722029
-      },
-      "share_achieved": 0.5017911416644925,
-      "short_below": {
-        "radius_km": 180,
-        "population": 19105083.108585536
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.0004137106077011186,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Kielce",
         "country": "Poland",
         "country_iso_alpha2": "PL",
         "distance_km": 36.05720683730771,
+        "name": "Kielce",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 19218390.54411763,
-      "populationShare": 0.5017911416644925,
-      "radiusKm": 181.0,
-      "centerLatitude": 51.025,
-      "centerLongitude": 20.191666666666663,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Poland",
-      "Iptc4xmpCore:CountryCode": "PL",
-      "countryName": "Poland",
-      "countryCode": "PL",
-      "nearestSettlement": "Kielce",
-      "nearestSettlementCountry": "Poland",
-      "distanceToSettlementKm": 36.05720683730771,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "51,1.5N",
-          "exif:GPSLongitude": "20,11.5E",
-          "Iptc4xmpExt:CountryName": "Poland",
-          "Iptc4xmpExt:CountryCode": "PL",
-          "Iptc4xmpExt:City": "Kielce"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Poland: 181 km circle holding 50.2% of the population (19,218,391 people); Center: 51.0250, 20.1917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          51,
-          1
-        ],
-        [
-          1,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          20,
-          1
-        ],
-        [
-          11,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Poland: 181 km circle holding 50.2% of the population (19,218,391 people); Center: 51.0250, 20.1917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 19218390.54411763,
+      "predicate_slack_persons": 0.0004137106077011186,
+      "radius_km": 181,
+      "row": 2338,
+      "share_achieved": 0.5017911416644925,
+      "short_below": {
+        "population": 19105083.108585536,
+        "radius_km": 180
+      },
+      "target": {
+        "persons": 19149790.568610147,
+        "share": 0.5,
+        "total": 38299581.13722029
+      },
+      "territory_share": 0.3299142072949666,
+      "tolerance_persons": 0.0
+    }
   }
 }

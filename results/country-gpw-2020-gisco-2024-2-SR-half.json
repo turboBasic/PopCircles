@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "SR",
-      "name": "Suriname",
-      "iso_alpha2": "SR",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "SR",
+      "iso_alpha2": "SR",
+      "name": "Suriname"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 8
     },
     "circle": {
-      "radius_km": 11,
       "centre": {
         "lat": 5.808333333333337,
         "lon": -55.22500000000001
       },
-      "row": 5051,
       "col": 7486,
-      "population": 298551.60834257305,
-      "target": {
-        "share": 0.5,
-        "persons": 281644.47886095475,
-        "total": 563288.9577219095
-      },
-      "share_achieved": 0.5300150202659666,
-      "short_below": {
-        "radius_km": 10,
-        "population": 281588.8467977494
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 6.37995486294432e-06,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Paramaribo",
         "country": "Suriname",
         "country_iso_alpha2": "SR",
         "distance_km": 7.066395313785619,
+        "name": "Paramaribo",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 298551.60834257305,
-      "populationShare": 0.5300150202659666,
-      "radiusKm": 11.0,
-      "centerLatitude": 5.808333333333337,
-      "centerLongitude": -55.22500000000001,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Suriname",
-      "Iptc4xmpCore:CountryCode": "SR",
-      "countryName": "Suriname",
-      "countryCode": "SR",
-      "nearestSettlement": "Paramaribo",
-      "nearestSettlementCountry": "Suriname",
-      "distanceToSettlementKm": 7.066395313785619,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "5,48.5N",
-          "exif:GPSLongitude": "55,13.5W",
-          "Iptc4xmpExt:CountryName": "Suriname",
-          "Iptc4xmpExt:CountryCode": "SR",
-          "Iptc4xmpExt:City": "Paramaribo"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Suriname: 11 km circle holding 53.0% of the population (298,552 people); Center: 5.8083, -55.2250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          5,
-          1
-        ],
-        [
-          48,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          55,
-          1
-        ],
-        [
-          13,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Suriname: 11 km circle holding 53.0% of the population (298,552 people); Center: 5.8083, -55.2250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 298551.60834257305,
+      "predicate_slack_persons": 6.37995486294432e-06,
+      "radius_km": 11,
+      "row": 5051,
+      "share_achieved": 0.5300150202659666,
+      "short_below": {
+        "population": 281588.8467977494,
+        "radius_km": 10
+      },
+      "target": {
+        "persons": 281644.47886095475,
+        "share": 0.5,
+        "total": 563288.9577219095
+      },
+      "territory_share": 0.002546154163651339,
+      "tolerance_persons": 0.0
+    }
   }
 }

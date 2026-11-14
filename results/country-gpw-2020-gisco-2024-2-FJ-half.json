@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "FJ",
-      "name": "Fiji",
-      "iso_alpha2": "FJ",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "FJ",
+      "iso_alpha2": "FJ",
+      "name": "Fiji"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 12
     },
     "circle": {
-      "radius_km": 54,
       "centre": {
         "lat": -17.79166666666667,
         "lon": 178.125
       },
-      "row": 6467,
       "col": 21487,
-      "population": 461842.240789416,
-      "target": {
-        "share": 0.5,
-        "persons": 455592.04325919756,
-        "total": 911184.0865183951
-      },
-      "share_achieved": 0.5068594234937753,
-      "short_below": {
-        "radius_km": 53,
-        "population": 451009.8097758468
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 7.214235816377072e-06,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Suva",
         "country": "Fiji",
         "country_iso_alpha2": "FJ",
         "distance_km": 50.62526711209274,
+        "name": "Suva",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 461842.240789416,
-      "populationShare": 0.5068594234937753,
-      "radiusKm": 54.0,
-      "centerLatitude": -17.79166666666667,
-      "centerLongitude": 178.125,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Fiji",
-      "Iptc4xmpCore:CountryCode": "FJ",
-      "countryName": "Fiji",
-      "countryCode": "FJ",
-      "nearestSettlement": "Suva",
-      "nearestSettlementCountry": "Fiji",
-      "distanceToSettlementKm": 50.62526711209274,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "17,47.5S",
-          "exif:GPSLongitude": "178,7.5E",
-          "Iptc4xmpExt:CountryName": "Fiji",
-          "Iptc4xmpExt:CountryCode": "FJ",
-          "Iptc4xmpExt:City": "Suva"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Fiji: 54 km circle holding 50.7% of the population (461,842 people); Center: -17.7917, 178.1250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          17,
-          1
-        ],
-        [
-          47,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          178,
-          1
-        ],
-        [
-          7,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Fiji: 54 km circle holding 50.7% of the population (461,842 people); Center: -17.7917, 178.1250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 461842.240789416,
+      "predicate_slack_persons": 7.214235816377072e-06,
+      "radius_km": 54,
+      "row": 6467,
+      "share_achieved": 0.5068594234937753,
+      "short_below": {
+        "population": 451009.8097758468,
+        "radius_km": 53
+      },
+      "target": {
+        "persons": 455592.04325919756,
+        "share": 0.5,
+        "total": 911184.0865183951
+      },
+      "territory_share": 0.4228197977795646,
+      "tolerance_persons": 0.0
+    }
   }
 }

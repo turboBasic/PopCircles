@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "WF",
-      "name": "Wallis and Futuna",
-      "iso_alpha2": "WF",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "WF",
+      "iso_alpha2": "WF",
+      "name": "Wallis and Futuna"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 5,
       "centre": {
         "lat": -13.274999999999991,
         "lon": -176.20833333333334
       },
-      "row": 6196,
       "col": 227,
-      "population": 6572.682630300522,
-      "target": {
-        "share": 0.5,
-        "persons": 6381.555870980024,
-        "total": 12763.111741960049
-      },
-      "share_achieved": 0.5149749342624768,
-      "short_below": {
-        "radius_km": 4,
-        "population": 4791.608939886093
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 1.0918732736024251e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Apia",
         "country": "Samoa",
         "country_iso_alpha2": "WS",
         "distance_km": 483.94897347774935,
+        "name": "Apia",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 6572.682630300522,
-      "populationShare": 0.5149749342624768,
-      "radiusKm": 5.0,
-      "centerLatitude": -13.274999999999991,
-      "centerLongitude": -176.20833333333334,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Wallis and Futuna",
-      "Iptc4xmpCore:CountryCode": "WF",
-      "countryName": "Wallis and Futuna",
-      "countryCode": "WF",
-      "nearestSettlement": "Apia",
-      "nearestSettlementCountry": "Samoa",
-      "distanceToSettlementKm": 483.94897347774935,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "13,16.5S",
-          "exif:GPSLongitude": "176,12.5W",
-          "Iptc4xmpExt:CountryName": "Wallis and Futuna",
-          "Iptc4xmpExt:CountryCode": "WF",
-          "Iptc4xmpExt:City": "Apia"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Wallis and Futuna: 5 km circle holding 51.5% of the population (6,573 people); Center: -13.2750, -176.2083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          13,
-          1
-        ],
-        [
-          16,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          176,
-          1
-        ],
-        [
-          12,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Wallis and Futuna: 5 km circle holding 51.5% of the population (6,573 people); Center: -13.2750, -176.2083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 6572.682630300522,
+      "predicate_slack_persons": 1.0918732736024251e-07,
+      "radius_km": 5,
+      "row": 6196,
+      "share_achieved": 0.5149749342624768,
+      "short_below": {
+        "population": 4791.608939886093,
+        "radius_km": 4
+      },
+      "target": {
+        "persons": 6381.555870980024,
+        "share": 0.5,
+        "total": 12763.111741960049
+      },
+      "territory_share": 0.3871392884388491,
+      "tolerance_persons": 0.0
+    }
   }
 }

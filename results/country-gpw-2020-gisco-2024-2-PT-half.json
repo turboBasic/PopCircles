@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "PT",
-      "name": "Portugal",
-      "iso_alpha2": "PT",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "PT",
+      "iso_alpha2": "PT",
+      "name": "Portugal"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 14
     },
     "circle": {
-      "radius_km": 128,
       "centre": {
         "lat": 39.608333333333334,
         "lon": -8.508333333333326
       },
-      "row": 3023,
       "col": 10289,
-      "population": 5090664.55817091,
-      "target": {
-        "share": 0.5,
-        "persons": 5074609.665232348,
-        "total": 10149219.330464697
-      },
-      "share_achieved": 0.5015818845189768,
-      "short_below": {
-        "radius_km": 127,
-        "population": 5037748.838912839
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00010480492792930701,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Leiria",
         "country": "Portugal",
         "country_iso_alpha2": "PT",
         "distance_km": 29.25326929145233,
+        "name": "Leiria",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 5090664.55817091,
-      "populationShare": 0.5015818845189768,
-      "radiusKm": 128.0,
-      "centerLatitude": 39.608333333333334,
-      "centerLongitude": -8.508333333333326,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Portugal",
-      "Iptc4xmpCore:CountryCode": "PT",
-      "countryName": "Portugal",
-      "countryCode": "PT",
-      "nearestSettlement": "Leiria",
-      "nearestSettlementCountry": "Portugal",
-      "distanceToSettlementKm": 29.25326929145233,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "39,36.5N",
-          "exif:GPSLongitude": "8,30.5W",
-          "Iptc4xmpExt:CountryName": "Portugal",
-          "Iptc4xmpExt:CountryCode": "PT",
-          "Iptc4xmpExt:City": "Leiria"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Portugal: 128 km circle holding 50.2% of the population (5,090,665 people); Center: 39.6083, -8.5083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          39,
-          1
-        ],
-        [
-          36,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          8,
-          1
-        ],
-        [
-          30,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Portugal: 128 km circle holding 50.2% of the population (5,090,665 people); Center: 39.6083, -8.5083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 5090664.55817091,
+      "predicate_slack_persons": 0.00010480492792930701,
+      "radius_km": 128,
+      "row": 3023,
+      "share_achieved": 0.5015818845189768,
+      "short_below": {
+        "population": 5037748.838912839,
+        "radius_km": 127
+      },
+      "target": {
+        "persons": 5074609.665232348,
+        "share": 0.5,
+        "total": 10149219.330464697
+      },
+      "territory_share": 0.4009628018581399,
+      "tolerance_persons": 0.0
+    }
   }
 }

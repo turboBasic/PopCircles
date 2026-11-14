@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "GG",
-      "name": "Guernsey",
-      "iso_alpha2": "GG",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "GG",
+      "iso_alpha2": "GG",
+      "name": "Guernsey"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 4
     },
     "circle": {
-      "radius_km": 4,
       "centre": {
         "lat": 49.458333333333336,
         "lon": -2.558333333333337
       },
-      "row": 2432,
       "col": 10646,
-      "population": 45896.02517223358,
-      "target": {
-        "share": 0.5,
-        "persons": 31327.9830981642,
-        "total": 62655.9661963284
-      },
-      "share_achieved": 0.7325084578286027,
-      "short_below": {
-        "radius_km": 3,
-        "population": 30469.53793334961
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 4.6457549694353045e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Cherbourg-Octeville",
         "country": "France",
         "country_iso_alpha2": "FR",
         "distance_km": 68.91562015068848,
+        "name": "Cherbourg-Octeville",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 45896.02517223358,
-      "populationShare": 0.7325084578286027,
-      "radiusKm": 4.0,
-      "centerLatitude": 49.458333333333336,
-      "centerLongitude": -2.558333333333337,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Guernsey",
-      "Iptc4xmpCore:CountryCode": "GG",
-      "countryName": "Guernsey",
-      "countryCode": "GG",
-      "nearestSettlement": "Cherbourg-Octeville",
-      "nearestSettlementCountry": "France",
-      "distanceToSettlementKm": 68.91562015068848,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "49,27.5N",
-          "exif:GPSLongitude": "2,33.5W",
-          "Iptc4xmpExt:CountryName": "Guernsey",
-          "Iptc4xmpExt:CountryCode": "GG",
-          "Iptc4xmpExt:City": "Cherbourg-Octeville"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Guernsey: 4 km circle holding 73.3% of the population (45,896 people); Center: 49.4583, -2.5583",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          49,
-          1
-        ],
-        [
-          27,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          2,
-          1
-        ],
-        [
-          33,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Guernsey: 4 km circle holding 73.3% of the population (45,896 people); Center: 49.4583, -2.5583",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 45896.02517223358,
+      "predicate_slack_persons": 4.6457549694353045e-07,
+      "radius_km": 4,
+      "row": 2432,
+      "share_achieved": 0.7325084578286027,
+      "short_below": {
+        "population": 30469.53793334961,
+        "radius_km": 3
+      },
+      "target": {
+        "persons": 31327.9830981642,
+        "share": 0.5,
+        "total": 62655.9661963284
+      },
+      "territory_share": 0.5130225779413631,
+      "tolerance_persons": 0.0
+    }
   }
 }

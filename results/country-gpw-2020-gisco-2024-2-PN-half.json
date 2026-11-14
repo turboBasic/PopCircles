@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "PN",
-      "name": "Pitcairn Islands",
-      "iso_alpha2": "PN",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "PN",
+      "iso_alpha2": "PN",
+      "name": "Pitcairn Islands"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,103 +37,28 @@
       "radii": 4
     },
     "circle": {
-      "radius_km": 3,
       "centre": {
         "lat": -24.375,
         "lon": -128.325
       },
-      "row": 6862,
       "col": 3100,
+      "covers_whole_grid": false,
       "population": 88.87758529186249,
-      "target": {
-        "share": 0.5,
-        "persons": 85.90373226976953,
-        "total": 171.80746453953907
-      },
+      "predicate_slack_persons": 1.6398261897314685e-09,
+      "radius_km": 3,
+      "row": 6862,
       "share_achieved": 0.5173092189565988,
       "short_below": {
-        "radius_km": 2,
-        "population": 51.81921100616455
+        "population": 51.81921100616455,
+        "radius_km": 2
       },
-      "covers_whole_grid": false,
-      "predicate_slack_persons": 1.6398261897314685e-09,
+      "target": {
+        "persons": 85.90373226976953,
+        "share": 0.5,
+        "total": 171.80746453953907
+      },
+      "territory_share": 0.4739886009707169,
       "tolerance_persons": 0.0
     }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 88.87758529186249,
-      "populationShare": 0.5173092189565988,
-      "radiusKm": 3.0,
-      "centerLatitude": -24.375,
-      "centerLongitude": -128.325,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Pitcairn Islands",
-      "Iptc4xmpCore:CountryCode": "PN",
-      "countryName": "Pitcairn Islands",
-      "countryCode": "PN",
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "24,22.5S",
-          "exif:GPSLongitude": "128,19.5W",
-          "Iptc4xmpExt:CountryName": "Pitcairn Islands",
-          "Iptc4xmpExt:CountryCode": "PN"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
-      },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Pitcairn Islands: 3 km circle holding 51.7% of the population (89 people); Center: -24.3750, -128.3250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          24,
-          1
-        ],
-        [
-          22,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          128,
-          1
-        ],
-        [
-          19,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Pitcairn Islands: 3 km circle holding 51.7% of the population (89 people); Center: -24.3750, -128.3250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

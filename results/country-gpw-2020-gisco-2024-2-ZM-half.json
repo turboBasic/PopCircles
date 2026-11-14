@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "ZM",
-      "name": "Zambia",
-      "iso_alpha2": "ZM",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "ZM",
+      "iso_alpha2": "ZM",
+      "name": "Zambia"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 18
     },
     "circle": {
-      "radius_km": 271,
       "centre": {
         "lat": -14.625,
         "lon": 27.174999999999983
       },
-      "row": 6277,
       "col": 12430,
-      "population": 9387264.953148583,
-      "target": {
-        "share": 0.5,
-        "persons": 9379257.388261417,
-        "total": 18758514.776522834
-      },
-      "share_achieved": 0.5004268762736583,
-      "short_below": {
-        "radius_km": 270,
-        "population": 9362205.558027888
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00020591699252091512,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Mumbwa",
         "country": "Zambia",
         "country_iso_alpha2": "ZM",
         "distance_km": 41.01504225001339,
+        "name": "Mumbwa",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 9387264.953148583,
-      "populationShare": 0.5004268762736583,
-      "radiusKm": 271.0,
-      "centerLatitude": -14.625,
-      "centerLongitude": 27.174999999999983,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Zambia",
-      "Iptc4xmpCore:CountryCode": "ZM",
-      "countryName": "Zambia",
-      "countryCode": "ZM",
-      "nearestSettlement": "Mumbwa",
-      "nearestSettlementCountry": "Zambia",
-      "distanceToSettlementKm": 41.01504225001339,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "14,37.5S",
-          "exif:GPSLongitude": "27,10.5E",
-          "Iptc4xmpExt:CountryName": "Zambia",
-          "Iptc4xmpExt:CountryCode": "ZM",
-          "Iptc4xmpExt:City": "Mumbwa"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Zambia: 271 km circle holding 50.0% of the population (9,387,265 people); Center: -14.6250, 27.1750",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          14,
-          1
-        ],
-        [
-          37,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          27,
-          1
-        ],
-        [
-          10,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Zambia: 271 km circle holding 50.0% of the population (9,387,265 people); Center: -14.6250, 27.1750",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 9387264.953148583,
+      "predicate_slack_persons": 0.00020591699252091512,
+      "radius_km": 271,
+      "row": 6277,
+      "share_achieved": 0.5004268762736583,
+      "short_below": {
+        "population": 9362205.558027888,
+        "radius_km": 270
+      },
+      "target": {
+        "persons": 9379257.388261417,
+        "share": 0.5,
+        "total": 18758514.776522834
+      },
+      "territory_share": 0.29890954840173617,
+      "tolerance_persons": 0.0
+    }
   }
 }

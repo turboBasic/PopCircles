@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "VI",
-      "name": "Us Virgin Islands",
-      "iso_alpha2": "VI",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "VI",
+      "iso_alpha2": "VI",
+      "name": "Us Virgin Islands"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 8
     },
     "circle": {
-      "radius_km": 13,
       "centre": {
         "lat": 18.34166666666667,
         "lon": -64.89166666666667
       },
-      "row": 4299,
       "col": 6906,
-      "population": 54374.4054184109,
-      "target": {
-        "share": 0.5,
-        "persons": 53083.682154415175,
-        "total": 106167.36430883035
-      },
-      "share_achieved": 0.5121574390811957,
-      "short_below": {
-        "radius_km": 12,
-        "population": 53006.413160339
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 8.83240754875418e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Christiansted",
         "country": "United States Virgin Islands",
         "country_iso_alpha2": "VI",
         "distance_km": 67.43344074628494,
+        "name": "Christiansted",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 54374.4054184109,
-      "populationShare": 0.5121574390811957,
-      "radiusKm": 13.0,
-      "centerLatitude": 18.34166666666667,
-      "centerLongitude": -64.89166666666667,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Us Virgin Islands",
-      "Iptc4xmpCore:CountryCode": "VI",
-      "countryName": "Us Virgin Islands",
-      "countryCode": "VI",
-      "nearestSettlement": "Christiansted",
-      "nearestSettlementCountry": "United States Virgin Islands",
-      "distanceToSettlementKm": 67.43344074628494,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "18,20.5N",
-          "exif:GPSLongitude": "64,53.5W",
-          "Iptc4xmpExt:CountryName": "Us Virgin Islands",
-          "Iptc4xmpExt:CountryCode": "VI",
-          "Iptc4xmpExt:City": "Christiansted"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Us Virgin Islands: 13 km circle holding 51.2% of the population (54,374 people); Center: 18.3417, -64.8917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          18,
-          1
-        ],
-        [
-          20,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          64,
-          1
-        ],
-        [
-          53,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Us Virgin Islands: 13 km circle holding 51.2% of the population (54,374 people); Center: 18.3417, -64.8917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 54374.4054184109,
+      "predicate_slack_persons": 8.83240754875418e-07,
+      "radius_km": 13,
+      "row": 4299,
+      "share_achieved": 0.5121574390811957,
+      "short_below": {
+        "population": 53006.413160339,
+        "radius_km": 12
+      },
+      "target": {
+        "persons": 53083.682154415175,
+        "share": 0.5,
+        "total": 106167.36430883035
+      },
+      "territory_share": 0.25838329610704874,
+      "tolerance_persons": 0.0
+    }
   }
 }
