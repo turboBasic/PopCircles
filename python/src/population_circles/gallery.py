@@ -12,7 +12,7 @@ import time
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any, Literal, NotRequired, TypedDict, cast
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -23,7 +23,7 @@ from PIL import Image, ImageChops
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.circle_document import CIRCLE_KINDS, Answer, Envelope, circle_of
-from population_circles.circle_map import Invoke, child, invoke_cli, require_success
+from population_circles.circle_map import Invoke, WorkflowError, child, invoke_cli, require_success
 from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
@@ -49,6 +49,7 @@ from population_circles.render_map import (
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
+CountryRefresh = Literal["sweep", "coverage"]
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2
 HEADER_CROP_ASPECT_TOLERANCE = 2
@@ -751,8 +752,98 @@ def report_sweep_work(sweep: dict[str, Any]) -> None:
     )
 
 
+def coverage_sweep(invoke: Invoke, path: Path, selection: dict[str, Any]) -> dict[str, Any]:
+    arguments = [
+        "country",
+        "coverage",
+        "--input",
+        str(path),
+        "--combination",
+        selection["combination_id"],
+        "--resolution",
+        str(selection["resolution"]),
+    ]
+    refreshed = child("country coverage", arguments, invoke)
+    require_success("country coverage", refreshed)
+    sweep = json.loads(refreshed.stdout)
+    if sweep.get("document") != "country-sweep":
+        message = "country coverage: Rust CLI returned a document other than country-sweep"
+        raise ValueError(message)
+    return sweep
+
+
+def country_sweep(
+    invoke: Invoke,
+    corpus: Path,
+    selection: dict[str, Any],
+    countries: list[dict[str, Any]],
+    refresh: CountryRefresh | None,
+) -> dict[str, Any]:
+    filename = (
+        f"country-sweep-{quote(selection['combination_id'], safe='')}-"
+        f"{selection['resolution']}-half.json"
+    )
+    saved = None if refresh == "sweep" else cached_sweep(corpus / filename, selection, countries)
+    country_ids = [country["id"] for country in countries]
+    if refresh == "coverage":
+        if saved is None:
+            message = "country coverage refresh requires a valid saved country sweep"
+            raise WorkflowError(message)
+        sweep = coverage_sweep(
+            invoke,
+            corpus / filename,
+            selection,
+        )
+        print(
+            f"Gallery: refreshed territory coverage for {len(countries)} saved country results",
+            file=sys.stderr,
+            flush=True,
+        )
+        return sweep
+    if saved is not None and refresh != "sweep":
+        print(
+            "Gallery: reused saved 50% country sweep; "
+            f"sweep work avoided for {len(country_ids)} countries",
+            file=sys.stderr,
+            flush=True,
+        )
+        return saved
+    arguments = [
+        "country",
+        "sweep",
+        "--combination",
+        selection["combination_id"],
+        "--resolution",
+        str(selection["resolution"]),
+        "--from",
+        HALF_SHARE_PERCENT,
+        "--to",
+        HALF_SHARE_PERCENT,
+        "--step",
+        "1",
+    ]
+    for country_id in country_ids:
+        arguments.extend(["--country", country_id])
+    print(
+        f"Gallery: calculating 50% circles for {len(country_ids)} countries",
+        file=sys.stderr,
+        flush=True,
+    )
+    swept = child("country sweep", arguments, invoke)
+    require_success("country sweep", swept)
+    result = json.loads(swept.stdout)
+    if result.get("document") != "country-sweep":
+        message = "country sweep: Rust CLI returned a document other than country-sweep"
+        raise ValueError(message)
+    report_sweep_work(result)
+    return result
+
+
 def country_documents(
-    invoke: Invoke, corpus: Path, *, refresh_country_sweep: bool = False
+    invoke: Invoke,
+    corpus: Path,
+    *,
+    country_refresh: CountryRefresh | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
     listed = child("country list", ["country", "list"], invoke)
     require_success("country list", listed)
@@ -771,48 +862,7 @@ def country_documents(
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
-    sweep = (
-        None
-        if refresh_country_sweep
-        else cached_sweep(corpus / sweep_filename, selection, countries)
-    )
-    arguments = [
-        "country",
-        "sweep",
-        "--combination",
-        selection["combination_id"],
-        "--resolution",
-        str(selection["resolution"]),
-        "--from",
-        HALF_SHARE_PERCENT,
-        "--to",
-        HALF_SHARE_PERCENT,
-        "--step",
-        "1",
-    ]
-    for country_id in country_ids:
-        arguments.extend(["--country", country_id])
-    if sweep is None:
-        print(
-            f"Gallery: calculating 50% circles for {len(countries)} countries",
-            file=sys.stderr,
-            flush=True,
-        )
-        swept = child("country sweep", arguments, invoke)
-        require_success("country sweep", swept)
-        sweep = json.loads(swept.stdout)
-        if sweep.get("document") != "country-sweep":
-            message = "country sweep: Rust CLI returned a document other than country-sweep"
-            raise ValueError(message)
-        report_sweep_work(sweep)
-    else:
-        print(
-            "Gallery: reused saved 50% country sweep; "
-            f"sweep work avoided for {len(countries)} countries",
-            file=sys.stderr,
-            flush=True,
-        )
-
+    sweep = country_sweep(invoke, corpus, selection, countries, country_refresh)
     sweep_selection = sweep["result"]["selection"]
     if sweep_selection != listing["result"]["selection"]:
         message = "country sweep: result selection differs from the configured country list"
@@ -856,7 +906,7 @@ def build(
     output: Path,
     invoke: Invoke = invoke_cli,
     *,
-    refresh_country_sweep: bool = False,
+    country_refresh: CountryRefresh | None = None,
     cache_directory: Path | None = None,
 ) -> tuple[list[Drawn], list[Skipped]]:
     # One basemap union and one registry read for the whole run, which is the only reason this is a
@@ -883,7 +933,9 @@ def build(
     (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     missing, generated = country_documents(
-        invoke, corpus, refresh_country_sweep=refresh_country_sweep
+        invoke,
+        corpus,
+        country_refresh=country_refresh,
     )
 
     sources = [
@@ -906,7 +958,13 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Render every renderable document in a corpus.")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--refresh-country-sweep", action="store_true")
+    refresh = parser.add_mutually_exclusive_group()
+    refresh.add_argument(
+        "--refresh-country-sweep", dest="country_refresh", action="store_const", const="sweep"
+    )
+    refresh.add_argument(
+        "--refresh-country-coverage", dest="country_refresh", action="store_const", const="coverage"
+    )
     return parser.parse_args(argv)
 
 
@@ -915,7 +973,11 @@ def main(argv: list[str] | None = None) -> int:
     corpus: Path = args.input
     output: Path = args.output
 
-    drawn, skipped = build(corpus, output, refresh_country_sweep=args.refresh_country_sweep)
+    drawn, skipped = build(
+        corpus,
+        output,
+        country_refresh=args.country_refresh,
+    )
     for one in drawn:
         print(one.figure)
     for one in skipped:

@@ -19,7 +19,8 @@ pub enum TerritoryShareError {
 ///
 /// # Errors
 /// Returns [`TerritoryShareError::GridMismatch`] for masks on another grid and
-/// [`TerritoryShareError::ZeroArea`] when their union contains no cells.
+/// [`TerritoryShareError::ZeroArea`] when their union contains no cells, or
+/// [`TerritoryShareError::GridIndex`] when a circle row is outside the grid.
 pub fn territory_share(
     domains: &[Domain],
     kernel: &Kernel,

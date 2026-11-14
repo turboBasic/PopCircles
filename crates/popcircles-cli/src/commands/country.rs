@@ -939,6 +939,144 @@ pub(crate) fn sweep(
         .with_countries_without_population_cells(countries_without_population_cells),
     )))
 }
+
+/// Add area coverage to a saved country sweep without reopening country population tables.
+fn add_circle_coverage(
+    circle: &mut serde_json::Map<String, serde_json::Value>,
+    id: &str,
+    domain: &Domain,
+    grid: Grid,
+) -> Result<(), Failure> {
+    let row_index = circle
+        .get("row")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+        .ok_or_else(|| {
+            Failure::bad_input(format!("saved country {id} circle has an invalid row"))
+        })?;
+    let col_index = circle
+        .get("col")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+        .ok_or_else(|| {
+            Failure::bad_input(format!("saved country {id} circle has an invalid column"))
+        })?;
+    let row = grid.row(row_index).ok_or_else(|| {
+        Failure::bad_input(format!("saved country {id} circle row is outside the grid"))
+    })?;
+    let col = grid.col(col_index).ok_or_else(|| {
+        Failure::bad_input(format!(
+            "saved country {id} circle column is outside the grid"
+        ))
+    })?;
+    let centre = circle
+        .get("centre")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| Failure::bad_input(format!("saved country {id} circle has no centre")))?;
+    let latitude = centre
+        .get("lat")
+        .and_then(serde_json::Value::as_f64)
+        .ok_or_else(|| {
+            Failure::bad_input(format!("saved country {id} circle has an invalid latitude"))
+        })?;
+    let longitude = centre
+        .get("lon")
+        .and_then(serde_json::Value::as_f64)
+        .ok_or_else(|| {
+            Failure::bad_input(format!(
+                "saved country {id} circle has an invalid longitude"
+            ))
+        })?;
+    let expected_centre = grid
+        .centre_of(row, col)
+        .map_err(|error| Failure::grid_index(&error))?;
+    if (latitude, longitude) != (expected_centre.lat, expected_centre.lon) {
+        return Err(Failure::bad_input(format!(
+            "saved country {id} circle centre does not match its grid cell"
+        )));
+    }
+    let radius = circle
+        .get("radius_km")
+        .and_then(serde_json::Value::as_f64)
+        .ok_or_else(|| {
+            Failure::bad_input(format!("saved country {id} circle has an invalid radius"))
+        })?;
+    let radius = RadiusKm::new(radius).map_err(|error| Failure::bad_input(error.to_string()))?;
+    let kernel = Kernel::new(grid, row, radius).map_err(Failure::kernel)?;
+    match popcircles::territory::territory_share(std::slice::from_ref(domain), &kernel, col) {
+        Ok(share) => {
+            let share = serde_json::Number::from_f64(share)
+                .ok_or_else(|| Failure::bad_input("territory coverage is not finite"))?;
+            circle.insert("territory_share".to_owned(), share.into());
+        }
+        Err(popcircles::territory::TerritoryShareError::ZeroArea) => {
+            circle.remove("territory_share");
+        }
+        Err(error) => return Err(Failure::bad_input(error.to_string())),
+    }
+    Ok(())
+}
+
+pub(crate) fn coverage(
+    config_path: Option<&Path>,
+    input: &Path,
+    args: &CountryTableArgs,
+) -> Result<String, Failure> {
+    let prepared = load_selected_prepared(config_path, args)?;
+    let grid = prepared
+        .loaded
+        .manifest
+        .effective_grid
+        .grid()
+        .map_err(|()| Failure::bad_input("prepared effective grid is invalid"))?;
+    let source = fs::read_to_string(input).map_err(|error| {
+        Failure::bad_input(format!(
+            "could not read saved country sweep {}: {error}",
+            input.display()
+        ))
+    })?;
+    let mut document: serde_json::Value = serde_json::from_str(&source).map_err(|error| {
+        Failure::bad_input(format!("saved country sweep is invalid JSON: {error}"))
+    })?;
+    if document.get("document").and_then(serde_json::Value::as_str) != Some("country-sweep") {
+        return Err(Failure::bad_input("saved document is not a country sweep"));
+    }
+    let selection = serde_json::to_value(prepared.selection())
+        .map_err(|error| Failure::bad_input(error.to_string()))?;
+    if document.pointer("/result/selection") != Some(&selection) {
+        return Err(Failure::bad_input(
+            "saved country sweep does not match the selected prepared data",
+        ));
+    }
+    let countries = document
+        .pointer_mut("/result/countries")
+        .and_then(serde_json::Value::as_array_mut)
+        .ok_or_else(|| Failure::bad_input("saved country sweep has no country results"))?;
+    for country in countries {
+        let id = country
+            .pointer("/country/id")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| Failure::bad_input("saved country result has no feature ID"))?
+            .to_owned();
+        let feature = prepared.feature(&id)?;
+        let domain = selected_domain(feature, grid)?;
+        let records = country
+            .get_mut("records")
+            .and_then(serde_json::Value::as_array_mut)
+            .ok_or_else(|| Failure::bad_input(format!("saved country {id} has no records")))?;
+        for record in records {
+            let circle = record
+                .get_mut("circle")
+                .and_then(serde_json::Value::as_object_mut)
+                .ok_or_else(|| {
+                    Failure::bad_input(format!("saved country {id} has an invalid circle"))
+                })?;
+            add_circle_coverage(circle, &id, &domain, grid)?;
+        }
+    }
+    serialised(serde_json::to_string(&document))
+}
+
 #[cfg(test)]
 #[expect(
     clippy::expect_used,

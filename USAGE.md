@@ -234,6 +234,18 @@ prepared resolution for a more precise selected answer when needed.
 A sweep skips features with no uniquely owned population cells at that resolution, reports each ID and
 reason on stderr, and measures the elapsed time and cropped grid for every completed feature.
 
+To add territory coverage to an existing saved country sweep without rerunning its population searches,
+use:
+
+```sh
+mise run cli -- country coverage --input results/country-sweep-gpw-2020-gisco-2024-2-half.json \
+  --combination gpw-2020-gisco-2024 --resolution 2
+```
+
+The saved sweep must match the selected prepared data. A country whose effective-grid mask has zero area
+keeps its legacy result without a coverage field; direct country searches still report the zero-area error.
+The Gallery's `--refresh-country-coverage` option uses this path and preserves saved population answers.
+
 ## Maps
 
 From the checkout root, one command searches a named dataset and saves its map:

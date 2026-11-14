@@ -235,11 +235,19 @@ def country_cli(
     sweep = country_sweep(swept_countries, selection)
     sweep["result"]["countries_without_population_cells"] = countries_without_population_cells or []
     outputs = [json.dumps(listing).encode(), json.dumps(sweep).encode()]
+    covered = copy.deepcopy(sweep)
+    for country in covered["result"]["countries"]:
+        for record in country["records"]:
+            record["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
     calls: list[list[str]] = []
 
     def invoke(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
         calls.append(arguments)
-        output = outputs[min(len(calls) - 1, 1)]
+        output = (
+            json.dumps(covered).encode()
+            if arguments[1:2] == ["coverage"]
+            else outputs[min(len(calls) - 1, 1)]
+        )
         return subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
 
     return invoke, calls
@@ -952,6 +960,47 @@ def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: 
     )
 
 
+def test_country_coverage_refresh_uses_saved_answers_without_running_country_sweep(
+    tmp_path: Path,
+) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    swept = [swept_country("AA", "Alpha")]
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    sweep_path = corpus / "country-sweep-fixture-10-half.json"
+    written(corpus, sweep_path.name, country_sweep(swept))
+    invoke, calls = country_cli(countries, swept)
+
+    missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
+
+    assert [call[:2] for call in calls] == [["country", "list"], ["country", "coverage"]]
+    assert calls[1][3] == str(sweep_path)
+    assert missing == []
+    circle = generated["country-fixture-10-AA-half.json"]["result"]["circle"]
+    assert circle["territory_share"] == COUNTRY_TERRITORY_SHARE
+    assert (
+        circle["centre"],
+        circle["radius_km"],
+        circle["population"],
+        circle["share_achieved"],
+    ) == (
+        swept[0]["records"][0]["circle"]["centre"],
+        swept[0]["records"][0]["circle"]["radius_km"],
+        swept[0]["records"][0]["circle"]["population"],
+        swept[0]["records"][0]["circle"]["share_achieved"],
+    )
+
+
+def test_country_coverage_refresh_requires_a_valid_saved_sweep(tmp_path: Path) -> None:
+    countries = [configured_country("AA", "Alpha")]
+    invoke, calls = country_cli(countries, [swept_country("AA", "Alpha")])
+
+    with pytest.raises(WorkflowError, match="requires a valid saved country sweep"):
+        country_documents(invoke, tmp_path / "missing", country_refresh="coverage")
+
+    assert calls == [["country", "list"]]
+
+
 def test_a_saved_sweep_without_unavailable_country_metadata_is_refreshed(tmp_path: Path) -> None:
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
@@ -1007,14 +1056,14 @@ def test_country_answer_documents_are_stable_when_only_sweep_stats_change(
     first_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 5
     first_swept["records"][0]["circle"]["stats"]["radii_reused"] = 3
     first_invoke, _ = country_cli(countries, [first_swept])
-    first = country_documents(first_invoke, tmp_path / "first", refresh_country_sweep=True)[1]
+    first = country_documents(first_invoke, tmp_path / "first", country_refresh="sweep")[1]
     assert "country sweep evaluated 5 radii and reused 3" in capsys.readouterr().err
 
     second_swept = swept_country("AA", "Alpha")
     second_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 99
     second_swept["records"][0]["circle"]["stats"]["radii_reused"] = 42
     second_invoke, _ = country_cli(countries, [second_swept])
-    second = country_documents(second_invoke, tmp_path / "second", refresh_country_sweep=True)[1]
+    second = country_documents(second_invoke, tmp_path / "second", country_refresh="sweep")[1]
 
     assert {name: json.dumps(payload, indent=2) for name, payload in first.items()} == {
         name: json.dumps(payload, indent=2) for name, payload in second.items()
@@ -1029,7 +1078,7 @@ def test_a_stats_free_sweep_is_reusable_and_reports_avoided_work(
     invoke, calls = country_cli(countries, swept)
     corpus = tmp_path / "corpus"
     corpus.mkdir()
-    generated = country_documents(invoke, corpus, refresh_country_sweep=True)[1]
+    generated = country_documents(invoke, corpus, country_refresh="sweep")[1]
     sweep_path = corpus / "country-sweep-fixture-10-half.json"
     sweep_path.write_text(json.dumps(generated[sweep_path.name]), encoding="utf-8")
     calls.clear()
@@ -1101,7 +1150,7 @@ def test_refresh_bypasses_a_matching_country_sweep_cache(tmp_path: Path) -> None
     written(corpus, "country-sweep-fixture-10-half.json", country_sweep(swept))
     invoke, calls = country_cli(countries, swept)
 
-    country_documents(invoke, corpus, refresh_country_sweep=True)
+    country_documents(invoke, corpus, country_refresh="sweep")
 
     assert len(calls) == EXPECTED_COUNTRY_CLI_CALLS
     assert calls[1][0:2] == ["country", "sweep"]
@@ -1151,7 +1200,7 @@ def test_a_failed_sweep_does_not_replace_saved_country_results(
         return result
 
     with pytest.raises(WorkflowError):
-        build(corpus, tmp_path / "gallery", fail_sweep, refresh_country_sweep=True)
+        build(corpus, tmp_path / "gallery", fail_sweep, country_refresh="sweep")
 
     assert calls[0] == ["country", "list"]
     assert calls[1][0:2] == ["country", "sweep"]
@@ -1164,7 +1213,24 @@ def test_gallery_cli_accepts_forced_country_sweep_refresh() -> None:
         ["--input", "results", "--output", "build/gallery", "--refresh-country-sweep"]
     )
 
-    assert args.refresh_country_sweep
+    assert args.country_refresh == "sweep"
+
+    coverage_args = gallery_module.parse(
+        ["--input", "results", "--output", "build/gallery", "--refresh-country-coverage"]
+    )
+    assert coverage_args.country_refresh == "coverage"
+
+    with pytest.raises(SystemExit):
+        gallery_module.parse(
+            [
+                "--input",
+                "results",
+                "--output",
+                "build/gallery",
+                "--refresh-country-sweep",
+                "--refresh-country-coverage",
+            ]
+        )
 
 
 def test_a_failed_country_command_leaves_no_gallery_index(

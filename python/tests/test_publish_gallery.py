@@ -137,11 +137,11 @@ def successful_build(
         corpus: Path,
         output: Path,
         *,
-        refresh_country_sweep: bool,
+        country_refresh: str | None,
         cache_directory: Path | None,
     ) -> tuple[list[object], list[object]]:
         if seen is not None:
-            seen.append((corpus, refresh_country_sweep, cache_directory))
+            seen.append((corpus, country_refresh == "sweep", cache_directory))
         assert (corpus / "world.json").is_file()
         assert corpus != pg.RESULTS
         output.mkdir()
@@ -366,10 +366,10 @@ def test_failed_render_preserves_existing_site_and_result_documents(
         corpus: Path,
         output: Path,
         *,
-        refresh_country_sweep: bool,
+        country_refresh: str | None,
         cache_directory: Path | None,
     ) -> None:
-        del refresh_country_sweep
+        del country_refresh
         del cache_directory
         write_json(corpus / "country-sweep-new.json", country_result("country-sweep"))
         output.mkdir()

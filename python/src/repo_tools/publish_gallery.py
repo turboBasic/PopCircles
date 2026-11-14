@@ -324,7 +324,7 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
             build_gallery(
                 corpus,
                 staged,
-                refresh_country_sweep=refresh_country_sweep,
+                country_refresh="sweep" if refresh_country_sweep else None,
                 cache_directory=BUILD / ".gallery-cache",
             )
         except Exception as error:
