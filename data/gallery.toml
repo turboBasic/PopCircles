@@ -45,6 +45,7 @@ excluded_country_ids = [
   "TF", # French Southern and Antarctic Lands — zero population
   "TK", # Tokelau
   "UM", # United States Minor Outlying Islands — zero population
+  "VA", # Vatican City has no owned cells; see #306 for an interpolated population estimate.
   # "VG", # British Virgin Islands
   # "VI", # United States Virgin Islands
   "WF", # Wallis and Futuna
