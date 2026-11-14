@@ -590,12 +590,12 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
     world_with_territory = gallery_module.figure_caption(
         circle_of(document("most-populous", territory_share=WORLD_TERRITORY_SHARE))
     )
-    assert world_with_territory["territory_share"] == WORLD_TERRITORY_SHARE
+    assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
 
     country = country_circle_document()
     country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
     assert (
-        gallery_module.figure_caption(circle_of(country))["territory_share"]
+        gallery_module.figure_caption(circle_of(country)).get("territory_share")
         == COUNTRY_TERRITORY_SHARE
     )
 
