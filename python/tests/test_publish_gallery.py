@@ -3,6 +3,7 @@ import re
 import stat
 import subprocess
 import time
+import tomllib
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -12,6 +13,12 @@ from typing import cast
 import pytest
 
 from repo_tools import publish_gallery as pg
+
+
+def test_gallery_publish_reuses_the_saved_country_sweep() -> None:
+    tasks = tomllib.loads((pg.REPO_ROOT / "mise.toml").read_text(encoding="utf-8"))["tasks"]
+
+    assert "--refresh-country-sweep" not in tasks["gallery:publish"]["run"]
 
 
 def write_json(path: Path, payload: dict[str, object]) -> None:
