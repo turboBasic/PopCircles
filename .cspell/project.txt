@@ -205,12 +205,24 @@ WPP
 Xichang
 
 # --- Geographic names in published result data ---
+Abyei
 Aksai
 Arunachal
+Bassas
+Bouvet
+Clipperton
+Eustatius
+Hala'ib
+Ilemi
 Liancourt
+Maarten
+Mayen
+Navassa
 Paracel
 Senkaku
+Sint
 Spratly
+Tawil
 
 # --- Config keys and CLI ---
 addopts
