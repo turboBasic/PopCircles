@@ -246,7 +246,7 @@ impl GridDocument {
         }
     }
 
-    fn grid(self) -> Result<Grid, ()> {
+    pub(crate) fn grid(self) -> Result<Grid, ()> {
         Grid::new(
             self.width,
             self.height,

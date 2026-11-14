@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "DZ",
-      "name": "Algeria",
-      "iso_alpha2": "DZ",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "DZ",
+      "iso_alpha2": "DZ",
+      "name": "Algeria"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 205,
       "centre": {
         "lat": 35.90833333333333,
         "lon": 4.724999999999994
       },
-      "row": 3245,
       "col": 11083,
-      "population": 21517144.279903814,
-      "target": {
-        "share": 0.5,
-        "persons": 21485688.817422498,
-        "total": 42971377.634844996
-      },
-      "share_achieved": 0.5007320096355442,
-      "short_below": {
-        "radius_km": 204,
-        "population": 21420871.328246772
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.000424913957543255,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Bordj Bou Arréridj",
         "country": "Algeria",
         "country_iso_alpha2": "DZ",
         "distance_km": 19.16878284254472,
+        "name": "Bordj Bou Arréridj",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 21517144.279903814,
-      "populationShare": 0.5007320096355442,
-      "radiusKm": 205.0,
-      "centerLatitude": 35.90833333333333,
-      "centerLongitude": 4.724999999999994,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Algeria",
-      "Iptc4xmpCore:CountryCode": "DZ",
-      "countryName": "Algeria",
-      "countryCode": "DZ",
-      "nearestSettlement": "Bordj Bou Arréridj",
-      "nearestSettlementCountry": "Algeria",
-      "distanceToSettlementKm": 19.16878284254472,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "35,54.5N",
-          "exif:GPSLongitude": "4,43.5E",
-          "Iptc4xmpExt:CountryName": "Algeria",
-          "Iptc4xmpExt:CountryCode": "DZ",
-          "Iptc4xmpExt:City": "Bordj Bou Arréridj"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Algeria: 205 km circle holding 50.1% of the population (21,517,144 people); Center: 35.9083, 4.7250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          35,
-          1
-        ],
-        [
-          54,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          4,
-          1
-        ],
-        [
-          43,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Algeria: 205 km circle holding 50.1% of the population (21,517,144 people); Center: 35.9083, 4.7250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 21517144.279903814,
+      "predicate_slack_persons": 0.000424913957543255,
+      "radius_km": 205,
+      "row": 3245,
+      "share_achieved": 0.5007320096355442,
+      "short_below": {
+        "population": 21420871.328246772,
+        "radius_km": 204
+      },
+      "target": {
+        "persons": 21485688.817422498,
+        "share": 0.5,
+        "total": 42971377.634844996
+      },
+      "territory_share": 0.046104708522263366,
+      "tolerance_persons": 0.0
+    }
   }
 }

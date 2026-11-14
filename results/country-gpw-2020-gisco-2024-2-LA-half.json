@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "LA",
-      "name": "Laos",
-      "iso_alpha2": "LA",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "LA",
+      "iso_alpha2": "LA",
+      "name": "Laos"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 208,
       "centre": {
         "lat": 19.674999999999997,
         "lon": 102.29166666666669
       },
-      "row": 4219,
       "col": 16937,
-      "population": 3655247.57975919,
-      "target": {
-        "share": 0.5,
-        "persons": 3652381.036982918,
-        "total": 7304762.073965836
-      },
-      "share_achieved": 0.5003924211010907,
-      "short_below": {
-        "radius_km": 207,
-        "population": 3635278.005769858
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.775055171826772e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Luang Prabang",
         "country": "Laos",
         "country_iso_alpha2": "LA",
         "distance_km": 28.095821242836813,
+        "name": "Luang Prabang",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 3655247.57975919,
-      "populationShare": 0.5003924211010907,
-      "radiusKm": 208.0,
-      "centerLatitude": 19.674999999999997,
-      "centerLongitude": 102.29166666666669,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Laos",
-      "Iptc4xmpCore:CountryCode": "LA",
-      "countryName": "Laos",
-      "countryCode": "LA",
-      "nearestSettlement": "Luang Prabang",
-      "nearestSettlementCountry": "Laos",
-      "distanceToSettlementKm": 28.095821242836813,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "19,40.5N",
-          "exif:GPSLongitude": "102,17.5E",
-          "Iptc4xmpExt:CountryName": "Laos",
-          "Iptc4xmpExt:CountryCode": "LA",
-          "Iptc4xmpExt:City": "Luang Prabang"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Laos: 208 km circle holding 50.0% of the population (3,655,248 people); Center: 19.6750, 102.2917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          19,
-          1
-        ],
-        [
-          40,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          102,
-          1
-        ],
-        [
-          17,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Laos: 208 km circle holding 50.0% of the population (3,655,248 people); Center: 19.6750, 102.2917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 3655247.57975919,
+      "predicate_slack_persons": 5.775055171826772e-05,
+      "radius_km": 208,
+      "row": 4219,
+      "share_achieved": 0.5003924211010907,
+      "short_below": {
+        "population": 3635278.005769858,
+        "radius_km": 207
+      },
+      "target": {
+        "persons": 3652381.036982918,
+        "share": 0.5,
+        "total": 7304762.073965836
+      },
+      "territory_share": 0.49087513027416807,
+      "tolerance_persons": 0.0
+    }
   }
 }

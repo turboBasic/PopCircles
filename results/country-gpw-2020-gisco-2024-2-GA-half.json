@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "GA",
-      "name": "Gabon",
-      "iso_alpha2": "GA",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "GA",
+      "iso_alpha2": "GA",
+      "name": "Gabon"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 162,
       "centre": {
         "lat": -0.6416666666666657,
         "lon": 10.324999999999989
       },
-      "row": 5438,
       "col": 11419,
-      "population": 955477.0289729438,
-      "target": {
-        "share": 0.5,
-        "persons": 955051.6324735557,
-        "total": 1910103.2649471115
-      },
-      "share_achieved": 0.5002227086394724,
-      "short_below": {
-        "radius_km": 161,
-        "population": 953387.6505034065
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 1.463886755402406e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Lambaréné",
         "country": "Gabon",
         "country_iso_alpha2": "GA",
         "distance_km": 13.664118661024013,
+        "name": "Lambaréné",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 955477.0289729438,
-      "populationShare": 0.5002227086394724,
-      "radiusKm": 162.0,
-      "centerLatitude": -0.6416666666666657,
-      "centerLongitude": 10.324999999999989,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Gabon",
-      "Iptc4xmpCore:CountryCode": "GA",
-      "countryName": "Gabon",
-      "countryCode": "GA",
-      "nearestSettlement": "Lambaréné",
-      "nearestSettlementCountry": "Gabon",
-      "distanceToSettlementKm": 13.664118661024013,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "0,38.5S",
-          "exif:GPSLongitude": "10,19.5E",
-          "Iptc4xmpExt:CountryName": "Gabon",
-          "Iptc4xmpExt:CountryCode": "GA",
-          "Iptc4xmpExt:City": "Lambaréné"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Gabon: 162 km circle holding 50.0% of the population (955,477 people); Center: -0.6417, 10.3250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          0,
-          1
-        ],
-        [
-          38,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          10,
-          1
-        ],
-        [
-          19,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Gabon: 162 km circle holding 50.0% of the population (955,477 people); Center: -0.6417, 10.3250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 955477.0289729438,
+      "predicate_slack_persons": 1.463886755402406e-05,
+      "radius_km": 162,
+      "row": 5438,
+      "share_achieved": 0.5002227086394724,
+      "short_below": {
+        "population": 953387.6505034065,
+        "radius_km": 161
+      },
+      "target": {
+        "persons": 955051.6324735557,
+        "share": 0.5,
+        "total": 1910103.2649471115
+      },
+      "territory_share": 0.29649263314960295,
+      "tolerance_persons": 0.0
+    }
   }
 }

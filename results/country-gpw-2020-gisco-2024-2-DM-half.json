@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "DM",
-      "name": "Dominica",
-      "iso_alpha2": "DM",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "DM",
+      "iso_alpha2": "DM",
+      "name": "Dominica"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 8,
       "centre": {
         "lat": 15.325000000000003,
         "lon": -61.34166666666667
       },
-      "row": 4480,
       "col": 7119,
-      "population": 37241.30875778198,
-      "target": {
-        "share": 0.5,
-        "persons": 37144.23758911621,
-        "total": 74288.47517823242
-      },
-      "share_achieved": 0.5013066787066619,
-      "short_below": {
-        "radius_km": 7,
-        "population": 32539.163249969482
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 8.06792573176931e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Roseau",
         "country": "Dominica",
         "country_iso_alpha2": "DM",
         "distance_km": 5.546513862541849,
+        "name": "Roseau",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 37241.30875778198,
-      "populationShare": 0.5013066787066619,
-      "radiusKm": 8.0,
-      "centerLatitude": 15.325000000000003,
-      "centerLongitude": -61.34166666666667,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Dominica",
-      "Iptc4xmpCore:CountryCode": "DM",
-      "countryName": "Dominica",
-      "countryCode": "DM",
-      "nearestSettlement": "Roseau",
-      "nearestSettlementCountry": "Dominica",
-      "distanceToSettlementKm": 5.546513862541849,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "15,19.5N",
-          "exif:GPSLongitude": "61,20.5W",
-          "Iptc4xmpExt:CountryName": "Dominica",
-          "Iptc4xmpExt:CountryCode": "DM",
-          "Iptc4xmpExt:City": "Roseau"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Dominica: 8 km circle holding 50.1% of the population (37,241 people); Center: 15.3250, -61.3417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          15,
-          1
-        ],
-        [
-          19,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          61,
-          1
-        ],
-        [
-          20,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Dominica: 8 km circle holding 50.1% of the population (37,241 people); Center: 15.3250, -61.3417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 37241.30875778198,
+      "predicate_slack_persons": 8.06792573176931e-07,
+      "radius_km": 8,
+      "row": 4480,
+      "share_achieved": 0.5013066787066619,
+      "short_below": {
+        "population": 32539.163249969482,
+        "radius_km": 7
+      },
+      "target": {
+        "persons": 37144.23758911621,
+        "share": 0.5,
+        "total": 74288.47517823242
+      },
+      "territory_share": 0.24241686595498987,
+      "tolerance_persons": 0.0
+    }
   }
 }

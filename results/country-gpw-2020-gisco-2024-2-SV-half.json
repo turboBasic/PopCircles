@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "SV",
-      "name": "El Salvador",
-      "iso_alpha2": "SV",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "SV",
+      "iso_alpha2": "SV",
+      "name": "El Salvador"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 12
     },
     "circle": {
-      "radius_km": 37,
       "centre": {
         "lat": 13.791666666666671,
         "lon": -89.39166666666667
       },
-      "row": 4572,
       "col": 5436,
-      "population": 3138877.538240373,
-      "target": {
-        "share": 0.5,
-        "persons": 3106677.75843348,
-        "total": 6213355.51686696
-      },
-      "share_achieved": 0.5051823494920712,
-      "short_below": {
-        "radius_km": 36,
-        "population": 3055266.9258561134
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.5133269590204736e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Santa Tecla",
         "country": "El Salvador",
         "country_iso_alpha2": "SV",
         "distance_km": 17.082161612924708,
+        "name": "Santa Tecla",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 3138877.538240373,
-      "populationShare": 0.5051823494920712,
-      "radiusKm": 37.0,
-      "centerLatitude": 13.791666666666671,
-      "centerLongitude": -89.39166666666667,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "El Salvador",
-      "Iptc4xmpCore:CountryCode": "SV",
-      "countryName": "El Salvador",
-      "countryCode": "SV",
-      "nearestSettlement": "Santa Tecla",
-      "nearestSettlementCountry": "El Salvador",
-      "distanceToSettlementKm": 17.082161612924708,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "13,47.5N",
-          "exif:GPSLongitude": "89,23.5W",
-          "Iptc4xmpExt:CountryName": "El Salvador",
-          "Iptc4xmpExt:CountryCode": "SV",
-          "Iptc4xmpExt:City": "Santa Tecla"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "El Salvador: 37 km circle holding 50.5% of the population (3,138,878 people); Center: 13.7917, -89.3917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          13,
-          1
-        ],
-        [
-          47,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          89,
-          1
-        ],
-        [
-          23,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "El Salvador: 37 km circle holding 50.5% of the population (3,138,878 people); Center: 13.7917, -89.3917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 3138877.538240373,
+      "predicate_slack_persons": 5.5133269590204736e-05,
+      "radius_km": 37,
+      "row": 4572,
+      "share_achieved": 0.5051823494920712,
+      "short_below": {
+        "population": 3055266.9258561134,
+        "radius_km": 36
+      },
+      "target": {
+        "persons": 3106677.75843348,
+        "share": 0.5,
+        "total": 6213355.51686696
+      },
+      "territory_share": 0.20200222288968356,
+      "tolerance_persons": 0.0
+    }
   }
 }

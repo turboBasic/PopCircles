@@ -12,6 +12,12 @@ export function visibleEntries(entries, selectedAnchor) {
   return entries.filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor);
 }
 
+export function territoryCaption(share, territoryName) {
+  return share === undefined || share === null
+    ? null
+    : `Circle covers ${Math.floor(share * 100 + 0.5)}% of ${territoryName}`;
+}
+
 export function countryUrl(currentUrl, anchor) {
   const url = new URL(currentUrl);
   url.hash = anchor ? `#${anchor}` : '';

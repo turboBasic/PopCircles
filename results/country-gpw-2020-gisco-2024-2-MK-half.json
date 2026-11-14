@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "MK",
-      "name": "North Macedonia",
-      "iso_alpha2": "MK",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "MK",
+      "iso_alpha2": "MK",
+      "name": "North Macedonia"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 12
     },
     "circle": {
-      "radius_km": 44,
       "centre": {
         "lat": 41.925,
         "lon": 21.308333333333337
       },
-      "row": 2884,
       "col": 12078,
-      "population": 1055676.8371977806,
-      "target": {
-        "share": 0.5,
-        "persons": 1046379.7265521791,
-        "total": 2092759.4531043582
-      },
-      "share_achieved": 0.5044425127942012,
-      "short_below": {
-        "radius_km": 43,
-        "population": 1033365.9423470497
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 1.5076892022298132e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Skopje",
         "country": "North Macedonia",
         "country_iso_alpha2": "MK",
         "distance_km": 13.289020802179492,
+        "name": "Skopje",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 1055676.8371977806,
-      "populationShare": 0.5044425127942012,
-      "radiusKm": 44.0,
-      "centerLatitude": 41.925,
-      "centerLongitude": 21.308333333333337,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "North Macedonia",
-      "Iptc4xmpCore:CountryCode": "MK",
-      "countryName": "North Macedonia",
-      "countryCode": "MK",
-      "nearestSettlement": "Skopje",
-      "nearestSettlementCountry": "North Macedonia",
-      "distanceToSettlementKm": 13.289020802179492,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "41,55.5N",
-          "exif:GPSLongitude": "21,18.5E",
-          "Iptc4xmpExt:CountryName": "North Macedonia",
-          "Iptc4xmpExt:CountryCode": "MK",
-          "Iptc4xmpExt:City": "Skopje"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "North Macedonia: 44 km circle holding 50.4% of the population (1,055,677 people); Center: 41.9250, 21.3083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          41,
-          1
-        ],
-        [
-          55,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          21,
-          1
-        ],
-        [
-          18,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "North Macedonia: 44 km circle holding 50.4% of the population (1,055,677 people); Center: 41.9250, 21.3083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 1055676.8371977806,
+      "predicate_slack_persons": 1.5076892022298132e-05,
+      "radius_km": 44,
+      "row": 2884,
+      "share_achieved": 0.5044425127942012,
+      "short_below": {
+        "population": 1033365.9423470497,
+        "radius_km": 43
+      },
+      "target": {
+        "persons": 1046379.7265521791,
+        "share": 0.5,
+        "total": 2092759.4531043582
+      },
+      "territory_share": 0.21268737877343882,
+      "tolerance_persons": 0.0
+    }
   }
 }

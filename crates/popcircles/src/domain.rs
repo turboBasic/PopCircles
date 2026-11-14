@@ -131,6 +131,30 @@ impl Domain {
         })
     }
 
+    /// Builds the union of domains on `grid`, counting a cell once even when features overlap.
+    ///
+    /// # Errors
+    /// Returns [`DomainError::GridMismatch`] if any input domain belongs to another grid.
+    pub fn union(feature_id: FeatureId, grid: Grid, domains: &[Self]) -> Result<Self, DomainError> {
+        if domains.iter().any(|domain| domain.grid != grid) {
+            return Err(DomainError::GridMismatch);
+        }
+        let rows = grid
+            .rows()
+            .map(|row| {
+                merge_intervals(
+                    domains
+                        .iter()
+                        .filter_map(|domain| domain.row_intervals(row))
+                        .flatten()
+                        .copied()
+                        .collect(),
+                )
+            })
+            .collect();
+        Self::from_intervals(feature_id, grid, rows)
+    }
+
     /// Rasterize one feature by classifying effective-grid cell centres with even-odd ring
     /// membership. Multipart components are combined and boundary centres are included.
     ///

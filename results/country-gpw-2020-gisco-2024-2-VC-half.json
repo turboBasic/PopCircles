@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "VC",
-      "name": "Saint Vincent and The Grenadines",
-      "iso_alpha2": "VC",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "VC",
+      "iso_alpha2": "VC",
+      "name": "Saint Vincent and The Grenadines"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 6,
       "centre": {
         "lat": 13.174999999999997,
         "lon": -61.19166666666666
       },
-      "row": 4609,
       "col": 7128,
-      "population": 65647.70070934296,
-      "target": {
-        "share": 0.5,
-        "persons": 55113.71754371375,
-        "total": 110227.4350874275
-      },
-      "share_achieved": 0.5955658920782664,
-      "short_below": {
-        "radius_km": 5,
-        "population": 48083.0481262207
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 8.929771364450316e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Kingstown",
         "country": "Saint Vincent and the Grenadines",
         "country_iso_alpha2": "VC",
         "distance_km": 3.761282651605961,
+        "name": "Kingstown",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 65647.70070934296,
-      "populationShare": 0.5955658920782664,
-      "radiusKm": 6.0,
-      "centerLatitude": 13.174999999999997,
-      "centerLongitude": -61.19166666666666,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Saint Vincent and The Grenadines",
-      "Iptc4xmpCore:CountryCode": "VC",
-      "countryName": "Saint Vincent and The Grenadines",
-      "countryCode": "VC",
-      "nearestSettlement": "Kingstown",
-      "nearestSettlementCountry": "Saint Vincent and the Grenadines",
-      "distanceToSettlementKm": 3.761282651605961,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "13,10.5N",
-          "exif:GPSLongitude": "61,11.5W",
-          "Iptc4xmpExt:CountryName": "Saint Vincent and The Grenadines",
-          "Iptc4xmpExt:CountryCode": "VC",
-          "Iptc4xmpExt:City": "Kingstown"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Saint Vincent and The Grenadines: 6 km circle holding 59.6% of the population (65,648 people); Center: 13.1750, -61.1917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          13,
-          1
-        ],
-        [
-          10,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          61,
-          1
-        ],
-        [
-          11,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Saint Vincent and The Grenadines: 6 km circle holding 59.6% of the population (65,648 people); Center: 13.1750, -61.1917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 65647.70070934296,
+      "predicate_slack_persons": 8.929771364450316e-07,
+      "radius_km": 6,
+      "row": 4609,
+      "share_achieved": 0.5955658920782664,
+      "short_below": {
+        "population": 48083.0481262207,
+        "radius_km": 5
+      },
+      "target": {
+        "persons": 55113.71754371375,
+        "share": 0.5,
+        "total": 110227.4350874275
+      },
+      "territory_share": 0.2601771871200713,
+      "tolerance_persons": 0.0
+    }
   }
 }

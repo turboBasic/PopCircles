@@ -27,6 +27,7 @@ ignorePaths:
   - .cspell/**
   - build/**
   - results/country-*-half.json # Generated country names come from the boundary data.
+  - results/world-sweep-*.json # Generated country and settlement names come from source data.
   - "**/__pycache__/**"
   - "**/.venv/**"
   - uv.lock

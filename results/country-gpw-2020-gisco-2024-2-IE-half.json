@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "IE",
-      "name": "Ireland",
-      "iso_alpha2": "IE",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "IE",
+      "iso_alpha2": "IE",
+      "name": "Ireland"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 14
     },
     "circle": {
-      "radius_km": 72,
       "centre": {
         "lat": 53.458333333333336,
         "lon": -6.941666666666663
       },
-      "row": 2192,
       "col": 10383,
-      "population": 2444383.0670700483,
-      "target": {
-        "share": 0.5,
-        "persons": 2432131.724826153,
-        "total": 4864263.449652306
-      },
-      "share_achieved": 0.5025186428265458,
-      "short_below": {
-        "radius_km": 71,
-        "population": 2430827.7635222487
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.189803654742529e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Dublin",
         "country": "Ireland",
         "country_iso_alpha2": "IE",
         "distance_km": 47.05576820180331,
+        "name": "Dublin",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 2444383.0670700483,
-      "populationShare": 0.5025186428265458,
-      "radiusKm": 72.0,
-      "centerLatitude": 53.458333333333336,
-      "centerLongitude": -6.941666666666663,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Ireland",
-      "Iptc4xmpCore:CountryCode": "IE",
-      "countryName": "Ireland",
-      "countryCode": "IE",
-      "nearestSettlement": "Dublin",
-      "nearestSettlementCountry": "Ireland",
-      "distanceToSettlementKm": 47.05576820180331,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "53,27.5N",
-          "exif:GPSLongitude": "6,56.5W",
-          "Iptc4xmpExt:CountryName": "Ireland",
-          "Iptc4xmpExt:CountryCode": "IE",
-          "Iptc4xmpExt:City": "Dublin"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Ireland: 72 km circle holding 50.3% of the population (2,444,383 people); Center: 53.4583, -6.9417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          53,
-          1
-        ],
-        [
-          27,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          6,
-          1
-        ],
-        [
-          56,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Ireland: 72 km circle holding 50.3% of the population (2,444,383 people); Center: 53.4583, -6.9417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 2444383.0670700483,
+      "predicate_slack_persons": 5.189803654742529e-05,
+      "radius_km": 72,
+      "row": 2192,
+      "share_achieved": 0.5025186428265458,
+      "short_below": {
+        "population": 2430827.7635222487,
+        "radius_km": 71
+      },
+      "target": {
+        "persons": 2432131.724826153,
+        "share": 0.5,
+        "total": 4864263.449652306
+      },
+      "territory_share": 0.21238687434657783,
+      "tolerance_persons": 0.0
+    }
   }
 }

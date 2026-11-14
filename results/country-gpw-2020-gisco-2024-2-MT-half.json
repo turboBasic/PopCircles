@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "MT",
-      "name": "Malta",
-      "iso_alpha2": "MT",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "MT",
+      "iso_alpha2": "MT",
+      "name": "Malta"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 5,
       "centre": {
         "lat": 35.891666666666666,
         "lon": 14.474999999999994
       },
-      "row": 3246,
       "col": 11668,
-      "population": 224758.8874206543,
-      "target": {
-        "share": 0.5,
-        "persons": 211270.8321774006,
-        "total": 422541.6643548012
-      },
-      "share_achieved": 0.531921243231361,
-      "short_below": {
-        "radius_km": 4,
-        "population": 182509.53302001953
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 3.5278603982628837e-06,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Valletta",
         "country": "Malta",
         "country_iso_alpha2": "MT",
         "distance_km": 3.68777972076633,
+        "name": "Valletta",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 224758.8874206543,
-      "populationShare": 0.531921243231361,
-      "radiusKm": 5.0,
-      "centerLatitude": 35.891666666666666,
-      "centerLongitude": 14.474999999999994,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Malta",
-      "Iptc4xmpCore:CountryCode": "MT",
-      "countryName": "Malta",
-      "countryCode": "MT",
-      "nearestSettlement": "Valletta",
-      "nearestSettlementCountry": "Malta",
-      "distanceToSettlementKm": 3.68777972076633,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "35,53.5N",
-          "exif:GPSLongitude": "14,28.5E",
-          "Iptc4xmpExt:CountryName": "Malta",
-          "Iptc4xmpExt:CountryCode": "MT",
-          "Iptc4xmpExt:City": "Valletta"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Malta: 5 km circle holding 53.2% of the population (224,759 people); Center: 35.8917, 14.4750",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          35,
-          1
-        ],
-        [
-          53,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          14,
-          1
-        ],
-        [
-          28,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Malta: 5 km circle holding 53.2% of the population (224,759 people); Center: 35.8917, 14.4750",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 224758.8874206543,
+      "predicate_slack_persons": 3.5278603982628837e-06,
+      "radius_km": 5,
+      "row": 3246,
+      "share_achieved": 0.531921243231361,
+      "short_below": {
+        "population": 182509.53302001953,
+        "radius_km": 4
+      },
+      "target": {
+        "persons": 211270.8321774006,
+        "share": 0.5,
+        "total": 422541.6643548012
+      },
+      "territory_share": 0.2522747611601321,
+      "tolerance_persons": 0.0
+    }
   }
 }

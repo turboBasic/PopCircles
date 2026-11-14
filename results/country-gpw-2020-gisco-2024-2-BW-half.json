@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "BW",
-      "name": "Botswana",
-      "iso_alpha2": "BW",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "BW",
+      "iso_alpha2": "BW",
+      "name": "Botswana"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 172,
       "centre": {
         "lat": -24.224999999999994,
         "lon": 25.32499999999999
       },
-      "row": 6853,
       "col": 12319,
-      "population": 1218858.0405290388,
-      "target": {
-        "share": 0.5,
-        "persons": 1215635.3233066113,
-        "total": 2431270.6466132225
-      },
-      "share_achieved": 0.5013255279608285,
-      "short_below": {
-        "radius_km": 171,
-        "population": 1215604.437861653
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 2.5946953337779367e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Molepolole",
         "country": "Botswana",
         "country_iso_alpha2": "BW",
         "distance_km": 27.01869537824212,
+        "name": "Molepolole",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 1218858.0405290388,
-      "populationShare": 0.5013255279608285,
-      "radiusKm": 172.0,
-      "centerLatitude": -24.224999999999994,
-      "centerLongitude": 25.32499999999999,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Botswana",
-      "Iptc4xmpCore:CountryCode": "BW",
-      "countryName": "Botswana",
-      "countryCode": "BW",
-      "nearestSettlement": "Molepolole",
-      "nearestSettlementCountry": "Botswana",
-      "distanceToSettlementKm": 27.01869537824212,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "24,13.5S",
-          "exif:GPSLongitude": "25,19.5E",
-          "Iptc4xmpExt:CountryName": "Botswana",
-          "Iptc4xmpExt:CountryCode": "BW",
-          "Iptc4xmpExt:City": "Molepolole"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Botswana: 172 km circle holding 50.1% of the population (1,218,858 people); Center: -24.2250, 25.3250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          24,
-          1
-        ],
-        [
-          13,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          25,
-          1
-        ],
-        [
-          19,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Botswana: 172 km circle holding 50.1% of the population (1,218,858 people); Center: -24.2250, 25.3250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 1218858.0405290388,
+      "predicate_slack_persons": 2.5946953337779367e-05,
+      "radius_km": 172,
+      "row": 6853,
+      "share_achieved": 0.5013255279608285,
+      "short_below": {
+        "population": 1215604.437861653,
+        "radius_km": 171
+      },
+      "target": {
+        "persons": 1215635.3233066113,
+        "share": 0.5,
+        "total": 2431270.6466132225
+      },
+      "territory_share": 0.1393795259750304,
+      "tolerance_persons": 0.0
+    }
   }
 }

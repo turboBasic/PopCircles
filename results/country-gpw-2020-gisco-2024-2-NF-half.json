@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "NF",
-      "name": "Norfolk Island",
-      "iso_alpha2": "NF",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "NF",
+      "iso_alpha2": "NF",
+      "name": "Norfolk Island"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,103 +37,28 @@
       "radii": 4
     },
     "circle": {
-      "radius_km": 3,
       "centre": {
         "lat": -29.02499999999999,
         "lon": 167.94166666666666
       },
-      "row": 7141,
       "col": 20876,
+      "covers_whole_grid": false,
       "population": 1516.035207092762,
-      "target": {
-        "share": 0.5,
-        "persons": 1228.4816392064095,
-        "total": 2456.963278412819
-      },
+      "predicate_slack_persons": 2.5537084315376478e-08,
+      "radius_km": 3,
+      "row": 7141,
       "share_achieved": 0.6170361683517347,
       "short_below": {
-        "radius_km": 2,
-        "population": 909.2259998321533
+        "population": 909.2259998321533,
+        "radius_km": 2
       },
-      "covers_whole_grid": false,
-      "predicate_slack_persons": 2.5537084315376478e-08,
+      "target": {
+        "persons": 1228.4816392064095,
+        "share": 0.5,
+        "total": 2456.963278412819
+      },
+      "territory_share": 0.6000516719093508,
       "tolerance_persons": 0.0
     }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 1516.035207092762,
-      "populationShare": 0.6170361683517347,
-      "radiusKm": 3.0,
-      "centerLatitude": -29.02499999999999,
-      "centerLongitude": 167.94166666666666,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Norfolk Island",
-      "Iptc4xmpCore:CountryCode": "NF",
-      "countryName": "Norfolk Island",
-      "countryCode": "NF",
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "29,1.5S",
-          "exif:GPSLongitude": "167,56.5E",
-          "Iptc4xmpExt:CountryName": "Norfolk Island",
-          "Iptc4xmpExt:CountryCode": "NF"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
-      },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Norfolk Island: 3 km circle holding 61.7% of the population (1,516 people); Center: -29.0250, 167.9417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          29,
-          1
-        ],
-        [
-          1,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          167,
-          1
-        ],
-        [
-          56,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Norfolk Island: 3 km circle holding 61.7% of the population (1,516 people); Center: -29.0250, 167.9417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
   }
 }

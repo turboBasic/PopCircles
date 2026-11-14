@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "SE",
-      "name": "Sweden",
-      "iso_alpha2": "SE",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "SE",
+      "iso_alpha2": "SE",
+      "name": "Sweden"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 185,
       "centre": {
         "lat": 59.20833333333333,
         "lon": 15.641666666666652
       },
-      "row": 1847,
       "col": 11738,
-      "population": 5069772.303217212,
-      "target": {
-        "share": 0.5,
-        "persons": 5041965.562449852,
-        "total": 10083931.124899704
-      },
-      "share_achieved": 0.5027575298187725,
-      "short_below": {
-        "radius_km": 184,
-        "population": 5040625.808864538
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00010464836147614882,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Örebro",
         "country": "Sweden",
         "country_iso_alpha2": "SE",
         "distance_km": 25.279337296815136,
+        "name": "Örebro",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 5069772.303217212,
-      "populationShare": 0.5027575298187725,
-      "radiusKm": 185.0,
-      "centerLatitude": 59.20833333333333,
-      "centerLongitude": 15.641666666666652,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Sweden",
-      "Iptc4xmpCore:CountryCode": "SE",
-      "countryName": "Sweden",
-      "countryCode": "SE",
-      "nearestSettlement": "Örebro",
-      "nearestSettlementCountry": "Sweden",
-      "distanceToSettlementKm": 25.279337296815136,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "59,12.5N",
-          "exif:GPSLongitude": "15,38.5E",
-          "Iptc4xmpExt:CountryName": "Sweden",
-          "Iptc4xmpExt:CountryCode": "SE",
-          "Iptc4xmpExt:City": "Örebro"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Sweden: 185 km circle holding 50.3% of the population (5,069,772 people); Center: 59.2083, 15.6417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          59,
-          1
-        ],
-        [
-          12,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          15,
-          1
-        ],
-        [
-          38,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Sweden: 185 km circle holding 50.3% of the population (5,069,772 people); Center: 59.2083, 15.6417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 5069772.303217212,
+      "predicate_slack_persons": 0.00010464836147614882,
+      "radius_km": 185,
+      "row": 1847,
+      "share_achieved": 0.5027575298187725,
+      "short_below": {
+        "population": 5040625.808864538,
+        "radius_km": 184
+      },
+      "target": {
+        "persons": 5041965.562449852,
+        "share": 0.5,
+        "total": 10083931.124899704
+      },
+      "territory_share": 0.21284549937506392,
+      "tolerance_persons": 0.0
+    }
   }
 }

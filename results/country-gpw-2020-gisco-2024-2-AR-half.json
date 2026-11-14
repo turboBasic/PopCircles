@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "AR",
-      "name": "Argentina",
-      "iso_alpha2": "AR",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "AR",
+      "iso_alpha2": "AR",
+      "name": "Argentina"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 18
     },
     "circle": {
-      "radius_km": 282,
       "centre": {
         "lat": -33.258333333333326,
         "lon": -59.991666666666674
       },
-      "row": 7395,
       "col": 7200,
-      "population": 22729114.70778273,
-      "target": {
-        "share": 0.5,
-        "persons": 22711281.50041872,
-        "total": 45422563.00083744
-      },
-      "share_achieved": 0.500392606805646,
-      "short_below": {
-        "radius_km": 281,
-        "population": 22706054.573230013
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00043079210039410497,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "San Nicolás de los Arroyos",
         "country": "Argentina",
         "country_iso_alpha2": "AR",
         "distance_km": 24.419044215097355,
+        "name": "San Nicolás de los Arroyos",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 22729114.70778273,
-      "populationShare": 0.500392606805646,
-      "radiusKm": 282.0,
-      "centerLatitude": -33.258333333333326,
-      "centerLongitude": -59.991666666666674,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Argentina",
-      "Iptc4xmpCore:CountryCode": "AR",
-      "countryName": "Argentina",
-      "countryCode": "AR",
-      "nearestSettlement": "San Nicolás de los Arroyos",
-      "nearestSettlementCountry": "Argentina",
-      "distanceToSettlementKm": 24.419044215097355,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "33,15.5S",
-          "exif:GPSLongitude": "59,59.5W",
-          "Iptc4xmpExt:CountryName": "Argentina",
-          "Iptc4xmpExt:CountryCode": "AR",
-          "Iptc4xmpExt:City": "San Nicolás de los Arroyos"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Argentina: 282 km circle holding 50.0% of the population (22,729,115 people); Center: -33.2583, -59.9917",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          33,
-          1
-        ],
-        [
-          15,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          59,
-          1
-        ],
-        [
-          59,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Argentina: 282 km circle holding 50.0% of the population (22,729,115 people); Center: -33.2583, -59.9917",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 22729114.70778273,
+      "predicate_slack_persons": 0.00043079210039410497,
+      "radius_km": 282,
+      "row": 7395,
+      "share_achieved": 0.500392606805646,
+      "short_below": {
+        "population": 22706054.573230013,
+        "radius_km": 281
+      },
+      "target": {
+        "persons": 22711281.50041872,
+        "share": 0.5,
+        "total": 45422563.00083744
+      },
+      "territory_share": 0.07630071826118594,
+      "tolerance_persons": 0.0
+    }
   }
 }

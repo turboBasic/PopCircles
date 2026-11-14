@@ -161,11 +161,17 @@ def title_of(answer: Answer) -> str:
     circle = answer.circle
     country = f"{answer.country.name}: " if answer.country else ""
     centre = f"{circle.centre.lat:.4f}, {circle.centre.lon:.4f}"
-    return (
+    population_percent = math.floor(answer.caption.share * 100 + 0.5)
+    title = (
         f"{country}{circle.radius_km:,.0f} km circle holding "
-        f"{answer.caption.share:.1%} of the population "
+        f"{population_percent}% of the population "
         f"({answer.caption.population:,.0f} people); Center: {centre}"
     )
+    if answer.caption.territory_share is not None:
+        territory = answer.country.name if answer.country else "Earth\u2019s land area"
+        percent = math.floor(answer.caption.territory_share * 100 + 0.5)
+        title += f"; Circle covers {percent}% of {territory}"
+    return title
 
 
 def footer_text() -> str:
@@ -211,6 +217,8 @@ def xmp_properties(
         "populationDataset": answer.provenance.dataset,
         "decimation": answer.provenance.decimation,
     }
+    if answer.caption.territory_share is not None:
+        properties["territoryShare"] = answer.caption.territory_share
     if answer.country is not None:
         properties["photoshop:Country"] = answer.country.name
         properties["Iptc4xmpCore:CountryCode"] = answer.country.id

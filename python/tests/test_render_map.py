@@ -45,6 +45,7 @@ CENTRE_LAT = 25.125
 CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
 WORLD_POPULATION = 1_254_363_867.93
+TERRITORY_SHARE = 0.375
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MAX_LOCAL_EXTENT_METRES = 5_000_000
@@ -133,6 +134,12 @@ def document() -> dict[str, Any]:
             "share_of_total": 0.1616868627727305,
         },
     }
+
+
+def territory_document() -> dict[str, Any]:
+    payload = document()
+    payload["result"]["territory_share"] = TERRITORY_SHARE
+    return payload
 
 
 def country_document(count: int = 1) -> dict[str, Any]:
@@ -610,7 +617,7 @@ def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
     title = title_of(circle_of(payload))
 
     assert title == (
-        "Andorra: 6 km circle holding 52.6% of the population "
+        "Andorra: 6 km circle holding 53% of the population "
         "(33,892 people); Center: 42.5083, 1.5583"
     )
     assert "\n" not in title
@@ -639,7 +646,18 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
 ) -> None:
     coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
     source = tmp_path / "map.json"
-    source.write_text(json.dumps(document()), encoding="utf-8")
+    source_document = territory_document()
+    source.write_text(json.dumps(source_document), encoding="utf-8")
+    annotations: list[str] = []
+    original_annotate = render_map_module.annotate
+
+    def capture_annotate(
+        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
+    ) -> None:
+        annotations.append(text)
+        original_annotate(figure, y, text, size, alignment)
+
+    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
     basemap_paths: list[Path] = []
     current_basemap = render_map_module.basemap
 
@@ -659,18 +677,27 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert "Coastline data:" in str(metadata["Copyright"])
     assert str(metadata["Copyright"]).count(COASTLINE_CREDIT) == 1
     assert "© Andrii Melnyk, 2026" in str(metadata["Copyright"])
-    assert metadata["Title"] == title_of(circle_of(document()))
+    answer = circle_of(source_document)
+    assert metadata["Title"] == title_of(answer)
+    assert metadata["Title"].endswith("Circle covers 38% of Earth\u2019s land area")
     assert metadata["Description"] == (
         f"Answered from population dataset {DATASET} at decimation k=10"
     )
     xmp = str(metadata["XML:com.adobe.xmp"])
     assert 'pc:population="1254363867.93"' in xmp
+    assert 'pc:territoryShare="0.375"' in xmp
     sidecar = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
-    assert sidecar["result"] == document()["result"]
+    assert sidecar["result"] == source_document["result"]
     assert sidecar["render_metadata"]["Title"] == metadata["Title"]
     assert sidecar["render_metadata"]["Description"] == metadata["Description"]
     assert sidecar["render_metadata"]["Copyright"] == metadata["Copyright"]
     assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
+    assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["territoryShare"] == TERRITORY_SHARE
+    assert [" ".join(annotation.split()) for annotation in annotations] == [
+        metadata["Title"],
+        metadata["Description"],
+        VISIBLE_FOOTER,
+    ]
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
@@ -729,7 +756,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
     figure = render(answer, ORTHOGRAPHIC, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert "1,000 km circle" in drawn_text
-    assert "16.2% of the population" in drawn_text
+    assert "16% of the population" in drawn_text
     assert "1,254,363,868 people" in drawn_text
     assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
     assert "Center:" in drawn_text
@@ -738,7 +765,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
 
 def test_measured_and_nested_documents_use_the_one_line_title() -> None:
     assert title_of(circle_of(document())) == (
-        "1,000 km circle holding 16.2% of the population "
+        "1,000 km circle holding 16% of the population "
         "(1,254,363,868 people); Center: 25.1250, 79.7080"
     )
 
@@ -755,16 +782,17 @@ def test_measured_and_nested_documents_use_the_one_line_title() -> None:
         },
     }
     assert title_of(circle_of(nested)) == (
-        "2,639 km circle holding 25.0% of the population (52,635 people); "
-        "Center: -85.0000, 105.0000"
+        "2,639 km circle holding 25% of the population (52,635 people); Center: -85.0000, 105.0000"
     )
 
 
 def test_country_title_names_the_country_and_population_dataset() -> None:
-    answer = circle_of(country_circle_document())
+    payload = country_circle_document()
+    payload["result"]["circle"]["territory_share"] = TERRITORY_SHARE
+    answer = circle_of(payload)
     assert title_of(answer) == (
-        "Germany: 200 km circle holding 50.0% of the population "
-        "(40 people); Center: 51.0000, 10.0000"
+        "Germany: 200 km circle holding 50% of the population "
+        "(40 people); Center: 51.0000, 10.0000; Circle covers 38% of Germany"
     )
 
 

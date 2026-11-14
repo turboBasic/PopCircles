@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "CW",
-      "name": "Curaçao",
-      "iso_alpha2": "CW",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "CW",
+      "iso_alpha2": "CW",
+      "name": "Curaçao"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 6
     },
     "circle": {
-      "radius_km": 6,
       "centre": {
         "lat": 12.141666666666666,
         "lon": -68.90833333333333
       },
-      "row": 4671,
       "col": 6665,
-      "population": 105764.24041318893,
-      "target": {
-        "share": 0.5,
-        "persons": 81866.37654977292,
-        "total": 163732.75309954584
-      },
-      "share_achieved": 0.6459565261746173,
-      "short_below": {
-        "radius_km": 5,
-        "population": 70249.10108470917
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 1.6499300000638805e-06,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Willemstad",
         "country": "Curacao",
         "country_iso_alpha2": "CW",
         "distance_km": 5.095880732331478,
+        "name": "Willemstad",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 105764.24041318893,
-      "populationShare": 0.6459565261746173,
-      "radiusKm": 6.0,
-      "centerLatitude": 12.141666666666666,
-      "centerLongitude": -68.90833333333333,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Curaçao",
-      "Iptc4xmpCore:CountryCode": "CW",
-      "countryName": "Curaçao",
-      "countryCode": "CW",
-      "nearestSettlement": "Willemstad",
-      "nearestSettlementCountry": "Curacao",
-      "distanceToSettlementKm": 5.095880732331478,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "12,8.5N",
-          "exif:GPSLongitude": "68,54.5W",
-          "Iptc4xmpExt:CountryName": "Curaçao",
-          "Iptc4xmpExt:CountryCode": "CW",
-          "Iptc4xmpExt:City": "Willemstad"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Curaçao: 6 km circle holding 64.6% of the population (105,764 people); Center: 12.1417, -68.9083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          12,
-          1
-        ],
-        [
-          8,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          68,
-          1
-        ],
-        [
-          54,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Curaçao: 6 km circle holding 64.6% of the population (105,764 people); Center: 12.1417, -68.9083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 105764.24041318893,
+      "predicate_slack_persons": 1.6499300000638805e-06,
+      "radius_km": 6,
+      "row": 4671,
+      "share_achieved": 0.6459565261746173,
+      "short_below": {
+        "population": 70249.10108470917,
+        "radius_km": 5
+      },
+      "target": {
+        "persons": 81866.37654977292,
+        "share": 0.5,
+        "total": 163732.75309954584
+      },
+      "territory_share": 0.24811248825913707,
+      "tolerance_persons": 0.0
+    }
   }
 }

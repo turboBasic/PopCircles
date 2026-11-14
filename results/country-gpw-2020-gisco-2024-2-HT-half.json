@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "HT",
-      "name": "Haiti",
-      "iso_alpha2": "HT",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "HT",
+      "iso_alpha2": "HT",
+      "name": "Haiti"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 12
     },
     "circle": {
-      "radius_km": 58,
       "centre": {
         "lat": 18.70833333333333,
         "lon": -72.47500000000001
       },
-      "row": 4277,
       "col": 6451,
-      "population": 5687955.043064488,
-      "target": {
-        "share": 0.5,
-        "persons": 5657814.869927922,
-        "total": 11315629.739855845
-      },
-      "share_achieved": 0.5026635877834007,
-      "short_below": {
-        "radius_km": 57,
-        "population": 5616291.548146112
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00010760207542547098,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Port-au-Prince",
         "country": "Haiti",
         "country_iso_alpha2": "HT",
         "distance_km": 23.378587374179254,
+        "name": "Port-au-Prince",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 5687955.043064488,
-      "populationShare": 0.5026635877834007,
-      "radiusKm": 58.0,
-      "centerLatitude": 18.70833333333333,
-      "centerLongitude": -72.47500000000001,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Haiti",
-      "Iptc4xmpCore:CountryCode": "HT",
-      "countryName": "Haiti",
-      "countryCode": "HT",
-      "nearestSettlement": "Port-au-Prince",
-      "nearestSettlementCountry": "Haiti",
-      "distanceToSettlementKm": 23.378587374179254,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "18,42.5N",
-          "exif:GPSLongitude": "72,28.5W",
-          "Iptc4xmpExt:CountryName": "Haiti",
-          "Iptc4xmpExt:CountryCode": "HT",
-          "Iptc4xmpExt:City": "Port-au-Prince"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Haiti: 58 km circle holding 50.3% of the population (5,687,955 people); Center: 18.7083, -72.4750",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          18,
-          1
-        ],
-        [
-          42,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          72,
-          1
-        ],
-        [
-          28,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Haiti: 58 km circle holding 50.3% of the population (5,687,955 people); Center: 18.7083, -72.4750",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 5687955.043064488,
+      "predicate_slack_persons": 0.00010760207542547098,
+      "radius_km": 58,
+      "row": 4277,
+      "share_achieved": 0.5026635877834007,
+      "short_below": {
+        "population": 5616291.548146112,
+        "radius_km": 57
+      },
+      "target": {
+        "persons": 5657814.869927922,
+        "share": 0.5,
+        "total": 11315629.739855845
+      },
+      "territory_share": 0.27788492165462875,
+      "tolerance_persons": 0.0
+    }
   }
 }

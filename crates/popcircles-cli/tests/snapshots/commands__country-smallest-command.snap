@@ -1,6 +1,5 @@
 ---
 source: crates/popcircles-cli/tests/commands.rs
-assertion_line: 1141
 expression: document
 ---
 {
@@ -42,6 +41,7 @@ expression: document
         "share": 0.1,
         "total": 102222.0
       },
+      "territory_share": 0.007174116633123992,
       "tolerance_persons": 0.0
     },
     "country": {

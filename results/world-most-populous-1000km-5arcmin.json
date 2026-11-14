@@ -24,8 +24,8 @@
       "middle_row_cell_area_km2": 85.86348270061563
     },
     "cache": {
-      "header": "out/gpw-5arcmin.header.json",
-      "payload": "out/gpw-5arcmin.payload.bin"
+      "header": "tmp/gh-73/results-build.2JHP1r/gpw-5arcmin.header.json",
+      "payload": "tmp/gh-73/results-build.2JHP1r/gpw-5arcmin.payload.bin"
     }
   },
   "result": {
@@ -39,94 +39,139 @@
     "population": 1254363867.9300776,
     "total_population": 7757982599.323671,
     "share_of_total": 0.1616868627727305,
+    "territory_share": 0.020279896577439237,
     "tolerance_persons": 0.0,
     "stats": {
       "levels": 9,
-      "blocks_examined": 2849,
-      "blocks_pruned": 2174,
-      "circles_evaluated": 675,
-      "kernels_built": 293
+      "blocks_examined": 2965,
+      "blocks_pruned": 2261,
+      "circles_evaluated": 704,
+      "kernels_built": 415
     },
     "nearest_settlement": {
       "name": "Jhansi",
       "country": "India",
-      "distance_km": 121.3164344646304,
+      "country_iso_alpha2": "IN",
+      "distance_km": 121.31643446462766,
       "short_form": false
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=10",
-    "XML:com.adobe.xmp": {
-      "population": 1254363867.9300776,
-      "populationShare": 0.1616868627727305,
-      "radiusKm": 1000.0,
-      "centerLatitude": 25.125,
-      "centerLongitude": 79.70833333333331,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 10,
-      "nearestSettlement": "Jhansi",
-      "nearestSettlementCountry": "India",
-      "distanceToSettlementKm": 121.3164344646304,
-      "Iptc4xmpExt:LocationShown": [
+    },
+    "country_breakdown": {
+      "entries": [
         {
-          "exif:GPSLatitude": "25,7.5N",
-          "exif:GPSLongitude": "79,42.5E",
-          "Iptc4xmpExt:City": "Jhansi",
-          "Iptc4xmpExt:CountryName": "India"
+          "id": "IN",
+          "name": "India",
+          "iso_alpha2": "IN",
+          "population_inside": 1091121497.9950275,
+          "country_total_population": 1370269450.9682193,
+          "fraction_of_country_population": 0.7962824371688733,
+          "fraction_of_circle_population": 0.8698604335563103
+        },
+        {
+          "id": "PK",
+          "name": "Pakistan",
+          "iso_alpha2": "PK",
+          "population_inside": 80306972.4764416,
+          "country_total_population": 202942195.87740004,
+          "fraction_of_country_population": 0.39571352881662947,
+          "fraction_of_circle_population": 0.0640220708915686
+        },
+        {
+          "id": "BD",
+          "name": "Bangladesh",
+          "iso_alpha2": "BD",
+          "population_inside": 44705190.7241745,
+          "country_total_population": 168653221.30802923,
+          "fraction_of_country_population": 0.26507166822817263,
+          "fraction_of_circle_population": 0.03563973091631376
+        },
+        {
+          "id": "NP",
+          "name": "Nepal",
+          "iso_alpha2": "NP",
+          "population_inside": 29587900.64873332,
+          "country_total_population": 29587900.64873332,
+          "fraction_of_country_population": 1.0,
+          "fraction_of_circle_population": 0.023587972680972225
+        },
+        {
+          "id": "XH",
+          "name": "Jammu Kashmir",
+          "population_inside": 4253398.640746455,
+          "country_total_population": 19196234.78117664,
+          "fraction_of_country_population": 0.22157463113116502,
+          "fraction_of_circle_population": 0.003390881027022339
+        },
+        {
+          "id": "CN",
+          "name": "China",
+          "iso_alpha2": "CN",
+          "population_inside": 497887.06794573367,
+          "country_total_population": 1425180365.0026057,
+          "fraction_of_country_population": 0.0003493502157145025,
+          "fraction_of_circle_population": 0.0003969239553809338
+        },
+        {
+          "id": "BT",
+          "name": "Bhutan",
+          "iso_alpha2": "BT",
+          "population_inside": 155507.488761354,
+          "country_total_population": 802873.0152129937,
+          "fraction_of_country_population": 0.19368877246434732,
+          "fraction_of_circle_population": 0.00012397318891046256
+        },
+        {
+          "id": "XE",
+          "name": "China/India",
+          "population_inside": 37680.75185726583,
+          "country_total_population": 37680.75185726583,
+          "fraction_of_country_population": 1.0,
+          "fraction_of_circle_population": 3.003972995447146e-05
+        },
+        {
+          "id": "XC",
+          "name": "Aksai Chin",
+          "population_inside": 975.1032053535555,
+          "country_total_population": 5717.414692272879,
+          "fraction_of_country_population": 0.170549672856757,
+          "fraction_of_circle_population": 7.773686968221178e-07
+        },
+        {
+          "id": "AF",
+          "name": "Afghanistan",
+          "iso_alpha2": "AF",
+          "population_inside": 7.450580596923828e-09,
+          "country_total_population": 36254956.48011618,
+          "fraction_of_country_population": 2.0550515902591292e-16,
+          "fraction_of_circle_population": 5.939728325576377e-18
         }
       ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
+      "reconciliation": {
+        "unassigned_population": 3696857.03318429,
+        "bound_persons": 0.08354482919833418
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "1,000 km circle holding 16.2% of the population (1,254,363,868 people); Center: 25.1250, 79.7083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=10",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: Center for International Earth Science Information Network — CIESIN — Columbia University. 2018.\nGridded Population of the World, Version 4 (GPWv4): Population Count Adjusted to Match 2015 Revision of UN WPP Country\nTotals, Revision 11. Palisades, NY: NASA Socioeconomic Data and Applications Center (SEDAC).\nhttps://doi.org/10.7927/H4PN93PB\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          25,
-          1
-        ],
-        [
-          7,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          79,
-          1
-        ],
-        [
-          42,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "1,000 km circle holding 16.2% of the population (1,254,363,868 people); Center: 25.1250, 79.7083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: Center for International Earth Science Information Network — CIESIN — Columbia University. 2018.\nGridded Population of the World, Version 4 (GPWv4): Population Count Adjusted to Match 2015 Revision of UN WPP Country\nTotals, Revision 11. Palisades, NY: NASA Socioeconomic Data and Applications Center (SEDAC).\nhttps://doi.org/10.7927/H4PN93PB\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "provenance": {
+        "boundary_dataset": "gisco-countries-2024-1m",
+        "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
+        "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
+        "effective_grid": {
+          "width": 4320,
+          "height": 2160,
+          "origin": {
+            "lat": 90.0,
+            "lon": -180.0
+          },
+          "lon_step": 0.08333333333333333,
+          "lat_step": -0.08333333333333333,
+          "spans_full_turn": true,
+          "middle_row_cell_area_km2": 85.86348270061563
+        },
+        "decimation": 10,
+        "accounting_route": "unique-native-cell ownership; one cropped prefix at a time; parallel prefix build and source scan",
+        "membership_rule_version": 1,
+        "ownership_rule_version": 1,
+        "aggregation_order_version": 1
+      }
+    }
   }
 }

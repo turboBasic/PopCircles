@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "AZ",
-      "name": "Azerbaijan",
-      "iso_alpha2": "AZ",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "AZ",
+      "iso_alpha2": "AZ",
+      "name": "Azerbaijan"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 14
     },
     "circle": {
-      "radius_km": 113,
       "centre": {
         "lat": 40.458333333333336,
         "lon": 48.758333333333326
       },
-      "row": 2972,
       "col": 13725,
-      "population": 5049294.644299175,
-      "target": {
-        "share": 0.5,
-        "persons": 5046488.52786528,
-        "total": 10092977.05573056
-      },
-      "share_achieved": 0.5002780266336087,
-      "short_below": {
-        "radius_km": 112,
-        "population": 5008185.58604231
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00010467005435763401,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Şirvan",
         "country": "Azerbaijan",
         "country_iso_alpha2": "AZ",
         "distance_km": 60.08712729822337,
+        "name": "Şirvan",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 5049294.644299175,
-      "populationShare": 0.5002780266336087,
-      "radiusKm": 113.0,
-      "centerLatitude": 40.458333333333336,
-      "centerLongitude": 48.758333333333326,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Azerbaijan",
-      "Iptc4xmpCore:CountryCode": "AZ",
-      "countryName": "Azerbaijan",
-      "countryCode": "AZ",
-      "nearestSettlement": "Şirvan",
-      "nearestSettlementCountry": "Azerbaijan",
-      "distanceToSettlementKm": 60.08712729822337,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "40,27.5N",
-          "exif:GPSLongitude": "48,45.5E",
-          "Iptc4xmpExt:CountryName": "Azerbaijan",
-          "Iptc4xmpExt:CountryCode": "AZ",
-          "Iptc4xmpExt:City": "Şirvan"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Azerbaijan: 113 km circle holding 50.0% of the population (5,049,295 people); Center: 40.4583, 48.7583",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          40,
-          1
-        ],
-        [
-          27,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          48,
-          1
-        ],
-        [
-          45,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Azerbaijan: 113 km circle holding 50.0% of the population (5,049,295 people); Center: 40.4583, 48.7583",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 5049294.644299175,
+      "predicate_slack_persons": 0.00010467005435763401,
+      "radius_km": 113,
+      "row": 2972,
+      "share_achieved": 0.5002780266336087,
+      "short_below": {
+        "population": 5008185.58604231,
+        "radius_km": 112
+      },
+      "target": {
+        "persons": 5046488.52786528,
+        "share": 0.5,
+        "total": 10092977.05573056
+      },
+      "territory_share": 0.38363189602595127,
+      "tolerance_persons": 0.0
+    }
   }
 }

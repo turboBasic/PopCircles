@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "TM",
-      "name": "Turkmenistan",
-      "iso_alpha2": "TM",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "TM",
+      "iso_alpha2": "TM",
+      "name": "Turkmenistan"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 234,
       "centre": {
         "lat": 39.80833333333334,
         "lon": 59.42499999999998
       },
-      "row": 3011,
       "col": 14365,
-      "population": 2845788.210681772,
-      "target": {
-        "share": 0.5,
-        "persons": 2844240.3577373372,
-        "total": 5688480.7154746745
-      },
-      "share_achieved": 0.500272103048574,
-      "short_below": {
-        "radius_km": 233,
-        "population": 2829321.016010006
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.3874576916773996e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Khiva",
         "country": "Uzbekistan",
         "country_iso_alpha2": "UZ",
         "distance_km": 192.7411731470666,
+        "name": "Khiva",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 2845788.210681772,
-      "populationShare": 0.500272103048574,
-      "radiusKm": 234.0,
-      "centerLatitude": 39.80833333333334,
-      "centerLongitude": 59.42499999999998,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Turkmenistan",
-      "Iptc4xmpCore:CountryCode": "TM",
-      "countryName": "Turkmenistan",
-      "countryCode": "TM",
-      "nearestSettlement": "Khiva",
-      "nearestSettlementCountry": "Uzbekistan",
-      "distanceToSettlementKm": 192.7411731470666,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "39,48.5N",
-          "exif:GPSLongitude": "59,25.5E",
-          "Iptc4xmpExt:CountryName": "Turkmenistan",
-          "Iptc4xmpExt:CountryCode": "TM",
-          "Iptc4xmpExt:City": "Khiva"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Turkmenistan: 234 km circle holding 50.0% of the population (2,845,788 people); Center: 39.8083, 59.4250",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          39,
-          1
-        ],
-        [
-          48,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          59,
-          1
-        ],
-        [
-          25,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Turkmenistan: 234 km circle holding 50.0% of the population (2,845,788 people); Center: 39.8083, 59.4250",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 2845788.210681772,
+      "predicate_slack_persons": 5.3874576916773996e-05,
+      "radius_km": 234,
+      "row": 3011,
+      "share_achieved": 0.500272103048574,
+      "short_below": {
+        "population": 2829321.016010006,
+        "radius_km": 233
+      },
+      "target": {
+        "persons": 2844240.3577373372,
+        "share": 0.5,
+        "total": 5688480.7154746745
+      },
+      "territory_share": 0.35601238953498887,
+      "tolerance_persons": 0.0
+    }
   }
 }

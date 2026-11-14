@@ -4,6 +4,7 @@ import {
   entryFromHash,
   countryUrl,
   filterCountries,
+  territoryCaption,
   visibleEntries
 } from '../src/gallery.js';
 
@@ -47,4 +48,11 @@ test('copies the selected country fragment without keeping an old fragment', () 
     countryUrl('https://example.test/gallery/?view=maps#old', 'country-result-AA'),
     'https://example.test/gallery/?view=maps#country-result-AA'
   );
+});
+
+test('formats circle coverage with an integer percent and omits missing legacy values', () => {
+  assert.equal(territoryCaption(0.375, 'Earth’s land area'), 'Circle covers 38% of Earth’s land area');
+  assert.equal(territoryCaption(0.625, 'Germany'), 'Circle covers 63% of Germany');
+  assert.equal(territoryCaption(undefined), null);
+  assert.equal(territoryCaption(null), null);
 });

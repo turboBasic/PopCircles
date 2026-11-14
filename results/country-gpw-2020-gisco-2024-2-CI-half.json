@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "CI",
-      "name": "Côte D’Ivoire",
-      "iso_alpha2": "CI",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "CI",
+      "iso_alpha2": "CI",
+      "name": "Côte D’Ivoire"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 16
     },
     "circle": {
-      "radius_km": 168,
       "centre": {
         "lat": 6.458333333333329,
         "lon": -4.808333333333337
       },
-      "row": 5012,
       "col": 10511,
-      "population": 12799571.49012518,
-      "target": {
-        "share": 0.5,
-        "persons": 12750169.249120139,
-        "total": 25500338.498240277
-      },
-      "share_achieved": 0.5019373170677107,
-      "short_below": {
-        "radius_km": 167,
-        "population": 12677579.055554241
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00022208443683635504,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Dimbokro",
         "country": "Ivory Coast",
         "country_iso_alpha2": "CI",
         "distance_km": 23.966080954807637,
+        "name": "Dimbokro",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 12799571.49012518,
-      "populationShare": 0.5019373170677107,
-      "radiusKm": 168.0,
-      "centerLatitude": 6.458333333333329,
-      "centerLongitude": -4.808333333333337,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Côte D’Ivoire",
-      "Iptc4xmpCore:CountryCode": "CI",
-      "countryName": "Côte D’Ivoire",
-      "countryCode": "CI",
-      "nearestSettlement": "Dimbokro",
-      "nearestSettlementCountry": "Ivory Coast",
-      "distanceToSettlementKm": 23.966080954807637,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "6,27.5N",
-          "exif:GPSLongitude": "4,48.5W",
-          "Iptc4xmpExt:CountryName": "Côte D’Ivoire",
-          "Iptc4xmpExt:CountryCode": "CI",
-          "Iptc4xmpExt:City": "Dimbokro"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Côte D’Ivoire: 168 km circle holding 50.2% of the population (12,799,571 people); Center: 6.4583, -4.8083",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          6,
-          1
-        ],
-        [
-          27,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          4,
-          1
-        ],
-        [
-          48,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Côte D’Ivoire: 168 km circle holding 50.2% of the population (12,799,571 people); Center: 6.4583, -4.8083",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 12799571.49012518,
+      "predicate_slack_persons": 0.00022208443683635504,
+      "radius_km": 168,
+      "row": 5012,
+      "share_achieved": 0.5019373170677107,
+      "short_below": {
+        "population": 12677579.055554241,
+        "radius_km": 167
+      },
+      "target": {
+        "persons": 12750169.249120139,
+        "share": 0.5,
+        "total": 25500338.498240277
+      },
+      "territory_share": 0.2656516398197255,
+      "tolerance_persons": 0.0
+    }
   }
 }

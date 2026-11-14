@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "GM",
-      "name": "Gambia",
-      "iso_alpha2": "GM",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "GM",
+      "iso_alpha2": "GM",
+      "name": "Gambia"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 8
     },
     "circle": {
-      "radius_km": 14,
       "centre": {
         "lat": 13.358333333333334,
         "lon": -16.67500000000001
       },
-      "row": 4598,
       "col": 9799,
-      "population": 1132226.8525927085,
-      "target": {
-        "share": 0.5,
-        "persons": 1127207.474343942,
-        "total": 2254414.948687884
-      },
-      "share_achieved": 0.5022264660069292,
-      "short_below": {
-        "radius_km": 13,
-        "population": 1085417.7172815818
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 2.5522838919173984e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Brikama",
         "country": "The Gambia",
         "country_iso_alpha2": "GM",
         "distance_km": 8.821420431337092,
+        "name": "Brikama",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 1132226.8525927085,
-      "populationShare": 0.5022264660069292,
-      "radiusKm": 14.0,
-      "centerLatitude": 13.358333333333334,
-      "centerLongitude": -16.67500000000001,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Gambia",
-      "Iptc4xmpCore:CountryCode": "GM",
-      "countryName": "Gambia",
-      "countryCode": "GM",
-      "nearestSettlement": "Brikama",
-      "nearestSettlementCountry": "The Gambia",
-      "distanceToSettlementKm": 8.821420431337092,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "13,21.5N",
-          "exif:GPSLongitude": "16,40.5W",
-          "Iptc4xmpExt:CountryName": "Gambia",
-          "Iptc4xmpExt:CountryCode": "GM",
-          "Iptc4xmpExt:City": "Brikama"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Gambia: 14 km circle holding 50.2% of the population (1,132,227 people); Center: 13.3583, -16.6750",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          13,
-          1
-        ],
-        [
-          21,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "W",
-      "GPSLongitude": [
-        [
-          16,
-          1
-        ],
-        [
-          40,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Gambia: 14 km circle holding 50.2% of the population (1,132,227 people); Center: 13.3583, -16.6750",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 1132226.8525927085,
+      "predicate_slack_persons": 2.5522838919173984e-05,
+      "radius_km": 14,
+      "row": 4598,
+      "share_achieved": 0.5022264660069292,
+      "short_below": {
+        "population": 1085417.7172815818,
+        "radius_km": 13
+      },
+      "target": {
+        "persons": 1127207.474343942,
+        "share": 0.5,
+        "total": 2254414.948687884
+      },
+      "territory_share": 0.04944265229575921,
+      "tolerance_persons": 0.0
+    }
   }
 }

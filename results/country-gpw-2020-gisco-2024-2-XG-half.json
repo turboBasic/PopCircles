@@ -9,25 +9,25 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "XG",
-      "name": "Ilemi Triangle",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "XG",
+      "name": "Ilemi Triangle"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -36,114 +36,35 @@
       "radii": 10
     },
     "circle": {
-      "radius_km": 20,
       "centre": {
         "lat": 4.791666666666671,
         "lon": 35.241666666666674
       },
-      "row": 5112,
       "col": 12914,
-      "population": 15218.578962972155,
-      "target": {
-        "share": 0.5,
-        "persons": 15047.877911995398,
-        "total": 30095.755823990796
-      },
-      "share_achieved": 0.5056719310182828,
-      "short_below": {
-        "radius_km": 19,
-        "population": 14435.388155221939
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 2.2933276675443105e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Kapoeta",
         "country": "South Sudan",
         "country_iso_alpha2": "SS",
         "distance_km": 183.00431836649358,
+        "name": "Kapoeta",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 15218.578962972155,
-      "populationShare": 0.5056719310182828,
-      "radiusKm": 20.0,
-      "centerLatitude": 4.791666666666671,
-      "centerLongitude": 35.241666666666674,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Ilemi Triangle",
-      "Iptc4xmpCore:CountryCode": "XG",
-      "countryName": "Ilemi Triangle",
-      "countryCode": "XG",
-      "nearestSettlement": "Kapoeta",
-      "nearestSettlementCountry": "South Sudan",
-      "distanceToSettlementKm": 183.00431836649358,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "4,47.5N",
-          "exif:GPSLongitude": "35,14.5E",
-          "Iptc4xmpExt:CountryName": "Ilemi Triangle",
-          "Iptc4xmpExt:CountryCode": "XG",
-          "Iptc4xmpExt:City": "Kapoeta"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Ilemi Triangle: 20 km circle holding 50.6% of the population (15,219 people); Center: 4.7917, 35.2417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          4,
-          1
-        ],
-        [
-          47,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          35,
-          1
-        ],
-        [
-          14,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Ilemi Triangle: 20 km circle holding 50.6% of the population (15,219 people); Center: 4.7917, 35.2417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 15218.578962972155,
+      "predicate_slack_persons": 2.2933276675443105e-07,
+      "radius_km": 20,
+      "row": 5112,
+      "share_achieved": 0.5056719310182828,
+      "short_below": {
+        "population": 14435.388155221939,
+        "radius_km": 19
+      },
+      "target": {
+        "persons": 15047.877911995398,
+        "share": 0.5,
+        "total": 30095.755823990796
+      },
+      "territory_share": 0.3801896824634237,
+      "tolerance_persons": 0.0
+    }
   }
 }

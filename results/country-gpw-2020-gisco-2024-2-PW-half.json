@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "PW",
-      "name": "Palau",
-      "iso_alpha2": "PW",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "PW",
+      "iso_alpha2": "PW",
+      "name": "Palau"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 8
     },
     "circle": {
-      "radius_km": 15,
       "centre": {
         "lat": 7.375,
         "lon": 134.47500000000002
       },
-      "row": 4957,
       "col": 18868,
-      "population": 10859.795335132629,
-      "target": {
-        "share": 0.5,
-        "persons": 10770.849473540831,
-        "total": 21541.698947081662
-      },
-      "share_achieved": 0.5041290086640937,
-      "short_below": {
-        "radius_km": 14,
-        "population": 10132.458552051336
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 2.0881943921324408e-07,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Koror",
         "country": "Palau",
         "country_iso_alpha2": "PW",
         "distance_km": 3.365803309442201,
+        "name": "Koror",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 10859.795335132629,
-      "populationShare": 0.5041290086640937,
-      "radiusKm": 15.0,
-      "centerLatitude": 7.375,
-      "centerLongitude": 134.47500000000002,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Palau",
-      "Iptc4xmpCore:CountryCode": "PW",
-      "countryName": "Palau",
-      "countryCode": "PW",
-      "nearestSettlement": "Koror",
-      "nearestSettlementCountry": "Palau",
-      "distanceToSettlementKm": 3.365803309442201,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "7,22.5N",
-          "exif:GPSLongitude": "134,28.5E",
-          "Iptc4xmpExt:CountryName": "Palau",
-          "Iptc4xmpExt:CountryCode": "PW",
-          "Iptc4xmpExt:City": "Koror"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Palau: 15 km circle holding 50.4% of the population (10,860 people); Center: 7.3750, 134.4750",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          7,
-          1
-        ],
-        [
-          22,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          134,
-          1
-        ],
-        [
-          28,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Palau: 15 km circle holding 50.4% of the population (10,860 people); Center: 7.3750, 134.4750",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 10859.795335132629,
+      "predicate_slack_persons": 2.0881943921324408e-07,
+      "radius_km": 15,
+      "row": 4957,
+      "share_achieved": 0.5041290086640937,
+      "short_below": {
+        "population": 10132.458552051336,
+        "radius_km": 14
+      },
+      "target": {
+        "persons": 10770.849473540831,
+        "share": 0.5,
+        "total": 21541.698947081662
+      },
+      "territory_share": 0.4084360110335228,
+      "tolerance_persons": 0.0
+    }
   }
 }

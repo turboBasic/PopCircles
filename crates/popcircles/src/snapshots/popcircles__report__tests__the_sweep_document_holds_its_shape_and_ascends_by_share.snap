@@ -1,6 +1,5 @@
 ---
 source: crates/popcircles/src/report.rs
-assertion_line: 1821
 expression: "Envelope::new(document)"
 ---
 {
@@ -38,6 +37,7 @@ expression: "Envelope::new(document)"
           "total": 210276.0
         },
         "share_achieved": 0.10502862903992848,
+        "territory_share": 0.0,
         "short_below": {
           "radius_km": 1107,
           "population": 20856.0
@@ -72,6 +72,7 @@ expression: "Envelope::new(document)"
           "total": 210276.0
         },
         "share_achieved": 0.2014780574102608,
+        "territory_share": 0.0,
         "short_below": {
           "radius_km": 2198,
           "population": 41205.0
@@ -106,6 +107,7 @@ expression: "Envelope::new(document)"
           "total": 210276.0
         },
         "share_achieved": 0.3027687420342788,
+        "territory_share": 0.0,
         "short_below": {
           "radius_km": 3328,
           "population": 62580.0

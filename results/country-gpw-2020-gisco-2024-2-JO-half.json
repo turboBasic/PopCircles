@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "JO",
-      "name": "Jordan",
-      "iso_alpha2": "JO",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "JO",
+      "iso_alpha2": "JO",
+      "name": "Jordan"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 10
     },
     "circle": {
-      "radius_km": 23,
       "centre": {
         "lat": 32.025,
         "lon": 35.95833333333334
       },
-      "row": 3478,
       "col": 12957,
-      "population": 4058902.25052166,
-      "target": {
-        "share": 0.5,
-        "persons": 4051683.9316713577,
-        "total": 8103367.863342715
-      },
-      "share_achieved": 0.5008907801018088,
-      "short_below": {
-        "radius_km": 22,
-        "population": 3955391.6973571777
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.9665673673792456e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Amman",
         "country": "Jordan",
         "country_iso_alpha2": "JO",
         "distance_km": 8.509766192915793,
+        "name": "Amman",
         "short_form": true
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 4058902.25052166,
-      "populationShare": 0.5008907801018088,
-      "radiusKm": 23.0,
-      "centerLatitude": 32.025,
-      "centerLongitude": 35.95833333333334,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Jordan",
-      "Iptc4xmpCore:CountryCode": "JO",
-      "countryName": "Jordan",
-      "countryCode": "JO",
-      "nearestSettlement": "Amman",
-      "nearestSettlementCountry": "Jordan",
-      "distanceToSettlementKm": 8.509766192915793,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "32,1.5N",
-          "exif:GPSLongitude": "35,57.5E",
-          "Iptc4xmpExt:CountryName": "Jordan",
-          "Iptc4xmpExt:CountryCode": "JO",
-          "Iptc4xmpExt:City": "Amman"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Jordan: 23 km circle holding 50.1% of the population (4,058,902 people); Center: 32.0250, 35.9583",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          32,
-          1
-        ],
-        [
-          1,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          35,
-          1
-        ],
-        [
-          57,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Jordan: 23 km circle holding 50.1% of the population (4,058,902 people); Center: 32.0250, 35.9583",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 4058902.25052166,
+      "predicate_slack_persons": 5.9665673673792456e-05,
+      "radius_km": 23,
+      "row": 3478,
+      "share_achieved": 0.5008907801018088,
+      "short_below": {
+        "population": 3955391.6973571777,
+        "radius_km": 22
+      },
+      "target": {
+        "persons": 4051683.9316713577,
+        "share": 0.5,
+        "total": 8103367.863342715
+      },
+      "territory_share": 0.018675475528071202,
+      "tolerance_persons": 0.0
+    }
   }
 }

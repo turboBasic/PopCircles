@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "FI",
-      "name": "Finland",
-      "iso_alpha2": "FI",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "FI",
+      "iso_alpha2": "FI",
+      "name": "Finland"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 14
     },
     "circle": {
-      "radius_km": 105,
       "centre": {
         "lat": 60.858333333333334,
         "lon": 23.84166666666667
       },
-      "row": 1748,
       "col": 12230,
-      "population": 2801553.3027753215,
-      "target": {
-        "share": 0.5,
-        "persons": 2785227.120474857,
-        "total": 5570454.240949714
-      },
-      "share_achieved": 0.50293085295997,
-      "short_below": {
-        "radius_km": 104,
-        "population": 2769543.401016823
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 5.359153978418283e-05,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Hämeenlinna",
         "country": "Finland",
         "country_iso_alpha2": "FI",
         "distance_km": 37.38500577682772,
+        "name": "Hämeenlinna",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 2801553.3027753215,
-      "populationShare": 0.50293085295997,
-      "radiusKm": 105.0,
-      "centerLatitude": 60.858333333333334,
-      "centerLongitude": 23.84166666666667,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Finland",
-      "Iptc4xmpCore:CountryCode": "FI",
-      "countryName": "Finland",
-      "countryCode": "FI",
-      "nearestSettlement": "Hämeenlinna",
-      "nearestSettlementCountry": "Finland",
-      "distanceToSettlementKm": 37.38500577682772,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "60,51.5N",
-          "exif:GPSLongitude": "23,50.5E",
-          "Iptc4xmpExt:CountryName": "Finland",
-          "Iptc4xmpExt:CountryCode": "FI",
-          "Iptc4xmpExt:City": "Hämeenlinna"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Finland: 105 km circle holding 50.3% of the population (2,801,553 people); Center: 60.8583, 23.8417",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "N",
-      "GPSLatitude": [
-        [
-          60,
-          1
-        ],
-        [
-          51,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          23,
-          1
-        ],
-        [
-          50,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Finland: 105 km circle holding 50.3% of the population (2,801,553 people); Center: 60.8583, 23.8417",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 2801553.3027753215,
+      "predicate_slack_persons": 5.359153978418283e-05,
+      "radius_km": 105,
+      "row": 1748,
+      "share_achieved": 0.50293085295997,
+      "short_below": {
+        "population": 2769543.401016823,
+        "radius_km": 104
+      },
+      "target": {
+        "persons": 2785227.120474857,
+        "share": 0.5,
+        "total": 5570454.240949714
+      },
+      "territory_share": 0.09987730518872809,
+      "tolerance_persons": 0.0
+    }
   }
 }

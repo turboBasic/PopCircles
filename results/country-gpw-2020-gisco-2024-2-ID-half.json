@@ -9,26 +9,26 @@
   },
   "result": {
     "selection": {
-      "combination_id": "gpw-2020-gisco-2024",
-      "resolution": 2,
-      "population_source": {
-        "name": "population-count-2020-30arcsec",
-        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d",
-        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries."
-      },
       "boundary_source": {
+        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO.",
         "name": "gisco-countries-2024-1m",
-        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
-        "attribution": "© EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-FAO."
-      }
+        "sha256": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      },
+      "combination_id": "gpw-2020-gisco-2024",
+      "population_source": {
+        "attribution": "GPWv4.11 population count; GISCO Countries 2024 boundaries.",
+        "name": "population-count-2020-30arcsec",
+        "sha256": "956993aa500774aed548c8e1af1a3a68fc164577be82ca799d4ae8568d445e9d"
+      },
+      "resolution": 2
     },
     "country": {
-      "id": "ID",
-      "name": "Indonesia",
-      "iso_alpha2": "ID",
       "boundary_dataset": "gisco-countries-2024-1m",
+      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f",
       "boundary_revision": "Countries 2024 snapshot downloaded 2026-10-22",
-      "boundary_digest": "556a81995108778335b8551f0d8929e86dcbcaab206ba512ba12928eafce505f"
+      "id": "ID",
+      "iso_alpha2": "ID",
+      "name": "Indonesia"
     },
     "population_dataset": "population-count-2020-30arcsec",
     "decimation": 2,
@@ -37,114 +37,35 @@
       "radii": 18
     },
     "circle": {
-      "radius_km": 392,
       "centre": {
         "lat": -7.008333333333326,
         "lon": 109.77499999999998
       },
-      "row": 5820,
       "col": 17386,
-      "population": 135942397.84529322,
-      "target": {
-        "share": 0.5,
-        "persons": 135819492.0671271,
-        "total": 271638984.1342542
-      },
-      "share_achieved": 0.5004524600125341,
-      "short_below": {
-        "radius_km": 391,
-        "population": 135768235.50358126
-      },
       "covers_whole_grid": false,
-      "predicate_slack_persons": 0.00322633314017161,
-      "tolerance_persons": 0.0,
       "nearest_settlement": {
-        "name": "Pekalongan",
         "country": "Indonesia",
         "country_iso_alpha2": "ID",
         "distance_km": 18.41599875648971,
+        "name": "Pekalongan",
         "short_form": false
-      }
-    }
-  },
-  "render_metadata": {
-    "Description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-    "XML:com.adobe.xmp": {
-      "population": 135942397.84529322,
-      "populationShare": 0.5004524600125341,
-      "radiusKm": 392.0,
-      "centerLatitude": -7.008333333333326,
-      "centerLongitude": 109.77499999999998,
-      "populationDataset": "population-count-2020-30arcsec",
-      "decimation": 2,
-      "photoshop:Country": "Indonesia",
-      "Iptc4xmpCore:CountryCode": "ID",
-      "countryName": "Indonesia",
-      "countryCode": "ID",
-      "nearestSettlement": "Pekalongan",
-      "nearestSettlementCountry": "Indonesia",
-      "distanceToSettlementKm": 18.41599875648971,
-      "Iptc4xmpExt:LocationShown": [
-        {
-          "exif:GPSLatitude": "7,0.5S",
-          "exif:GPSLongitude": "109,46.5E",
-          "Iptc4xmpExt:CountryName": "Indonesia",
-          "Iptc4xmpExt:CountryCode": "ID",
-          "Iptc4xmpExt:City": "Pekalongan"
-        }
-      ],
-      "dc:creator": [
-        "Andrii Melnyk"
-      ],
-      "Iptc4xmpCore:CreatorContactInfo": {
-        "Iptc4xmpCore:CiUrlWork": "https://github.com/turboBasic/PopCircles"
       },
-      "dc:rights": "© Andrii Melnyk, 2026",
-      "dc:title": "Indonesia: 392 km circle holding 50.0% of the population (135,942,398 people); Center: -7.0083, 109.7750",
-      "dc:description": "Answered from population dataset population-count-2020-30arcsec at decimation k=2",
-      "photoshop:Credit": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · © EuroGeographics for the administrative boundaries · See full attribution in image metadata",
-      "fullAttribution": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
-    },
-    "EXIF:GPSInfo": {
-      "GPSVersionID": [
-        2,
-        3,
-        0,
-        0
-      ],
-      "GPSLatitudeRef": "S",
-      "GPSLatitude": [
-        [
-          7,
-          1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSLongitudeRef": "E",
-      "GPSLongitude": [
-        [
-          109,
-          1
-        ],
-        [
-          46,
-          1
-        ],
-        [
-          30000,
-          1000
-        ]
-      ],
-      "GPSMapDatum": "WGS-84"
-    },
-    "Title": "Indonesia: 392 km circle holding 50.0% of the population (135,942,398 people); Center: -7.0083, 109.7750",
-    "Copyright": "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles\nPopulation data: GPWv4.11 population count; GISCO Countries 2024 boundaries.\nAdministrative boundaries: © EuroGeographics for the administrative boundaries; acknowledge EuroGeographics and UN-\nFAO.\nCoastline data: © EuroGeographics for the administrative boundaries"
+      "population": 135942397.84529322,
+      "predicate_slack_persons": 0.00322633314017161,
+      "radius_km": 392,
+      "row": 5820,
+      "share_achieved": 0.5004524600125341,
+      "short_below": {
+        "population": 135768235.50358126,
+        "radius_km": 391
+      },
+      "target": {
+        "persons": 135819492.0671271,
+        "share": 0.5,
+        "total": 271638984.1342542
+      },
+      "territory_share": 0.058821817725211514,
+      "tolerance_persons": 0.0
+    }
   }
 }
