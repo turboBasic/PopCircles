@@ -1,2 +1,73 @@
-# Country feature IDs that never appear in Gallery maps or country cards.
-excluded_country_ids = []
+# GISCO feature IDs outside the UN Member States list (2026-08-17 snapshot).
+# Zero-total population territories are excluded independently of membership.
+excluded_country_ids = [
+  "AI", # Anguilla
+  "AQ", # Antarctica — zero population
+  "AS", # American Samoa
+  "AW", # Aruba
+  "BL", # Saint Barthélemy
+  # "BM", # Bermuda
+  "BQ", # Bonaire, Sint Eustatius and Saba
+  "BV", # Bouvet Island — zero population
+  "CC", # Cocos (Keeling) Islands
+  # "CK", # Cook Islands
+  "CP", # Clipperton Island — zero population
+  # "CW", # Curaçao
+  "CX", # Christmas Island
+  # "EH", # Western Sahara
+  # "FK", # Falkland Islands
+  # "FO", # Faroe Islands
+  "GG", # Guernsey
+  # "GI", # Gibraltar
+  # "GL", # Greenland
+  "GS", # South Georgia and the South Sandwich Islands — zero population
+  "GU", # Guam
+  # "HK", # Hong Kong
+  "HM", # Heard Island and McDonald Islands — zero population
+  # "IM", # Isle of Man
+  # "JE", # Jersey
+  # "KY", # Cayman Islands
+  # "MO", # Macao
+  # "MP", # Northern Mariana Islands
+  "MS", # Montserrat
+  # "NC", # New Caledonia
+  "NF", # Norfolk Island
+  "NU", # Niue
+  # "PF", # French Polynesia
+  "PM", # Saint Pierre and Miquelon
+  "PN", # Pitcairn Islands
+  # "PR", # Puerto Rico
+  # "PS", # Palestine
+  "SH", # Saint Helena, Ascension and Tristan da Cunha
+  # "SJ", # Svalbard and Jan Mayen
+  "SX", # Sint Maarten
+  "TC", # Turks and Caicos Islands
+  "TF", # French Southern and Antarctic Lands — zero population
+  "TK", # Tokelau
+  "UM", # United States Minor Outlying Islands — zero population
+  # "VG", # British Virgin Islands
+  # "VI", # United States Virgin Islands
+  "WF", # Wallis and Futuna
+  "XA", # Paracel Islands
+  "XB", # Spratly Islands — zero population
+  "XC", # Aksai Chin
+  "XD", # Arunachal Pradesh
+  "XE", # China/India
+  "XF", # Hala'ib Triangle
+  "XG", # Ilemi Triangle
+  # "XH", # Jammu and Kashmir
+  "XI",  # Kuril Islands
+  "XJ",  # Liancourt Rocks
+  "XJL", # No man's land
+  "XL",  # Navassa Island — zero population
+  "XM",  # Scarborough Reef — zero population
+  "XN",  # Senkaku Islands
+  "XO",  # Bassas da India — zero population
+  "XU",  # Abyei
+  "XV",  # Bir Tawil
+  "XXR", # Equatorial Guinea/Gabon disputed territory
+  "XXS", # Chagos Islands — zero population
+  "XXT", # Sapodilla Cayes
+  "XXW", # Belize/Guatemala disputed territory
+  "XXY", # Essequibo
+]

@@ -13,7 +13,6 @@
   let data = $state(null);
   let error = $state('');
   let query = $state('');
-  let includeZeroPopulation = $state(false);
   let selectedEntry = $state(null);
   let entries = $derived(
     data
@@ -21,10 +20,10 @@
       : []
   );
   let matches = $derived(
-    data ? [entries[0], ...filterCountries(data.countries, query, includeZeroPopulation)] : []
+    data ? [entries[0], ...filterCountries(data.countries, query)] : []
   );
   let visibleMapEntries = $derived(
-    visibleEntries(entries, selectedEntry?.anchor ?? null, includeZeroPopulation)
+    visibleEntries(entries, selectedEntry?.anchor ?? null)
   );
   let browserOpen = $state(false);
   let themeLight = $state(false);
@@ -276,10 +275,6 @@
               placeholder="Search maps"
               autocomplete="off"
             />
-            <label class="zero-population-filter">
-              <input type="checkbox" bind:checked={includeZeroPopulation} />
-              Include territories with zero population
-            </label>
             <p class="visually-hidden" role="status" aria-live="polite">
               {query ? `${matches.length} matching maps` : ''}
             </p>
@@ -372,8 +367,6 @@
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .country-browser-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; max-height: calc(100vh - (8rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; }
-  .zero-population-filter { display: flex; align-items: center; gap: .5rem; margin: .75rem 0; color: var(--muted); }
-  .zero-population-filter input { width: auto; padding: 0; }
   .drawer-title { display: none; }
   label { display: block; margin: .8rem 0 .5rem; font-weight: 600; }
   input { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }

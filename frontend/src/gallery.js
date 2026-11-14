@@ -1,10 +1,6 @@
-export function filterCountries(countries, query, includeZeroPopulation = false) {
+export function filterCountries(countries, query) {
   const search = query.trim().toLowerCase();
-  return countries.filter(
-    (country) =>
-      (includeZeroPopulation || !country.missing) &&
-      country.name.toLowerCase().includes(search)
-  );
+  return countries.filter((country) => country.name.toLowerCase().includes(search));
 }
 
 export function entryFromHash(entries, hash) {
@@ -12,10 +8,8 @@ export function entryFromHash(entries, hash) {
   return entries.find((entry) => entry.anchor === anchor) ?? null;
 }
 
-export function visibleEntries(entries, selectedAnchor, includeMissing = false) {
-  return entries
-    .filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor)
-    .filter((entry) => entry.anchor === selectedAnchor || includeMissing || !entry.missing);
+export function visibleEntries(entries, selectedAnchor) {
+  return entries.filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor);
 }
 
 export function countryUrl(currentUrl, anchor) {

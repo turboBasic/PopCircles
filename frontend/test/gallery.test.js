@@ -18,12 +18,10 @@ const countries = [
 ];
 const entries = [{ name: 'World', anchor: 'world-result' }, ...countries];
 
-test('filters countries by trimmed, case-insensitive names', () => {
+test('filters countries by trimmed, case-insensitive names, including missing entries', () => {
   assert.deepEqual(filterCountries(countries, '  ALP '), [countries[0]]);
-  assert.deepEqual(filterCountries(countries, ''), countries.slice(0, 2));
-  assert.deepEqual(filterCountries(countries, 'population'), []);
-  assert.deepEqual(filterCountries(countries, 'population', true), [countries[2]]);
-  assert.deepEqual(filterCountries(countries, '', true), countries);
+  assert.deepEqual(filterCountries(countries, ''), countries);
+  assert.deepEqual(filterCountries(countries, 'population'), [countries[2]]);
 });
 
 test('resolves World and country entries from URL fragments, with the base URL unselected', () => {
@@ -37,11 +35,10 @@ test('resolves World and country entries from URL fragments, with the base URL u
   assert.equal(entryFromHash(entries, ''), null);
 });
 
-test('shows all available entries by default or only a selected fragment entry', () => {
-  assert.deepEqual(visibleEntries(entries, null), entries.slice(0, 3));
+test('shows all entries by default or only a selected fragment entry', () => {
+  assert.deepEqual(visibleEntries(entries, null), entries);
   assert.deepEqual(visibleEntries(entries, 'world-result'), [entries[0]]);
   assert.deepEqual(visibleEntries(entries, 'country-result-AA'), [countries[0]]);
-  assert.deepEqual(visibleEntries(entries, null, true), entries);
   assert.deepEqual(visibleEntries(entries, countries[2].anchor), [countries[2]]);
 });
 

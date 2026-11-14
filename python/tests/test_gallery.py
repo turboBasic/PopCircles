@@ -728,10 +728,16 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         == "country-smallest"
         and payload["result"]["circle"]["target"]["total"] == 0
     }
-    assert {
-        one.document.name for one in skipped if one.kind == "zero-population country"
-    } == zero_population
+    zero_population_ids = {
+        json.loads(source.read_text(encoding="utf-8"))["result"]["country"]["id"]
+        for source in committed
+        if source.name in zero_population
+    }
+    assert zero_population_ids <= gallery_module.excluded_country_ids()
     assert not zero_population.intersection(one.document.name for one in drawn)
+    assert any(one.country_id == "DE" for one in drawn)
+    assert any(one.country_id == "CW" for one in drawn)
+    assert not any(one.country_id in gallery_module.excluded_country_ids() for one in drawn)
     for one in drawn:
         assert one.figure.read_bytes().startswith(PNG_MAGIC)
         assert (output / one.document.name).is_file()
@@ -749,7 +755,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     countries = [
         configured_country("AA", "Alpha"),
         configured_country("BB", "Beta"),
-        configured_country("CC", "No population <yet>"),
+        configured_country("ZZ", "No population <yet>"),
     ]
     zero_population = swept_country("BB", "Beta")
     zero_population["records"][0]["circle"]["radius_km"] = 0
@@ -771,7 +777,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
             ),
             zero_population,
         ],
-        countries_without_population_cells=[{"id": "CC", "name": "No population <yet>"}],
+        countries_without_population_cells=[{"id": "ZZ", "name": "No population <yet>"}],
     )
     corpus = tmp_path / "corpus"
     corpus.mkdir()
@@ -808,7 +814,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     ] == [
         "AA",
         "BB",
-        "CC",
+        "ZZ",
     ]
     assert [one.document.name for one in drawn] == [result_names[0], "world.json"]
     assert [one.figure.name for one in drawn] == [
@@ -1172,3 +1178,14 @@ def test_a_country_without_a_unique_half_record_leaves_no_gallery_index(
         build(corpus, output, invoke)
 
     assert not (output / "index.html").exists()
+
+
+def test_excluded_ids_are_omitted_from_missing_country_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(gallery_module, "excluded_country_ids", lambda: {"HK"})
+    countries = [configured_country("DE", "Germany"), configured_country("HK", "Hong Kong")]
+    sweep = country_sweep([])
+    sweep["result"]["countries_without_population_cells"] = countries
+
+    assert gallery_module.missing_country_names(sweep, countries) == ["Germany"]
