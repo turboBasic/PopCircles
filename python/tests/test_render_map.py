@@ -617,7 +617,7 @@ def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
     title = title_of(circle_of(payload))
 
     assert title == (
-        "Andorra: 6 km circle holding 52.6% of the population "
+        "Andorra: 6 km circle holding 53% of the population "
         "(33,892 people); Center: 42.5083, 1.5583"
     )
     assert "\n" not in title
@@ -679,7 +679,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert "© Andrii Melnyk, 2026" in str(metadata["Copyright"])
     answer = circle_of(source_document)
     assert metadata["Title"] == title_of(answer)
-    assert metadata["Title"].endswith("Circle area: 38% of Earth\u2019s land area")
+    assert metadata["Title"].endswith("Circle covers 38% of Earth\u2019s land area")
     assert metadata["Description"] == (
         f"Answered from population dataset {DATASET} at decimation k=10"
     )
@@ -756,7 +756,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
     figure = render(answer, ORTHOGRAPHIC, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert "1,000 km circle" in drawn_text
-    assert "16.2% of the population" in drawn_text
+    assert "16% of the population" in drawn_text
     assert "1,254,363,868 people" in drawn_text
     assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
     assert "Center:" in drawn_text
@@ -765,7 +765,7 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
 
 def test_measured_and_nested_documents_use_the_one_line_title() -> None:
     assert title_of(circle_of(document())) == (
-        "1,000 km circle holding 16.2% of the population "
+        "1,000 km circle holding 16% of the population "
         "(1,254,363,868 people); Center: 25.1250, 79.7080"
     )
 
@@ -782,8 +782,7 @@ def test_measured_and_nested_documents_use_the_one_line_title() -> None:
         },
     }
     assert title_of(circle_of(nested)) == (
-        "2,639 km circle holding 25.0% of the population (52,635 people); "
-        "Center: -85.0000, 105.0000"
+        "2,639 km circle holding 25% of the population (52,635 people); Center: -85.0000, 105.0000"
     )
 
 
@@ -792,8 +791,8 @@ def test_country_title_names_the_country_and_population_dataset() -> None:
     payload["result"]["circle"]["territory_share"] = TERRITORY_SHARE
     answer = circle_of(payload)
     assert title_of(answer) == (
-        "Germany: 200 km circle holding 50.0% of the population "
-        "(40 people); Center: 51.0000, 10.0000; Circle area: 38% of Germany"
+        "Germany: 200 km circle holding 50% of the population "
+        "(40 people); Center: 51.0000, 10.0000; Circle covers 38% of Germany"
     )
 
 

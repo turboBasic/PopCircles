@@ -144,7 +144,7 @@ def assert_built_site(output: Path) -> None:
     assert "_blank" in bundle
     assert "noopener" in bundle
     assert "View result data" in bundle
-    assert "Circle area:" in bundle
+    assert "Circle covers" in bundle
     assert "cdn.jsdelivr.net" not in bundle
     assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
@@ -393,7 +393,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     )
     assert annotations == [
         (
-            "1,000 km circle holding 16.2% of the population (1,254,363,868 people); "
+            "1,000 km circle holding 16% of the population (1,254,363,868 people); "
             "Center: 25.1250, 79.7080"
         ),
         "Answered from population dataset population-count-2020-30arcsec at decimation k=10",

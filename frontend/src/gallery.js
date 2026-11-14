@@ -15,7 +15,7 @@ export function visibleEntries(entries, selectedAnchor) {
 export function territoryCaption(share, territoryName) {
   return share === undefined || share === null
     ? null
-    : `Circle area: ${Math.floor(share * 100 + 0.5)}% of ${territoryName}`;
+    : `Circle covers ${Math.floor(share * 100 + 0.5)}% of ${territoryName}`;
 }
 
 export function countryUrl(currentUrl, anchor) {
