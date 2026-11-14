@@ -1,3 +1,5 @@
+import math
+
 import pytest
 from shapely.geometry import Polygon, box
 
@@ -49,6 +51,19 @@ def test_circle_larger_than_a_hemisphere_is_world_minus_its_complement() -> None
 
     assert territory_share(circle, [box(-1.0, 79.0, 1.0, 81.0)]) == pytest.approx(1.0)
     assert territory_share(circle, [box(179.0, -1.0, 180.0, 1.0)]) == pytest.approx(0.0)
+
+
+def test_large_cap_share_uses_spherical_area_not_aeqd_disk_area() -> None:
+    circle = Circle(
+        centre=Coordinate(lat=0.0, lon=0.0),
+        radius_km=9_000.0,
+        earth_radius_km=EARTH_RADIUS_KM,
+    )
+
+    share = territory_share(circle, [box(-179.0, -89.0, 0.0, 89.0), box(0.0, -89.0, 179.0, 89.0)])
+
+    expected = (1.0 - math.cos(circle.radius_km / EARTH_RADIUS_KM)) / 2.0
+    assert share == pytest.approx(expected, abs=0.01)
 
 
 def test_world_union_does_not_double_count_overlapping_features() -> None:
