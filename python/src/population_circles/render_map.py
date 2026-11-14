@@ -169,7 +169,9 @@ def title_of(answer: Answer) -> str:
     )
     if answer.caption.territory_share is not None:
         territory = answer.country.name if answer.country else "Earth\u2019s land area"
-        percent = math.floor(answer.caption.territory_share * 100 + 0.5)
+        percentage = answer.caption.territory_share * 100
+        decimals = max(0, 1 - math.floor(math.log10(percentage))) if percentage else 0
+        percent = f"{percentage:.{decimals}f}"
         title += f"; Circle covers {percent}% of {territory}"
     return title
 
