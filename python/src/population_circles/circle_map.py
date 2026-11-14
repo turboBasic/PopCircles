@@ -146,6 +146,7 @@ def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
             options.output,
             options.projection,
             no_coastlines=options.no_coastlines,
+            coverage_enriched=True,
         )
     except Exception as error:
         # Rendering errors vary by library; the retained document locates the failure.

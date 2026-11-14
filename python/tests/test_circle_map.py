@@ -145,6 +145,11 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
         options = replace(options, document=options.document.parent / "nested" / "answer.json")
 
     monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
+    monkeypatch.setattr(
+        render_map,
+        "enrich_document",
+        Mock(side_effect=AssertionError("pre-enriched document should not be recalculated")),
+    )
     children = Children([0, 0])
     with pytest.raises(
         WorkflowError, match=r"unsupported projection.*current search document retained"
