@@ -157,8 +157,10 @@ tobytes
 verticalalignment
 weezl
 wght
+xfact
 xlim
 xoff
+yfact
 ylim
 zerocopy
 zorder

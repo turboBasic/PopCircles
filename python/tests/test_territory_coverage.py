@@ -40,6 +40,17 @@ def test_share_uses_the_result_sphere_for_circle_radius() -> None:
     assert territory_share(larger_sphere, territory) < territory_share(circle, territory)
 
 
+def test_circle_larger_than_a_hemisphere_is_world_minus_its_complement() -> None:
+    circle = Circle(
+        centre=Coordinate(lat=0.0, lon=0.0),
+        radius_km=15_000.0,
+        earth_radius_km=EARTH_RADIUS_KM,
+    )
+
+    assert territory_share(circle, [box(-1.0, 79.0, 1.0, 81.0)]) == pytest.approx(1.0)
+    assert territory_share(circle, [box(179.0, -1.0, 180.0, 1.0)]) == pytest.approx(0.0)
+
+
 def test_world_union_does_not_double_count_overlapping_features() -> None:
     circle = Circle(
         centre=Coordinate(lat=0.0, lon=0.0),
