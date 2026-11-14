@@ -5,7 +5,8 @@
     entryFromHash,
     countryUrl,
     filterCountries,
-    visibleEntries
+    visibleEntries,
+    territoryCaption
   } from './gallery.js';
 
   const headerBackground = './header-background.png';
@@ -173,9 +174,13 @@
 
 {#snippet figureCaption(figure, countryAnchor = null)}
   {#if figure.caption}
+    {@const territory = territoryCaption(figure.caption.territory_share)}
     <p>
       {figure.caption.radius_km.toLocaleString()} km radius ·
       {(figure.caption.share * 100).toFixed(1)}% of the population ·
+      {#if territory}
+        {territory} ·
+      {/if}
       {figure.caption.population.toLocaleString('en-US', { maximumFractionDigits: 0 })} people ·
       centre
       <a

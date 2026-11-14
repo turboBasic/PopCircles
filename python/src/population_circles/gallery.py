@@ -84,6 +84,7 @@ class FigureCaption(TypedDict):
     centre_lat: float
     centre_lon: float
     settlement: SettlementCaption | None
+    territory_share: NotRequired[float]
 
 
 @dataclass(frozen=True)
@@ -223,7 +224,7 @@ def map_cache_key(
 
 def figure_caption(answer: Answer) -> FigureCaption:
     settlement = answer.caption.settlement
-    return {
+    caption: FigureCaption = {
         "radius_km": answer.circle.radius_km,
         "share": answer.caption.share,
         "population": answer.caption.population,
@@ -239,6 +240,9 @@ def figure_caption(answer: Answer) -> FigureCaption:
             else None
         ),
     }
+    if answer.caption.territory_share is not None:
+        caption["territory_share"] = answer.caption.territory_share
+    return caption
 
 
 def reuse_cached_map(cache: Path, key: str, target: Path) -> bool:

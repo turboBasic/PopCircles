@@ -12,6 +12,10 @@ export function visibleEntries(entries, selectedAnchor) {
   return entries.filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor);
 }
 
+export function territoryCaption(share) {
+  return share === undefined || share === null ? null : `${(share * 100).toFixed(1)}% of territory`;
+}
+
 export function countryUrl(currentUrl, anchor) {
   const url = new URL(currentUrl);
   url.hash = anchor ? `#${anchor}` : '';

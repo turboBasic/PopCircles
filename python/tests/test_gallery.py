@@ -32,6 +32,8 @@ DATASET = "population-count-2020-30arcsec"
 WORLD_POPULATION = 1_254_363_867.93
 WORLD_SHARE = 0.1616868627727305
 WORLD_RADIUS_KM = 1000.0
+WORLD_TERRITORY_SHARE = 0.375
+COUNTRY_TERRITORY_SHARE = 0.625
 VISIBLE_FOOTER = (
     "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
     "© EuroGeographics for the administrative boundaries · "
@@ -78,8 +80,10 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
 
 
-def document(kind: str, dataset: str = DATASET) -> dict[str, Any]:
-    return {
+def document(
+    kind: str, dataset: str = DATASET, territory_share: float | None = None
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "schema_version": 1,
         "document": kind,
         "tool": "popcircles",
@@ -96,6 +100,9 @@ def document(kind: str, dataset: str = DATASET) -> dict[str, Any]:
             "circles": [],
         },
     }
+    if territory_share is not None:
+        payload["result"]["territory_share"] = territory_share
+    return payload
 
 
 def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
@@ -137,6 +144,7 @@ def assert_built_site(output: Path) -> None:
     assert "_blank" in bundle
     assert "noopener" in bundle
     assert "View result data" in bundle
+    assert "of territory" in bundle
     assert "cdn.jsdelivr.net" not in bundle
     assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
@@ -506,7 +514,7 @@ def test_gallery_data_uses_only_the_current_maps(
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "old.json", document("most-populous"))
-    written(corpus, "current.json", document("most-populous"))
+    written(corpus, "current.json", document("most-populous", territory_share=0.375))
     output = tmp_path / "gallery"
     invoke = country_cli([], [])[0]
 
@@ -534,6 +542,7 @@ def test_gallery_data_uses_only_the_current_maps(
                 "centre_lat": 25.125,
                 "centre_lon": 79.708,
                 "settlement": None,
+                "territory_share": 0.375,
             },
         },
     ]
@@ -576,6 +585,19 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
     assert world["radius_km"] == WORLD_RADIUS_KM
     assert world["share"] == WORLD_SHARE
     assert world["population"] == WORLD_POPULATION
+    assert "territory_share" not in world
+
+    world_with_territory = gallery_module.figure_caption(
+        circle_of(document("most-populous", territory_share=WORLD_TERRITORY_SHARE))
+    )
+    assert world_with_territory["territory_share"] == WORLD_TERRITORY_SHARE
+
+    country = country_circle_document()
+    country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
+    assert (
+        gallery_module.figure_caption(circle_of(country))["territory_share"]
+        == COUNTRY_TERRITORY_SHARE
+    )
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:

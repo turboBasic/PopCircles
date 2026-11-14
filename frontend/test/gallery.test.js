@@ -4,6 +4,7 @@ import {
   entryFromHash,
   countryUrl,
   filterCountries,
+  territoryCaption,
   visibleEntries
 } from '../src/gallery.js';
 
@@ -47,4 +48,10 @@ test('copies the selected country fragment without keeping an old fragment', () 
     countryUrl('https://example.test/gallery/?view=maps#old', 'country-result-AA'),
     'https://example.test/gallery/?view=maps#country-result-AA'
   );
+});
+
+test('formats territory coverage to one decimal place and omits missing legacy values', () => {
+  assert.equal(territoryCaption(0.375), '37.5% of territory');
+  assert.equal(territoryCaption(undefined), null);
+  assert.equal(territoryCaption(null), null);
 });
