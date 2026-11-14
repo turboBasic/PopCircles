@@ -205,14 +205,6 @@ enum CountryCommand {
         #[arg(long, default_value = "out/countries")]
         ledger_dir: PathBuf,
     },
-    /// Add territory coverage to a saved country-sweep document without rerunning population searches.
-    Coverage {
-        /// Existing country-sweep JSON document to annotate.
-        #[arg(long)]
-        input: PathBuf,
-        #[command(flatten)]
-        table: CountryTableArgs,
-    },
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -364,9 +356,6 @@ fn dispatch_country(
             search,
             ledger_dir,
         } => commands::country::sweep(config_path, &countries, shares, &table, search, &ledger_dir),
-        CountryCommand::Coverage { input, table } => {
-            commands::country::coverage(config_path, &input, &table)
-        }
     }
 }
 

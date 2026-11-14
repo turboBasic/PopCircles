@@ -132,7 +132,7 @@ use crate::table::{BuiltTable, ColSpan, RowBand, Window};
 
 /// Bumped when a change to a document below is not additive — a renamed or removed field, or one
 /// whose meaning moved. A new field does not bump it.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 /// The kind a payload type is, published as the envelope's `document` key.
 ///
@@ -589,7 +589,8 @@ pub struct CircleReport {
     population: f64,
     total_population: f64,
     share_of_total: f64,
-    territory_share: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    territory_share: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     nearest_settlement: Option<NearestSettlementReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -610,7 +611,7 @@ impl CircleReport {
         radius: RadiusKm,
         population: f64,
         total: f64,
-        territory_share: f64,
+        territory_share: Option<f64>,
     ) -> Result<Self, GridIndexError> {
         let (row, col) = cell;
         Ok(Self {
@@ -779,7 +780,8 @@ pub struct MostPopulousReport {
     population: f64,
     total_population: f64,
     share_of_total: f64,
-    territory_share: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    territory_share: Option<f64>,
     tolerance_persons: f64,
     stats: SearchStatsReport,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -801,7 +803,7 @@ impl MostPopulousReport {
         found: &MostPopulous,
         grid: &Grid,
         total: f64,
-        territory_share: f64,
+        territory_share: Option<f64>,
     ) -> Result<Self, GridIndexError> {
         let centre = found.centre;
         Ok(Self {
@@ -921,7 +923,8 @@ pub struct SmallestReport {
     population: f64,
     target: TargetReport,
     share_achieved: f64,
-    territory_share: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    territory_share: Option<f64>,
     /// Absent, rather than null, when the answer is 0 km and there is no radius below it to have proved
     /// short — [`TableQueryReport::window`]'s convention.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -953,7 +956,7 @@ impl SmallestReport {
     pub fn new(
         found: &Smallest,
         grid: &Grid,
-        territory_share: f64,
+        territory_share: Option<f64>,
     ) -> Result<Self, GridIndexError> {
         let centre = found.centre;
         Ok(Self {
@@ -1348,7 +1351,7 @@ mod tests {
         // the version is the *first* key: a consumer streaming the document reads it before it has
         // to understand anything else.
         let json = serde_json::to_string(&Envelope::new(())).unwrap();
-        assert!(json.starts_with(r#"{"schema_version":1,"#), "{json}");
+        assert!(json.starts_with(r#"{"schema_version":2,"#), "{json}");
     }
 
     /// The provenance of a table over [`degree_grid`], for the tests that want one and vary nothing about it
@@ -1628,13 +1631,13 @@ mod tests {
             ],
         );
         let empty = country_breakdown(grid, Vec::new());
-        let circle = CircleReport::new(requested, cell, &grid, radius, population, total, 0.0)
+        let circle = CircleReport::new(requested, cell, &grid, radius, population, total, None)
             .expect("circle indices belong to the grid")
             .with_country_breakdown(Some(&breakdown));
-        let most_report = MostPopulousReport::new(&most, &grid, total, 0.0)
+        let most_report = MostPopulousReport::new(&most, &grid, total, None)
             .expect("search centre belongs to the grid")
             .with_country_breakdown(Some(&breakdown));
-        let smallest_report = SmallestReport::new(&found, &grid, 0.0)
+        let smallest_report = SmallestReport::new(&found, &grid, None)
             .expect("search centre belongs to the grid")
             .with_country_breakdown(Some(&breakdown));
         let reports = serde_json::json!({
@@ -1649,11 +1652,11 @@ mod tests {
                 SweepShares::new(20, 20, 10), vec![smallest_report],
             ))).unwrap(),
             "legacy_circle": serde_json::to_value(Envelope::new(
-                CircleReport::new(requested, cell, &grid, radius, population, total, 0.0)
+                CircleReport::new(requested, cell, &grid, radius, population, total, None)
                     .expect("circle indices belong to the grid"),
             )).unwrap(),
             "empty": serde_json::to_value(Envelope::new(
-                CircleReport::new(requested, cell, &grid, radius, population, total, 0.0)
+                CircleReport::new(requested, cell, &grid, radius, population, total, None)
                     .expect("circle indices belong to the grid")
                     .with_country_breakdown(Some(&empty)),
             )).unwrap(),
@@ -1711,7 +1714,7 @@ mod tests {
         assert_eq!(total, 210_276.0);
 
         insta::assert_json_snapshot!(Envelope::new(
-            CircleReport::new(requested, cell, &grid, radius, population, total, 0.0)
+            CircleReport::new(requested, cell, &grid, radius, population, total, None)
                 .expect("circle indices belong to the grid")
         ));
     }
@@ -1760,16 +1763,16 @@ mod tests {
             .unwrap();
 
         let circle = Envelope::new(
-            CircleReport::new(centre, cell, &grid, radius, population, total, 0.0)
+            CircleReport::new(centre, cell, &grid, radius, population, total, None)
                 .expect("circle indices belong to the grid")
                 .with_nearest_settlement(Some(&circle_context)),
         );
         let most_populous = Envelope::new(
-            MostPopulousReport::new(&most_found, &grid, total, 0.0)
+            MostPopulousReport::new(&most_found, &grid, total, None)
                 .expect("search centre belongs to the grid")
                 .with_nearest_settlement(Some(&most_context)),
         );
-        let smallest_report = SmallestReport::new(&found, &grid, 0.0)
+        let smallest_report = SmallestReport::new(&found, &grid, None)
             .expect("search centre belongs to the grid")
             .with_nearest_settlement(Some(&smallest_context));
         let smallest = Envelope::new(SmallestDocument::new(
@@ -1783,7 +1786,7 @@ mod tests {
         ));
 
         let ocean = Envelope::new(
-            CircleReport::new(centre, cell, &grid, radius, population, total, 0.0)
+            CircleReport::new(centre, cell, &grid, radius, population, total, None)
                 .expect("circle indices belong to the grid")
                 .with_nearest_settlement(None),
         );
@@ -1823,7 +1826,7 @@ mod tests {
         assert_ne!((found.centre.row.get(), found.centre.col.get()), (0, 0));
 
         insta::assert_json_snapshot!(Envelope::new(
-            MostPopulousReport::new(&found, &grid, total, 0.0)
+            MostPopulousReport::new(&found, &grid, total, None)
                 .expect("search centre belongs to the grid")
         ));
     }
@@ -1852,7 +1855,7 @@ mod tests {
         assert_eq!(below.0, found.radius_km - 1);
 
         insta::assert_json_snapshot!(Envelope::new(
-            SmallestReport::new(&found, &grid, 0.0).expect("search centre belongs to the grid")
+            SmallestReport::new(&found, &grid, None).expect("search centre belongs to the grid")
         ));
     }
 
@@ -1879,7 +1882,7 @@ mod tests {
         assert!(found.ambiguity.is_some(), "{found:?}");
 
         insta::assert_json_snapshot!(Envelope::new(
-            SmallestReport::new(&found, &grid, 0.0).expect("search centre belongs to the grid")
+            SmallestReport::new(&found, &grid, None).expect("search centre belongs to the grid")
         ));
     }
 
@@ -1923,7 +1926,7 @@ mod tests {
 
         insta::assert_json_snapshot!(Envelope::new(SmallestDocument::new(
             LedgerReport::new(ledger_path(), ledger.entries.len()),
-            SmallestReport::new(&found, &grid, 0.0).expect("search centre belongs to the grid"),
+            SmallestReport::new(&found, &grid, None).expect("search centre belongs to the grid"),
         )));
 
         insta::assert_json_snapshot!(Envelope::new(
@@ -1938,7 +1941,8 @@ mod tests {
                 ),
                 ("population-count-2020-30arcsec", 10),
                 LedgerReport::new(ledger_path(), ledger.entries.len()),
-                SmallestReport::new(&found, &grid, 0.0).expect("search centre belongs to the grid"),
+                SmallestReport::new(&found, &grid, None)
+                    .expect("search centre belongs to the grid"),
             )
             .with_iso_alpha2(Some("FR"))
         ));
@@ -1968,7 +1972,7 @@ mod tests {
                     &mut (),
                 )
                 .expect("a whole-globe fixture and a map cannot fail");
-                SmallestReport::new(&found, &grid, 0.0).expect("search centre belongs to the grid")
+                SmallestReport::new(&found, &grid, None).expect("search centre belongs to the grid")
             })
             .collect();
         assert_eq!(records.len(), 3);
@@ -1999,7 +2003,7 @@ mod tests {
         let found = smallest::smallest(&table, share(0.2), Some(spacing(4)), &mut (), &mut ())
             .expect("a whole-globe fixture and a no-op ledger cannot fail");
         let record =
-            SmallestReport::new(&found, &grid, 0.0).expect("search centre belongs to the grid");
+            SmallestReport::new(&found, &grid, None).expect("search centre belongs to the grid");
         let block = || LedgerReport::new(ledger_path(), 0);
 
         let one = serde_json::to_string(&Envelope::new(SmallestDocument::new(
@@ -2033,9 +2037,8 @@ mod tests {
         let (cell, radius, population, total) = circle_at(&table, requested, 1200.0);
         assert_eq!((population, total), (0.0, 0.0));
 
-        let report = CircleReport::new(requested, cell, &grid, radius, population, total, 0.0)
+        let report = CircleReport::new(requested, cell, &grid, radius, population, total, None)
             .expect("circle indices belong to the grid");
-        assert_eq!(report.share_of_total, 0.0);
         let json = serde_json::to_string(&Envelope::new(report)).unwrap();
         assert!(!json.contains("null") && !json.contains("NaN"), "{json}");
     }
@@ -2101,7 +2104,7 @@ mod tests {
                 )
                 .expect("the fixture table can be searched");
                 CountrySweepRecord::new(
-                    SmallestReport::new(&found, &grid, 0.0)
+                    SmallestReport::new(&found, &grid, None)
                         .expect("search centre belongs to the grid"),
                 )
             })

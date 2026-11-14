@@ -79,10 +79,9 @@ expression: document
     },
     "row": 4,
     "share_of_total": 0.0,
-    "territory_share": 0.0,
     "total_population": 210276.0
   },
-  "schema_version": 1,
+  "schema_version": 2,
   "tool": "popcircles",
   "tool_version": "0.3.0"
 }

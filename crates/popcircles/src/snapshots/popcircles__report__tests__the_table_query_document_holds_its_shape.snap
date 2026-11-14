@@ -3,7 +3,7 @@ source: crates/popcircles/src/report.rs
 expression: "Envelope::new(TableQueryReport::new(0x3a5d_5e3b_082f_2fb7, &grid, None, rows,\nColSpan::FullTurn, 7_757_982_599.32,))"
 ---
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "document": "table-query",
   "tool": "popcircles",
   "tool_version": "0.3.0",

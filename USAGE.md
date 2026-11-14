@@ -17,7 +17,7 @@ Wiesbaden to Rome:
 
 ```sh
 mise run cli -- distance 50.0782 8.2398 41.9028 12.4964
-# {"schema_version":1,"tool":"popcircles","result":{"great_circle_km":966.3013398709427, …}}
+# {"schema_version":2,"tool":"popcircles","result":{"great_circle_km":966.3013398709427, …}}
 ```
 
 ### The population map's grid
@@ -33,7 +33,7 @@ For the GPWv4.11 population raster — a map made of cells — without reading t
 
 ```sh
 mise run cli -- grid describe --dataset population-count-2020-30arcsec
-# {"schema_version":1,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
+# {"schema_version":2,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
 ```
 
 Grid-taking commands accept `--dataset` for registry defaults. World calculations use the population
@@ -219,7 +219,7 @@ countries by name and each country's records by requested share:
 ```sh
 mise run cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
   --combination gpw-2020-gisco-2024 --resolution 10
-# {…,"schema_version":1,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
+# {…,"schema_version":2,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
 #  "countries":[{"country":{"id":"DE","name":"Germany",…},"ledger":{"path":"out/countries/4445.json",…},
 #  "records":[{"share":0.1,"circle":{"target":{"share":0.1,…},…}},…]},…],
 #  "countries_without_population_cells":[{"id":"VA","name":"Vatican City"},…]}}

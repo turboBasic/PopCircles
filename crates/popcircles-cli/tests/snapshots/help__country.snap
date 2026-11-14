@@ -13,7 +13,6 @@ Commands:
   fetch         Fetch one configured prepared country combination from its remote location
   smallest      Find the smallest population circle for one registered country
   sweep         Sweep requested shares over selected countries, resuming one ledger per country
-  coverage      Add territory coverage to a saved country-sweep document without rerunning population searches
   help          Print this message or the help of the given subcommand(s)
 
 Options:

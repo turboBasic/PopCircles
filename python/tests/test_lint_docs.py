@@ -167,11 +167,11 @@ def test_main_is_clean_on_real_repo() -> None:
 
 def test_document_contract_requires_matching_kinds() -> None:
     rust = """
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 impl Document for Circle { const KIND: &'static str = "circle"; }
 """
     python = """
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DocumentKind = Literal["circle"]
 """
     assert lint_docs.document_contract_findings(rust, python) == []
@@ -186,12 +186,12 @@ DocumentKind = Literal["circle"]
 
 def test_document_contract_requires_matching_schema_versions() -> None:
     rust = """
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 impl Document for Circle { const KIND: &'static str = "circle"; }
 """
-    python = 'SCHEMA_VERSION = 2\nDocumentKind = Literal["circle"]'
+    python = 'SCHEMA_VERSION = 3\nDocumentKind = Literal["circle"]'
     assert lint_docs.document_contract_findings(rust, python) == [
-        "schema versions differ: Rust 1, Python 2"
+        "schema versions differ: Rust 2, Python 3"
     ]
 
 

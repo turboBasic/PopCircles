@@ -434,7 +434,7 @@ fn one_document_naming_the_fixture(fixture: &Fixture, output: &Output) -> serde_
     // read as the first.
     let document: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("stdout is one JSON document");
-    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["schema_version"], 2);
     assert_eq!(
         document["provenance"]["digest"],
         serde_json::Value::from(hexadecimal(fixture.digest))
@@ -469,7 +469,7 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
         "population-at",
         &["--lat", "45", "--lon", "15", "--radius-km", "1"],
     ));
-    assert_territory_share(&population_at["result"]);
+    assert_no_territory_share(&population_at["result"]);
     assert_eq!(
         population_at["result"]["country_breakdown"]["entries"][0]["id"],
         "XX"
@@ -477,12 +477,12 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
 
     let most_populous =
         successful_document(&fixture.run_ok("most-populous", &["--radius-km", "0"]));
-    assert_territory_share(&most_populous["result"]);
+    assert_no_territory_share(&most_populous["result"]);
     assert!(most_populous["result"]["country_breakdown"].is_object());
 
     let smallest_args = ["--share", "10", "--ledger", "smallest.json"];
     let smallest = successful_document(&fixture.run_ok("smallest-for-share", &smallest_args));
-    assert_territory_share(&smallest["result"]["circle"]);
+    assert_no_territory_share(&smallest["result"]["circle"]);
     assert!(smallest["result"]["circle"]["country_breakdown"].is_object());
     let warm = successful_document(&fixture.run_ok("smallest-for-share", &smallest_args));
     for field in ["radius_km", "centre", "population", "country_breakdown"] {
@@ -517,23 +517,17 @@ fn every_circle_command_publishes_country_accounting_from_registered_inputs() {
             .as_array()
             .unwrap()
             .iter()
-            .all(|record| has_territory_share(&record["territory_share"]))
+            .all(|record| record.get("territory_share").is_none())
     );
 }
 
-fn assert_territory_share(result: &serde_json::Value) {
-    assert!(has_territory_share(&result["territory_share"]), "{result}");
+fn assert_no_territory_share(result: &serde_json::Value) {
+    assert!(result.get("territory_share").is_none(), "{result}");
 }
 
-fn has_territory_share(value: &serde_json::Value) -> bool {
-    value
-        .as_f64()
-        .is_some_and(|share| share.is_finite() && (0.0..=1.0).contains(&share))
-}
-
-fn assert_country_sweep_shares(records: &[serde_json::Value]) {
+fn assert_country_sweep_omits_coverage(records: &[serde_json::Value]) {
     for record in records {
-        assert_territory_share(&record["circle"]);
+        assert_no_territory_share(&record["circle"]);
     }
 }
 
@@ -625,7 +619,7 @@ fn country_list_reads_only_registered_boundaries_and_sorts_the_json_result() {
         String::from_utf8_lossy(&output.stderr)
     );
     let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["schema_version"], 2);
     assert_eq!(document["document"], "country-list");
     assert_eq!(document["result"]["selection"]["combination_id"], "fixture");
     assert_eq!(document["result"]["selection"]["resolution"], 1);
@@ -1135,7 +1129,7 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
     assert_eq!(first.status.code(), Some(0), "{first:?}");
     let mut document: serde_json::Value = serde_json::from_slice(&first.stdout).unwrap();
     assert_eq!(document["document"], "country-smallest");
-    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["schema_version"], 2);
     assert_eq!(document["result"]["country"]["id"], "AA");
     assert_eq!(document["result"]["country"]["name"], "Alpha");
     assert_eq!(
@@ -1163,7 +1157,7 @@ fn country_smallest_publishes_identity_and_refuses_a_mismatched_ledger() {
         "population-count-2020-30arcsec"
     );
     assert_eq!(document["result"]["decimation"], 1);
-    assert_territory_share(&document["result"]["circle"]);
+    assert_no_territory_share(&document["result"]["circle"]);
     document["result"]["ledger"]["path"] = "shared-country.json".into();
     insta::assert_json_snapshot!("country-smallest-command", document);
 
@@ -1374,7 +1368,7 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
         assert_eq!(records.len(), 2);
         assert_eq!(records[0]["share"], 0.1);
         assert_eq!(records[1]["share"], 0.2);
-        assert_country_sweep_shares(records);
+        assert_country_sweep_omits_coverage(records);
     }
     let aa_ledger = countries[0]["ledger"]["path"].as_str().unwrap();
     let bb_ledger = countries[1]["ledger"]["path"].as_str().unwrap();
@@ -1417,77 +1411,16 @@ fn country_sweep_is_ordered_resumable_and_keeps_country_ledgers_separate() {
 }
 
 #[test]
-fn country_coverage_adds_area_shares_to_saved_answers_without_changing_them() {
+fn country_coverage_is_no_longer_a_rust_subcommand() {
     let fixture = Fixture::build();
-    fixture.register_two_countries();
-    fixture.register_empty_country();
-    fixture.prepare_country_data();
-    let sweep = run_with(
-        fixture.directory.path(),
-        &[],
-        "country sweep",
-        &[
-            "--country",
-            "AA",
-            "--country",
-            "BB",
-            "--from",
-            "10",
-            "--to",
-            "10",
-            "--step",
-            "1",
-            "--spacing",
-            "4",
-            "--ledger-dir",
-            "out/coverage-ledgers",
-        ],
-    );
-    let original: serde_json::Value = serde_json::from_slice(&sweep.stdout).unwrap();
-    let input = fixture.directory.path().join("saved-country-sweep.json");
-    std::fs::write(&input, &sweep.stdout).unwrap();
-
-    let covered = run_with(
+    let result = run_with(
         fixture.directory.path(),
         &[],
         "country coverage",
-        &["--input", input.to_str().unwrap()],
+        &["--input", "saved-country-sweep.json"],
     );
-    assert_eq!(covered.status.code(), Some(0), "{covered:?}");
-    let covered: serde_json::Value = serde_json::from_slice(&covered.stdout).unwrap();
-    assert_eq!(covered["document"], "country-sweep");
-    for (before, after) in original["result"]["countries"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .zip(covered["result"]["countries"].as_array().unwrap())
-    {
-        let old_circle = &before["records"][0]["circle"];
-        let new_circle = &after["records"][0]["circle"];
-        for key in ["centre", "radius_km", "population", "share_achieved"] {
-            assert_eq!(old_circle[key], new_circle[key]);
-        }
-        let share = new_circle["territory_share"].as_f64().unwrap();
-        assert!(share.is_finite() && (0.0..=1.0).contains(&share));
-    }
-
-    let mut mismatched = original;
-    let latitude = mismatched["result"]["countries"][0]["records"][0]["circle"]["centre"]["lat"]
-        .as_f64()
-        .unwrap();
-    mismatched["result"]["countries"][0]["records"][0]["circle"]["centre"]["lat"] =
-        (latitude + 0.5).into();
-    std::fs::write(&input, serde_json::to_vec(&mismatched).unwrap()).unwrap();
-    let refused = run_with(
-        fixture.directory.path(),
-        &[],
-        "country coverage",
-        &["--input", input.to_str().unwrap()],
-    );
-    assert_eq!(refused.status.code(), Some(2), "{refused:?}");
-    assert!(
-        String::from_utf8_lossy(&refused.stderr).contains("centre does not match its grid cell")
-    );
+    assert_eq!(result.status.code(), Some(2), "{result:?}");
+    assert!(String::from_utf8_lossy(&result.stderr).contains("unrecognized subcommand"));
 }
 
 #[test]

@@ -1,9 +1,9 @@
 ---
 source: crates/popcircles/src/report.rs
-expression: "Envelope::new(SmallestReport::new(&found, &grid,\n0.0).expect(\"search centre belongs to the grid\"))"
+expression: "Envelope::new(SmallestReport::new(&found, &grid,\nNone).expect(\"search centre belongs to the grid\"))"
 ---
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "document": "smallest-circle",
   "tool": "popcircles",
   "tool_version": "0.3.0",
@@ -26,7 +26,6 @@ expression: "Envelope::new(SmallestReport::new(&found, &grid,\n0.0).expect(\"sea
       "total": 210276.0
     },
     "share_achieved": 0.25031387319522913,
-    "territory_share": 0.0,
     "short_below": {
       "radius_km": 2638,
       "population": 51510.0

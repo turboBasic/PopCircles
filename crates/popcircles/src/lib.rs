@@ -13,4 +13,3 @@ pub mod search;
 pub mod settlement;
 pub mod smallest;
 pub mod table;
-pub mod territory;
