@@ -88,6 +88,7 @@ IEEEFP
 IUGG
 libgdal
 mbtiles
+Mollweide
 naturalearth
 nvkelso
 pmtiles
