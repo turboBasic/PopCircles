@@ -161,11 +161,14 @@ def title_of(answer: Answer) -> str:
     circle = answer.circle
     country = f"{answer.country.name}: " if answer.country else ""
     centre = f"{circle.centre.lat:.4f}, {circle.centre.lon:.4f}"
-    return (
+    title = (
         f"{country}{circle.radius_km:,.0f} km circle holding "
         f"{answer.caption.share:.1%} of the population "
         f"({answer.caption.population:,.0f} people); Center: {centre}"
     )
+    if answer.caption.territory_share is not None:
+        title += f"; Territory: {answer.caption.territory_share:.1%}"
+    return title
 
 
 def footer_text() -> str:
@@ -211,6 +214,8 @@ def xmp_properties(
         "populationDataset": answer.provenance.dataset,
         "decimation": answer.provenance.decimation,
     }
+    if answer.caption.territory_share is not None:
+        properties["territoryShare"] = answer.caption.territory_share
     if answer.country is not None:
         properties["photoshop:Country"] = answer.country.name
         properties["Iptc4xmpCore:CountryCode"] = answer.country.id

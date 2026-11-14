@@ -193,6 +193,7 @@ class Caption(BaseModel):
 
     population: float
     share: float
+    territory_share: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
     settlement: Settlement | None = None
     country_breakdown: CountryBreakdown | None = None
 
@@ -243,6 +244,7 @@ class _Measured(_Payload):
     radius_km: float
     population: float
     share_of_total: float
+    territory_share: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
     nearest_settlement: Settlement | None = None
     country_breakdown: CountryBreakdown | None = None
 
@@ -256,6 +258,7 @@ class _Measured(_Payload):
             caption=Caption(
                 population=self.population,
                 share=self.share_of_total,
+                territory_share=self.territory_share,
                 settlement=self.nearest_settlement,
                 country_breakdown=self.country_breakdown,
             ),
@@ -270,6 +273,7 @@ class _Smallest(BaseModel):
     radius_km: float
     population: float
     share_achieved: float
+    territory_share: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
     nearest_settlement: Settlement | None = None
     country_breakdown: CountryBreakdown | None = None
 
@@ -287,6 +291,7 @@ class _Searched(_Payload):
             caption=Caption(
                 population=self.circle.population,
                 share=self.circle.share_achieved,
+                territory_share=self.circle.territory_share,
                 settlement=self.circle.nearest_settlement,
                 country_breakdown=self.circle.country_breakdown,
             ),

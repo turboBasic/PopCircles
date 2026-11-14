@@ -32,6 +32,9 @@ SEARCHED_LAT = -85.0
 SEARCHED_RADIUS_KM = 2639
 SEARCHED_POPULATION = 52635.0
 SEARCHED_SHARE = 0.25031387319522913
+MEASURED_TERRITORY_SHARE = 0.375
+SMALLEST_TERRITORY_SHARE = 0.625
+COUNTRY_TERRITORY_SHARE = 0.875
 SETTLEMENT_DISTANCE_KM = 12.345
 
 
@@ -173,6 +176,7 @@ def test_the_most_populous_circle_reads_as_a_circle() -> None:
     circle = answer.circle
     assert circle.radius_km == MEASURED_RADIUS_KM
     assert answer.caption.share == MEASURED_SHARE
+    assert answer.caption.territory_share is None
 
 
 def test_a_smallest_document_reads_the_circle_under_its_ledger() -> None:
@@ -203,6 +207,7 @@ def test_a_country_smallest_document_retains_its_boundary_identity() -> None:
     assert answer.provenance.dataset == DATASET
     assert answer.provenance.table is None
     assert answer.provenance.decimation == 10  # noqa: PLR2004 — fixture decimation
+    assert answer.caption.territory_share is None
 
     missing_identity = country_searched()
     del missing_identity["country"]
@@ -224,6 +229,27 @@ def test_a_country_smallest_document_retains_its_boundary_identity() -> None:
     invalid.pop("provenance")
     with pytest.raises(ValidationError):
         circle_of(invalid)
+
+
+def test_territory_share_is_carried_from_each_supported_circle_shape() -> None:
+    measured_document = envelope("circle", measured())
+    measured_document["result"]["territory_share"] = MEASURED_TERRITORY_SHARE
+    assert circle_of(measured_document).caption.territory_share == MEASURED_TERRITORY_SHARE
+
+    smallest_document = envelope("smallest", searched())
+    smallest_document["result"]["circle"]["territory_share"] = SMALLEST_TERRITORY_SHARE
+    assert circle_of(smallest_document).caption.territory_share == SMALLEST_TERRITORY_SHARE
+
+    country_document = envelope("country-smallest", country_searched())
+    country_document.pop("provenance")
+    country_document["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
+    assert circle_of(country_document).caption.territory_share == COUNTRY_TERRITORY_SHARE
+
+    for invalid_share in (-0.1, 1.1, float("nan")):
+        malformed = envelope("circle", measured())
+        malformed["result"]["territory_share"] = invalid_share
+        with pytest.raises(ValidationError):
+            circle_of(malformed)
 
 
 def test_settlement_context_is_optional_and_validated_on_both_payload_shapes() -> None:
@@ -301,6 +327,15 @@ def test_present_empty_country_breakdowns_are_valid_and_sweep_stays_not_drawable
         {"records": [{**searched()["circle"], "country_breakdown": breakdown()}]}
     )
     assert sweep.records[0].country_breakdown is not None
+    assert sweep.records[0].territory_share is None
+    measured_record = {
+        **searched()["circle"],
+        "territory_share": MEASURED_TERRITORY_SHARE,
+    }
+    assert (
+        SweepRecords.model_validate({"records": [measured_record]}).records[0].territory_share
+        == MEASURED_TERRITORY_SHARE
+    )
     assert "sweep" not in CIRCLE_KINDS
 
 

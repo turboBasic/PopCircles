@@ -45,6 +45,7 @@ CENTRE_LAT = 25.125
 CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
 WORLD_POPULATION = 1_254_363_867.93
+TERRITORY_SHARE = 0.375
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MAX_LOCAL_EXTENT_METRES = 5_000_000
@@ -133,6 +134,12 @@ def document() -> dict[str, Any]:
             "share_of_total": 0.1616868627727305,
         },
     }
+
+
+def territory_document() -> dict[str, Any]:
+    payload = document()
+    payload["result"]["territory_share"] = TERRITORY_SHARE
+    return payload
 
 
 def country_document(count: int = 1) -> dict[str, Any]:
@@ -639,7 +646,18 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
 ) -> None:
     coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
     source = tmp_path / "map.json"
-    source.write_text(json.dumps(document()), encoding="utf-8")
+    source_document = territory_document()
+    source.write_text(json.dumps(source_document), encoding="utf-8")
+    annotations: list[str] = []
+    original_annotate = render_map_module.annotate
+
+    def capture_annotate(
+        figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
+    ) -> None:
+        annotations.append(text)
+        original_annotate(figure, y, text, size, alignment)
+
+    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
     basemap_paths: list[Path] = []
     current_basemap = render_map_module.basemap
 
@@ -659,18 +677,23 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert "Coastline data:" in str(metadata["Copyright"])
     assert str(metadata["Copyright"]).count(COASTLINE_CREDIT) == 1
     assert "© Andrii Melnyk, 2026" in str(metadata["Copyright"])
-    assert metadata["Title"] == title_of(circle_of(document()))
+    answer = circle_of(source_document)
+    assert metadata["Title"] == title_of(answer)
+    assert metadata["Title"].endswith(f"Territory: {TERRITORY_SHARE:.1%}")
     assert metadata["Description"] == (
         f"Answered from population dataset {DATASET} at decimation k=10"
     )
     xmp = str(metadata["XML:com.adobe.xmp"])
     assert 'pc:population="1254363867.93"' in xmp
+    assert 'pc:territoryShare="0.375"' in xmp
     sidecar = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
-    assert sidecar["result"] == document()["result"]
+    assert sidecar["result"] == source_document["result"]
     assert sidecar["render_metadata"]["Title"] == metadata["Title"]
     assert sidecar["render_metadata"]["Description"] == metadata["Description"]
     assert sidecar["render_metadata"]["Copyright"] == metadata["Copyright"]
     assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
+    assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["territoryShare"] == TERRITORY_SHARE
+    assert annotations == [metadata["Title"], metadata["Description"], VISIBLE_FOOTER]
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
