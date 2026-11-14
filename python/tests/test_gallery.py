@@ -102,6 +102,24 @@ def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
     (directory / name).write_text(json.dumps(payload), encoding="utf-8")
 
 
+def test_header_background_crops_to_plate_carree_plot_without_white_margins(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "world.png"
+    target = tmp_path / "header-background.png"
+    image = Image.new("RGB", (120, 80), "white")
+    image.paste(render_map_module.OCEAN, (10, 10, 110, 35))
+    image.paste((100, 190, 180), (10, 35, 110, 60))
+    image.save(source)
+
+    gallery_module.crop_header_background(source, target)
+
+    with Image.open(target) as cropped:
+        assert cropped.size == (100, 49)
+        assert cropped.getpixel((0, 0)) == (223, 255, 253)
+        assert cropped.getpixel((50, 48)) == (100, 190, 180)
+
+
 def assert_built_site(output: Path) -> None:
     page = (output / "index.html").read_text(encoding="utf-8")
     assert 'src="./assets/' in page
@@ -122,6 +140,14 @@ def assert_built_site(output: Path) -> None:
     assert "cdn.jsdelivr.net" not in bundle
     assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
+    with Image.open(output / "header-background.png") as header_background:
+        assert (
+            abs(
+                header_background.width
+                - gallery_module.HEADER_CROP_ASPECT_RATIO * header_background.height
+            )
+            <= gallery_module.HEADER_CROP_ASPECT_TOLERANCE
+        )
 
 
 def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None:

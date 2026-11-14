@@ -120,7 +120,9 @@ figsize
 flate
 fontsize
 geoms
+getbbox
 getpid
+getpixel
 gridlines
 horizontalalignment
 indicatif
