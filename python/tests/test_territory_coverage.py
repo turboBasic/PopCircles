@@ -1,6 +1,7 @@
 import math
 
 import pytest
+from shapely import make_valid
 from shapely.geometry import Polygon, box
 
 from population_circles.circle_document import Circle, Coordinate
@@ -77,6 +78,44 @@ def test_world_union_does_not_double_count_overlapping_features() -> None:
     assert territory_share(circle, [feature, feature]) == pytest.approx(
         territory_share(circle, [feature])
     )
+
+
+def test_invalid_boundary_topology_is_repaired_without_mutating_the_source() -> None:
+    circle = Circle(
+        centre=Coordinate(lat=0.25, lon=0.5),
+        radius_km=100.0,
+        earth_radius_km=EARTH_RADIUS_KM,
+    )
+    invalid = Polygon(((0, 0), (1, 1), (0, 1), (1, 0), (0, 0)))
+    assert not invalid.is_valid
+
+    actual = territory_share(circle, [invalid])
+    repaired = territory_share(circle, [make_valid(invalid)])
+
+    assert actual == pytest.approx(repaired)
+    assert not invalid.is_valid
+
+
+def test_ring_winding_across_the_south_pole_is_clipped_validly() -> None:
+    antarctic_cap = Polygon(
+        (
+            (-180, -63),
+            (-90, -63),
+            (0, -63),
+            (90, -63),
+            (180, -63),
+            (180, -90),
+            (-180, -90),
+            (-180, -63),
+        )
+    )
+    circle = Circle(
+        centre=Coordinate(lat=-75.0, lon=79.0),
+        radius_km=100.0,
+        earth_radius_km=EARTH_RADIUS_KM,
+    )
+
+    assert territory_share(circle, [antarctic_cap]) == pytest.approx(0.00113, abs=0.0001)
 
 
 def test_holes_and_antimeridian_features_keep_their_land_area() -> None:

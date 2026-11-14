@@ -1,4 +1,5 @@
 import argparse
+import json
 import subprocess
 import sys
 from collections.abc import Callable
@@ -119,7 +120,7 @@ def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
         message = f"document publication: could not replace {options.document}: {error}"
         raise WorkflowError(message) from error
     try:
-        render_map.render_file(
+        enriched = render_map.render_file(
             options.document,
             options.output,
             options.projection,
@@ -129,6 +130,13 @@ def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
         # Rendering errors vary by library; the retained document locates the failure.
         message = f"render: {error}; current search document retained at {options.document}"
         raise WorkflowError(message) from error
+    if isinstance(enriched, dict):
+        try:
+            content = (json.dumps(enriched, indent=2, ensure_ascii=False) + "\n").encode()
+            publish(options.document, content)
+        except OSError as error:
+            message = f"document publication: could not replace {options.document}: {error}"
+            raise WorkflowError(message) from error
 
 
 def parse(argv: list[str] | None = None) -> Options:

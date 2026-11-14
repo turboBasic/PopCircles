@@ -16,6 +16,7 @@ from shapely.geometry.base import BaseGeometry
 import population_circles.dataset_registry as dataset_registry_module
 import population_circles.gallery as gallery_module
 import population_circles.render_map as render_map_module
+import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.circle_map import Invoke, WorkflowError
 from population_circles.dataset_registry import Registry, country_boundary_dataset_key, load
@@ -107,6 +108,13 @@ def document(
 
 def written(directory: Path, name: str, payload: dict[str, Any]) -> None:
     (directory / name).write_text(json.dumps(payload), encoding="utf-8")
+
+
+def result_territory_share(corpus: Path, name: str) -> float:
+    circle = json.loads((corpus / name).read_text(encoding="utf-8"))["result"]["circle"]
+    share = circle["territory_share"]
+    assert 0.0 <= share <= 1.0
+    return share
 
 
 def test_header_background_crops_to_plate_carree_plot_without_white_margins(
@@ -389,6 +397,8 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
                 "population": WORLD_POPULATION,
                 "centre_lat": 25.125,
                 "centre_lon": 79.708,
+                "territory_share": 0.0,
+                "territory_name": "Earth\u2019s land area",
                 "settlement": None,
             },
         },
@@ -399,14 +409,12 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     copied_document = json.loads(
         (tmp_path / "gallery" / "drawable.json").read_text(encoding="utf-8")
     )
-    assert annotations == [
-        (
-            "1,000 km circle holding 16% of the population (1,254,363,868 people); "
-            "Center: 25.1250, 79.7080"
-        ),
-        "Answered from population dataset population-count-2020-30arcsec at decimation k=10",
-        VISIBLE_FOOTER,
-    ]
+    assert " ".join(annotations[0].splitlines()) == metadata["Title"]
+    assert " ".join(annotations[0].splitlines()).endswith(
+        "Circle covers 0% of Earth\u2019s land area"
+    )
+    assert annotations[1] == metadata["Description"]
+    assert annotations[-1] == VISIBLE_FOOTER
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert "© Andrii Melnyk, 2026" in metadata["Copyright"]
@@ -415,7 +423,9 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         f"Answered from population dataset {DATASET} at decimation k=10"
     )
     assert 'pc:population="1254363867.93"' in metadata["XML:com.adobe.xmp"]
-    assert copied_document["result"] == document("most-populous")["result"]
+    expected_result = document("most-populous")["result"]
+    expected_result["territory_share"] = 0.0
+    assert copied_document["result"] == expected_result
     assert copied_document["render_metadata"]["Title"] == metadata["Title"]
     assert copied_document["render_metadata"]["Description"] == metadata["Description"]
     assert copied_document["render_metadata"]["Copyright"] == metadata["Copyright"]
@@ -550,7 +560,7 @@ def test_gallery_data_uses_only_the_current_maps(
                 "centre_lat": 25.125,
                 "centre_lon": 79.708,
                 "settlement": None,
-                "territory_share": 0.375,
+                "territory_share": 0.0,
                 "territory_name": "Earth\u2019s land area",
             },
         },
@@ -882,6 +892,8 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                     "population": WORLD_POPULATION,
                     "centre_lat": 25.125,
                     "centre_lon": 79.708,
+                    "territory_share": 0.0,
+                    "territory_name": "Earth\u2019s land area",
                     "settlement": None,
                 },
             },
@@ -907,6 +919,8 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                                 "country": "Fixture Country",
                                 "distance_km": 0.5,
                             },
+                            "territory_share": result_territory_share(corpus, result_names[0]),
+                            "territory_name": "Alpha",
                         },
                     },
                 ],
@@ -961,7 +975,7 @@ def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: 
 
 
 def test_country_coverage_refresh_uses_saved_answers_without_running_country_sweep(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
@@ -970,14 +984,25 @@ def test_country_coverage_refresh_uses_saved_answers_without_running_country_swe
     sweep_path = corpus / "country-sweep-fixture-10-half.json"
     written(corpus, sweep_path.name, country_sweep(swept))
     invoke, calls = country_cli(countries, swept)
+    monkeypatch.setattr(
+        territory_coverage_module,
+        "load_country_boundaries",
+        lambda answer, _registry: {
+            answer.country.id: box(
+                answer.circle.centre.lon - 5,
+                answer.circle.centre.lat - 5,
+                answer.circle.centre.lon + 5,
+                answer.circle.centre.lat + 5,
+            )
+        },
+    )
 
     missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
 
-    assert [call[:2] for call in calls] == [["country", "list"], ["country", "coverage"]]
-    assert calls[1][3] == str(sweep_path)
+    assert calls == [["country", "list"]]
     assert missing == []
     circle = generated["country-fixture-10-AA-half.json"]["result"]["circle"]
-    assert circle["territory_share"] == COUNTRY_TERRITORY_SHARE
+    assert 0.0 < circle["territory_share"] < 1.0
     assert (
         circle["centre"],
         circle["radius_km"],

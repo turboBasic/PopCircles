@@ -1,14 +1,25 @@
 import math
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from typing import cast
 
 from pyproj import CRS, Transformer
-from shapely import segmentize
+from shapely import make_valid, segmentize
 from shapely.affinity import scale, translate
 from shapely.geometry import MultiPolygon, Point, Polygon, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.circle_document import Circle, Coordinate
+from population_circles.circle_document import (
+    Answer,
+    Caption,
+    Circle,
+    Coordinate,
+    CountryIdentity,
+    Envelope,
+    Provenance,
+    circle_of,
+)
 from population_circles.circle_geometry import (
     METRES_PER_KM,
     POLE_LAT,
@@ -17,10 +28,13 @@ from population_circles.circle_geometry import (
     geodetic_crs,
     geographic,
 )
+from population_circles.country_outline import load_country_boundaries, load_map_boundaries
+from population_circles.dataset_registry import Registry, load
 
 HALF_TURN_DEG = 180.0
 MAX_SOURCE_SEGMENT_DEG = 0.01
 GEOGRAPHIC_CUT_SLACK_KM = 0.01
+SHARE_NUMERICAL_TOLERANCE = 1e-12
 WORLD = box(-HALF_TURN_DEG, -90.0, HALF_TURN_DEG, 90.0)
 
 
@@ -36,6 +50,13 @@ def _unwrap_ring(points: Iterable[tuple[float, float]]) -> list[tuple[float, flo
                 turns += 360.0
         unwrapped.append((lon + turns, lat))
         previous = lon
+    winding = unwrapped[-1][0] - unwrapped[0][0]
+    pole_indices = [index for index, (_, lat) in enumerate(unwrapped) if abs(lat) == POLE_LAT]
+    if pole_indices and abs(winding) >= HALF_TURN_DEG * 2.0:
+        correction = -HALF_TURN_DEG * 2.0 * round(winding / (HALF_TURN_DEG * 2.0))
+        for index in range(pole_indices[-1], len(unwrapped)):
+            lon, lat = unwrapped[index]
+            unwrapped[index] = (lon + correction, lat)
     return unwrapped
 
 
@@ -75,9 +96,9 @@ def _world_parts(geometry: BaseGeometry, central_meridian: float) -> tuple[Polyg
         for offset in (-360.0, 0.0, 360.0):
             clipped = translate(unwrapped, xoff=offset).intersection(WORLD)
             if isinstance(clipped, Polygon):
-                parts.append(translate(clipped, xoff=central_meridian))
+                parts.append(clipped)
             elif isinstance(clipped, MultiPolygon):
-                parts.extend(translate(part, xoff=central_meridian) for part in clipped.geoms)
+                parts.extend(clipped.geoms)
     return tuple(parts)
 
 
@@ -101,6 +122,16 @@ def _project_polygon(
         for ring in densified.interiors
     ]
     return Polygon(exterior, holes)
+
+
+def _polygon_parts(geometry: BaseGeometry) -> Iterable[Polygon]:
+    if isinstance(geometry, Polygon):
+        yield geometry
+    elif isinstance(geometry, MultiPolygon):
+        yield from geometry.geoms
+    else:
+        for part in getattr(geometry, "geoms", ()):
+            yield from _polygon_parts(part)
 
 
 def _projected_circle(
@@ -141,6 +172,25 @@ def _projected_circle(
     return world.difference(excluded)
 
 
+def _project_territory(
+    territory: BaseGeometry, transformer: Transformer, central_meridian: float
+) -> list[BaseGeometry]:
+    if territory.is_empty:
+        message = "territory geometry must be non-empty"
+        raise ValueError(message)
+    source = territory if territory.is_valid else make_valid(territory)
+    polygons = list(_polygon_parts(source))
+    if not polygons:
+        message = "territory geometry must contain polygonal area"
+        raise ValueError(message)
+    projected = [
+        _project_polygon(part, transformer)
+        for polygon in polygons
+        for part in _world_parts(polygon, central_meridian)
+    ]
+    return [part for part in projected if not part.is_empty]
+
+
 def cap_geometry(circle: Circle) -> BaseGeometry:
     return geographic(cap(circle.centre, circle.radius_km, circle.earth_radius_km))
 
@@ -172,7 +222,10 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
         message = "earth radius must be finite and positive"
         raise ValueError(message)
     if not math.isfinite(radius_km) or radius_km <= 0.0 or radius_km >= math.pi * earth_radius_km:
-        message = "circle radius must be finite and between zero and half the circumference"
+        message = (
+            f"circle radius {radius_km} km must be finite and between zero and "
+            f"half the circumference on a {earth_radius_km} km sphere"
+        )
         raise ValueError(message)
 
     hemisphere_km = math.pi * earth_radius_km / 2.0
@@ -180,16 +233,13 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
     if radius_km > hemisphere_km:
         central_meridian += 180.0
     central_meridian = (central_meridian + 180.0) % 360.0 - 180.0
-    crs = equal_area_crs(earth_radius_km, central_meridian)
+    crs = equal_area_crs(earth_radius_km)
     to_equal_area = Transformer.from_crs(geodetic_crs(earth_radius_km), crs, always_xy=True)
-    territory_parts: list[BaseGeometry] = []
-    for territory in territories:
-        if territory.is_empty or not territory.is_valid:
-            message = "territory geometry must be non-empty and valid"
-            raise ValueError(message)
-        parts = _world_parts(territory, central_meridian)
-        projected = [_project_polygon(part, to_equal_area) for part in parts]
-        territory_parts.extend(part for part in projected if not part.is_empty)
+    territory_parts = [
+        part
+        for territory in territories
+        for part in _project_territory(territory, to_equal_area, central_meridian)
+    ]
     land = unary_union(territory_parts)
     territory_area = land.area
     if not math.isfinite(territory_area) or territory_area <= 0.0:
@@ -201,6 +251,10 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
         circle, to_equal_area, central_meridian, MAX_SOURCE_SEGMENT_DEG / 2.0
     )
     share = land.intersection(projected_circle).area / territory_area
+    if math.isclose(share, 0.0, abs_tol=SHARE_NUMERICAL_TOLERANCE):
+        share = 0.0
+    elif math.isclose(share, 1.0, abs_tol=SHARE_NUMERICAL_TOLERANCE):
+        share = 1.0
     if not math.isfinite(share) or not 0.0 <= share <= 1.0:
         message = "territory coverage must be finite and within [0, 1]"
         raise ValueError(message)
@@ -224,3 +278,87 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
         message = "territory coverage error bound must be within [0, 1]"
         raise ValueError(message)
     return share
+
+
+@dataclass(frozen=True)
+class _Enrichment:
+    document: Mapping[str, object]
+    earth_radius: float
+    registry: Registry
+    boundaries: Mapping[str, BaseGeometry] | None
+
+
+def _enrich_circle(
+    circle_data: dict[str, object],
+    context: _Enrichment,
+    country_data: Mapping[str, object] | None = None,
+) -> None:
+    circle = Circle.model_validate({**circle_data, "earth_radius_km": context.earth_radius})
+    if circle.radius_km == 0.0:
+        circle_data.pop("territory_share", None)
+        return
+    if country_data is not None:
+        country = CountryIdentity.model_validate(country_data)
+        answer = Answer(
+            circle=circle,
+            caption=Caption(population=0.0, share=0.0),
+            provenance=Provenance(dataset="country-result", table=None),
+            country=country,
+        )
+        selected_boundaries = (
+            load_country_boundaries(answer, context.registry)
+            if context.boundaries is None
+            else context.boundaries
+        )
+        if selected_boundaries is None:
+            message = f"country boundary for {country.id!r} is not registered"
+            raise ValueError(message)
+        geometries = [selected_boundaries[country.id]] if country.id in selected_boundaries else []
+    else:
+        answer = circle_of(context.document)
+        selected_boundaries = (
+            load_map_boundaries(answer, context.registry)
+            if context.boundaries is None
+            else context.boundaries
+        )
+        geometries = (
+            [selected_boundaries[answer.country.id]]
+            if answer.country is not None and answer.country.id in selected_boundaries
+            else []
+            if answer.country is not None
+            else list(selected_boundaries.values())
+        )
+    try:
+        circle_data["territory_share"] = territory_share(circle, geometries)
+    except ValueError as error:
+        if "finite positive area" in str(error):
+            circle_data.pop("territory_share", None)
+            return
+        raise
+
+
+def enrich_document(
+    document: dict[str, object], boundaries: Mapping[str, BaseGeometry] | None = None
+) -> dict[str, object]:
+    """Add geometric coverage to the circle payloads in a published result document."""
+    kind = Envelope.model_validate(document).document
+    registry = load()
+    earth_radius = Envelope.model_validate(document).earth_model.radius_km
+    result = cast(dict[str, object], document["result"])
+    context = _Enrichment(document, earth_radius, registry, boundaries)
+
+    def enrich(
+        circle_data: dict[str, object], country_data: Mapping[str, object] | None = None
+    ) -> None:
+        _enrich_circle(circle_data, context, country_data)
+
+    if kind == "country-sweep":
+        for country_entry in cast(list[dict[str, object]], result["countries"]):
+            identity = cast(Mapping[str, object], country_entry["country"])
+            for record in cast(list[dict[str, object]], country_entry["records"]):
+                enrich(cast(dict[str, object], record["circle"]), identity)
+    elif kind in {"smallest", "country-smallest"}:
+        enrich(cast(dict[str, object], result["circle"]))
+    else:
+        enrich(result)
+    return document

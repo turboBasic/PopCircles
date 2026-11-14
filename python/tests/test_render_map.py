@@ -17,6 +17,7 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.dataset_registry as dataset_registry_module
 import population_circles.render_map as render_map_module
+import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
@@ -645,6 +646,16 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        render_map_module,
+        "load_map_boundaries",
+        lambda _answer, _registry: {"fixture": box(70, 15, 90, 35)},
+    )
+    monkeypatch.setattr(
+        territory_coverage_module,
+        "territory_share",
+        lambda _circle, _territories: 0.375,
+    )
     source = tmp_path / "map.json"
     source_document = territory_document()
     source.write_text(json.dumps(source_document), encoding="utf-8")

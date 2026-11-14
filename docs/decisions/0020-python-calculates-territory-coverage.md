@@ -15,11 +15,15 @@ geometry. This narrowly supersedes ADR 0014's ban on Python numeric interpretati
 not read population rasters, tables, or ledgers. Rust omits the field because it has no source geometry.
 
 Transform circle and territory geometry to a Mollweide equal-area CRS built with the result's spherical
-radius. GISCO edges are straight segments between stored longitude/latitude vertices; unwrap rings at
-the projection seam and densify those segments to at most 0.01 degrees before projecting. Preserve
-holes and multipart features. For world coverage, union projected source features before measuring so
-overlaps count once. The measured fraction is the intersection area divided by the selected territory
-area.
+radius. Center the longitude seam on the circle (or its antipode for a circle larger than a hemisphere),
+unwrap rings into that seam-relative longitude window, and project in a zero-centered CRS so PROJ cannot
+wrap coordinates back across the cut. GISCO edges are straight segments between stored
+longitude/latitude vertices; densify those segments to at most 0.01 degrees before projecting. Close
+rings that wind around a pole along the pole. Repair invalid registered GISCO geometry with Shapely
+`make_valid` for this calculation only, retaining its polygonal components; the verified source file is
+never changed. Preserve holes and multipart features. For world coverage, union projected source
+features before measuring so overlaps count once. The measured fraction is the intersection area divided
+by the selected territory area.
 
 Approximate the circle boundary with the existing 720-sided buffer. In its azimuthal-equidistant
 construction, each edge lies at most `r * (1 - cos(pi / 720))` inside the spherical cap of radius `r`;
