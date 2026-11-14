@@ -796,6 +796,15 @@ def test_country_title_names_the_country_and_population_dataset() -> None:
     )
 
 
+def test_title_formats_territory_percentage_to_two_significant_digits() -> None:
+    payload = document()
+    payload["result"]["territory_share"] = 0.01234
+    assert title_of(circle_of(payload)).endswith("Circle covers 1.2% of Earth\u2019s land area")
+
+    payload["result"]["territory_share"] = 0.00001234
+    assert title_of(circle_of(payload)).endswith("Circle covers 0.0012% of Earth\u2019s land area")
+
+
 def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
