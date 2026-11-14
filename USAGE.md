@@ -95,9 +95,11 @@ Circle searches use the population map, a list of populated places, and country 
 `mise run data:get` before searching; if a file is missing, the command explains how to fetch it.
 Distance, grid and table commands do not need the places or country borders.
 
-Every circle result includes `territory_share`, the area-weighted fraction of the effective-grid GISCO
-domain covered by the circle. World results use the union of country domains, counting overlapping cells
-once; country results use the selected feature. The exact fraction is between 0 and 1.
+The Python renderer and Gallery add `territory_share`: the fraction of a territory's geographic area
+intersected by the circle. The calculation uses the result's spherical Earth model and registered GISCO
+geometry, independent of the population grid. World results use the union of country features, counting
+overlapping land once; country results use the selected feature. Values are between 0 and 1. Raw Rust
+search output omits this field until a Python rendering or Gallery workflow enriches it.
 
 **The examples below use a coarser map.** Each cell is 10 times wider and taller than a source cell, so
 the search runs faster but places the circle centre less precisely. For the half-world example, this
@@ -110,8 +112,7 @@ A thousand kilometres around Dhaka is a tenth of everyone:
 ```sh
 search population-at --lat 23.8103 --lon 90.4125 --radius-km 1000
 # {…,"result":{"requested":{"lat":23.8103,…},"centre":{"lat":23.79166666666667,"lon":90.375},
-#  "radius_km":1000.0,"population":769799773.1688497,"share_of_total":0.0992267981157833,
-#  "territory_share":<fraction>}}
+#  "radius_km":1000.0,"population":769799773.1688497,"share_of_total":0.0992267981157833}}
 ```
 
 The centre is not the coordinate asked for: it is the centre of the cell containing it, and both are
@@ -125,8 +126,7 @@ the previous example and contains 16% of the world's population rather than 10%:
 ```sh
 search most-populous --radius-km 1000
 # {…,"result":{"centre":{"lat":25.125,"lon":79.70833333333331},"radius_km":1000.0,
-#  "population":1254363867.9300776,"share_of_total":0.1616868627727305,"tolerance_persons":0.0,
-#  "territory_share":<fraction>,…}}
+#  "population":1254363867.9300776,"share_of_total":0.1616868627727305,"tolerance_persons":0.0,…}}
 ```
 
 ### The smallest circle holding a share
@@ -141,7 +141,7 @@ search smallest-for-share --share 50 --ledger out/radii.json
 #  "centre":{"lat":28.79166666666667,"lon":100.625},"population":3879165388.019252,
 #  "target":{"share":0.5,"persons":3878991299.6618357,"total":7757982599.323671},
 #  "short_below":{"radius_km":3359,"population":3878869485.4163485},"covers_whole_grid":false,
-#  "predicate_slack_persons":0.01196060136531932,"territory_share":<fraction>,…}}}
+#  "predicate_slack_persons":0.01196060136531932,…}}}
 ```
 
 3360 km, centred in western China. `short_below` is the other end of the bracket the search proved: that
@@ -210,7 +210,7 @@ mise run cli -- country smallest --country DE --share 50 \
 # {…,"document":"country-smallest","result":{"country":{"id":"DE","name":"Germany",
 #  "iso_alpha2":"DE","boundary_dataset":"gisco-countries-2024-1m",…},
 #  "ledger":{"path":"out/countries/4445.json",…},
-#  "circle":{"radius_km":…,"target":{"share":0.5,…},"territory_share":<fraction>,…}}}
+#  "circle":{"radius_km":…,"target":{"share":0.5,…},…}}}
 ```
 
 Several countries and shares run in one command. Repeat `--country` for each selector; the result orders
@@ -234,17 +234,15 @@ prepared resolution for a more precise selected answer when needed.
 A sweep skips features with no uniquely owned population cells at that resolution, reports each ID and
 reason on stderr, and measures the elapsed time and cropped grid for every completed feature.
 
-To add territory coverage to an existing saved country sweep without rerunning its population searches,
-use:
+To add or refresh geometric territory coverage in saved circle results without rerunning population
+searches, use the Gallery's coverage-only refresh:
 
 ```sh
-mise run cli -- country coverage --input results/country-sweep-gpw-2020-gisco-2024-2-half.json \
-  --combination gpw-2020-gisco-2024 --resolution 2
+mise run gallery -- --input results --output build/gallery --refresh-country-coverage
 ```
 
-The saved sweep must match the selected prepared data. A country whose effective-grid mask has zero area
-keeps its legacy result without a coverage field; direct country searches still report the zero-area error.
-The Gallery's `--refresh-country-coverage` option uses this path and preserves saved population answers.
+The refresh uses each saved circle's centre and radius with registered boundary geometry. It preserves
+population answers and omits coverage when the selected source has no polygonal area to measure.
 
 ## Maps
 
