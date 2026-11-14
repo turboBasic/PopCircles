@@ -984,18 +984,20 @@ def test_country_coverage_refresh_uses_saved_answers_without_running_country_swe
     sweep_path = corpus / "country-sweep-fixture-10-half.json"
     written(corpus, sweep_path.name, country_sweep(swept))
     invoke, calls = country_cli(countries, swept)
-    monkeypatch.setattr(
-        territory_coverage_module,
-        "load_country_boundaries",
-        lambda answer, _registry: {
+
+    def country_boundaries(answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
+        assert answer.country is not None
+        centre = answer.circle.centre
+        return {
             answer.country.id: box(
-                answer.circle.centre.lon - 5,
-                answer.circle.centre.lat - 5,
-                answer.circle.centre.lon + 5,
-                answer.circle.centre.lat + 5,
+                centre.lon - 5,
+                centre.lat - 5,
+                centre.lon + 5,
+                centre.lat + 5,
             )
-        },
-    )
+        }
+
+    monkeypatch.setattr(territory_coverage_module, "load_country_boundaries", country_boundaries)
 
     missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
 

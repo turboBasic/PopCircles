@@ -38,6 +38,10 @@ SHARE_NUMERICAL_TOLERANCE = 1e-12
 WORLD = box(-HALF_TURN_DEG, -90.0, HALF_TURN_DEG, 90.0)
 
 
+class NoTerritoryAreaError(ValueError):
+    """The selected source geometry has no polygonal area to measure."""
+
+
 def _unwrap_ring(points: Iterable[tuple[float, float]]) -> list[tuple[float, float]]:
     unwrapped: list[tuple[float, float]] = []
     turns = 0
@@ -176,13 +180,11 @@ def _project_territory(
     territory: BaseGeometry, transformer: Transformer, central_meridian: float
 ) -> list[BaseGeometry]:
     if territory.is_empty:
-        message = "territory geometry must be non-empty"
-        raise ValueError(message)
+        return []
     source = territory if territory.is_valid else make_valid(territory)
     polygons = list(_polygon_parts(source))
     if not polygons:
-        message = "territory geometry must contain polygonal area"
-        raise ValueError(message)
+        return []
     projected = [
         _project_polygon(part, transformer)
         for polygon in polygons
@@ -244,7 +246,7 @@ def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> floa
     territory_area = land.area
     if not math.isfinite(territory_area) or territory_area <= 0.0:
         message = "territory geometry must have finite positive area"
-        raise ValueError(message)
+        raise NoTerritoryAreaError(message)
 
     projected_circle = _projected_circle(circle, to_equal_area, central_meridian)
     refined_circle = _projected_circle(
@@ -330,11 +332,8 @@ def _enrich_circle(
         )
     try:
         circle_data["territory_share"] = territory_share(circle, geometries)
-    except ValueError as error:
-        if "finite positive area" in str(error):
-            circle_data.pop("territory_share", None)
-            return
-        raise
+    except NoTerritoryAreaError:
+        circle_data.pop("territory_share", None)
 
 
 def enrich_document(

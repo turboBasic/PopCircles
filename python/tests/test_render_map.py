@@ -2,7 +2,7 @@ import hashlib
 import json
 import re
 import socket
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -18,7 +18,7 @@ from shapely.geometry.base import BaseGeometry
 import population_circles.dataset_registry as dataset_registry_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
-from population_circles.circle_document import Answer, circle_of
+from population_circles.circle_document import Answer, Circle, circle_of
 from population_circles.circle_geometry import cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import Registry, load, parse
@@ -646,15 +646,22 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     coastline_path = use_coastline_fixture(tmp_path, monkeypatch)
+
+    def fixture_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
+        return {"fixture": box(70, 15, 90, 35)}
+
+    def fixture_territory_share(_circle: Circle, _territories: Iterable[BaseGeometry]) -> float:
+        return 0.375
+
     monkeypatch.setattr(
         render_map_module,
         "load_map_boundaries",
-        lambda _answer, _registry: {"fixture": box(70, 15, 90, 35)},
+        fixture_boundaries,
     )
     monkeypatch.setattr(
         territory_coverage_module,
         "territory_share",
-        lambda _circle, _territories: 0.375,
+        fixture_territory_share,
     )
     source = tmp_path / "map.json"
     source_document = territory_document()

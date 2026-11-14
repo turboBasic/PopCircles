@@ -5,7 +5,7 @@ from shapely import make_valid
 from shapely.geometry import Polygon, box
 
 from population_circles.circle_document import Circle, Coordinate
-from population_circles.territory_coverage import equal_area_crs, territory_share
+from population_circles.territory_coverage import enrich_document, equal_area_crs, territory_share
 
 EARTH_RADIUS_KM = 6371.0088
 
@@ -116,6 +116,27 @@ def test_ring_winding_across_the_south_pole_is_clipped_validly() -> None:
     )
 
     assert territory_share(circle, [antarctic_cap]) == pytest.approx(0.00113, abs=0.0001)
+
+
+def test_a_result_with_no_polygonal_source_area_keeps_coverage_absent() -> None:
+    document: dict[str, object] = {
+        "schema_version": 2,
+        "document": "most-populous",
+        "earth_model": {"model": "sphere", "radius_km": EARTH_RADIUS_KM},
+        "provenance": {"dataset": "fixture", "digest": "fixture", "decimation": 1},
+        "result": {
+            "centre": {"lat": 0.0, "lon": 0.0},
+            "radius_km": 100.0,
+            "population": 1.0,
+            "share_of_total": 0.5,
+        },
+    }
+
+    enrich_document(document, {"empty": Polygon()})
+
+    result = document["result"]
+    assert isinstance(result, dict)
+    assert "territory_share" not in result
 
 
 def test_holes_and_antimeridian_features_keep_their_land_area() -> None:

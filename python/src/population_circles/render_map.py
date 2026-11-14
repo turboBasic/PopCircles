@@ -615,7 +615,7 @@ def render_file(
     projection: str = PLATE_CARREE,
     *,
     no_coastlines: bool = False,
-) -> dict[str, object]:
+) -> None:
     document = json.loads(input_path.read_text(encoding="utf-8"))
     answer = circle_of(document)
     registry = load()
@@ -674,7 +674,6 @@ def render_file(
         sidecar_path.write_text(
             json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
-        return cast(dict[str, object], document)
     finally:
         plt.close(figure)
 
