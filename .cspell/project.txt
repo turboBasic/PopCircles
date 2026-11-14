@@ -46,6 +46,7 @@ ureq
 vite
 xdist
 xmpmeta
+xoff
 
 # --- Domain vocabulary ---
 antimeridian
