@@ -7,18 +7,15 @@ export function filterCountries(countries, query, includeZeroPopulation = false)
   );
 }
 
-export function defaultCountry(countries) {
-  return countries.find((country) => country.name === 'Germany') ?? countries[0] ?? null;
-}
-
-export function countryFromHash(countries, hash, fallback) {
+export function entryFromHash(entries, hash) {
   const anchor = hash.startsWith('#') ? hash.slice(1) : hash;
-  return countries.find((country) => country.anchor === anchor) ?? fallback;
+  return entries.find((entry) => entry.anchor === anchor) ?? null;
 }
 
-export function visibleCountries(countries, selectedAnchor, expanded, includeZeroPopulation = false) {
-  return (expanded ? countries : countries.filter((country) => country.anchor === selectedAnchor))
-    .filter((country) => includeZeroPopulation || !country.missing);
+export function visibleEntries(entries, selectedAnchor, includeMissing = false) {
+  return entries
+    .filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor)
+    .filter((entry) => entry.anchor === selectedAnchor || includeMissing || !entry.missing);
 }
 
 export function countryUrl(currentUrl, anchor) {

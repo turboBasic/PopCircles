@@ -19,6 +19,7 @@ from uuid import uuid4
 import matplotlib as mpl
 from matplotlib import font_manager
 from matplotlib import pyplot as plt
+from PIL import Image, ImageChops
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.circle_document import CIRCLE_KINDS, Answer, Envelope, circle_of
@@ -32,6 +33,7 @@ from population_circles.dataset_registry import (
 )
 from population_circles.map_frame import PLATE_CARREE
 from population_circles.render_map import (
+    OCEAN,
     citation,
     copyright_of,
     description_of,
@@ -47,6 +49,9 @@ from population_circles.render_map import (
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
+HEADER_OCEAN_MATCH_TOLERANCE = 8
+HEADER_CROP_ASPECT_RATIO = 2
+HEADER_CROP_ASPECT_TOLERANCE = 2
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_INPUTS = tuple(
     sorted(
@@ -459,6 +464,36 @@ def build_frontend(output: Path) -> None:
     )
 
 
+def crop_header_background(source: Path, target: Path) -> None:
+    with Image.open(source) as original:
+        image = original.convert("RGB")
+        ocean = Image.new("RGB", image.size, OCEAN)
+        lookup = [255 if value < HEADER_OCEAN_MATCH_TOLERANCE else 0 for value in range(256)]
+        mask = ImageChops.difference(image, ocean).convert("L").point(lookup)
+        bounds = mask.getbbox()
+        if bounds is None:
+            # shortcut: fallback assumes render's 11x6 world axes; update when those bounds change.
+            left, top, right = (
+                round(image.width * 0.113),
+                round(image.height * 0.131),
+                round(image.width * 0.887),
+            )
+            bottom = round(image.height * 0.839)
+        else:
+            left, top, right, _ = bounds
+            # The 2:1 Plate Carree frame extends beyond the ocean pixels at its land-filled edge.
+            bottom = top + round((right - left) / HEADER_CROP_ASPECT_RATIO) - 1
+        if bottom <= top or bottom > image.height:
+            raise ValueError
+        image.crop((left, top, right, bottom)).save(target)
+
+
+def write_header_background(drawn: list[Drawn], output: Path) -> None:
+    world_map = next((one.figure for one in drawn if one.country_name is None), None)
+    if world_map is not None:
+        crop_header_background(world_map, output / "header-background.png")
+
+
 def build_gallery_output(
     corpus: Path,
     sources: list[tuple[Path, dict[str, Any]]],
@@ -476,6 +511,7 @@ def build_gallery_output(
     skipped.extend(excluded_sources)
     render_jobs: list[tuple[Path, dict[str, Any], int, int]] = []
     try:
+        (output / "header-background.png").unlink(missing_ok=True)
         build_frontend(output)
         print(
             f"Gallery: rendering {len(sources)} result documents",
@@ -526,6 +562,7 @@ def build_gallery_output(
             file=sys.stderr,
             flush=True,
         )
+        write_header_background(drawn, output)
 
         for name, payload in generated.items():
             destination = corpus / name
