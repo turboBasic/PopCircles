@@ -159,6 +159,30 @@ mod tests {
     }
 
     #[test]
+    fn weights_covered_cells_by_their_row_area() {
+        let grid = Grid::new(
+            4,
+            2,
+            LatLon {
+                lat: 90.0,
+                lon: 0.0,
+            },
+            90.0,
+            -45.0,
+        )
+        .unwrap();
+        let domain = domain(grid, "unequal-rows", &[&[(1, 2)], &[(1, 2)]]);
+        let centre = grid.col(1).unwrap();
+        let kernel = Kernel::new(grid, grid.row(1).unwrap(), RadiusKm::new(1.0).unwrap()).unwrap();
+        let north_area = grid.cell_area_km2(grid.row(0).unwrap()).unwrap();
+        let south_area = grid.cell_area_km2(grid.row(1).unwrap()).unwrap();
+
+        let actual = territory_share(std::slice::from_ref(&domain), &kernel, centre).unwrap();
+        assert_eq!(actual, south_area / (north_area + south_area));
+        assert_ne!(actual, 0.5);
+    }
+
+    #[test]
     fn overlapping_masks_are_counted_once() {
         let grid = grid();
         let left = domain(grid, "left", &[&[(0, 2)], &[]]);
