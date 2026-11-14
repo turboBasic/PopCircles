@@ -45,6 +45,7 @@ excluded_country_ids = [
   "TF", # French Southern and Antarctic Lands — zero population
   "TK", # Tokelau
   "UM", # United States Minor Outlying Islands — zero population
+  "VA", # Vatican City. Currently cannot calculate because no data point exists within its territory
   # "VG", # British Virgin Islands
   # "VI", # United States Virgin Islands
   "WF", # Wallis and Futuna
