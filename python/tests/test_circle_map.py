@@ -9,11 +9,13 @@ from unittest.mock import Mock
 import pytest
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
+from shapely.geometry import box
+from shapely.geometry.base import BaseGeometry
 
 from population_circles import circle_map, render_map
 from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
-from population_circles.dataset_registry import load
+from population_circles.dataset_registry import Registry, load
 from population_circles.map_frame import ORTHOGRAPHIC
 from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
 
@@ -23,6 +25,7 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
 
 
 @pytest.fixture
@@ -40,6 +43,10 @@ def options(tmp_path: Path) -> Options:
             "--no-coastlines",
         ]
     )
+
+
+def intersecting_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
+    return {"fixture": box(79, 24, 81, 26)}
 
 
 class Children:
@@ -131,17 +138,22 @@ def test_rejected_documents_are_retained_and_never_drawn(options: Options, paylo
 
 
 @pytest.mark.parametrize("override", [False, True])
-def test_a_render_failure_keeps_this_runs_exact_stdout(options: Options, *, override: bool) -> None:
+def test_a_render_failure_keeps_this_runs_enriched_document(
+    options: Options, monkeypatch: pytest.MonkeyPatch, *, override: bool
+) -> None:
     if override:
         options = replace(options, document=options.document.parent / "nested" / "answer.json")
+
+    monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
     children = Children([0, 0])
     with pytest.raises(
         WorkflowError, match=r"unsupported projection.*current search document retained"
     ) as caught:
         workflow(replace(options, projection="unknown"), children)
     assert str(options.document) in str(caught.value)
-    assert options.document.read_bytes() == children.stdout
-    assert json.loads(options.document.read_bytes())["provenance"]["dataset"] == DATASET
+    published = json.loads(options.document.read_bytes())
+    assert published["provenance"]["dataset"] == DATASET
+    assert published["result"]["territory_share"] > 0.0
 
 
 def test_save_failure_closes_the_figure_and_retains_the_document(
@@ -155,10 +167,11 @@ def test_save_failure_closes_the_figure_and_retains_the_document(
         raise OSError(message)
 
     monkeypatch.setattr(Figure, "savefig", fail)
+    monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
     children = Children([0, 0])
     with pytest.raises(WorkflowError, match="render: cannot save figure"):
         workflow(options, children)
-    assert options.document.read_bytes() == children.stdout
+    assert "territory_share" in json.loads(options.document.read_bytes())["result"]
     assert plt.get_fignums() == before
 
 

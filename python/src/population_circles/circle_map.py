@@ -1,13 +1,19 @@
 import argparse
+import json
 import subprocess
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import cast
 
 from population_circles import render_map
+from population_circles.circle_document import circle_of
+from population_circles.country_outline import load_map_boundaries
+from population_circles.dataset_registry import load
 from population_circles.map_frame import PLATE_CARREE, PROJECTIONS
+from population_circles.territory_coverage import enrich_document
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 Invoke = Callable[[list[str]], subprocess.CompletedProcess[bytes]]
@@ -82,6 +88,22 @@ def publish(destination: Path, content: bytes) -> None:
             temporary.unlink(missing_ok=True)
 
 
+def _enriched_search_result(content: bytes) -> bytes:
+    try:
+        document = json.loads(content)
+    except json.JSONDecodeError:
+        return content
+    if not isinstance(document, dict):
+        return content
+    payload = cast(dict[str, object], document)
+    if payload.get("schema_version") not in {1, 2}:
+        return content
+    answer = circle_of(payload)
+    boundaries = load_map_boundaries(answer, load())
+    enrich_document(payload, boundaries)
+    return (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
+
+
 def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
     try:
         check_destinations(options)
@@ -114,7 +136,7 @@ def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
     result = child("search", search, invoke)
     require_success("search", result)
     try:
-        publish(options.document, result.stdout)
+        publish(options.document, _enriched_search_result(result.stdout))
     except OSError as error:
         message = f"document publication: could not replace {options.document}: {error}"
         raise WorkflowError(message) from error

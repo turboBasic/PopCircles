@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from population_circles import render_map
+from population_circles import circle_map, render_map
 from population_circles.circle_document import SweepRecords, circle_of
 from population_circles.circle_map import REPO_ROOT, Options, WorkflowError, workflow
 from population_circles.dataset_registry import parse
@@ -16,6 +16,7 @@ from test_render_map import PNG_MAGIC, empty_boundaries
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
 
 
 def run(arguments: list[str], directory: Path) -> subprocess.CompletedProcess[bytes]:
@@ -59,6 +60,7 @@ def test_real_build_reuse_and_missing_raster(
     )
     registry = parse((tmp_path / "data/registry.toml").read_text())
     monkeypatch.setattr(render_map, "load", lambda: registry)
+    monkeypatch.setattr(circle_map, "load", lambda: registry)
     options = Options(
         dataset="tiny",
         share="50",
