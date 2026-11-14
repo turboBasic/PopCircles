@@ -85,6 +85,7 @@ class FigureCaption(TypedDict):
     centre_lon: float
     settlement: SettlementCaption | None
     territory_share: NotRequired[float]
+    territory_name: NotRequired[str]
 
 
 @dataclass(frozen=True)
@@ -242,6 +243,9 @@ def figure_caption(answer: Answer) -> FigureCaption:
     }
     if answer.caption.territory_share is not None:
         caption["territory_share"] = answer.caption.territory_share
+        caption["territory_name"] = (
+            answer.country.name if answer.country else "Earth\u2019s land area"
+        )
     return caption
 
 

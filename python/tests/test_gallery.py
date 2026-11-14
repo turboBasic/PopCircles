@@ -144,7 +144,7 @@ def assert_built_site(output: Path) -> None:
     assert "_blank" in bundle
     assert "noopener" in bundle
     assert "View result data" in bundle
-    assert "of territory" in bundle
+    assert "Circle area:" in bundle
     assert "cdn.jsdelivr.net" not in bundle
     assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
@@ -543,6 +543,7 @@ def test_gallery_data_uses_only_the_current_maps(
                 "centre_lon": 79.708,
                 "settlement": None,
                 "territory_share": 0.375,
+                "territory_name": "Earth\u2019s land area",
             },
         },
     ]
@@ -591,6 +592,7 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
         circle_of(document("most-populous", territory_share=WORLD_TERRITORY_SHARE))
     )
     assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
+    assert world_with_territory.get("territory_name") == "Earth\u2019s land area"
 
     country = country_circle_document()
     country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
@@ -598,6 +600,7 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
         gallery_module.figure_caption(circle_of(country)).get("territory_share")
         == COUNTRY_TERRITORY_SHARE
     )
+    assert gallery_module.figure_caption(circle_of(country)).get("territory_name") == "Germany"
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:

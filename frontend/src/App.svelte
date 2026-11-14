@@ -174,7 +174,7 @@
 
 {#snippet figureCaption(figure, countryAnchor = null)}
   {#if figure.caption}
-    {@const territory = territoryCaption(figure.caption.territory_share)}
+    {@const territory = territoryCaption(figure.caption.territory_share, figure.caption.territory_name)}
     <p>
       {figure.caption.radius_km.toLocaleString()} km radius ·
       {(figure.caption.share * 100).toFixed(1)}% of the population ·

@@ -679,7 +679,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert "© Andrii Melnyk, 2026" in str(metadata["Copyright"])
     answer = circle_of(source_document)
     assert metadata["Title"] == title_of(answer)
-    assert metadata["Title"].endswith(f"Territory: {TERRITORY_SHARE:.1%}")
+    assert metadata["Title"].endswith("Circle area: 38% of Earth\u2019s land area")
     assert metadata["Description"] == (
         f"Answered from population dataset {DATASET} at decimation k=10"
     )
@@ -693,7 +693,11 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert sidecar["render_metadata"]["Copyright"] == metadata["Copyright"]
     assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
     assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["territoryShare"] == TERRITORY_SHARE
-    assert annotations == [metadata["Title"], metadata["Description"], VISIBLE_FOOTER]
+    assert [" ".join(annotation.split()) for annotation in annotations] == [
+        metadata["Title"],
+        metadata["Description"],
+        VISIBLE_FOOTER,
+    ]
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
@@ -784,10 +788,12 @@ def test_measured_and_nested_documents_use_the_one_line_title() -> None:
 
 
 def test_country_title_names_the_country_and_population_dataset() -> None:
-    answer = circle_of(country_circle_document())
+    payload = country_circle_document()
+    payload["result"]["circle"]["territory_share"] = TERRITORY_SHARE
+    answer = circle_of(payload)
     assert title_of(answer) == (
         "Germany: 200 km circle holding 50.0% of the population "
-        "(40 people); Center: 51.0000, 10.0000"
+        "(40 people); Center: 51.0000, 10.0000; Circle area: 38% of Germany"
     )
 
 

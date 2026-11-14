@@ -12,8 +12,10 @@ export function visibleEntries(entries, selectedAnchor) {
   return entries.filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor);
 }
 
-export function territoryCaption(share) {
-  return share === undefined || share === null ? null : `${(share * 100).toFixed(1)}% of territory`;
+export function territoryCaption(share, territoryName) {
+  return share === undefined || share === null
+    ? null
+    : `Circle area: ${Math.floor(share * 100 + 0.5)}% of ${territoryName}`;
 }
 
 export function countryUrl(currentUrl, anchor) {

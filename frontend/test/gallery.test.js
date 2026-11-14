@@ -50,8 +50,9 @@ test('copies the selected country fragment without keeping an old fragment', () 
   );
 });
 
-test('formats territory coverage to one decimal place and omits missing legacy values', () => {
-  assert.equal(territoryCaption(0.375), '37.5% of territory');
+test('formats territory coverage with an integer percent and omits missing legacy values', () => {
+  assert.equal(territoryCaption(0.375, 'Earth’s land area'), 'Circle area: 38% of Earth’s land area');
+  assert.equal(territoryCaption(0.625, 'Germany'), 'Circle area: 63% of Germany');
   assert.equal(territoryCaption(undefined), null);
   assert.equal(territoryCaption(null), null);
 });
