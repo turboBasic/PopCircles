@@ -116,3 +116,15 @@ def test_invalid_circle_measurements_are_refused(
 
     with pytest.raises(ValueError, match="radius"):
         territory_share(circle, [box(-1.0, -1.0, 1.0, 1.0)])
+
+
+@pytest.mark.parametrize(("lat", "lon"), [(91.0, 0.0), (0.0, 181.0)])
+def test_invalid_circle_centres_are_refused(lat: float, lon: float) -> None:
+    circle = Circle(
+        centre=Coordinate(lat=lat, lon=lon),
+        radius_km=1.0,
+        earth_radius_km=EARTH_RADIUS_KM,
+    )
+
+    with pytest.raises(ValueError, match="centre"):
+        territory_share(circle, [box(-1.0, -1.0, 1.0, 1.0)])

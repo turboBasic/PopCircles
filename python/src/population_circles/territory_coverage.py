@@ -11,6 +11,7 @@ from shapely.ops import unary_union
 from population_circles.circle_document import Circle, Coordinate
 from population_circles.circle_geometry import (
     METRES_PER_KM,
+    POLE_LAT,
     QUAD_SEGS,
     cap,
     geodetic_crs,
@@ -144,6 +145,18 @@ def cap_geometry(circle: Circle) -> BaseGeometry:
     return geographic(cap(circle.centre, circle.radius_km, circle.earth_radius_km))
 
 
+def _validate_centre(circle: Circle) -> None:
+    centre = circle.centre
+    if (
+        not math.isfinite(centre.lat)
+        or not math.isfinite(centre.lon)
+        or not -POLE_LAT <= centre.lat <= POLE_LAT
+        or not -HALF_TURN_DEG <= centre.lon <= HALF_TURN_DEG
+    ):
+        message = "circle centre must have finite geographic coordinates"
+        raise ValueError(message)
+
+
 def equal_area_crs(earth_radius_km: float, central_meridian: float = 0.0) -> CRS:
     return CRS.from_proj4(
         f"+proj=moll +lon_0={central_meridian} +R={earth_radius_km * METRES_PER_KM} "
@@ -154,6 +167,7 @@ def equal_area_crs(earth_radius_km: float, central_meridian: float = 0.0) -> CRS
 def territory_share(circle: Circle, territories: Iterable[BaseGeometry]) -> float:
     earth_radius_km = circle.earth_radius_km
     radius_km = circle.radius_km
+    _validate_centre(circle)
     if not math.isfinite(earth_radius_km) or earth_radius_km <= 0.0:
         message = "earth radius must be finite and positive"
         raise ValueError(message)
