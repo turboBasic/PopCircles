@@ -24,7 +24,12 @@
   /** @type {GalleryEntry | null} */
   let selectedEntry = $state(null);
   let entries = $derived(
-    data ? [{ name: 'World', anchor: 'world-result', figures: data.world }, ...data.countries] : [],
+    data
+      ? [
+          { name: 'World', anchor: 'world-result', figures: data.world, missing: false },
+          ...data.countries,
+        ]
+      : [],
   );
   let browserOpen = $state(false);
   /** @type {HTMLDialogElement | null} */
@@ -155,7 +160,7 @@
         if (!active) return;
         data = value;
         restoreEntry([
-          { name: 'World', anchor: 'world-result', figures: value.world },
+          { name: 'World', anchor: 'world-result', figures: value.world, missing: false },
           ...value.countries,
         ]);
       })

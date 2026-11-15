@@ -9,6 +9,7 @@
 # Svelte dependencies and the standalone frontend build
 /frontend/node_modules/
 /frontend/dist/
+/frontend/test-results/
 /.vite/
 
 # Rust
@@ -38,6 +39,7 @@ perf.data.old
 *.gif
 *.webp
 *.pdf
+!/frontend/e2e/gallery.spec.js-snapshots/*.png
 
 # Local environment
 .env

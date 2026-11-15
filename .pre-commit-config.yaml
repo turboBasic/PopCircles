@@ -55,13 +55,13 @@ repos:
           echo "  fix: add a row for it, or publish it to a data tag and give the row a fetch_url";
           echo "  — ADR 0009 is which of those applies."; rc=1; done; exit $rc' --
 
-      # Keep raster and PDF images out of the repository; SVG assets are the deliberate exception.
+      # Only Playwright's visual test fixtures are exempt; all other raster and PDF images stay out.
       - id: no-committed-images
         name: no image is committed
         language: system
         files: '(?i)\.(png|jpe?g|gif|webp|pdf)$'
         entry: >-
-          bash -c 'printf "%s: an image is published, never committed.\n" "$@"; exit 1' --
+          bash -c 'rc=0; for f in "$@"; do case "$f" in frontend/e2e/gallery.spec.js-snapshots/*.png) continue;; esac; printf "%s: an image is published, never committed.\n" "$f"; rc=1; done; exit "$rc"' --
 
       # The half of "never silence a lint with a blanket #[allow]" a machine can settle: a crate-level
       # `#![allow(…)]` exempts every item beneath it, including ones written later, where an item-level
@@ -135,7 +135,7 @@ repos:
 
       - id: prettier-frontend
         name: prettier (frontend)
-        entry: mise exec -- sh -c 'cd frontend && prettier --check src test *.js *.json index.html'
+        entry: mise exec -- sh -c 'cd frontend && prettier --check src test e2e *.js *.json index.html'
         language: system
         files: ^frontend/.*\.(js|svelte|html|json|css)$
         pass_filenames: false

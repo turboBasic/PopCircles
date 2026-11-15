@@ -4,10 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "test": "node --test"
+    "dev": "vite",
+    "test": "node --test",
+    "test:e2e": "playwright install chromium && playwright test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "eslint-plugin-svelte": "3.24.1",
     "globals": "17.14.0",
