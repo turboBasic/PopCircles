@@ -24,21 +24,17 @@
       </div>
     {/if}
   </div>
-  <h1>One circle, half the population.</h1>
-  <p class="intro">Explore country and world population circles.</p>
 </header>
 
 <style>
-  header { position: sticky; top: 0; z-index: 4; isolation: isolate; padding: calc(4rem - 3.4rem * var(--header-shrink)) 0 calc(1rem - .4rem * var(--header-shrink)); background: var(--bg); border-bottom: 1px solid color-mix(in srgb, var(--line) calc(100% * var(--header-shrink)), transparent); }
-  .header-art { position: absolute; inset: 0 auto 0 50%; width: 100vw; transform: translateX(-50%); z-index: -1; overflow: hidden; opacity: calc(.16 * (1 - var(--header-shrink))); pointer-events: none; }
+  header { position: relative; z-index: 4; isolation: isolate; padding: .75rem 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .header-art { position: absolute; inset: 0 auto 0 50%; width: 100vw; transform: translateX(-50%); z-index: -1; overflow: hidden; opacity: .16; pointer-events: none; }
   .header-art img { position: absolute; top: 50%; left: 50%; width: 104vw; height: auto; max-width: none; transform: translate(-50%, -50%); filter: grayscale(1) brightness(.65); }
   .top-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .home-link { display: flex; align-items: center; gap: .65rem; color: var(--accent); font: 400 1rem/1 "Lilita One", sans-serif; letter-spacing: .16em; text-decoration: none; text-transform: uppercase; }
   .home-link .globe-letter { display: inline; width: .8em; height: .8em; margin-left: -.1em; margin-right: .1em; vertical-align: baseline -.05em; }
   .home-link img { width: 24px; height: 24px; }
   .home-link .trailing-globe { display: none; }
-  h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
-  .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); color: var(--muted); }
   .map-actions { display: flex; align-items: center; gap: .5rem; }
   .icon-control { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; padding: .45rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; text-decoration: none; }
   .icon-control svg { width: 1.25rem; height: 1.25rem; }
