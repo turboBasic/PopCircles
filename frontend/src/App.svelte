@@ -9,16 +9,6 @@
   /** @typedef {import('./gallery.js').GalleryData} GalleryData */
   /** @typedef {import('./gallery.js').GalleryEntry} GalleryEntry */
 
-  const globeFrames = Object.entries(
-    import.meta.glob('../assets/earth-globe-*.svg', {
-      eager: true,
-      query: '?url',
-      import: 'default',
-    }),
-  )
-    .sort(([left], [right]) => left.localeCompare(right, undefined, { numeric: true }))
-    .map(([, url]) => url);
-
   let data = $state(/** @type {GalleryData | null} */ (null));
   let error = $state('');
   /** @type {GalleryEntry | null} */
@@ -45,8 +35,7 @@
   let browserTrigger = $state(null);
   /** @type {HTMLDivElement | null} */
   let resultsPanel = $state(null);
-  let globeFrame = $state(globeFrames[0]);
-  let globeFramesReady = false;
+  let scrollPosition = $state(0);
 
   function resetView() {
     resultsPanel?.scrollTo(0, 0);
@@ -102,11 +91,7 @@
   }
 
   function handleScroll() {
-    const scrollDistance = resultsPanel?.scrollTop ?? 0;
-    if (globeFramesReady) {
-      globeFrame =
-        globeFrames[Math.floor((scrollDistance / 240) * globeFrames.length) % globeFrames.length];
-    }
+    scrollPosition = resultsPanel?.scrollTop ?? 0;
   }
 
   /** @param {MouseEvent} event @param {string} anchor */
@@ -123,16 +108,6 @@
 
   onMount(() => {
     let active = true;
-    const globeFrameImages = globeFrames.map((src) => {
-      const image = new Image();
-      image.src = src;
-      return image;
-    });
-    Promise.allSettled(globeFrameImages.map((image) => image.decode())).then(() => {
-      if (!active) return;
-      globeFramesReady = true;
-      handleScroll();
-    });
     const navigationQuery = window.matchMedia('(max-width: 800px)');
     mobileNavigation = navigationQuery;
     const handleHistory = () => restoreEntry();
@@ -187,7 +162,7 @@
 
 <div class="app-shell">
   <AppHeader
-    {globeFrame}
+    {scrollPosition}
     {data}
     {themeLight}
     {browserOpen}

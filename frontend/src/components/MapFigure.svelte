@@ -4,8 +4,8 @@
 
   /** @typedef {import('../gallery.js').GalleryFigure} GalleryFigure */
 
-  /** @type {{figure: GalleryFigure, countryAnchor?: string | null, loading?: 'lazy' | 'eager', onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
-  let { figure, countryAnchor = null, loading = 'lazy', onCopy } = $props();
+  /** @type {{figure: GalleryFigure, entryAnchor: string, countryAnchor?: string | null, loading?: 'lazy' | 'eager', onSelect: () => void, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
+  let { figure, entryAnchor, countryAnchor = null, loading = 'lazy', onSelect, onCopy } = $props();
   /** @type {HTMLImageElement | null} */
   let image = $state(null);
   let loaded = $state(false);
@@ -20,7 +20,7 @@
 </script>
 
 <figure>
-  <a href={figure.map}>
+  <a class="map-link" href={`#${entryAnchor}`} onclick={onSelect}>
     <div class="map-frame" style:aspect-ratio={MAP_ASPECT_RATIO}>
       {#if !loaded && !failed}<span class="image-status">Loading map…</span>{/if}
       {#if failed}<span class="image-status" role="alert">Map image could not be loaded.</span>{/if}
@@ -86,6 +86,9 @@
     width: 100%;
     overflow: hidden;
     background: var(--surface-2);
+  }
+  .map-link {
+    display: block;
   }
   figure img {
     position: absolute;

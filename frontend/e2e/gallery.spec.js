@@ -3,7 +3,17 @@ import { expect, test } from '@playwright/test';
 const countries = Array.from({ length: 80 }, (_, index) => ({
   name: `Country ${String(index + 1).padStart(2, '0')}`,
   anchor: `country-${index + 1}`,
-  figures: [],
+  figures:
+    index === 41
+      ? [
+          {
+            map: 'country-42.svg',
+            document: 'country-42.json',
+            country_id: 'CC',
+            alt: 'Country 42 map',
+          },
+        ]
+      : [],
   missing: false,
 }));
 const world = [{ map: 'world.svg', document: 'world.json', country_id: null, alt: 'World map' }];
@@ -13,6 +23,12 @@ test.beforeEach(async ({ page }) => {
     route.fulfill({ json: { world, countries } }),
   );
   await page.route('**/world.svg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 6" />',
+    }),
+  );
+  await page.route('**/country-42.svg', (route) =>
     route.fulfill({
       contentType: 'image/svg+xml',
       body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 6" />',
@@ -36,6 +52,10 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(page).toHaveURL(/#country-42$/);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toHaveCount(0);
+  const mapLink = page.getByRole('link', { name: 'Country 42 map' });
+  await expect(mapLink).toHaveAttribute('href', '#country-42');
+  await mapLink.click();
+  await expect(page).toHaveURL(/#country-42$/);
 });
 
 test('results scroll inside the viewport without scrolling the document', async ({ page }) => {
