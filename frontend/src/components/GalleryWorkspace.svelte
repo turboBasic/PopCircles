@@ -32,7 +32,7 @@
                 <MapFigure
                   {figure}
                   countryAnchor={entry.anchor === 'world-result' ? null : entry.anchor}
-                  loading={selectedEntry?.anchor === entry.anchor ? 'eager' : 'lazy'}
+                  loading={entry.anchor === (selectedEntry?.anchor ?? 'world-result') ? 'eager' : 'lazy'}
                   onCopy={onCopy}
                 />
               {/each}

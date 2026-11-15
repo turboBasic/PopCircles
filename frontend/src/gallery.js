@@ -1,3 +1,5 @@
+export const MAP_ASPECT_RATIO = 11 / 6;
+
 export function filterCountries(countries, query) {
   const search = query.trim().toLowerCase();
   return countries.filter((country) => country.name.toLowerCase().includes(search));
