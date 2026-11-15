@@ -22,7 +22,7 @@ Review the current conversation, project state, relevant files, and Git diff. Pr
 3. **Architecture and decisions**
    - Relevant architecture, components, APIs, and dependencies.
    - Important decisions and their rationale.
-   - Rejected approaches only when knowing why they were rejected prevents repeated mistakes.
+   - Rejected approaches only when knowing why those decisions were rejected prevents repeated mistakes.
 
 4. **Modified files and Git state**
    - Relevant file paths and a brief description of changes.
@@ -48,6 +48,7 @@ Review the current conversation, project state, relevant files, and Git diff. Pr
    - Do not duplicate information already available in persistent project documentation; reference those files instead.
 
 **Rules:**
+
 - Be concise and information-dense. Target 1,000–1,500 words maximum; use substantially less if sufficient.
 - Prefer exact file paths, symbols, commands, and actionable facts over narrative summaries.
 - Do not invent progress, test results, or decisions.
