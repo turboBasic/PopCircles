@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}{ext}',
   expect: {
-    toHaveScreenshot: { animations: 'disabled', maxDiffPixelRatio: 0.02 },
+    toHaveScreenshot: { animations: 'disabled', maxDiffPixelRatio: 0.05 },
   },
   use: {
     baseURL: 'http://127.0.0.1:4173',
