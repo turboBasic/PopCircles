@@ -43,6 +43,7 @@
   let resultsPanel = $state(null);
   let headerShrink = $state(0);
   let globeFrame = $state(globeFrames[0]);
+  let globeFramesReady = false;
 
   function resetView() {
     headerShrink = 0;
@@ -126,7 +127,9 @@
   function handleScroll() {
     const scrollDistance = window.scrollY + (resultsPanel?.scrollTop ?? 0);
     headerShrink = Math.min(Math.max(window.scrollY, resultsPanel?.scrollTop ?? 0) / 120, 1);
-    globeFrame = globeFrames[Math.floor(scrollDistance / 240 * globeFrames.length) % globeFrames.length];
+    if (globeFramesReady) {
+      globeFrame = globeFrames[Math.floor(scrollDistance / 240 * globeFrames.length) % globeFrames.length];
+    }
   }
 
   async function copyCountryUrl(event, anchor) {
@@ -142,6 +145,16 @@
 
   onMount(() => {
     let active = true;
+    const globeFrameImages = globeFrames.map((src) => {
+      const image = new Image();
+      image.src = src;
+      return image;
+    });
+    Promise.allSettled(globeFrameImages.map((image) => image.decode())).then(() => {
+      if (!active) return;
+      globeFramesReady = true;
+      handleScroll();
+    });
     mobileNavigation = window.matchMedia('(max-width: 800px)');
     const handleHistory = () => restoreEntry();
     const handleNavigationChange = () => {
