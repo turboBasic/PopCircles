@@ -126,6 +126,27 @@ repos:
         types: [toml]
         pass_filenames: false
 
+      - id: eslint-frontend
+        name: eslint (frontend)
+        entry: mise exec -- sh -c 'cd frontend && eslint .'
+        language: system
+        files: ^frontend/.*\.(js|svelte)$
+        pass_filenames: false
+
+      - id: prettier-frontend
+        name: prettier (frontend)
+        entry: mise exec -- sh -c 'cd frontend && prettier --check src test *.js *.json index.html'
+        language: system
+        files: ^frontend/.*\.(js|svelte|html|json|css)$
+        pass_filenames: false
+
+      - id: svelte-check
+        name: svelte-check
+        entry: mise exec -- sh -c 'cd frontend && svelte-check --workspace .'
+        language: system
+        always_run: true
+        pass_filenames: false
+
       # Args match the upstream hook's defaults; --files must stay last so pre-commit's
       # filenames land after it.
       - id: cspell

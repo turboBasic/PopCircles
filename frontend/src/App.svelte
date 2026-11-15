@@ -4,33 +4,41 @@
   import AppHeader from './components/AppHeader.svelte';
   import CountryNavigation from './components/CountryNavigation.svelte';
   import GalleryWorkspace from './components/GalleryWorkspace.svelte';
-  import {
-    entryFromHash,
-    countryUrl
-  } from './gallery.js';
+  import { entryFromHash, countryUrl } from './gallery.js';
+
+  /** @typedef {import('./gallery.js').GalleryData} GalleryData */
+  /** @typedef {import('./gallery.js').GalleryEntry} GalleryEntry */
 
   const globeFrames = Object.entries(
-    import.meta.glob('../assets/earth-globe-*.svg', { eager: true, query: '?url', import: 'default' })
+    import.meta.glob('../assets/earth-globe-*.svg', {
+      eager: true,
+      query: '?url',
+      import: 'default',
+    }),
   )
     .sort(([left], [right]) => left.localeCompare(right, undefined, { numeric: true }))
     .map(([, url]) => url);
 
-  let data = $state(null);
+  let data = $state(/** @type {GalleryData | null} */ (null));
   let error = $state('');
+  /** @type {GalleryEntry | null} */
   let selectedEntry = $state(null);
   let entries = $derived(
-    data
-      ? [{ name: 'World', anchor: 'world-result', figures: data.world }, ...data.countries]
-      : []
+    data ? [{ name: 'World', anchor: 'world-result', figures: data.world }, ...data.countries] : [],
   );
   let browserOpen = $state(false);
+  /** @type {HTMLDialogElement | null} */
   let mobileDialog = $state(null);
   let desktopNavigationOpen = $state(true);
   let themeLight = $state(false);
   let copyStatus = $state('');
-  let copyTimeout = null;
+  /** @type {number | undefined} */
+  let copyTimeout;
+  /** @type {MediaQueryList | null} */
   let mobileNavigation = $state(null);
+  /** @type {HTMLButtonElement | null} */
   let browserTrigger = $state(null);
+  /** @type {HTMLDivElement | null} */
   let resultsPanel = $state(null);
   let globeFrame = $state(globeFrames[0]);
   let globeFramesReady = false;
@@ -39,6 +47,7 @@
     resultsPanel?.scrollTo(0, 0);
   }
 
+  /** @param {GalleryEntry[]} availableEntries */
   function restoreEntry(availableEntries = entries) {
     const entry = entryFromHash(availableEntries, window.location.hash);
     selectedEntry = entry;
@@ -60,9 +69,12 @@
     desktopNavigationOpen = !desktopNavigationOpen;
     try {
       localStorage.setItem('popcircles-desktop-navigation-open', String(desktopNavigationOpen));
-    } catch {}
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
   }
 
+  /** @param {GalleryEntry} entry */
   function selectEntry(entry) {
     selectedEntry = entry;
     copyStatus = '';
@@ -72,6 +84,7 @@
     });
   }
 
+  /** @param {string} message */
   function showCopyStatus(message) {
     copyStatus = message;
     window.clearTimeout(copyTimeout);
@@ -86,10 +99,12 @@
   function handleScroll() {
     const scrollDistance = resultsPanel?.scrollTop ?? 0;
     if (globeFramesReady) {
-      globeFrame = globeFrames[Math.floor(scrollDistance / 240 * globeFrames.length) % globeFrames.length];
+      globeFrame =
+        globeFrames[Math.floor((scrollDistance / 240) * globeFrames.length) % globeFrames.length];
     }
   }
 
+  /** @param {MouseEvent} event @param {string} anchor */
   async function copyCountryUrl(event, anchor) {
     event.preventDefault();
     const url = countryUrl(window.location.href, anchor);
@@ -113,18 +128,22 @@
       globeFramesReady = true;
       handleScroll();
     });
-    mobileNavigation = window.matchMedia('(max-width: 800px)');
+    const navigationQuery = window.matchMedia('(max-width: 800px)');
+    mobileNavigation = navigationQuery;
     const handleHistory = () => restoreEntry();
     try {
-      desktopNavigationOpen = localStorage.getItem('popcircles-desktop-navigation-open') !== 'false';
-    } catch {}
+      desktopNavigationOpen =
+        localStorage.getItem('popcircles-desktop-navigation-open') !== 'false';
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
     browserOpen = false;
     const handleNavigationChange = () => {
       browserOpen = false;
-      if (!mobileNavigation.matches && mobileDialog?.open) mobileDialog.close();
+      if (!navigationQuery.matches && mobileDialog?.open) mobileDialog.close();
     };
     handleScroll();
-    mobileNavigation.addEventListener('change', handleNavigationChange);
+    navigationQuery.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     fetch('./gallery-data.json')
@@ -135,7 +154,10 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        restoreEntry([{ name: 'World', anchor: 'world-result', figures: value.world }, ...value.countries]);
+        restoreEntry([
+          { name: 'World', anchor: 'world-result', figures: value.world },
+          ...value.countries,
+        ]);
       })
       .catch((cause) => {
         if (active) error = cause.message;
@@ -146,7 +168,7 @@
       window.clearTimeout(copyTimeout);
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
-      mobileNavigation.removeEventListener('change', handleNavigationChange);
+      navigationQuery.removeEventListener('change', handleNavigationChange);
     };
   });
 </script>
@@ -172,9 +194,19 @@
   />
 
   {#if error}
-    <div class="workspace-message"><p role="alert">Could not load gallery data: {error}</p><footer class="site-footer">© Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries</footer></div>
+    <div class="workspace-message">
+      <p role="alert">Could not load gallery data: {error}</p>
+      <footer class="site-footer">
+        © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
+      </footer>
+    </div>
   {:else if !data}
-    <div class="workspace-message"><p role="status">Loading gallery…</p><footer class="site-footer">© Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries</footer></div>
+    <div class="workspace-message">
+      <p role="status">Loading gallery…</p>
+      <footer class="site-footer">
+        © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
+      </footer>
+    </div>
   {:else}
     <div class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} class="explorer">
       <CountryNavigation
@@ -202,25 +234,112 @@
 </main>
 
 {#if copyStatus}
-  <p class="copy-toast" role="status" aria-live="polite" aria-atomic="true" transition:fade={{ duration: 150 }}>
+  <p
+    class="copy-toast"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    transition:fade={{ duration: 150 }}
+  >
     {copyStatus}
   </p>
 {/if}
 
 <style>
-  :global(:root) { height: 100%; overflow: hidden; color-scheme: dark; overflow-anchor: none; --bg: #0b1020; --surface: #121a2b; --surface-2: #19243a; --text: #eef3ff; --muted: #a4b0c5; --accent: #80e0c0; --line: #29364d; --glow: #203456; }
-  :global(:root[data-theme="light"]) { color-scheme: light; --bg: #f5f7fb; --surface: #fff; --surface-2: #e9eef5; --text: #172033; --muted: #4b596e; --accent: #145c4e; --line: #cbd5e1; --glow: #e5edf7; }
-  :global(*) { box-sizing: border-box; }
-  :global(body) { height: 100%; margin: 0; overflow: hidden; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
-  main { display: grid; width: min(1600px, calc(100% - 2rem)); height: 100dvh; min-height: 0; margin: auto; grid-template-rows: auto minmax(0, 1fr); }
-  .workspace-message { display: flex; min-height: 0; flex-direction: column; justify-content: space-between; }
-  .workspace-message p { margin-block: 1rem; }
-  .site-footer { padding: 1.25rem 0; color: var(--muted); border-top: 1px solid var(--line); font-size: .85rem; }
-  .explorer { display: grid; min-width: 0; min-height: 0; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: stretch; }
-  .explorer.collapsed { grid-template-columns: minmax(0, 1fr); }
-  .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
+  :global(:root) {
+    height: 100%;
+    overflow: hidden;
+    color-scheme: dark;
+    overflow-anchor: none;
+    --bg: #0b1020;
+    --surface: #121a2b;
+    --surface-2: #19243a;
+    --text: #eef3ff;
+    --muted: #a4b0c5;
+    --accent: #80e0c0;
+    --line: #29364d;
+    --glow: #203456;
+  }
+  :global(:root[data-theme='light']) {
+    color-scheme: light;
+    --bg: #f5f7fb;
+    --surface: #fff;
+    --surface-2: #e9eef5;
+    --text: #172033;
+    --muted: #4b596e;
+    --accent: #145c4e;
+    --line: #cbd5e1;
+    --glow: #e5edf7;
+  }
+  :global(*) {
+    box-sizing: border-box;
+  }
+  :global(body) {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: var(--text);
+    background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%);
+    font:
+      16px/1.55 system-ui,
+      sans-serif;
+  }
+  main {
+    display: grid;
+    width: min(1600px, calc(100% - 2rem));
+    height: 100dvh;
+    min-height: 0;
+    margin: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .workspace-message {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .workspace-message p {
+    margin-block: 1rem;
+  }
+  .site-footer {
+    padding: 1.25rem 0;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+  }
+  .explorer {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+  .explorer.collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .copy-toast {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 10;
+    max-width: min(28rem, calc(100vw - 2.5rem));
+    margin: 0;
+    padding: 0.8rem 1rem;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 2rem #0005;
+  }
   @media (max-width: 800px) {
-    main { width: calc(100% - 2rem); }
-    .explorer { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: .75rem; }
+    main {
+      width: calc(100% - 2rem);
+    }
+    .explorer {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 0.75rem;
+    }
   }
 </style>

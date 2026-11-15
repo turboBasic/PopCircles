@@ -5,7 +5,7 @@ import {
   countryUrl,
   filterCountries,
   territoryCaption,
-  visibleEntries
+  visibleEntries,
 } from '../src/gallery.js';
 
 const countries = [
@@ -14,8 +14,8 @@ const countries = [
   {
     name: 'No population <yet>',
     anchor: 'country-missing-No%20population%20%3C' + 'yet%3E',
-    missing: true
-  }
+    missing: true,
+  },
 ];
 const entries = [{ name: 'World', anchor: 'world-result' }, ...countries];
 
@@ -30,7 +30,7 @@ test('resolves World and country entries from URL fragments, with the base URL u
   assert.equal(entryFromHash(entries, '#country-result-AA'), countries[0]);
   assert.equal(
     entryFromHash(entries, '#country-missing-No%20population%20%3C' + 'yet%3E'),
-    countries[2]
+    countries[2],
   );
   assert.equal(entryFromHash(entries, '#unknown'), null);
   assert.equal(entryFromHash(entries, ''), null);
@@ -46,12 +46,15 @@ test('shows all entries by default or only a selected fragment entry', () => {
 test('copies the selected country fragment without keeping an old fragment', () => {
   assert.equal(
     countryUrl('https://example.test/gallery/?view=maps#old', 'country-result-AA'),
-    'https://example.test/gallery/?view=maps#country-result-AA'
+    'https://example.test/gallery/?view=maps#country-result-AA',
   );
 });
 
 test('formats circle coverage with an integer percent and omits missing legacy values', () => {
-  assert.equal(territoryCaption(0.375, 'Earth’s land area'), 'Circle covers 38% of Earth’s land area');
+  assert.equal(
+    territoryCaption(0.375, 'Earth’s land area'),
+    'Circle covers 38% of Earth’s land area',
+  );
   assert.equal(territoryCaption(0.625, 'Germany'), 'Circle covers 63% of Germany');
   assert.equal(territoryCaption(undefined), null);
   assert.equal(territoryCaption(null), null);
