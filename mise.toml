@@ -110,7 +110,7 @@ run = [
   "cargo fmt --all",
   "uv run ruff format .",
   "taplo fmt",
-  "sh -c 'cd frontend && prettier --write src test *.js *.json index.html'",
+  "sh -c 'cd frontend && prettier --write src test e2e *.js *.json index.html'",
 ]
 
 [tasks."lint:rust"]
@@ -227,7 +227,11 @@ run = "uv run popcircles-bench --smoke"
 [tasks."test:frontend"]
 description = "Test and build the static Svelte frontend"
 depends = ["deps"]
-run = ["npm --prefix frontend test", "npm --prefix frontend run build"]
+run = [
+  "npm --prefix frontend test",
+  "npm --prefix frontend run test:e2e",
+  "npm --prefix frontend run build",
+]
 
 [tasks."test:rust"]
 description = "Run the Rust test suite"

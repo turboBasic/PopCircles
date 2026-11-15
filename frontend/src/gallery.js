@@ -30,7 +30,7 @@ export const MAP_ASPECT_RATIO = 11 / 6;
  * @property {string} name
  * @property {string} anchor
  * @property {GalleryFigure[]} figures
- * @property {boolean} [missing]
+ * @property {boolean} missing
  */
 /**
  * @typedef {object} GalleryData

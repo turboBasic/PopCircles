@@ -6,6 +6,15 @@
 - Keep UI components modular, semantic, and reusable.
 - Separate presentation logic from data processing and map generation.
 
+## Data contract
+
+Python writes `gallery-data.json`; the Svelte app reads it at runtime. The `PageData`, `PageCountry`,
+`PageFigure`, and caption `TypedDict`s in `python/src/population_circles/gallery.py` own the wire
+shape. `frontend/src/gallery.js` mirrors those types for static checking. Keep required fields,
+optional omitted fields, and nullable fields aligned in both places. Add generated-data assertions to
+the Python Gallery tests when changing the contract. Do not add a second runtime schema or move map
+generation into the frontend.
+
 ## UI/UX
 
 - Use a viewport-contained application shell (`100dvh`).
@@ -17,6 +26,20 @@
 - Preserve map aspect ratios and avoid layout shifts.
 - Use responsive layouts based on available content width.
 - Preserve light and dark theme support.
+
+## Acceptance criteria
+
+- At desktop and mobile viewport sizes, the page shell fits the viewport and the document has no
+  vertical scrollbar; map results and country navigation scroll within their own regions.
+- Selecting a country updates the URL fragment, displays that country's maps, and returns the results
+  region to its start. Browser back and forward restore the selected country.
+- On narrow screens, country navigation opens as a modal dialog, closes with Escape, and returns focus
+  to its trigger. On wide screens, navigation can be collapsed and its state survives a reload.
+- Focused mode shows the selected country's maps; Expand All shows every country's maps. Both modes
+  preserve map aspect ratios without layout shifts as images load.
+- The theme control switches all page surfaces and text between readable light and dark palettes.
+- All navigation, mode, theme, and dialog actions work by keyboard, with visible focus and an
+  accessible name or role for each control.
 
 ## Development Principles
 
