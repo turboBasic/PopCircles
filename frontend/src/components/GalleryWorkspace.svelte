@@ -20,7 +20,7 @@
     <p>Explore country and world population circles.</p>
   </div>
   <section class="map-results" aria-label="Maps">
-    <div id="map-results-list" class:gallery-mode={selectedEntry === null} class:single-map={selectedEntry !== null}>
+    <div id="map-results-list">
       {#each visibleMapEntries as entry (entry.anchor)}
         <section class="country" id={entry.anchor}>
           <h2><a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a></h2>
@@ -52,10 +52,6 @@
   .workspace-intro p { margin: 0; color: var(--muted); }
   .country { scroll-margin-top: 1rem; margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .empty { color: var(--muted); }
-  .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
-  .gallery-mode #world-result { grid-column: 1 / -1; }
-  .gallery-mode .country { margin: 0; }
-  .gallery-mode .figure-grid { grid-template-columns: minmax(0, 1fr); }
   .country h2 a { color: inherit; text-decoration: none; }
   .country h2 a:hover { text-decoration: underline; text-underline-offset: .2em; }
   .figure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; }
