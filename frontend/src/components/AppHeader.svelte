@@ -1,9 +1,10 @@
 <script>
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
+  import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{globeFrame: string, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
+  /** @type {{scrollPosition: number, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
   let {
-    globeFrame,
+    scrollPosition,
     data,
     themeLight,
     browserOpen,
@@ -20,13 +21,7 @@
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
   <div class="top-bar">
-    <a class="home-link" href="./" aria-label="PopCircles home"
-      ><span>P<img class="globe-letter" src={globeFrame} alt="" />pCircles</span><img
-        class="trailing-globe"
-        src={globeFrame}
-        alt=""
-      /></a
-    >
+    <PopCirclesLogo {scrollPosition} />
     {#if data}
       <div class="map-actions" role="group" aria-label="Gallery controls">
         <button
@@ -143,33 +138,6 @@
   .workspace-intro p {
     margin: 0;
     color: var(--muted);
-  }
-  .home-link {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    color: var(--accent);
-    font:
-      400 1rem/1 'Lilita One',
-      sans-serif;
-    letter-spacing: 0.16em;
-    text-decoration: none;
-    text-transform: uppercase;
-  }
-  .home-link .globe-letter {
-    display: inline;
-    width: 0.8em;
-    height: 0.8em;
-    margin-left: -0.1em;
-    margin-right: 0.1em;
-    vertical-align: baseline -0.05em;
-  }
-  .home-link img {
-    width: 24px;
-    height: 24px;
-  }
-  .home-link .trailing-globe {
-    display: none;
   }
   .map-actions {
     display: flex;

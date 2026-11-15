@@ -30,10 +30,12 @@
               {#each entry.figures as figure (figure.map)}
                 <MapFigure
                   {figure}
+                  entryAnchor={entry.anchor}
                   countryAnchor={entry.anchor === 'world-result' ? null : entry.anchor}
                   loading={entry.anchor === (selectedEntry?.anchor ?? 'world-result')
                     ? 'eager'
                     : 'lazy'}
+                  onSelect={() => onSelect(entry)}
                   {onCopy}
                 />
               {/each}
