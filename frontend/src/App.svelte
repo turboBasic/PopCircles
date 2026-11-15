@@ -2,11 +2,11 @@
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import AppHeader from './components/AppHeader.svelte';
+  import CountryNavigation from './components/CountryNavigation.svelte';
   import MapFigure from './components/MapFigure.svelte';
   import {
     entryFromHash,
     countryUrl,
-    filterCountries,
     visibleEntries
   } from './gallery.js';
 
@@ -18,15 +18,11 @@
 
   let data = $state(null);
   let error = $state('');
-  let query = $state('');
   let selectedEntry = $state(null);
   let entries = $derived(
     data
       ? [{ name: 'World', anchor: 'world-result', figures: data.world }, ...data.countries]
       : []
-  );
-  let matches = $derived(
-    data ? [entries[0], ...filterCountries(data.countries, query)] : []
   );
   let visibleMapEntries = $derived(
     visibleEntries(entries, selectedEntry?.anchor ?? null)
@@ -36,10 +32,7 @@
   let copyStatus = $state('');
   let copyTimeout = null;
   let mobileNavigation = $state(null);
-  let browser = $state(null);
   let browserTrigger = $state(null);
-  let browserPanel = $state(null);
-  let countrySearch = $state(null);
   let resultsPanel = $state(null);
   let headerShrink = $state(0);
   let globeFrame = $state(globeFrames[0]);
@@ -57,59 +50,16 @@
     if (entry) requestAnimationFrame(resetView);
   }
 
-  function closeBrowser() {
-    if (!mobileNavigation?.matches || !browserOpen) return;
-    browserOpen = false;
-    browserTrigger.focus();
-  }
-
   function toggleBrowser() {
-    if (browserOpen) closeBrowser();
-    else browserOpen = true;
-  }
-
-  function handleBrowserKeydown(event) {
-    if (!mobileNavigation?.matches || !browserOpen) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeBrowser();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const focusable = [...browserPanel.querySelectorAll('input, a')].filter(
-      (element) => element.getClientRects().length
-    );
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  function handlePointerdown(event) {
-    if (
-      mobileNavigation?.matches &&
-      browserOpen &&
-      !browser.contains(event.target) &&
-      !browserTrigger.contains(event.target)
-    ) {
-      closeBrowser();
-    }
+    browserOpen = !browserOpen;
   }
 
   function selectEntry(entry) {
-    const returnFocus = mobileNavigation?.matches && browserOpen;
     selectedEntry = entry;
     copyStatus = '';
     window.clearTimeout(copyTimeout);
-    closeBrowser();
     requestAnimationFrame(() => {
       resetView();
-      if (returnFocus) browserTrigger.focus();
     });
   }
 
@@ -165,7 +115,6 @@
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
-    document.addEventListener('pointerdown', handlePointerdown);
     window.addEventListener('scroll', handleScroll, { passive: true });
     fetch('./gallery-data.json')
       .then((response) => {
@@ -187,7 +136,6 @@
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
       window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('pointerdown', handlePointerdown);
       mobileNavigation.removeEventListener('change', handleNavigationChange);
     };
   });
@@ -217,60 +165,15 @@
     <p role="status">Loading gallery…</p>
   {:else}
     <div class="explorer">
-      <aside aria-label="Map navigation">
-        <details
-          bind:this={browser}
-          bind:open={browserOpen}
-          ontoggle={() => {
-            if (mobileNavigation?.matches && browser?.open) countrySearch?.focus();
-          }}
-        >
-          <summary
-            id="country-browser-trigger"
-            aria-controls="country-browser-panel"
-            aria-expanded={browserOpen}
-          >
-            Browse maps <span class="status">{matches.length} maps</span>
-          </summary>
-          <div
-            bind:this={browserPanel}
-            class="country-browser-panel"
-            id="country-browser-panel"
-            role={mobileNavigation?.matches && browserOpen ? 'dialog' : 'region'}
-            aria-modal={mobileNavigation?.matches && browserOpen ? 'true' : undefined}
-            aria-labelledby={mobileNavigation?.matches && browserOpen ? 'country-browser-title' : undefined}
-            onkeydown={handleBrowserKeydown}
-          >
-            <h2 class="drawer-title" id="country-browser-title">Browse maps</h2>
-            <label for="country-search">Search maps</label>
-            <input
-              bind:this={countrySearch}
-              id="country-search"
-              type="search"
-              bind:value={query}
-              placeholder="Search maps"
-              autocomplete="off"
-            />
-            <p class="visually-hidden" role="status" aria-live="polite">
-              {query ? `${matches.length} matching maps` : ''}
-            </p>
-            <nav aria-label="Maps">
-              {#each matches as entry (entry.anchor)}
-                <a
-                  class:active={selectedEntry?.anchor === entry.anchor}
-                  aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
-                  href={`#${entry.anchor}`}
-                  onclick={() => selectEntry(entry)}
-                >
-                  {entry.name}
-                </a>
-              {:else}
-                <p class="empty">No matching maps.</p>
-              {/each}
-            </nav>
-          </div>
-        </details>
-      </aside>
+      <CountryNavigation
+        worldEntry={entries[0]}
+        countries={data.countries}
+        {selectedEntry}
+        {mobileNavigation}
+        bind:browserOpen
+        {browserTrigger}
+        onSelect={selectEntry}
+      />
 
       <!-- svelte-ignore a11y_no_noninteractive_tabindex: keyboard users need to focus this scroll region. -->
       <div
@@ -325,21 +228,8 @@
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
-  .status, .empty, .site-footer { color: var(--muted); }
+  .empty, .site-footer { color: var(--muted); }
   .explorer { display: grid; min-height: 100vh; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-  aside { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
-  aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-  summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
-  summary:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .country-browser-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; max-height: calc(100vh - (8rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; }
-  .drawer-title { display: none; }
-  label { display: block; margin: .8rem 0 .5rem; font-weight: 600; }
-  input { width: 100%; padding: .75rem 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .5rem; font: inherit; }
-  nav { display: grid; flex: 1; gap: .35rem; min-height: 0; margin-top: 1rem; overflow-y: auto; }
-  nav a { padding: .25rem 0; color: var(--muted); text-decoration: none; }
-  nav a:hover, nav a.active { color: var(--text); text-decoration: underline; text-underline-offset: .2em; }
-  .status { font-size: .85rem; }
-  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .results { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); min-width: 0; height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow-y: auto; padding-bottom: 4rem; }
   .country { scroll-margin-top: calc(5rem + 4rem * (1 - var(--header-shrink))); margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
@@ -354,11 +244,5 @@
   @media (max-width: 800px) {
     .explorer { min-height: 0; grid-template-columns: 1fr; }
     .results { position: static; height: auto; overflow: visible; }
-    aside { position: static; z-index: auto; display: block; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
-    aside summary { display: none; }
-    .country-browser-panel { display: none; }
-    details[open] .country-browser-panel { display: block; position: fixed; inset: 1rem; z-index: 5; max-height: none; overflow: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; box-shadow: 0 1rem 3rem #0008; }
-    .drawer-title { display: block; }
-    nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
