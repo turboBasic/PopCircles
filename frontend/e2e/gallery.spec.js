@@ -25,10 +25,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('searches country navigation and selects a country', async ({ page }) => {
-  await page.locator('#country-search-desktop').fill('country 42');
-  await expect(page.getByRole('navigation', { name: 'Maps' }).getByRole('link')).toHaveCount(2);
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
+  await expect(navigation.getByRole('link')).toHaveCount(2);
   await page
-    .getByRole('navigation', { name: 'Maps' })
+    .getByRole('navigation', { name: 'Map navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
 
@@ -38,7 +39,7 @@ test('searches country navigation and selects a country', async ({ page }) => {
 });
 
 test('results scroll inside the viewport without scrolling the document', async ({ page }) => {
-  const metrics = await page.locator('.results').evaluate((results) => {
+  const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
     results.scrollTop = results.scrollHeight;
     return {
       scrollTop: results.scrollTop,
@@ -85,11 +86,9 @@ test('responsive layout, map ratio, and theme styles keep their expected values'
     page.evaluate(() => ({
       background: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
       colorScheme: getComputedStyle(document.documentElement).colorScheme,
-      shellHeight: document.querySelector('main').getBoundingClientRect().height,
+      documentHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
-      resultOverflow: getComputedStyle(document.querySelector('.results')).overflowY,
       columns: getComputedStyle(document.querySelector('.explorer')).gridTemplateColumns,
-      sidebarDisplay: getComputedStyle(document.querySelector('aside')).display,
       mapAspectRatio: Number.parseFloat(
         getComputedStyle(document.querySelector('.map-frame')).aspectRatio,
       ),
@@ -98,8 +97,8 @@ test('responsive layout, map ratio, and theme styles keep their expected values'
   let visual = await visualProperties();
   expect(visual.background).toBe('#0b1020');
   expect(visual.colorScheme).toBe('dark');
-  expect(visual.shellHeight).toBe(visual.viewportHeight);
-  expect(visual.resultOverflow).toBe('auto');
+  expect(visual.documentHeight).toBeLessThanOrEqual(visual.viewportHeight);
+  expect(await page.getByRole('region', { name: 'Map results' }).isVisible()).toBe(true);
   expect(visual.columns.split(' ')).toHaveLength(2);
   expect(visual.mapAspectRatio).toBeCloseTo(11 / 6);
   await expect(page).toHaveScreenshot('gallery-desktop-dark.png');
@@ -115,9 +114,9 @@ test('responsive layout, map ratio, and theme styles keep their expected values'
   visual = await visualProperties();
   expect(visual.background).toBe('#0b1020');
   expect(visual.colorScheme).toBe('dark');
-  expect(visual.shellHeight).toBe(visual.viewportHeight);
+  expect(visual.documentHeight).toBeLessThanOrEqual(visual.viewportHeight);
   expect(visual.columns.split(' ')).toHaveLength(1);
-  expect(visual.sidebarDisplay).toBe('none');
+  await expect(page.getByRole('navigation', { name: 'Map navigation' })).toBeHidden();
   expect(await page.getByRole('button', { name: 'Open map navigation' }).isVisible()).toBe(true);
   await expect(page).toHaveScreenshot('gallery-mobile-dark.png');
 

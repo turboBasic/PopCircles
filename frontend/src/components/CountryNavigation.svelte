@@ -38,7 +38,7 @@
 </script>
 
 {#snippet mapLinks()}
-  <nav aria-label="Maps">
+  <div class="map-links">
     {#each matches as entry (entry.anchor)}
       <a
         class:active={selectedEntry?.anchor === entry.anchor}
@@ -47,10 +47,10 @@
         onclick={() => selectEntry(entry)}>{entry.name}</a
       >
     {:else}<p class="empty">No matching maps.</p>{/each}
-  </nav>
+  </div>
 {/snippet}
 
-<aside
+<nav
   class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen}
   aria-label="Map navigation"
 >
@@ -68,7 +68,7 @@
     {query ? `${matches.length} matching maps` : ''}
   </p>
   <div id="country-browser-desktop">{@render mapLinks()}</div>
-</aside>
+</nav>
 
 <dialog
   id="country-browser-panel"
@@ -90,11 +90,11 @@
   <p class="visually-hidden" role="status" aria-live="polite">
     {query ? `${matches.length} matching maps` : ''}
   </p>
-  {@render mapLinks()}
+  <nav aria-label="Map links">{@render mapLinks()}</nav>
 </dialog>
 
 <style>
-  aside {
+  nav[aria-label='Map navigation'] {
     display: flex;
     min-height: 0;
     flex-direction: column;
@@ -104,7 +104,7 @@
     border: 1px solid var(--line);
     border-radius: 0.8rem;
   }
-  aside.collapsed {
+  nav[aria-label='Map navigation'].collapsed {
     display: none;
   }
   input:focus-visible,
@@ -127,19 +127,19 @@
     border-radius: 0.5rem;
     font: inherit;
   }
-  nav {
+  .map-links {
     display: grid;
     flex: 1;
     gap: 0.35rem;
     margin-top: 1rem;
   }
-  nav a {
+  .map-links a {
     padding: 0.25rem 0;
     color: var(--muted);
     text-decoration: none;
   }
-  nav a:hover,
-  nav a.active {
+  .map-links a:hover,
+  .map-links a.active {
     color: var(--text);
     text-decoration: underline;
     text-underline-offset: 0.2em;
@@ -165,7 +165,7 @@
   dialog::backdrop {
     background: #0008;
   }
-  dialog nav {
+  dialog .map-links {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .close {
@@ -183,14 +183,14 @@
     border: 0;
   }
   @media (max-width: 800px) {
-    aside {
+    nav[aria-label='Map navigation'] {
       display: block;
       overflow: visible;
       padding: 0;
       border: 0;
       background: transparent;
     }
-    aside {
+    nav[aria-label='Map navigation'] {
       display: none;
     }
   }

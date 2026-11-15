@@ -185,7 +185,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<main>
+<div class="app-shell">
   <AppHeader
     {globeFrame}
     {data}
@@ -198,45 +198,44 @@
     onToggleDesktopNavigation={toggleDesktopNavigation}
   />
 
-  {#if error}
-    <div class="workspace-message">
-      <p role="alert">Could not load gallery data: {error}</p>
-      <footer class="site-footer">
-        © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
-      </footer>
-    </div>
-  {:else if !data}
-    <div class="workspace-message">
-      <p role="status">Loading gallery…</p>
-      <footer class="site-footer">
-        © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
-      </footer>
-    </div>
-  {:else}
-    <div class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} class="explorer">
-      <CountryNavigation
-        worldEntry={entries[0]}
-        countries={data.countries}
-        {selectedEntry}
-        {mobileNavigation}
-        {desktopNavigationOpen}
-        bind:mobileDialog
-        bind:browserOpen
-        {browserTrigger}
-        onSelect={selectEntry}
-      />
+  <main>
+    {#if error}
+      <div class="workspace-message">
+        <p role="alert">Could not load gallery data: {error}</p>
+      </div>
+    {:else if !data}
+      <div class="workspace-message">
+        <p role="status">Loading gallery…</p>
+      </div>
+    {:else}
+      <div class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} class="explorer">
+        <CountryNavigation
+          worldEntry={entries[0]}
+          countries={data.countries}
+          {selectedEntry}
+          {mobileNavigation}
+          {desktopNavigationOpen}
+          bind:mobileDialog
+          bind:browserOpen
+          {browserTrigger}
+          onSelect={selectEntry}
+        />
 
-      <GalleryWorkspace
-        {entries}
-        {selectedEntry}
-        bind:resultsPanel
-        onSelect={selectEntry}
-        onScroll={handleScroll}
-        onCopy={copyCountryUrl}
-      />
-    </div>
-  {/if}
-</main>
+        <GalleryWorkspace
+          {entries}
+          {selectedEntry}
+          bind:resultsPanel
+          onSelect={selectEntry}
+          onScroll={handleScroll}
+          onCopy={copyCountryUrl}
+        />
+      </div>
+    {/if}
+  </main>
+  <footer class="site-footer">
+    © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
+  </footer>
+</div>
 
 {#if copyStatus}
   <p
@@ -289,13 +288,18 @@
       16px/1.55 system-ui,
       sans-serif;
   }
-  main {
+  .app-shell {
     display: grid;
     width: min(1600px, calc(100% - 2rem));
     height: 100dvh;
     min-height: 0;
     margin: auto;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  main {
+    display: grid;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
   }
   .workspace-message {
     display: flex;
@@ -307,10 +311,10 @@
     margin-block: 1rem;
   }
   .site-footer {
-    padding: 1.25rem 0;
+    padding: 0.5rem 0;
     color: var(--muted);
     border-top: 1px solid var(--line);
-    font-size: 0.85rem;
+    font-size: 0.72rem;
   }
   .explorer {
     display: grid;
@@ -338,7 +342,7 @@
     box-shadow: 0 0.5rem 2rem #0005;
   }
   @media (max-width: 800px) {
-    main {
+    .app-shell {
       width: calc(100% - 2rem);
     }
     .explorer {

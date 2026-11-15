@@ -18,10 +18,6 @@
   tabindex="0"
   onscroll={onScroll}
 >
-  <div class="workspace-intro">
-    <h1>One circle, half the population.</h1>
-    <p>Explore country and world population circles.</p>
-  </div>
   <section class="map-results" aria-label="Maps">
     <div id="map-results-list">
       {#each visibleMapEntries as entry (entry.anchor)}
@@ -47,9 +43,6 @@
       {/each}
     </div>
   </section>
-  <footer class="site-footer">
-    © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
-  </footer>
 </div>
 
 <style>
@@ -59,20 +52,6 @@
     min-height: 0;
     overflow-y: auto;
     padding-bottom: 2rem;
-  }
-  .workspace-intro {
-    margin: 1.25rem;
-  }
-  .workspace-intro h1 {
-    max-width: 850px;
-    margin: 0 0 0.5rem;
-    font-size: clamp(2rem, 5vw, 4rem);
-    line-height: 1.08;
-    letter-spacing: -0.045em;
-  }
-  .workspace-intro p {
-    margin: 0;
-    color: var(--muted);
   }
   .country {
     scroll-margin-top: 1rem;
@@ -97,11 +76,5 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     gap: 1rem;
-  }
-  .site-footer {
-    padding: 1.25rem;
-    color: var(--muted);
-    border-top: 1px solid var(--line);
-    font-size: 0.85rem;
   }
 </style>
