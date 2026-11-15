@@ -22,7 +22,7 @@ Review the current conversation, project state, relevant files, and Git diff. Pr
 3. **Architecture and decisions**
    - Relevant architecture, components, APIs, and dependencies.
    - Important decisions and their rationale.
-   - Rejected approaches only when knowing why those decisions were rejected prevents repeated mistakes.
+   - Rejected approaches only when knowing why they were rejected prevents repeated mistakes.
 
 4. **Modified files and Git state**
    - Relevant file paths and a brief description of changes.
