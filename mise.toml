@@ -1,7 +1,7 @@
 [tools]
 # HTTPS transport for the explicit country fetch command; use the same release on Linux and macOS.
 "github:stunnel/static-curl" = "8.23.0"
-jactionlint = "2.5.0"
+jactionlint = "2.6.0"
 node = "26.13.1"
 "npm:cspell-cli" = "10.4.0"
 "npm:eslint" = "10.15.0"
