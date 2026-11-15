@@ -20,7 +20,7 @@
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
   <div class="top-bar">
-    <a class="home-link" href="./"
+    <a class="home-link" href="./" aria-label="PopCircles home"
       ><span>P<img class="globe-letter" src={globeFrame} alt="" />pCircles</span><img
         class="trailing-globe"
         src={globeFrame}
@@ -28,7 +28,7 @@
       /></a
     >
     {#if data}
-      <div class="map-actions" aria-label="Gallery controls">
+      <div class="map-actions" role="group" aria-label="Gallery controls">
         <button
           class="desktop-browser-toggle"
           type="button"
@@ -87,6 +87,12 @@
       </div>
     {/if}
   </div>
+  {#if data}
+    <div class="workspace-intro">
+      <h1>One circle, half the population.</h1>
+      <p>Explore country and world population circles.</p>
+    </div>
+  {/if}
 </header>
 
 <style>
@@ -123,6 +129,20 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+  }
+  .workspace-intro {
+    margin: 1.25rem 0;
+  }
+  .workspace-intro h1 {
+    max-width: 850px;
+    margin: 0 0 0.5rem;
+    font-size: clamp(2rem, 5vw, 4rem);
+    line-height: 1.08;
+    letter-spacing: -0.045em;
+  }
+  .workspace-intro p {
+    margin: 0;
+    color: var(--muted);
   }
   .home-link {
     display: flex;
