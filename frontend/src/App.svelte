@@ -1,12 +1,12 @@
 <script>
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
+  import MapFigure from './components/MapFigure.svelte';
   import {
     entryFromHash,
     countryUrl,
     filterCountries,
-    visibleEntries,
-    territoryCaption
+    visibleEntries
   } from './gallery.js';
 
   const headerBackground = './header-background.png';
@@ -193,37 +193,6 @@
   });
 </script>
 
-{#snippet figureCaption(figure, countryAnchor = null)}
-  {#if figure.caption}
-    {@const territory = territoryCaption(figure.caption.territory_share, figure.caption.territory_name)}
-    <p>
-      {figure.caption.radius_km.toLocaleString()} km radius ·
-      {(figure.caption.share * 100).toFixed(1)}% of the population ·
-      {#if territory}
-        {territory} ·
-      {/if}
-      {figure.caption.population.toLocaleString('en-US', { maximumFractionDigits: 0 })} people ·
-      centre
-      <a
-        href={`https://www.openstreetmap.org/?mlat=${figure.caption.centre_lat.toFixed(4)}&mlon=${figure.caption.centre_lon.toFixed(4)}#map=12/${figure.caption.centre_lat.toFixed(4)}/${figure.caption.centre_lon.toFixed(4)}`}
-        target="_blank"
-        rel="noopener"
-      >
-        {figure.caption.centre_lat.toFixed(4)}, {figure.caption.centre_lon.toFixed(4)}
-      </a>
-      {#if figure.caption.settlement}
-        · nearest city: {figure.caption.settlement.name},
-        {figure.caption.settlement.country}
-        ({Math.round(figure.caption.settlement.distance_km).toLocaleString()} km away)
-      {/if}
-    </p>
-  {/if}
-  <a href={figure.document}>View result data</a>
-  {#if countryAnchor}
-    · <a href={countryUrl(window.location.href, countryAnchor)} onclick={(event) => copyCountryUrl(event, countryAnchor)}>Copy country URL</a>
-  {/if}
-{/snippet}
-
 <svelte:head>
   <title>PopCircles</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -348,16 +317,12 @@
                 {:else}
                   <div class="figure-grid">
                     {#each entry.figures as figure (figure.map)}
-                      <figure>
-                        <a href={figure.map}>
-                          <img
-                            src={figure.map}
-                            alt={figure.alt}
-                            loading={selectedEntry?.anchor === entry.anchor ? 'eager' : 'lazy'}
-                          />
-                        </a>
-                        <figcaption>{@render figureCaption(figure, entry.anchor === 'world-result' ? null : entry.anchor)}</figcaption>
-                      </figure>
+                      <MapFigure
+                        {figure}
+                        countryAnchor={entry.anchor === 'world-result' ? null : entry.anchor}
+                        loading={selectedEntry?.anchor === entry.anchor ? 'eager' : 'lazy'}
+                        onCopy={copyCountryUrl}
+                      />
                     {/each}
                   </div>
                 {/if}
@@ -396,7 +361,7 @@
   .home-link .trailing-globe { display: none; }
   h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
   header .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
-  .intro, .status, .empty, figcaption, .site-footer { color: var(--muted); }
+  .intro, .status, .empty, .site-footer { color: var(--muted); }
   .explorer { display: grid; min-height: 100vh; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
   aside { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); z-index: 2; display: flex; flex-direction: column; max-height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow: hidden; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
@@ -428,11 +393,6 @@
   .country h2 a { color: inherit; text-decoration: none; }
   .country h2 a:hover { text-decoration: underline; text-underline-offset: .2em; }
   .figure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; }
-  figure { min-width: 0; margin: 0; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); border-radius: .8rem; }
-  figure img { display: block; width: 100%; height: auto; }
-  figcaption { padding: .75rem 1rem; font-size: .85rem; }
-  figcaption p { margin: 0 0 .5rem; }
-  figcaption a { color: inherit; text-decoration-color: #65758e; text-underline-offset: 3px; }
   @media (max-width: 800px) {
     .explorer { min-height: 0; grid-template-columns: 1fr; }
     .results { position: static; height: auto; overflow: visible; }
