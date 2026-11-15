@@ -4,7 +4,10 @@
 jactionlint = "2.5.0"
 node = "26.13.1"
 "npm:cspell-cli" = "10.4.0"
+"npm:eslint" = "10.15.0"
 "npm:markdownlint-cli2" = "0.24.1"
+"npm:prettier" = "3.10.1"
+"npm:svelte-check" = "4.7.8"
 # Not `npm:opencode-ai`: that package's postinstall fetches the real binary, and mise's npm backend
 # runs no postinstall. `aqua:anomalyco/opencode` fetches the platform binary directly. Pinned exactly,
 # where most tools here take `latest` — this one decides what a workflow does, not whether a file is
@@ -102,11 +105,12 @@ description = "Remove superseded gallery handoff ZIP assets after deployment"
 run = "uv run publish-gallery cleanup"
 
 [tasks.fmt]
-description = "Format Rust, Python and TOML"
+description = "Format Rust, Python, TOML and frontend"
 run = [
   "cargo fmt --all",
   "uv run ruff format .",
   "taplo fmt",
+  "sh -c 'cd frontend && prettier --write src test *.js *.json index.html'",
 ]
 
 [tasks."lint:rust"]
@@ -153,6 +157,11 @@ run = "prek run --all-files check-added-large-files geo-data-registered no-commi
 description = "Check Rust, TOML and Python are formatted"
 run = "prek run --all-files cargo-fmt taplo-fmt ruff-format"
 
+[tasks."lint:frontend"]
+description = "Lint and check the Svelte frontend"
+depends = ["deps"]
+run = "prek run --all-files eslint-frontend prettier-frontend svelte-check"
+
 # See `lint:data` for why. Matters more here: one hook stands in for `unsafe_code = "forbid"`, so a
 # branch from a clone where `prek install` never ran has to meet it too.
 [tasks."lint:exemptions"]
@@ -184,6 +193,7 @@ depends = [
   "lint:workflows",
   "lint:precommit",
   "lint:data",
+  "lint:frontend",
   "lint:format",
   "lint:exemptions",
   "lint:markdown",
