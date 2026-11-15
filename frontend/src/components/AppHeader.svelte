@@ -1,5 +1,5 @@
 <script>
-  let { globeFrame, data, themeLight, browserOpen, browserTrigger = $bindable(), onTheme, onToggleBrowser } = $props();
+  let { globeFrame, data, themeLight, browserOpen, desktopNavigationOpen, browserTrigger = $bindable(), onTheme, onToggleBrowser, onToggleDesktopNavigation } = $props();
 </script>
 
 <header>
@@ -10,6 +10,7 @@
     <a class="home-link" href="./"><span>P<img class="globe-letter" src={globeFrame} alt="" />pCircles</span><img class="trailing-globe" src={globeFrame} alt="" /></a>
     {#if data}
       <div class="map-actions" aria-label="Gallery controls">
+        <button class="desktop-browser-toggle" type="button" aria-controls="country-browser-desktop" aria-expanded={desktopNavigationOpen} onclick={onToggleDesktopNavigation}>{desktopNavigationOpen ? 'Hide maps' : 'Show maps'}</button>
         <a class="icon-control" href="https://github.com/turboBasic/PopCircles" aria-label="PopCircles on GitHub">
           <svg viewBox="0 0 26 24" aria-hidden="true"><path transform="translate(1 0)" fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.75 2.05 3.44 1.57.1-.73.39-1.23.7-1.52-2.48-.28-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.15a10.6 10.6 0 0 1 5.55 0c2.12-1.44 3.05-1.15 3.05-1.15.61 1.54.23 2.68.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.52.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
         </a>
@@ -39,8 +40,9 @@
   .icon-control { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; padding: .45rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; text-decoration: none; }
   .icon-control svg { width: 1.25rem; height: 1.25rem; }
   .mobile-browser-toggle { display: none; }
+  .desktop-browser-toggle { white-space: nowrap; }
   button { padding: .55rem .85rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; font: inherit; cursor: pointer; }
   button:hover { border-color: var(--accent); }
   :global(a:focus-visible), :global(button:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-  @media (max-width: 800px) { .mobile-browser-toggle { display: block; } }
+  @media (max-width: 800px) { .mobile-browser-toggle { display: block; } .desktop-browser-toggle { display: none; } }
 </style>

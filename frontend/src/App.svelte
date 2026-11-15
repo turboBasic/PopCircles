@@ -24,6 +24,7 @@
       : []
   );
   let browserOpen = $state(false);
+  let desktopNavigationOpen = $state(true);
   let themeLight = $state(false);
   let copyStatus = $state('');
   let copyTimeout = null;
@@ -45,6 +46,13 @@
 
   function toggleBrowser() {
     browserOpen = !browserOpen;
+  }
+
+  function toggleDesktopNavigation() {
+    desktopNavigationOpen = !desktopNavigationOpen;
+    try {
+      localStorage.setItem('popcircles-desktop-navigation-open', String(desktopNavigationOpen));
+    } catch {}
   }
 
   function selectEntry(entry) {
@@ -99,10 +107,11 @@
     });
     mobileNavigation = window.matchMedia('(max-width: 800px)');
     const handleHistory = () => restoreEntry();
-    const handleNavigationChange = () => {
-      browserOpen = !mobileNavigation.matches;
-    };
-    browserOpen = !mobileNavigation.matches;
+    try {
+      desktopNavigationOpen = localStorage.getItem('popcircles-desktop-navigation-open') !== 'false';
+    } catch {}
+    browserOpen = false;
+    const handleNavigationChange = () => { browserOpen = false; };
     handleScroll();
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
@@ -144,9 +153,11 @@
     {data}
     {themeLight}
     {browserOpen}
+    {desktopNavigationOpen}
     bind:browserTrigger
     onTheme={toggleTheme}
     onToggleBrowser={toggleBrowser}
+    onToggleDesktopNavigation={toggleDesktopNavigation}
   />
 
   {#if error}
@@ -154,12 +165,13 @@
   {:else if !data}
     <div class="workspace-message"><p role="status">Loading gallery…</p><footer class="site-footer">© Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries</footer></div>
   {:else}
-    <div class="explorer">
+    <div class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} class="explorer">
       <CountryNavigation
         worldEntry={entries[0]}
         countries={data.countries}
         {selectedEntry}
         {mobileNavigation}
+        {desktopNavigationOpen}
         bind:browserOpen
         {browserTrigger}
         onSelect={selectEntry}
@@ -193,6 +205,7 @@
   .workspace-message p { margin-block: 1rem; }
   .site-footer { padding: 1.25rem 0; color: var(--muted); border-top: 1px solid var(--line); font-size: .85rem; }
   .explorer { display: grid; min-width: 0; min-height: 0; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: stretch; }
+  .explorer.collapsed { grid-template-columns: minmax(0, 1fr); }
   .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
   @media (max-width: 800px) {
     main { width: calc(100% - 2rem); }

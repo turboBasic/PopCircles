@@ -1,7 +1,7 @@
 <script>
   import { filterCountries } from '../gallery.js';
 
-  let { worldEntry, countries, selectedEntry, mobileNavigation, browserOpen = $bindable(), browserTrigger, onSelect } = $props();
+  let { worldEntry, countries, selectedEntry, mobileNavigation, desktopNavigationOpen, browserOpen = $bindable(), browserTrigger, onSelect } = $props();
   let query = $state('');
   let browser = $state(null);
   let browserPanel = $state(null);
@@ -58,7 +58,7 @@
   });
 </script>
 
-<aside aria-label="Map navigation">
+<aside class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} aria-label="Map navigation">
   <details
     bind:this={browser}
     bind:open={browserOpen}
@@ -111,6 +111,7 @@
 
 <style>
   aside { display: flex; min-height: 0; flex-direction: column; overflow-y: auto; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+  aside.collapsed { display: none; }
   aside details { display: flex; flex: 1; flex-direction: column; min-height: 0; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; }
   summary:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
