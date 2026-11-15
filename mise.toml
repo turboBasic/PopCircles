@@ -15,7 +15,7 @@ prek = "0.5.10"
 python = "3.15.2"
 # clippy and rustfmt are named explicitly because CI's default profile omits them; rust-src
 # gives rust-analyzer the standard library sources for the same pinned toolchain.
-rust = { version = "1.99.1", components = ["clippy", "rustfmt", "rust-src"] }
+rust = { version = "1.100.0", components = ["clippy", "rustfmt", "rust-src"] }
 shellcheck = "0.11.0"
 taplo = "0.10.0"
 uv = "0.13.7"
