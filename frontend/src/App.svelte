@@ -40,7 +40,7 @@
   function restoreEntry(availableEntries = entries) {
     const entry = entryFromHash(availableEntries, window.location.hash);
     selectedEntry = entry;
-    if (entry) requestAnimationFrame(resetView);
+    requestAnimationFrame(resetView);
   }
 
   function toggleBrowser() {
