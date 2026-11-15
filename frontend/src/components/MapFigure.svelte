@@ -1,9 +1,18 @@
 <script>
+  import { onMount } from 'svelte';
   import { countryUrl, MAP_ASPECT_RATIO, territoryCaption } from '../gallery.js';
 
   let { figure, countryAnchor = null, loading = 'lazy', onCopy } = $props();
+  let image = $state(null);
   let loaded = $state(false);
   let failed = $state(false);
+
+  onMount(() => {
+    if (image?.complete) {
+      loaded = image.naturalWidth > 0;
+      failed = image.naturalWidth === 0;
+    }
+  });
 </script>
 
 <figure>
@@ -11,7 +20,7 @@
     <div class="map-frame" style:aspect-ratio={MAP_ASPECT_RATIO}>
       {#if !loaded && !failed}<span class="image-status">Loading map…</span>{/if}
       {#if failed}<span class="image-status" role="alert">Map image could not be loaded.</span>{/if}
-      <img class:loaded src={figure.map} alt={figure.alt} {loading} onload={() => (loaded = true)} onerror={() => (failed = true)} />
+      <img bind:this={image} class:loaded src={figure.map} alt={figure.alt} {loading} onload={() => (loaded = true)} onerror={() => (failed = true)} />
     </div>
   </a>
   <figcaption>

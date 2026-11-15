@@ -1,14 +1,13 @@
 <script>
   import { filterCountries } from '../gallery.js';
 
-  let { worldEntry, countries, selectedEntry, mobileNavigation, desktopNavigationOpen, browserOpen = $bindable(), browserTrigger, onSelect } = $props();
+  let { worldEntry, countries, selectedEntry, mobileNavigation, desktopNavigationOpen, browserOpen = $bindable(), mobileDialog = $bindable(), browserTrigger, onSelect } = $props();
   let query = $state('');
-  let mobileDialog = $state(null);
-  let countrySearch = $state(null);
   let matches = $derived(worldEntry ? [worldEntry, ...filterCountries(countries, query)] : []);
 
   function closeBrowser() {
-    if (!mobileNavigation?.matches || !browserOpen) return;
+    if (!mobileNavigation?.matches || !mobileDialog?.open) return;
+    mobileDialog.close();
     browserOpen = false;
   }
 
@@ -17,15 +16,6 @@
     onSelect(entry);
   }
 
-  $effect(() => {
-    if (!mobileDialog) return;
-    if (mobileNavigation?.matches && browserOpen && !mobileDialog.open) {
-      mobileDialog.showModal();
-      countrySearch.focus();
-    }
-    else if ((!mobileNavigation?.matches || !browserOpen) && mobileDialog.open) mobileDialog.close();
-  });
-
   function handleDialogClose() {
     if (!mobileNavigation?.matches) return;
     browserOpen = false;
@@ -33,28 +23,28 @@
   }
 </script>
 
-<aside class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} aria-label="Map navigation">
-  <label for="country-search-desktop">Search maps <span class="status">{matches.length} maps</span></label>
-  <input id="country-search-desktop" type="search" bind:value={query} placeholder="Search maps" autocomplete="off" />
-  <p class="visually-hidden" role="status" aria-live="polite">{query ? `${matches.length} matching maps` : ''}</p>
-  <nav id="country-browser-desktop" aria-label="Maps">
+{#snippet mapLinks()}
+  <nav aria-label="Maps">
     {#each matches as entry (entry.anchor)}
       <a class:active={selectedEntry?.anchor === entry.anchor} aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined} href={`#${entry.anchor}`} onclick={() => selectEntry(entry)}>{entry.name}</a>
     {:else}<p class="empty">No matching maps.</p>{/each}
   </nav>
+{/snippet}
+
+<aside class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} aria-label="Map navigation">
+  <label for="country-search-desktop">Search maps <span class="status">{matches.length} maps</span></label>
+  <input id="country-search-desktop" type="search" bind:value={query} placeholder="Search maps" autocomplete="off" />
+  <p class="visually-hidden" role="status" aria-live="polite">{query ? `${matches.length} matching maps` : ''}</p>
+  <div id="country-browser-desktop">{@render mapLinks()}</div>
 </aside>
 
 <dialog id="country-browser-panel" bind:this={mobileDialog} aria-labelledby="country-browser-title" onclose={handleDialogClose}>
   <button class="close" type="button" onclick={closeBrowser}>Close maps</button>
   <h2 id="country-browser-title">Browse maps</h2>
   <label for="country-search-mobile">Search maps</label>
-  <input bind:this={countrySearch} id="country-search-mobile" type="search" bind:value={query} placeholder="Search maps" autocomplete="off" />
+  <input id="country-search-mobile" type="search" bind:value={query} placeholder="Search maps" autocomplete="off" autofocus />
   <p class="visually-hidden" role="status" aria-live="polite">{query ? `${matches.length} matching maps` : ''}</p>
-  <nav aria-label="Maps">
-    {#each matches as entry (entry.anchor)}
-      <a class:active={selectedEntry?.anchor === entry.anchor} aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined} href={`#${entry.anchor}`} onclick={() => selectEntry(entry)}>{entry.name}</a>
-    {:else}<p class="empty">No matching maps.</p>{/each}
-  </nav>
+  {@render mapLinks()}
 </dialog>
 
 <style>

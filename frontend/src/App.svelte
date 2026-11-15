@@ -24,6 +24,7 @@
       : []
   );
   let browserOpen = $state(false);
+  let mobileDialog = $state(null);
   let desktopNavigationOpen = $state(true);
   let themeLight = $state(false);
   let copyStatus = $state('');
@@ -45,7 +46,14 @@
   }
 
   function toggleBrowser() {
-    browserOpen = !browserOpen;
+    if (!mobileNavigation?.matches || !mobileDialog) return;
+    if (mobileDialog.open) {
+      mobileDialog.close();
+      browserOpen = false;
+    } else {
+      mobileDialog.showModal();
+      browserOpen = true;
+    }
   }
 
   function toggleDesktopNavigation() {
@@ -111,7 +119,10 @@
       desktopNavigationOpen = localStorage.getItem('popcircles-desktop-navigation-open') !== 'false';
     } catch {}
     browserOpen = false;
-    const handleNavigationChange = () => { browserOpen = false; };
+    const handleNavigationChange = () => {
+      browserOpen = false;
+      if (!mobileNavigation.matches && mobileDialog?.open) mobileDialog.close();
+    };
     handleScroll();
     mobileNavigation.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
@@ -172,6 +183,7 @@
         {selectedEntry}
         {mobileNavigation}
         {desktopNavigationOpen}
+        bind:mobileDialog
         bind:browserOpen
         {browserTrigger}
         onSelect={selectEntry}
