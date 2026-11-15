@@ -31,16 +31,13 @@ __pycache__/
 perf.data
 perf.data.old
 
-# Every image format, rendered map or not: a figure is deployed to the site ADR 0012 rules and no image
-# is a committed file here, so the rule is the format rather than the directory it was written to. This
-# line stops the accident; `no-committed-images` is what refuses a `git add -f`.
+# Raster and PDF images stay out
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.webp
 *.pdf
-*.svg
 
 # Local environment
 .env
