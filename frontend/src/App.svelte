@@ -3,11 +3,10 @@
   import { fade } from 'svelte/transition';
   import AppHeader from './components/AppHeader.svelte';
   import CountryNavigation from './components/CountryNavigation.svelte';
-  import MapFigure from './components/MapFigure.svelte';
+  import GalleryWorkspace from './components/GalleryWorkspace.svelte';
   import {
     entryFromHash,
-    countryUrl,
-    visibleEntries
+    countryUrl
   } from './gallery.js';
 
   const globeFrames = Object.entries(
@@ -23,9 +22,6 @@
     data
       ? [{ name: 'World', anchor: 'world-result', figures: data.world }, ...data.countries]
       : []
-  );
-  let visibleMapEntries = $derived(
-    visibleEntries(entries, selectedEntry?.anchor ?? null)
   );
   let browserOpen = $state(false);
   let themeLight = $state(false);
@@ -175,39 +171,14 @@
         onSelect={selectEntry}
       />
 
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex: keyboard users need to focus this scroll region. -->
-      <div
-        bind:this={resultsPanel}
-        class="results"
-        role="region"
-        aria-label="Map results"
-        tabindex="0"
-        onscroll={handleScroll}
-      >
-        <section class="map-results" aria-label="Maps">
-          <div id="map-results-list" class:gallery-mode={selectedEntry === null} class:single-map={selectedEntry !== null}>
-            {#each visibleMapEntries as entry (entry.anchor)}
-              <section class="country" id={entry.anchor}>
-                <h2><a href={`#${entry.anchor}`} onclick={() => selectEntry(entry)}>{entry.name}</a></h2>
-                {#if entry.missing}
-                  <p class="empty">No 50% result is available for this country.</p>
-                {:else}
-                  <div class="figure-grid">
-                    {#each entry.figures as figure (figure.map)}
-                      <MapFigure
-                        {figure}
-                        countryAnchor={entry.anchor === 'world-result' ? null : entry.anchor}
-                        loading={selectedEntry?.anchor === entry.anchor ? 'eager' : 'lazy'}
-                        onCopy={copyCountryUrl}
-                      />
-                    {/each}
-                  </div>
-                {/if}
-              </section>
-            {/each}
-          </div>
-        </section>
-      </div>
+      <GalleryWorkspace
+        {entries}
+        {selectedEntry}
+        bind:resultsPanel
+        onSelect={selectEntry}
+        onScroll={handleScroll}
+        onCopy={copyCountryUrl}
+      />
     </div>
   {/if}
   <footer class="site-footer">
@@ -228,21 +199,11 @@
   :global(*) { box-sizing: border-box; }
   :global(body) { margin: 0; color: var(--text); background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%); font: 16px/1.55 system-ui, sans-serif; }
   main { width: min(1600px, calc(100% - 2rem)); margin: auto; }
-  .empty, .site-footer { color: var(--muted); }
+  .site-footer { color: var(--muted); }
   .explorer { display: grid; min-height: 100vh; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-  .results { position: sticky; top: calc(4rem + 5rem * (1 - var(--header-shrink))); min-width: 0; height: calc(100vh - (4rem + 5rem * (1 - var(--header-shrink)))); overflow-y: auto; padding-bottom: 4rem; }
-  .country { scroll-margin-top: calc(5rem + 4rem * (1 - var(--header-shrink))); margin-bottom: .8rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
   .copy-toast { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 10; max-width: min(28rem, calc(100vw - 2.5rem)); margin: 0; padding: .8rem 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 .5rem 2rem #0005; }
   .site-footer { margin-top: 2rem; padding: 1.25rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
-  .gallery-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: .8rem; }
-  .gallery-mode #world-result { grid-column: 1 / -1; }
-  .gallery-mode .country { margin: 0; }
-  .gallery-mode .figure-grid { grid-template-columns: minmax(0, 1fr); }
-  .country h2 a { color: inherit; text-decoration: none; }
-  .country h2 a:hover { text-decoration: underline; text-underline-offset: .2em; }
-  .figure-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 1rem; }
   @media (max-width: 800px) {
     .explorer { min-height: 0; grid-template-columns: 1fr; }
-    .results { position: static; height: auto; overflow: visible; }
   }
 </style>
