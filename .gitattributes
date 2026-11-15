@@ -4,6 +4,7 @@
 *.py text
 *.pyi text
 *.html text
+*.svg text
 *.js text
 *.css text
 *.svelte text

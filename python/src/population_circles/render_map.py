@@ -4,6 +4,7 @@ import math
 import textwrap
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping, Sequence
+from functools import cache
 from pathlib import Path
 from typing import cast
 
@@ -90,6 +91,7 @@ HORIZON_LAYER = 5
 MINUTES_PER_DEGREE = 60
 
 
+@cache
 def basemap(path: Path) -> BaseGeometry:
     features: Sequence[Mapping[str, dict[str, object]]] = json.loads(
         path.read_text(encoding="utf-8"),

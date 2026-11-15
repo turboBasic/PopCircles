@@ -10,6 +10,11 @@
   } from './gallery.js';
 
   const headerBackground = './header-background.png';
+  const globeFrames = Object.entries(
+    import.meta.glob('../assets/earth-globe-*.svg', { eager: true, query: '?url', import: 'default' })
+  )
+    .sort(([left], [right]) => left.localeCompare(right, undefined, { numeric: true }))
+    .map(([, url]) => url);
 
   let data = $state(null);
   let error = $state('');
@@ -37,6 +42,7 @@
   let countrySearch = $state(null);
   let resultsPanel = $state(null);
   let headerShrink = $state(0);
+  let globeFrame = $state(globeFrames[0]);
 
   function resetView() {
     headerShrink = 0;
@@ -118,7 +124,9 @@
   }
 
   function handleScroll() {
+    const scrollDistance = window.scrollY + (resultsPanel?.scrollTop ?? 0);
     headerShrink = Math.min(Math.max(window.scrollY, resultsPanel?.scrollTop ?? 0) / 120, 1);
+    globeFrame = globeFrames[Math.floor(scrollDistance / 240 * globeFrames.length) % globeFrames.length];
   }
 
   async function copyCountryUrl(event, anchor) {
@@ -205,6 +213,9 @@
 
 <svelte:head>
   <title>PopCircles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
 </svelte:head>
 
 <main style:--header-shrink={headerShrink}>
@@ -213,7 +224,7 @@
       <div class="header-art" aria-hidden="true"><img src={headerBackground} alt="" /></div>
     {/if}
     <div class="top-bar">
-      <a class="home-link" href="./">PopCircles</a>
+      <a class="home-link" href="./"><span>P<img class="globe-letter" src={globeFrame} alt="" />pCircles</span><img class="trailing-globe" src={globeFrame} alt="" /></a>
       {#if data}
         <div class="map-actions" aria-label="Gallery controls">
           <a class="icon-control" href="https://github.com/turboBasic/PopCircles" aria-label="PopCircles on GitHub">
@@ -366,7 +377,10 @@
   .header-art { position: absolute; inset: 0 auto 0 50%; width: 100vw; transform: translateX(-50%); z-index: -1; overflow: hidden; opacity: calc(.16 * (1 - var(--header-shrink))); pointer-events: none; }
   .header-art img { position: absolute; top: 50%; left: 50%; width: 104vw; height: auto; max-width: none; transform: translate(-50%, -50%); filter: grayscale(1) brightness(.65); }
   .top-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  .home-link { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-decoration: none; text-transform: uppercase; }
+  .home-link { display: flex; align-items: center; gap: .65rem; color: var(--accent); font: 400 1rem/1 "Lilita One", sans-serif; letter-spacing: .16em; text-decoration: none; text-transform: uppercase; }
+  .home-link .globe-letter { display: inline; width: .8em; height: .8em; margin-left: -0.1em; margin-right: .1em; vertical-align: baseline -0.05em; }
+  .home-link img { width: 24px; height: 24px; }
+  .home-link .trailing-globe { display: none; }
   h1 { max-width: 850px; max-height: calc(4.5rem * (1 - var(--header-shrink))); margin: calc(.7rem * (1 - var(--header-shrink))) 0 calc(1rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); font-size: calc(clamp(2rem, 5vw, 4rem) * (1 - var(--header-shrink))); line-height: 1.08; letter-spacing: -.045em; }
   header .intro { max-height: calc(3rem * (1 - var(--header-shrink))); margin-block: calc(.5rem * (1 - var(--header-shrink))); overflow: hidden; opacity: calc(1 - var(--header-shrink)); }
   .intro, .status, .empty, figcaption, .site-footer { color: var(--muted); }

@@ -36,6 +36,7 @@ popcircles
 prek
 pyright
 pytest
+resvg
 ruff
 rustls
 shellcheck
@@ -57,6 +58,7 @@ basemap
 binade
 binades
 datasheet
+detalization
 equirectangular
 geotiff
 geotransform
@@ -92,6 +94,7 @@ Mollweide
 naturalearth
 nvkelso
 pmtiles
+polygonize
 pyogrio
 RUSAGE
 scalerank
@@ -116,6 +119,7 @@ darkred
 delenv
 dimgrey
 edgecolor
+evenodd
 facecolor
 figcaption
 figsize

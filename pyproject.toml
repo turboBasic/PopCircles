@@ -22,6 +22,7 @@ publish-gallery = "repo_tools.publish_gallery:main"
 release-smoke = "repo_tools.release_smoke:main"
 release-trust = "repo_tools.release_trust:main"
 render-gallery = "population_circles.gallery:main"
+render-globe = "population_circles.render_globe:main"
 render-map = "population_circles.render_map:main"
 
 [build-system]
@@ -42,6 +43,7 @@ dev = [
   "pyright>=1.1.407",
   "pytest>=9.0.2",
   "pytest-xdist>=3.8.0",
+  "resvg-py>=0.5.0",
   "ruff>=0.16.2",
   "shapely>=2.1.2",
 ]
@@ -70,6 +72,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "python/src/population_circles/gallery.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
+]
+"python/src/population_circles/render_globe.py" = [
+  "T201", # the path a globe was written to is this command's output, not debug printing
 ]
 "python/src/population_circles/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
