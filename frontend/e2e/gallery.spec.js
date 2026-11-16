@@ -546,6 +546,76 @@ test('mobile selection and viewport changes preserve query and independent state
   await expect(trigger).toBeFocused();
 });
 
+test('short narrow viewports keep navigation controls visible and scroll regions separate', async ({
+  page,
+}) => {
+  const longCountry = {
+    name: 'Long'.repeat(80),
+    anchor: 'country-long',
+    figures: [],
+    missing: false,
+  };
+  await page.route('**/gallery-data.json', (route) =>
+    route.fulfill({ json: { world, countries: [...countries, longCountry] } }),
+  );
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { name: 'One circle, half the population.' }),
+  ).toBeVisible();
+
+  const dialog = page.getByRole('dialog', { name: 'Browse maps' });
+  const results = page.getByRole('region', { name: 'Map results' });
+  const list = dialog.locator('.map-links');
+  const longLink = dialog.getByRole('link', { name: longCountry.name });
+
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const resultsScrollTop = await results.evaluate((element) => element.scrollTop);
+    await page.getByRole('button', { name: 'Open maps navigation' }).click();
+    await expect(dialog).toBeVisible();
+    await expect
+      .poll(() => dialog.evaluate((element) => getComputedStyle(element).transform))
+      .toBe('matrix(1, 0, 0, 1, 0, 0)');
+    const bounds = await dialog.boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+
+    const closeBounds = await dialog
+      .getByRole('button', { name: 'Close map navigation' })
+      .boundingBox();
+    expect(closeBounds.width).toBeGreaterThanOrEqual(44);
+    expect(closeBounds.height).toBeGreaterThanOrEqual(44);
+    await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
+    expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expect(dialog.getByRole('searchbox', { name: 'Search maps' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeVisible();
+    const longLinkBounds = await longLink.boundingBox();
+    expect(longLinkBounds.x + longLinkBounds.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+    expect(await results.evaluate((element) => element.scrollTop)).toBe(resultsScrollTop);
+    const documentMetrics = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      viewport: window.innerHeight,
+      rootTop: document.documentElement.scrollTop,
+      bodyTop: document.body.scrollTop,
+    }));
+    expect(documentMetrics.height).toBeLessThanOrEqual(documentMetrics.viewport);
+    expect(documentMetrics.rootTop).toBe(0);
+    expect(documentMetrics.bodyTop).toBe(0);
+
+    await page.setViewportSize({ width: 1024, height: viewport.height });
+    await expect.poll(() => dialog.evaluate((element) => element.matches(':modal'))).toBe(false);
+    const navigationBounds = await dialog.boundingBox();
+    const listPosition = await list.evaluate((element) => element.scrollTop);
+    await results.evaluate((element) => (element.scrollTop = element.scrollHeight));
+    await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    expect(await dialog.boundingBox()).toEqual(navigationBounds);
+    expect(await list.evaluate((element) => element.scrollTop)).toBe(listPosition);
+  }
+});
+
 test('interactive controls have accessible names', async ({ page }) => {
   const [buttons, namedButtons, links, namedLinks] = await Promise.all([
     page.locator('button:visible').count(),

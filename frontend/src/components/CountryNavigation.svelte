@@ -215,6 +215,7 @@
 <style>
   dialog {
     position: relative;
+    display: flex;
     z-index: auto;
     grid-column: 1;
     width: 100%;
@@ -224,6 +225,7 @@
     margin: 0;
     padding: calc(var(--navigation-header-space, 0px) + 1rem) 1rem
       calc(var(--footer-space, 0px) + 1rem);
+    flex-direction: column;
     overflow: hidden;
     color: var(--text);
     background: var(--surface);
@@ -239,7 +241,7 @@
     transform: translateX(-100%);
   }
   dialog.open {
-    display: block;
+    display: flex;
     animation: none;
   }
   @starting-style {
@@ -274,7 +276,8 @@
   }
   nav {
     display: flex;
-    height: 100%;
+    flex: 1;
+    height: auto;
     min-height: 0;
     flex-direction: column;
   }
@@ -339,9 +342,11 @@
     margin-top: 0.35rem;
   }
   .map-links a {
+    display: block;
     padding: 0.25rem 0;
     color: var(--muted);
     text-decoration: none;
+    overflow-wrap: anywhere;
   }
   .map-links a:hover,
   .map-links a.active {
@@ -417,6 +422,7 @@
         overlay 180ms allow-discrete;
     }
     dialog.open {
+      display: flex;
       opacity: 1;
       transform: translateX(0);
     }
@@ -429,6 +435,8 @@
       top: 0.75rem;
       right: auto;
       left: 0.75rem;
+      width: 2.75rem;
+      height: 2.75rem;
     }
     dialog::backdrop {
       background: var(--chrome-bg);
