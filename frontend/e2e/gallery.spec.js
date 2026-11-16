@@ -141,6 +141,28 @@ test('desktop navigation collapses to a rail without overlapping results', async
   }
 });
 
+test('navigation-only transitions do not request map assets', async ({ page }) => {
+  const mapRequests = () =>
+    page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .map((resource) => resource.name)
+        .filter((url) => /\.(svg|json)(?:$|\?)/.test(url)),
+    );
+  const initialRequests = await mapRequests();
+
+  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+  await page.getByRole('button', { name: 'Search maps' }).click();
+  await page.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
+  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Open maps navigation' }).click();
+  await page.getByRole('button', { name: 'Close map navigation' }).click();
+
+  expect(await mapRequests()).toEqual(initialRequests);
+});
+
 test('mobile navigation remains modal and closes on resize', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
@@ -613,6 +635,31 @@ test('short narrow viewports keep navigation controls visible and scroll regions
     await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
     expect(await dialog.boundingBox()).toEqual(navigationBounds);
     expect(await list.evaluate((element) => element.scrollTop)).toBe(listPosition);
+  }
+});
+
+test('navigation fits the effective viewport at 200% and 400% zoom', async ({ page }) => {
+  for (const zoom of [2, 4]) {
+    const viewport = { width: Math.floor(1440 / zoom), height: Math.floor(900 / zoom) };
+    await page.setViewportSize(viewport);
+    const trigger = page.getByRole('button', { name: 'Open maps navigation' });
+    await expect(trigger).toBeVisible();
+    const triggerBounds = await trigger.boundingBox();
+    expect(triggerBounds.x).toBeGreaterThanOrEqual(0);
+    expect(triggerBounds.x + triggerBounds.width).toBeLessThanOrEqual(viewport.width);
+    await trigger.click();
+    const dialog = page.getByRole('dialog', { name: 'Browse maps' });
+    await expect(dialog).toBeVisible();
+    await expect
+      .poll(() => dialog.evaluate((element) => getComputedStyle(element).transform))
+      .toBe('matrix(1, 0, 0, 1, 0, 0)');
+    const bounds = await dialog.boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+    await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeVisible();
+    await expect(dialog.getByRole('searchbox', { name: 'Search maps' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
   }
 });
 
