@@ -1,45 +1,25 @@
 <script>
-  import { onMount } from 'svelte';
+  import globeSprite from '../../assets/earth-globe.svg?url';
 
   /** @type {{scrollPosition: number}} */
   let { scrollPosition } = $props();
-  const globeFrames = Object.entries(
-    import.meta.glob('../../assets/earth-globe-*.svg', {
-      eager: true,
-      query: '?url',
-      import: 'default',
-    }),
-  )
-    .sort(([left], [right]) => left.localeCompare(right, undefined, { numeric: true }))
-    .map(([, url]) => url);
-  let globeFramesReady = $state(false);
-  let globeFrame = $derived(
-    globeFramesReady
-      ? globeFrames[Math.floor((scrollPosition / 240) * globeFrames.length) % globeFrames.length]
-      : globeFrames[0],
-  );
-
-  onMount(() => {
-    let active = true;
-    const images = globeFrames.map((src) => {
-      const image = new Image();
-      image.src = src;
-      return image;
-    });
-    Promise.allSettled(images.map((image) => image.decode())).then(() => {
-      if (active) globeFramesReady = true;
-    });
-    return () => (active = false);
-  });
+  const globeFrameCount = 72;
+  let globeFrame = $derived(Math.floor((scrollPosition / 240) * globeFrameCount) % globeFrameCount);
+  let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
 </script>
 
-<a class="home-link" href="./" aria-label="PopCircles home"
-  ><span>P<img class="globe-letter" src={globeFrame} alt="" />pCircles</span><img
-    class="trailing-globe"
-    src={globeFrame}
-    alt=""
-  /></a
->
+<a class="home-link" href="./" aria-label="PopCircles home">
+  <span class="brand-text"
+    >P<span class="o-slot"
+      >o<svg class="globe-letter" viewBox="0 0 512 512" aria-hidden="true"
+        ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
+      ></span
+    >pCircles</span
+  >
+  <svg class="trailing-globe" viewBox="0 0 512 512" aria-hidden="true"
+    ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
+  >
+</a>
 
 <style>
   .home-link {
@@ -54,19 +34,27 @@
     text-decoration: none;
     text-transform: uppercase;
   }
-  .home-link .globe-letter {
-    display: inline;
-    width: 0.8em;
-    height: 0.8em;
-    margin-left: -0.1em;
-    margin-right: 0.1em;
-    vertical-align: baseline -0.05em;
+  .brand-text {
+    white-space: nowrap;
   }
-  .home-link img {
+  .o-slot {
+    position: relative;
+    display: inline-block;
+  }
+  .globe-letter {
+    display: block;
+    width: 1em;
+    height: 1em;
+  }
+  .o-slot .globe-letter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .trailing-globe {
+    display: none;
     width: 24px;
     height: 24px;
-  }
-  .home-link .trailing-globe {
-    display: none;
   }
 </style>
