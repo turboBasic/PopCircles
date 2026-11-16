@@ -1,5 +1,5 @@
 import math
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import cast
 
@@ -28,6 +28,7 @@ _transform = cast(Callable[..., BaseGeometry], transform)
 PLATE_CARREE = "plate-carree"
 ORTHOGRAPHIC = "orthographic"
 PROJECTIONS = (PLATE_CARREE, ORTHOGRAPHIC)
+COUNTRY_PROJECTIONS = (*PROJECTIONS, "albers-equal-area", "transverse-mercator")
 
 # The orthographic clip stops this far short of the limb, as a fraction of the radius reaching it —
 # 1 km on this sphere. Cutting a shape against a polygon synthesises vertices on lines straight in
@@ -55,6 +56,13 @@ class Frame:
     circle: BaseGeometry
     horizon: BaseGeometry
     country_outline: BaseGeometry | None = None
+
+
+@dataclass(frozen=True)
+class CountryFrameSettings:
+    projection: str = ORTHOGRAPHIC
+    projection_parameters: Mapping[str, float] | None = None
+    extent: tuple[float, float, float, float] | None = None
 
 
 def plate_carree(built: Cap) -> Frame:
@@ -93,11 +101,16 @@ def orthographic(built: Cap) -> Frame:
 def country_frame(
     built: Cap,
     country_outline: BaseGeometry,
-    projection: str = ORTHOGRAPHIC,
-    centre: Coordinate | None = None,
+    settings: CountryFrameSettings | None = None,
 ) -> Frame:
-    if projection not in PROJECTIONS:
-        message = f"unsupported projection {projection!r}; choose from {', '.join(PROJECTIONS)}"
+    settings = settings or CountryFrameSettings()
+    projection = settings.projection
+    extent = settings.extent
+    parameters = settings.projection_parameters or {}
+    if projection not in COUNTRY_PROJECTIONS:
+        message = (
+            f"unsupported projection {projection!r}; choose from {', '.join(COUNTRY_PROJECTIONS)}"
+        )
         raise ValueError(message)
     if projection == PLATE_CARREE:
         world = plate_carree(built)
@@ -119,21 +132,25 @@ def country_frame(
             to_frame=world.to_frame,
             visible=world.visible,
             circle=circle,
-            horizon=box(west, south, east, north),
+            horizon=box(*extent) if extent is not None else box(west, south, east, north),
             country_outline=country_outline,
         )
 
     coordinates = get_coordinates(country_outline)
+    centre: Coordinate | None = None
     if centre is None:
-        longitudes = [math.radians(point[0]) for point in coordinates]
-        centre = type(built.centre)(
-            lat=math.fsum(point[1] for point in coordinates) / len(coordinates),
-            lon=math.degrees(
-                math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
-            ),
-        )
+        if "lat_0" in parameters and "lon_0" in parameters:
+            centre = Coordinate(lat=parameters["lat_0"], lon=parameters["lon_0"])
+        else:
+            longitudes = [math.radians(point[0]) for point in coordinates]
+            centre = type(built.centre)(
+                lat=math.fsum(point[1] for point in coordinates) / len(coordinates),
+                lon=math.degrees(
+                    math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
+                ),
+            )
     centre_lon = centre.lon
-    face = projected_crs("ortho", centre, built.earth_radius_km)
+    face = projected_crs(projection, centre, built.earth_radius_km, parameters)
     to_face = Transformer.from_crs(built.geodetic, face, always_xy=True)
 
     def unwrap_lon(lon: float) -> float:
@@ -176,7 +193,7 @@ def country_frame(
         for point in get_coordinates(geometry)
         for value in point
     ):
-        message = "country circle or outline extends beyond the orthographic horizon"
+        message = f"country circle or outline extends beyond the {projection} projection domain"
         raise ValueError(message)
     west = min(outline.bounds[0], circle.bounds[0])
     south = min(outline.bounds[1], circle.bounds[1])
@@ -187,7 +204,7 @@ def country_frame(
         to_frame=to_face,
         visible=WORLD,
         circle=circle,
-        horizon=box(west, south, east, north),
+        horizon=box(*extent) if extent is not None else box(west, south, east, north),
         country_outline=outline,
     )
 

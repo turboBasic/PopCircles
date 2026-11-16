@@ -1,3 +1,4 @@
+import math
 import re
 import tomllib
 from pathlib import Path
@@ -7,12 +8,68 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PRESENTATION_CONFIG = REPO_ROOT / "data" / "presentation.toml"
-Projection = Literal["plate-carree", "orthographic"]
+CountryProjection = Literal[
+    "plate-carree",
+    "orthographic",
+    "albers-equal-area",
+    "transverse-mercator",
+]
+DefaultProjection = Literal["plate-carree", "orthographic"]
+ExtentUnits = Literal["metres", "degrees"]
 CountryId = Annotated[str, Field(pattern=r"^[A-Z]{2,3}$")]
+PROJECTION_PARAMETERS: dict[str, frozenset[str]] = {
+    "plate-carree": frozenset(),
+    "orthographic": frozenset({"lon_0", "lat_0"}),
+    "albers-equal-area": frozenset({"lon_0", "lat_0", "lat_1", "lat_2"}),
+    "transverse-mercator": frozenset({"lon_0", "lat_0", "k_0"}),
+}
+OPTIONAL_PROJECTION_PARAMETERS: frozenset[str] = frozenset({"x_0", "y_0"})
+MIN_LATITUDE = -90
+MAX_LATITUDE = 90
+MIN_LONGITUDE = -180
+MAX_LONGITUDE = 180
+MIN_SCALE_FACTOR = 0.0
 
 
 class _Model(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+
+def _validate_projection_parameters(
+    projection: CountryProjection, parameters: dict[str, float]
+) -> None:
+    required = PROJECTION_PARAMETERS[projection]
+    actual = frozenset(parameters)
+    allowed = required | (
+        OPTIONAL_PROJECTION_PARAMETERS if projection != "plate-carree" else frozenset[str]()
+    )
+    missing = required - actual
+    unknown = actual - allowed
+    if missing or unknown:
+        message = (
+            f"{projection} projection_parameters missing {sorted(missing)} "
+            f"or unsupported {sorted(unknown)}"
+        )
+        raise ValueError(message)
+    if not all(math.isfinite(value) for value in parameters.values()):
+        message = "projection parameters must be finite"
+        raise ValueError(message)
+    for name in ("lat_0", "lat_1", "lat_2"):
+        value = parameters.get(name)
+        if value is not None and not MIN_LATITUDE <= value <= MAX_LATITUDE:
+            message = f"{name} must be between {MIN_LATITUDE} and {MAX_LATITUDE} degrees"
+            raise ValueError(message)
+    lon_0 = parameters.get("lon_0")
+    if lon_0 is not None and not MIN_LONGITUDE <= lon_0 <= MAX_LONGITUDE:
+        message = f"lon_0 must be between {MIN_LONGITUDE} and {MAX_LONGITUDE} degrees"
+        raise ValueError(message)
+    k_0 = parameters.get("k_0")
+    if k_0 is not None and k_0 <= MIN_SCALE_FACTOR:
+        message = "k_0 must be positive"
+        raise ValueError(message)
+    if projection == "albers-equal-area" and parameters["lat_1"] == -parameters["lat_2"]:
+        message = "lat_1 and lat_2 cannot be opposite parallels"
+        raise ValueError(message)
 
 
 class MapText(_Model):
@@ -32,41 +89,46 @@ class Gallery(_Model):
         return value
 
 
-class ComponentBounds(_Model):
-    west: float = Field(ge=-180, le=180)
-    south: float = Field(ge=-90, le=90)
-    east: float = Field(ge=-180, le=180)
-    north: float = Field(ge=-90, le=90)
+class MapExtent(_Model):
+    units: ExtentUnits
+    x_min: float
+    y_min: float
+    x_max: float
+    y_max: float
 
     @model_validator(mode="after")
-    def ordered_bounds(self) -> Self:
-        if self.west >= self.east:
-            message = "west must be less than east"
+    def finite_ordered_bounds(self) -> Self:
+        if not all(
+            math.isfinite(value) for value in (self.x_min, self.y_min, self.x_max, self.y_max)
+        ):
+            message = "extent coordinates must be finite"
             raise ValueError(message)
-        if self.south >= self.north:
-            message = "south must be less than north"
+        if self.x_min >= self.x_max or self.y_min >= self.y_max:
+            message = "extent minimums must be less than maximums"
             raise ValueError(message)
         return self
 
 
 class CountryMap(_Model):
-    projection: Projection
-    centre_lat: float | None = Field(default=None, ge=-90, le=90)
-    centre_lon: float | None = Field(default=None, ge=-180, le=180)
-    component_bounds: ComponentBounds | None = None
+    projection: CountryProjection
+    projection_parameters: dict[str, float] = Field(default_factory=dict)
+    extent: MapExtent | None = None
 
     @model_validator(mode="after")
-    def paired_centre(self) -> Self:
-        if (self.centre_lat is None) != (self.centre_lon is None):
-            message = "centre_lat and centre_lon must be set together"
-            raise ValueError(message)
+    def valid_projection_parameters(self) -> Self:
+        _validate_projection_parameters(self.projection, self.projection_parameters)
+        if self.extent is not None:
+            expected_units = "degrees" if self.projection == "plate-carree" else "metres"
+            if self.extent.units != expected_units:
+                message = f"{self.projection} extents must use {expected_units}"
+                raise ValueError(message)
         return self
 
 
 class PresentationConfig(_Model):
     map_text: MapText
     gallery: Gallery
-    country_maps: dict[str, CountryMap | Projection]
+    country_maps: dict[str, CountryMap | DefaultProjection]
 
     @model_validator(mode="after")
     def valid_country_map_keys(self) -> Self:
@@ -83,9 +145,9 @@ class PresentationConfig(_Model):
         return self
 
     @property
-    def default_projection(self) -> Projection:
+    def default_projection(self) -> DefaultProjection:
         value = self.country_maps["default_projection"]
-        if not isinstance(value, str):
+        if not isinstance(value, str) or value not in ("orthographic", "plate-carree"):
             message = "country_maps.default_projection must be a projection"
             raise TypeError(message)
         return value

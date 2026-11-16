@@ -18,6 +18,7 @@ from population_circles.map_frame import (
     LIMB_SHAVE,
     ORTHOGRAPHIC,
     PLATE_CARREE,
+    CountryFrameSettings,
     Frame,
     country_frame,
     frame,
@@ -169,7 +170,14 @@ def test_country_frame_uses_an_explicit_orthographic_centre() -> None:
     built = cap(Coordinate(lat=40.0, lon=-100.0), 500.0, EARTH_RADIUS_KM)
     outline = box(-125, 25, -66, 49)
 
-    view = country_frame(built, outline, ORTHOGRAPHIC, centre)
+    view = country_frame(
+        built,
+        outline,
+        CountryFrameSettings(
+            projection=ORTHOGRAPHIC,
+            projection_parameters={"lat_0": centre.lat, "lon_0": centre.lon},
+        ),
+    )
 
     assert view.to_frame.transform(centre.lon, centre.lat) == pytest.approx((0.0, 0.0), abs=1e-6)
     assert view.country_outline is not None
@@ -181,7 +189,7 @@ def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
     built = cap(Coordinate(lat=-40.0, lon=-72.0), 200.0, EARTH_RADIUS_KM)
     outline = box(-75, -45, -70, -35)
 
-    view = country_frame(built, outline, PLATE_CARREE)
+    view = country_frame(built, outline, CountryFrameSettings(projection=PLATE_CARREE))
 
     assert view.country_outline is outline
     assert view.to_frame.transform(-72.0, -40.0) == (-72.0, -40.0)
@@ -190,8 +198,44 @@ def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
     assert view.horizon.bounds == pytest.approx(outline.union(view.circle).bounds)
 
 
+@pytest.mark.parametrize(
+    ("projection", "centre", "parameters"),
+    [
+        (
+            "albers-equal-area",
+            Coordinate(lat=45.0, lon=-125.0),
+            {"lon_0": -125.0, "lat_0": 45.0, "lat_1": 35.0, "lat_2": 60.0},
+        ),
+        (
+            "transverse-mercator",
+            Coordinate(lat=-38.0, lon=-71.0),
+            {"lon_0": -71.0, "lat_0": -38.0, "k_0": 1.0},
+        ),
+    ],
+)
+def test_country_frame_applies_projection_parameters_and_exact_extent(
+    projection: str, centre: Coordinate, parameters: dict[str, float]
+) -> None:
+    built = cap(centre, 100.0, EARTH_RADIUS_KM)
+    outline = box(centre.lon - 1, centre.lat - 1, centre.lon + 1, centre.lat + 1)
+    extent = (-1_000_000.0, -1_000_000.0, 1_000_000.0, 1_000_000.0)
+
+    view = country_frame(
+        built,
+        outline,
+        CountryFrameSettings(
+            projection=projection,
+            projection_parameters=parameters,
+            extent=extent,
+        ),
+    )
+
+    assert view.to_frame.transform(centre.lon, centre.lat) == pytest.approx((0.0, 0.0), abs=1e-6)
+    assert view.horizon.bounds == extent
+
+
 def test_country_frame_refuses_a_large_circle_beyond_the_horizon() -> None:
     built = cap(Coordinate(lat=51.0, lon=10.0), 15_000.0, EARTH_RADIUS_KM)
 
-    with pytest.raises(ValueError, match="extends beyond the orthographic horizon"):
+    with pytest.raises(ValueError, match="extends beyond the orthographic projection domain"):
         country_frame(built, box(9, 50, 11, 52))

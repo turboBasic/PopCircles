@@ -21,12 +21,12 @@ from matplotlib.path import Path as DrawPath
 from PIL import ExifTags, Image
 from PIL.TiffImagePlugin import IFDRational
 from shapely import get_coordinates
-from shapely.geometry import MultiPolygon, box, shape
+from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
 
-from population_circles.circle_document import Answer, Coordinate, circle_of
+from population_circles.circle_document import Answer, circle_of
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
@@ -39,6 +39,7 @@ from population_circles.dataset_registry import (
 from population_circles.map_frame import (
     PLATE_CARREE,
     PROJECTIONS,
+    CountryFrameSettings,
     Frame,
     country_frame,
     frame,
@@ -46,7 +47,6 @@ from population_circles.map_frame import (
     project,
 )
 from population_circles.presentation_config import (
-    ComponentBounds,
     CountryMap,
     map_text_rendering,
 )
@@ -545,13 +545,11 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
     if answer.country is not None:
-        projection, country_outline, centre = country_map_display(
-            answer.country.id, country_outline
-        )
+        country_outline, frame_settings = country_map_display(answer.country.id, country_outline)
     else:
-        centre = None
+        frame_settings = None
     view = (
-        country_frame(built, country_outline, projection, centre)
+        country_frame(built, country_outline, frame_settings)
         if country_outline is not None
         else frame(projection, built)
     )
@@ -617,37 +615,26 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
 
 def country_map_display(
     country_id: str, outline: BaseGeometry | None
-) -> tuple[str, BaseGeometry, Coordinate | None]:
+) -> tuple[BaseGeometry, CountryFrameSettings]:
     if outline is None:
         raise MissingCountryOutlineError
     config = load_presentation_config()
     settings = config.country_maps.get(country_id)
     if not isinstance(settings, CountryMap):
-        return config.default_projection, outline, None
-    centre = None
-    if settings.centre_lat is not None and settings.centre_lon is not None:
-        centre = Coordinate(lat=settings.centre_lat, lon=settings.centre_lon)
-    if settings.component_bounds is not None:
-        outline = select_outline_components(outline, settings.component_bounds)
-    return settings.projection, outline, centre
-
-
-def select_outline_components(outline: BaseGeometry, bounds: ComponentBounds) -> BaseGeometry:
-    selection = box(bounds.west, bounds.south, bounds.east, bounds.north)
-    if isinstance(outline, MultiPolygon):
-        components = outline.geoms
-    elif isinstance(outline, Polygon):
-        components = (outline,)
-    else:
-        message = "component_bounds require a polygon country outline"
-        raise TypeError(message)
-    retained = [
-        component for component in components if box(*component.bounds).intersects(selection)
-    ]
-    if not retained:
-        message = "component_bounds select no country outline components"
-        raise ValueError(message)
-    return MultiPolygon(retained) if isinstance(outline, MultiPolygon) else retained[0]
+        return outline, CountryFrameSettings(projection=config.default_projection)
+    extent = None
+    if settings.extent is not None:
+        extent = (
+            settings.extent.x_min,
+            settings.extent.y_min,
+            settings.extent.x_max,
+            settings.extent.y_max,
+        )
+    return outline, CountryFrameSettings(
+        projection=settings.projection,
+        projection_parameters=settings.projection_parameters,
+        extent=extent,
+    )
 
 
 def parse(argv: list[str] | None = None) -> argparse.Namespace:

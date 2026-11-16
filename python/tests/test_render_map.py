@@ -18,13 +18,14 @@ from shapely.geometry.base import BaseGeometry
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
-from population_circles.circle_document import Answer, Circle, Coordinate, circle_of
+from population_circles.circle_document import Answer, Circle, circle_of
 from population_circles.circle_geometry import Cap, cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import Registry, load, parse
 from population_circles.map_frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
+    CountryFrameSettings,
     Frame,
 )
 from population_circles.map_frame import (
@@ -59,7 +60,7 @@ CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
 WORLD_POPULATION = 1_254_363_867.93
 TERRITORY_SHARE = 0.375
-EXPECTED_EXCLUDED_CHILE_COMPONENTS = 10
+EXPECTED_OFFSCREEN_CHILE_COMPONENTS = 10
 CountryPresentationCase = tuple[
     str,
     tuple[float, float],
@@ -353,24 +354,37 @@ def test_country_render_uses_presentation_settings_by_canonical_id(
     payload["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
     answer = circle_of(payload)
     current_country_frame = build_country_frame
-    observed: list[tuple[str, BaseGeometry, tuple[float, float] | None]] = []
+    observed: list[tuple[CountryFrameSettings, BaseGeometry]] = []
 
     def capture_country_frame(
         built: Cap,
         selected: BaseGeometry,
-        projection: str = ORTHOGRAPHIC,
-        frame_centre: Coordinate | None = None,
+        settings: CountryFrameSettings | None = None,
     ) -> Frame:
-        selected_centre = (frame_centre.lat, frame_centre.lon) if frame_centre is not None else None
-        observed.append((projection, selected, selected_centre))
-        return current_country_frame(built, selected, projection, frame_centre)
+        frame_settings = settings or CountryFrameSettings()
+        observed.append((frame_settings, selected))
+        return current_country_frame(built, selected, frame_settings)
 
     monkeypatch.setattr(render_map_module, "country_frame", capture_country_frame)
     figure = render(answer, PLATE_CARREE, coastline=None, country_outline=outline)
     try:
-        assert observed[0][0] == expected_projection
-        assert observed[0][2] == expected_centre
-        assert observed[0][1].equals(outline)
+        frame_settings, selected_outline = observed[0]
+        assert frame_settings.projection == expected_projection
+        observed_centre = frame_settings.projection_parameters
+        assert (
+            (observed_centre.get("lat_0"), observed_centre.get("lon_0"))
+            if observed_centre is not None and "lat_0" in observed_centre
+            else None
+        ) == expected_centre
+        assert selected_outline.equals(outline)
+        if country_id == "US":
+            assert frame_settings.projection_parameters == {"lon_0": -96.0, "lat_0": 44.0}
+            assert frame_settings.extent == (
+                -5397723.3,
+                -2111802.2,
+                2419813.8,
+                3835144.3,
+            )
     finally:
         plt.close(figure)
 
@@ -401,7 +415,7 @@ def test_country_render_rejects_an_invalid_presentation_config(
         )
 
 
-def test_country_render_selects_complete_chile_components() -> None:
+def test_chile_extent_hides_remote_components_without_filtering_outline() -> None:
     result = (
         Path(__file__).resolve().parents[2]
         / "results"
@@ -416,14 +430,23 @@ def test_country_render_selects_complete_chile_components() -> None:
     original_circle = answer.circle.model_dump_json()
     settings = load_presentation_config().country_maps["CL"]
     assert isinstance(settings, CountryMap)
-    assert settings.component_bounds is not None
-
-    selected = render_map_module.select_outline_components(outline, settings.component_bounds)
-
     assert isinstance(outline, MultiPolygon)
-    assert isinstance(selected, MultiPolygon)
-    assert len(outline.geoms) - len(selected.geoms) == EXPECTED_EXCLUDED_CHILE_COMPONENTS
-    assert selected.bounds == pytest.approx((-75.72, -56.53, -66.42, -17.50), abs=0.01)
+    assert settings.extent is not None
+    assert settings.extent.units == "degrees"
+    rendered_outline, frame_settings = render_map_module.country_map_display("CL", outline)
+    assert rendered_outline is outline
+    assert frame_settings.extent is not None
+    assert sum(component.bounds[2] < frame_settings.extent[0] for component in outline.geoms) == (
+        EXPECTED_OFFSCREEN_CHILE_COMPONENTS
+    )
+    view = build_country_frame(
+        cap(answer.circle.centre, answer.circle.radius_km, answer.circle.earth_radius_km),
+        rendered_outline,
+        frame_settings,
+    )
+    assert view.horizon.bounds == pytest.approx(
+        (-75.724713888, -56.528847748, -66.418757789, -17.498400217)
+    )
     assert outline.wkb == original
 
     figure = render(answer, ORTHOGRAPHIC, coastline=None, country_outline=outline)

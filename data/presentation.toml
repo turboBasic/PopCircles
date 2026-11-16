@@ -83,14 +83,26 @@ default_projection = "orthographic"
 
 [country_maps.US]
 projection = "orthographic"
-centre_lat = 44.0
-centre_lon = -96.0
+
+# Parameters are named for the selected projection. The rectangle uses its output x/y units.
+[country_maps.US.projection_parameters]
+lon_0 = -96.0
+lat_0 = 44.0
+
+# Orthographic coordinates in metres; these reproduce the current USA image rectangle.
+[country_maps.US.extent]
+units = "metres"
+x_min = -5397723.3
+y_min = -2111802.2
+x_max = 2419813.8
+y_max = 3835144.3
 
 [country_maps.CL]
 projection = "plate-carree"
 
-[country_maps.CL.component_bounds]
-west = -76.0
-south = -56.53
-east = -66.42
-north = -17.50
+[country_maps.CL.extent]
+units = "degrees"
+x_min = -75.724713888
+y_min = -56.528847748
+x_max = -66.418757789
+y_max = -17.498400217

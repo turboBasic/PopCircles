@@ -80,6 +80,7 @@ Valeriepieris
 
 # --- Geospatial tooling and standards ---
 AEQD
+Albers
 Carree
 ENGL
 EPSG
