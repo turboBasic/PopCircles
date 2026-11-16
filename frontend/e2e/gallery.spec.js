@@ -557,7 +557,15 @@ test('short narrow viewports keep navigation controls visible and scroll regions
     expect(documentMetrics.bodyTop).toBe(0);
 
     await page.setViewportSize({ width: 1024, height: viewport.height });
-    await expect.poll(() => dialog.evaluate((element) => element.matches(':modal'))).toBe(false);
+    await expect
+      .poll(() =>
+        dialog.evaluate((element) => ({
+          open: element.open,
+          modal: element.matches(':modal'),
+        })),
+      )
+      .toEqual({ open: true, modal: false });
+    await expect(dialog.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
     const navigationBounds = await dialog.boundingBox();
     await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
     await results.evaluate((element) => (element.scrollTop = element.scrollHeight));
