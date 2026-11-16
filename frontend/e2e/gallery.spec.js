@@ -160,7 +160,8 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
         letter.getBoundingClientRect(),
       );
       const slot = brandText.querySelector('.globe-slot').getBoundingClientRect();
-      const globe = brandText.querySelector('.globe-letter').getBoundingClientRect();
+      const globeElement = brandText.querySelector('.globe-letter');
+      const globe = globeElement.getBoundingClientRect();
       const fontSize = Number.parseFloat(getComputedStyle(brandText).fontSize);
       const slotGap = Number.parseFloat(getComputedStyle(brandText).columnGap);
       return {
@@ -169,7 +170,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
         globeCenter: globe.left + globe.width / 2,
         globeMiddle: globe.top + globe.height / 2,
         globeScale: globe.width / slot.width,
-        inlineScale: globe.style.scale,
+        inlineScale: globeElement.style.scale,
         slotWidths: slots.map(({ width }) => width),
         slotGaps: slots.slice(1).map((letter, index) => letter.left - slots[index].right),
         expectedSlotGaps: slots
