@@ -40,8 +40,35 @@ export const MAP_ASPECT_RATIO = 11 / 6;
 
 /** @param {GalleryEntry[]} countries @param {string} query */
 export function filterCountries(countries, query) {
-  const search = query.trim().toLowerCase();
-  return countries.filter((country) => country.name.toLowerCase().includes(search));
+  const search = normalizeCountryName(query.trim());
+  return countries.filter((country) => normalizeCountryName(country.name).includes(search));
+}
+
+/** @param {string} name */
+function normalizeCountryName(name) {
+  return name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+}
+
+/** @param {GalleryEntry[]} countries */
+export function sortCountries(countries) {
+  return [...countries].sort((left, right) =>
+    left.name.localeCompare(right.name, 'en', { sensitivity: 'base' }),
+  );
+}
+
+/** @param {GalleryEntry[]} countries */
+export function groupCountries(countries) {
+  return Object.groupBy(sortCountries(countries), (country) =>
+    normalizeCountryName(country.name).charAt(0).toUpperCase(),
+  );
+}
+
+/** @param {GalleryEntry[]} countries @param {string} query */
+export function countCountryMatches(countries, query) {
+  return filterCountries(countries, query).length;
 }
 
 /** @param {GalleryEntry[]} entries @param {string} hash */

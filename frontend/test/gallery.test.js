@@ -4,6 +4,9 @@ import {
   entryFromHash,
   countryUrl,
   filterCountries,
+  sortCountries,
+  groupCountries,
+  countCountryMatches,
   territoryCaption,
   visibleEntries,
 } from '../src/gallery.js';
@@ -23,6 +26,23 @@ test('filters countries by trimmed, case-insensitive names, including missing en
   assert.deepEqual(filterCountries(countries, '  ALP '), [countries[0]]);
   assert.deepEqual(filterCountries(countries, ''), countries);
   assert.deepEqual(filterCountries(countries, 'population'), [countries[2]]);
+});
+
+test('sorts and groups countries alphabetically and counts normalized substring matches', () => {
+  const unsorted = [
+    { name: '\u00c9ire', anchor: 'ie' },
+    { name: 'belgium', anchor: 'be' },
+    { name: '\u00c5land', anchor: 'ax' },
+    { name: 'Canada', anchor: 'ca' },
+  ];
+  assert.deepEqual(sortCountries(unsorted), [unsorted[2], unsorted[1], unsorted[3], unsorted[0]]);
+  assert.deepEqual(Object.keys(groupCountries(unsorted)), ['A', 'B', 'C', 'E']);
+  assert.deepEqual(groupCountries(unsorted).A, [unsorted[2]]);
+  assert.deepEqual(filterCountries(unsorted, '  IRE '), [unsorted[0]]);
+  assert.deepEqual(filterCountries(unsorted, 'land'), [unsorted[2]]);
+  assert.equal(countCountryMatches(unsorted, 'a'), 2);
+  assert.equal(countCountryMatches(unsorted, ''), unsorted.length);
+  assert.equal(countCountryMatches(unsorted, 'zz'), 0);
 });
 
 test('resolves World and country entries from URL fragments, with the base URL unselected', () => {
