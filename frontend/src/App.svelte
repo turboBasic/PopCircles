@@ -38,12 +38,16 @@
   let scrollPosition = $state(0);
   let headerCollapseProgress = $state(0);
   let headerSpace = $state(0);
+  let navigationHeaderSpace = $state(0);
   let footerSpace = $state(0);
 
   function measureChrome() {
     const header = document.querySelector('.app-header');
     const footer = document.querySelector('.site-footer');
-    if (header && scrollPosition === 0) headerSpace = header.getBoundingClientRect().height;
+    if (header) {
+      navigationHeaderSpace = header.getBoundingClientRect().height;
+      if (scrollPosition === 0) headerSpace = navigationHeaderSpace;
+    }
     if (footer) footerSpace = footer.getBoundingClientRect().height;
   }
 
@@ -179,7 +183,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<div class="app-shell" style={`--header-space: ${headerSpace}px; --footer-space: ${footerSpace}px`}>
+<div
+  class="app-shell"
+  style={`--header-space: ${headerSpace}px; --navigation-header-space: ${navigationHeaderSpace}px; --footer-space: ${footerSpace}px`}
+>
   <AppHeader
     {scrollPosition}
     {headerCollapseProgress}
