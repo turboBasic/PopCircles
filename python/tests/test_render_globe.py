@@ -94,7 +94,9 @@ def test_render_svg_sprite_preserves_frames_and_shared_attribution(tmp_path: Pat
     assert len(root.findall(f"{{{SVG}}}metadata")) == 1
     assert root.findtext(f"{{{SVG}}}metadata") == "Globe attribution"
     assert [len(symbol.findall(f"{{{SVG}}}circle")) for symbol in symbols] == [1, 1]
-    assert [symbol.find(f"{{{SVG}}}g").attrib["fill-rule"] for symbol in symbols] == [
+    groups = [symbol.find(f"{{{SVG}}}g") for symbol in symbols]
+    assert all(group is not None for group in groups)
+    assert [group.attrib["fill-rule"] for group in groups if group is not None] == [
         "evenodd",
         "evenodd",
     ]
@@ -139,7 +141,7 @@ def test_render_gif_preserves_source_frame_order(
         calls.append(svg_path or svg_string or "")
         return png_bytes
 
-    monkeypatch.setattr(render_globe.resvg_py, "svg_to_bytes", svg_to_bytes)
+    monkeypatch.setattr("resvg_py.svg_to_bytes", svg_to_bytes)
     if source_kind == "sequence":
         first = tmp_path / "globe-01.svg"
         second = tmp_path / "globe-02.svg"

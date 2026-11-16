@@ -3,6 +3,7 @@ import math
 import re
 import tempfile
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -160,7 +161,7 @@ def render_gif(
             message = "SVG output must be numbered, for example earth-globe-24.svg"
             raise ValueError(message)
         prefix = match.group(1)
-        sources: list[Path | ET.Element] = sorted(
+        frames = sorted(
             (
                 path
                 for path in sequence_svg.parent.glob(f"{prefix}-*.svg")
@@ -168,15 +169,17 @@ def render_gif(
             ),
             key=lambda path: int(path.stem.removeprefix(f"{prefix}-")),
         )
-        if len(sources) < MIN_GIF_FRAMES:
+        if len(frames) < MIN_GIF_FRAMES:
             message = f"Need at least two numbered SVG frames matching {prefix}-<step>.svg"
             raise ValueError(message)
+        sources: Sequence[Path | ET.Element] = frames
     elif svg_sprite is not None and sequence_svg is None:
         sprite = parse_svg(svg_sprite)
-        sources = sprite.findall(f"{{{SVG_NAMESPACE}}}symbol")
-        if len(sources) < MIN_GIF_FRAMES:
+        symbols = sprite.findall(f"{{{SVG_NAMESPACE}}}symbol")
+        if len(symbols) < MIN_GIF_FRAMES:
             message = "Need at least two SVG symbols in the sprite"
             raise ValueError(message)
+        sources = symbols
     else:
         message = "Provide exactly one of sequence_svg or svg_sprite"
         raise ValueError(message)
