@@ -35,7 +35,6 @@ from population_circles.dataset_registry import (
     Registry,
     coastline_dataset_key,
     load,
-    map_text_rendering,
 )
 from population_circles.map_frame import (
     PLATE_CARREE,
@@ -46,6 +45,7 @@ from population_circles.map_frame import (
     graticule,
     project,
 )
+from population_circles.presentation_config import map_text_rendering
 from population_circles.territory_coverage import enrich_document
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking

@@ -1,22 +1,25 @@
-import tomllib
+import hashlib
 
 import pytest
 
 from population_circles.presentation_config import (
     PRESENTATION_CONFIG,
-    REPO_ROOT,
     load,
     parse,
 )
 
+EXPECTED_EXCLUDED_COUNTRY_COUNT = 48
+
 
 def test_committed_presentation_config_preserves_existing_settings() -> None:
     config = load()
-    old_exclusions = tomllib.loads(
-        (REPO_ROOT / "data" / "gallery.toml").read_text(encoding="utf-8")
-    )["excluded_country_ids"]
+    exclusions = config.gallery.excluded_country_ids
 
-    assert config.gallery.excluded_country_ids == old_exclusions
+    # Pin the complete migrated set without copying its IDs into a second configuration.
+    assert len(exclusions) == EXPECTED_EXCLUDED_COUNTRY_COUNT
+    assert hashlib.sha256("\n".join(sorted(exclusions)).encode()).hexdigest() == (
+        "d11c07ce3d8d606d4c9d7ea07aab8cb472f249c09c2489f8244c852248b8de56"
+    )
     assert config.map_text.render_title is True
     assert config.map_text.render_description is True
     assert config.default_projection == "orthographic"

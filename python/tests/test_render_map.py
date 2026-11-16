@@ -15,7 +15,6 @@ from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.dataset_registry as dataset_registry_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import Answer, Circle, circle_of
@@ -76,40 +75,6 @@ def empty_boundaries(
 def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
     with Image.open(path) as image:
         return image.info
-
-
-@pytest.mark.parametrize(
-    ("settings", "expected"),
-    [
-        ("", (False, False)),
-        (
-            "[map_text]\nrender_title = true\nrender_description = false\n",
-            (True, False),
-        ),
-    ],
-)
-def test_map_text_rendering_defaults_to_false_and_accepts_booleans(
-    settings: str,
-    expected: tuple[bool, bool],
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    (tmp_path / "data").mkdir()
-    (tmp_path / "data" / "config.toml").write_text(settings, encoding="utf-8")
-    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    assert dataset_registry_module.map_text_rendering() == expected
-
-
-def test_map_text_rendering_rejects_non_boolean_values(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    (tmp_path / "data").mkdir()
-    (tmp_path / "data" / "config.toml").write_text(
-        '[map_text]\nrender_title = "yes"\n', encoding="utf-8"
-    )
-    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    with pytest.raises(TypeError, match=r"config.toml: map_text\.render_title"):
-        dataset_registry_module.map_text_rendering()
 
 
 @pytest.fixture(autouse=True)

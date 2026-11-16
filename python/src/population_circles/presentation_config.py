@@ -108,3 +108,8 @@ def parse(text: str, *, source: Path = PRESENTATION_CONFIG) -> PresentationConfi
 
 def load() -> PresentationConfig:
     return parse(PRESENTATION_CONFIG.read_text(encoding="utf-8"))
+
+
+def map_text_rendering() -> tuple[bool, bool]:
+    settings = load().map_text
+    return settings.render_title, settings.render_description
