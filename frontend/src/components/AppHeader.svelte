@@ -2,18 +2,16 @@
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
+  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleDrawer: () => void}} */
   let {
     scrollPosition,
     headerCollapseProgress,
     data,
     themeLight,
-    browserOpen,
-    desktopNavigationOpen,
+    drawerOpen,
     browserTrigger = $bindable(),
     onTheme,
-    onToggleBrowser,
-    onToggleDesktopNavigation,
+    onToggleDrawer,
   } = $props();
 </script>
 
@@ -26,17 +24,18 @@
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
   <div class="top-bar">
+    <button
+      bind:this={browserTrigger}
+      class="drawer-toggle"
+      type="button"
+      aria-controls="country-browser-panel"
+      aria-expanded={drawerOpen}
+      aria-label="Open maps navigation"
+      onclick={onToggleDrawer}>☰</button
+    >
     <PopCirclesLogo {scrollPosition} />
     {#if data}
       <div class="map-actions" role="group" aria-label="Gallery controls">
-        <button
-          class="desktop-browser-toggle"
-          type="button"
-          aria-controls="country-browser-desktop"
-          aria-expanded={desktopNavigationOpen}
-          onclick={onToggleDesktopNavigation}
-          >{desktopNavigationOpen ? 'Hide maps' : 'Show maps'}</button
-        >
         <a
           class="icon-control"
           href="https://github.com/turboBasic/PopCircles"
@@ -75,15 +74,6 @@
             >
           {/if}
         </button>
-        <button
-          bind:this={browserTrigger}
-          class="mobile-browser-toggle"
-          type="button"
-          aria-controls="country-browser-panel"
-          aria-expanded={browserOpen}
-          aria-label={browserOpen ? 'Close map navigation' : 'Open map navigation'}
-          onclick={onToggleBrowser}>Maps</button
-        >
       </div>
     {/if}
   </div>
@@ -189,11 +179,15 @@
     width: 1.25rem;
     height: 1.25rem;
   }
-  .mobile-browser-toggle {
-    display: none;
-  }
-  .desktop-browser-toggle {
+  .drawer-toggle {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     white-space: nowrap;
+  }
+  @media (min-width: 1024px) {
+    .drawer-toggle {
+      display: none;
+    }
   }
   button {
     padding: 0.55rem 0.85rem;
@@ -211,13 +205,5 @@
   :global(button:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-  }
-  @media (max-width: 800px) {
-    .mobile-browser-toggle {
-      display: block;
-    }
-    .desktop-browser-toggle {
-      display: none;
-    }
   }
 </style>

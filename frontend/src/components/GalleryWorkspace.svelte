@@ -22,7 +22,9 @@
     <div id="map-results-list">
       {#each visibleMapEntries as entry (entry.anchor)}
         <section class="country" id={entry.anchor}>
-          <h2><a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a></h2>
+          <h2 id={`map-heading-${entry.anchor}`} tabindex="-1">
+            <a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a>
+          </h2>
           {#if entry.missing}
             <p class="empty">No 50% result is available for this country.</p>
           {:else}
@@ -49,6 +51,7 @@
 
 <style>
   .results {
+    grid-column: 2;
     height: 100%;
     min-width: 0;
     min-height: 0;
@@ -78,5 +81,13 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     gap: 1rem;
+  }
+  #world-result .figure-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (max-width: 1023px) {
+    .results {
+      grid-column: 1;
+    }
   }
 </style>
