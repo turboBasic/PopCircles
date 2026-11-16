@@ -9,13 +9,22 @@
 </script>
 
 <a class="home-link" href="./" aria-label="PopCircles home">
-  <span class="brand-text"
-    >P<span class="o-slot"
+  <span class="brand-text" aria-hidden="true">
+    <span class="letter-slot">P</span>
+    <span class="letter-slot globe-slot"
       >o<svg class="globe-letter" viewBox="0 0 512 512" aria-hidden="true"
         ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
       ></span
-    >pCircles</span
-  >
+    >
+    <span class="letter-slot">p</span>
+    <span class="letter-slot">C</span>
+    <span class="letter-slot">i</span>
+    <span class="letter-slot">r</span>
+    <span class="letter-slot">c</span>
+    <span class="letter-slot">l</span>
+    <span class="letter-slot">e</span>
+    <span class="letter-slot">s</span>
+  </span>
   <svg class="trailing-globe" viewBox="0 0 512 512" aria-hidden="true"
     ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
   >
@@ -35,18 +44,26 @@
     text-transform: uppercase;
   }
   .brand-text {
+    display: flex;
+    gap: 0.12em;
     white-space: nowrap;
   }
-  .o-slot {
+  .letter-slot {
+    flex: 0 0 0.72em;
+    width: 0.72em;
+    text-align: center;
+  }
+  .globe-slot {
     position: relative;
-    display: inline-block;
+    margin-left: -0.08em;
+    margin-right: 0.1em;
   }
   .globe-letter {
     display: block;
-    width: 1em;
-    height: 1em;
+    width: 100%;
+    height: 0.72em;
   }
-  .o-slot .globe-letter {
+  .globe-slot .globe-letter {
     position: absolute;
     top: 50%;
     left: 50%;

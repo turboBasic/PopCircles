@@ -112,7 +112,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
       'image/svg+xml',
     );
     return {
-      text: brandText?.textContent,
+      text: brandText?.textContent.replace(/\s/g, ''),
       label: link.getAttribute('aria-label'),
       symbolIds: [...document.querySelectorAll('symbol')].map((symbol) => symbol.id),
       references: urls.map((url) => ({
@@ -154,29 +154,35 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
     await page.setViewportSize(viewport);
     const alignment = await logo.evaluate((link) => {
       const brandText = link.querySelector('.brand-text');
-      const slot = brandText.querySelector('.o-slot').getBoundingClientRect();
+      const slots = [...brandText.querySelectorAll('.letter-slot')].map((letter) =>
+        letter.getBoundingClientRect(),
+      );
+      const slot = brandText.querySelector('.globe-slot').getBoundingClientRect();
       const globe = brandText.querySelector('.globe-letter').getBoundingClientRect();
-      const prefix = document.createRange();
-      prefix.setStart(brandText.firstChild, 0);
-      prefix.setEnd(brandText.firstChild, 1);
-      const suffix = document.createRange();
-      suffix.setStart(brandText.lastChild, 0);
-      suffix.setEnd(brandText.lastChild, 1);
+      const fontSize = Number.parseFloat(getComputedStyle(brandText).fontSize);
+      const slotGap = Number.parseFloat(getComputedStyle(brandText).columnGap);
       return {
         slotCenter: slot.left + slot.width / 2,
         globeCenter: globe.left + globe.width / 2,
         globeSize: globe.width,
         slotSize: slot.width,
-        prefixRight: prefix.getBoundingClientRect().right,
-        suffixLeft: suffix.getBoundingClientRect().left,
-        slotLeft: slot.left,
-        slotRight: slot.right,
+        slotWidths: slots.map(({ width }) => width),
+        slotGaps: slots.slice(1).map((letter, index) => letter.left - slots[index].right),
+        expectedSlotGaps: slots
+          .slice(1)
+          .map((_, index) => slotGap + fontSize * (index === 0 ? -0.08 : index === 1 ? 0.1 : 0)),
       };
     });
     expect(Math.abs(alignment.slotCenter - alignment.globeCenter)).toBeLessThan(1);
-    expect(alignment.globeSize).toBeGreaterThanOrEqual(alignment.slotSize);
-    expect(alignment.prefixRight).toBeLessThanOrEqual(alignment.slotLeft);
-    expect(alignment.slotRight).toBeLessThanOrEqual(alignment.suffixLeft);
+    expect(alignment.globeSize).toBeCloseTo(alignment.slotSize, 1);
+    expect(
+      alignment.slotWidths.every((width) => Math.abs(width - alignment.slotWidths[0]) < 1),
+    ).toBe(true);
+    expect(
+      alignment.slotGaps.every(
+        (gap, index) => Math.abs(gap - alignment.expectedSlotGaps[index]) < 1,
+      ),
+    ).toBe(true);
   }
 });
 
