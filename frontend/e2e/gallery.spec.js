@@ -50,16 +50,16 @@ test('searches country navigation and selects a country', async ({ page }) => {
     'href',
     '#world-result',
   );
-  await expect(navigation.getByText('80 countries')).toBeVisible();
-  await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
+  await expect(navigation.getByText('Matching: 80')).toBeVisible();
+  await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await expect(navigation.getByRole('link')).toHaveCount(3);
-  await expect(navigation.getByText('1 country')).toBeVisible();
+  await expect(navigation.getByText('Matching: 1')).toBeVisible();
   await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
-  await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('no result');
+  await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('no result');
   await expect(navigation.getByText('No matching countries.')).toBeVisible();
   await navigation.getByRole('button', { name: 'Clear search' }).click();
-  await expect(navigation.getByRole('searchbox', { name: 'Search maps' })).toHaveValue('');
-  await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
+  await expect(navigation.getByRole('searchbox', { name: 'Search countries' })).toHaveValue('');
+  await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await page
     .getByRole('navigation', { name: 'Map navigation' })
     .getByRole('link', { name: 'Country 42' })
@@ -113,8 +113,8 @@ test('desktop navigation collapses to a rail without overlapping results', async
     expect(rail.width).toBeLessThanOrEqual(64);
     expect(workspaceExpanded.width).toBeGreaterThan(workspaceBefore.width);
     expect(workspaceExpanded.x).toBeGreaterThan(rail.x + rail.width);
-    await page.getByRole('button', { name: 'Search maps' }).click();
-    await expect(drawer.getByRole('searchbox', { name: 'Search maps' })).toBeFocused();
+    await page.getByRole('button', { name: 'Search countries' }).click();
+    await expect(drawer.getByRole('searchbox', { name: 'Search countries' })).toBeFocused();
     const workspaceAfterExpand = await page
       .getByRole('region', { name: 'Map results' })
       .boundingBox();
@@ -125,7 +125,7 @@ test('desktop navigation collapses to a rail without overlapping results', async
     await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
     await page.getByRole('button', { name: 'Expand maps navigation' }).click();
     expect(await list.evaluate((element) => element.scrollTop)).toBe(listScrollTop);
-    await page.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
+    await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
     await drawer
       .getByRole('navigation', { name: 'Map navigation' })
       .getByRole('link', { name: 'Country 42', exact: true })
@@ -137,7 +137,9 @@ test('desktop navigation collapses to a rail without overlapping results', async
         .getByRole('navigation', { name: 'Map navigation' })
         .getByRole('link', { name: 'Country 42', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('searchbox', { name: 'Search maps' })).toHaveValue('country 42');
+    await expect(page.getByRole('searchbox', { name: 'Search countries' })).toHaveValue(
+      'country 42',
+    );
     if (width === 1024) await page.goto('/');
   }
 });
@@ -153,8 +155,8 @@ test('navigation-only transitions do not request map assets', async ({ page }) =
   const initialRequests = await mapRequests();
 
   await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
-  await page.getByRole('button', { name: 'Search maps' }).click();
-  await page.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
+  await page.getByRole('button', { name: 'Search countries' }).click();
+  await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
   await page.getByRole('button', { name: 'Expand maps navigation' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -288,7 +290,7 @@ test('drawer presentation fits each viewport, theme, and motion preference', asy
       expect(backdrop).not.toBe('rgba(0, 0, 0, 0)');
       await page.keyboard.press('Shift+Tab');
       await expect(drawer.locator(':focus-visible')).toHaveCSS('outline-style', 'solid');
-      await drawer.getByRole('searchbox', { name: 'Search maps' }).focus();
+      await drawer.getByRole('searchbox', { name: 'Search countries' }).focus();
     }
 
     const scroll = await drawer.locator('.map-links').evaluate((links) => {
@@ -458,7 +460,7 @@ test('mobile selection and viewport changes preserve query and independent state
   ).toBeVisible();
   const trigger = page.getByRole('button', { name: 'Open maps navigation' });
   const dialog = page.getByRole('dialog', { name: 'Browse maps' });
-  const search = dialog.getByRole('searchbox', { name: 'Search maps' });
+  const search = dialog.getByRole('searchbox', { name: 'Search countries' });
 
   await trigger.click();
   await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeFocused();
@@ -535,7 +537,7 @@ test('short narrow viewports keep navigation controls visible and scroll regions
     expect(closeBounds.height).toBeGreaterThanOrEqual(44);
     await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
     expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-    await expect(dialog.getByRole('searchbox', { name: 'Search maps' })).toBeVisible();
+    await expect(dialog.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeVisible();
     const longLinkBounds = await longLink.boundingBox();
     expect(longLinkBounds.x + longLinkBounds.width).toBeLessThanOrEqual(bounds.x + bounds.width);
@@ -580,7 +582,7 @@ test('navigation fits viewports equivalent to 200% and 400% zoom', async ({ page
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
     await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeVisible();
-    await expect(dialog.getByRole('searchbox', { name: 'Search maps' })).toBeVisible();
+    await expect(dialog.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   }
@@ -596,7 +598,7 @@ test('interactive controls have accessible names', async ({ page }) => {
 
   expect(namedButtons).toBe(buttons);
   expect(namedLinks).toBe(links);
-  await expect(page.getByRole('searchbox', { name: 'Search maps' })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
 });
 
 test('animated logo keeps its brand text and selects valid sprite symbols', async ({ page }) => {

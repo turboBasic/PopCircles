@@ -130,7 +130,7 @@
       aria-expanded={!desktopNavigationCollapsed}
       onclick={onToggleDesktopNavigation}>›</button
     >
-    <button type="button" aria-label="Search maps" onclick={onExpandAndFocusSearch}>⌕</button>
+    <button type="button" aria-label="Search countries" onclick={onExpandAndFocusSearch}>⌕</button>
   </div>
   <button
     class="close"
@@ -143,18 +143,16 @@
   >
   <h2 id="country-browser-title">Browse maps</h2>
   <nav aria-label="Map navigation">
-    <label for="country-search">
-      Search maps <span class="status"
-        >{matchCount} {matchCount === 1 ? 'country' : 'countries'}</span
-      >
+    <label class="search-label" for="country-search">
+      Search countries <span class="status">Matching: {matchCount}</span>
     </label>
     <div class="search-field">
       <input
         id="country-search"
         type="search"
-        aria-label="Search maps"
+        aria-label="Search countries"
         bind:value={query}
-        placeholder="Search maps"
+        placeholder="Search countries"
         autocomplete="off"
       />
       {#if query}
@@ -170,7 +168,7 @@
       {/if}
     </div>
     <p class="visually-hidden" role="status" aria-live="polite">
-      {query ? `${matches.length} matching countries` : ''}
+      {query ? `Matching: ${matches.length}` : ''}
     </p>
     <div class="map-pinned-links">
       <a
@@ -261,6 +259,16 @@
     display: block;
     margin: 0.8rem 0 0.5rem;
     font-weight: 600;
+  }
+  .search-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .status {
+    margin-left: auto;
+    text-align: right;
   }
   input {
     width: 100%;
