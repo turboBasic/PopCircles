@@ -49,6 +49,7 @@
 
 <style>
   .results {
+    grid-column: 1 / -1;
     height: 100%;
     min-width: 0;
     min-height: 0;

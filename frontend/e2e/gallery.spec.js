@@ -69,6 +69,7 @@ test('drawer defaults by viewport and keeps the workspace fixed while resizing',
   const drawerBounds = await drawer.boundingBox();
   expect(drawerBounds.x).toBeGreaterThanOrEqual(0);
   expect(drawerBounds.width).toBeLessThan(1024);
+  expect(workspaceBefore.width).toBeGreaterThan(768);
   expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
     workspaceBefore,
   );
