@@ -344,8 +344,9 @@
     padding-inline: 0.4rem;
   }
   .desktop-collapsed nav > label,
-  .desktop-collapsed nav > input,
+  .desktop-collapsed nav > .search-field,
   .desktop-collapsed nav > .visually-hidden,
+  .desktop-collapsed .map-pinned-links,
   .desktop-collapsed .map-links,
   .desktop-collapsed .desktop-controls {
     display: none;

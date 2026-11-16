@@ -114,6 +114,8 @@ test('desktop navigation collapses to a rail without overlapping results', async
     const workspaceExpanded = await page.getByRole('region', { name: 'Map results' }).boundingBox();
     expect(rail.width).toBeGreaterThanOrEqual(56);
     expect(rail.width).toBeLessThanOrEqual(64);
+    await expect(drawer.getByRole('link', { name: 'All countries' })).toBeHidden();
+    await expect(drawer.getByRole('searchbox', { name: 'Search countries' })).toBeHidden();
     expect(workspaceExpanded.width).toBeGreaterThan(workspaceBefore.width);
     expect(workspaceExpanded.x).toBeGreaterThan(rail.x + rail.width);
     await page.getByRole('button', { name: 'Search countries' }).click();
