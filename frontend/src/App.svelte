@@ -208,7 +208,7 @@
     {/if}
   </main>
   <footer class="site-footer">
-    © Andrii Melnyk, 2026 · © EuroGeographics for the administrative boundaries
+    <a href="https://github.com/turboBasic">A project by Andrii Melnyk</a>
   </footer>
 </div>
 
@@ -290,6 +290,16 @@
     color: var(--muted);
     border-top: 1px solid var(--line);
     font-size: 0.72rem;
+  }
+  .site-footer a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .site-footer a:hover,
+  .site-footer a:focus-visible {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
   .explorer {
     display: grid;
