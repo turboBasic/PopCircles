@@ -94,7 +94,7 @@ class PresentationConfig(_Model):
 def parse(text: str, *, source: Path = PRESENTATION_CONFIG) -> PresentationConfig:
     try:
         return PresentationConfig.model_validate(tomllib.loads(text))
-    except (ValidationError, tomllib.TOMLDecodeError) as error:
+    except (TypeError, ValidationError, tomllib.TOMLDecodeError) as error:
         if isinstance(error, ValidationError):
             details = "; ".join(
                 f"{'.'.join(str(part) for part in issue['loc'])}: {issue['msg']}"

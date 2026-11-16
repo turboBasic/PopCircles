@@ -68,6 +68,15 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
             "default_projection",
         ),
         (
+            (
+                "[map_text]\nrender_title = true\nrender_description = true\n"
+                "[gallery]\nexcluded_country_ids = []\n"
+                '[country_maps]\ndefault_projection = "orthographic"\n'
+                'US = "orthographic"\n'
+            ),
+            "country_maps.US",
+        ),
+        (
             PRESENTATION_CONFIG.read_text(encoding="utf-8").replace(
                 "east = -66.42", "east = -77.0"
             ),
