@@ -62,13 +62,18 @@
         {/if}
       </p>
     {/if}
-    <a href={figure.document}>View result data</a>
-    {#if countryAnchor}
-      · <a
-        href={countryUrl(window.location.href, countryAnchor)}
-        onclick={(event) => onCopy(event, countryAnchor)}>Copy country URL</a
-      >
-    {/if}
+    <div class="figure-footer">
+      <span class="figure-actions">
+        <a href={figure.document}>View result data</a>
+        {#if countryAnchor}
+          · <a
+            href={countryUrl(window.location.href, countryAnchor)}
+            onclick={(event) => onCopy(event, countryAnchor)}>Copy country URL</a
+          >
+        {/if}
+      </span>
+      <span class="figure-attribution">© EuroGeographics for the administrative boundaries</span>
+    </div>
   </figcaption>
 </figure>
 
@@ -118,6 +123,15 @@
   }
   figcaption p {
     margin: 0 0 0.5rem;
+  }
+  .figure-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .figure-attribution {
+    text-align: right;
   }
   figcaption a {
     color: inherit;

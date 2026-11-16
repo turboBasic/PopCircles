@@ -154,6 +154,7 @@ def assert_built_site(output: Path) -> None:
     assert "View result data" in bundle
     assert "Circle covers" in bundle
     assert "cdn.jsdelivr.net" not in bundle
+    assert "figure-attribution" in bundle
     assert "© EuroGeographics for the administrative boundaries" in bundle
     assert (output / "gallery-data.json").is_file()
     with Image.open(output / "header-background.png") as header_background:
