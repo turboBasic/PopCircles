@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from typing import cast
 
 from pyproj import CRS, Transformer
-from shapely import get_coordinates, set_precision, transform
+from shapely import (
+    get_coordinates,
+    set_precision,  # pyright: ignore[reportUnknownVariableType] — Shapely leaves this overload partially typed
+    transform,
+)
 from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -25,6 +29,7 @@ from population_circles.circle_geometry import (
 
 # Shapely's stubs omit the documented interleaved=False callback and include_z=None options.
 _transform = cast(Callable[..., BaseGeometry], transform)
+_set_precision = cast(Callable[..., BaseGeometry], set_precision)
 
 PLATE_CARREE = "plate-carree"
 ORTHOGRAPHIC = "orthographic"
@@ -80,7 +85,7 @@ def _country_extent(bounds: tuple[float, float, float, float]) -> tuple[float, f
 def _dissolve_projected_outline(outline: BaseGeometry, source: BaseGeometry) -> BaseGeometry:
     if source.bounds[0] < -ANTIMERIDIAN_LIMIT_DEG and source.bounds[2] > ANTIMERIDIAN_LIMIT_DEG:
         # GISCO's two antimeridian cuts are a few metres apart; close that display-only seam.
-        outline = set_precision(outline, grid_size=ANTIMERIDIAN_SNAP_METRES)
+        outline = _set_precision(outline, grid_size=ANTIMERIDIAN_SNAP_METRES)
     return unary_union(outline)
 
 
