@@ -1,6 +1,8 @@
 import argparse
 import math
 import re
+import tempfile
+import xml.etree.ElementTree as ET
 from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -38,6 +40,7 @@ MIN_GIF_FRAMES = 2
 PIXEL_METRES = PROJECTION_RADIUS_KM * 1000 / GLOBE_RADIUS * VIEW_SIZE / OUTPUT_SIZE
 MIN_TOPOLOGY_AREA = PIXEL_METRES**2
 SIMPLIFY_METRES = PIXEL_METRES
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 
 
 def simplify_projected_land(land: BaseGeometry, detalization: float = 1) -> BaseGeometry:
@@ -137,7 +140,72 @@ def render_globe(
     output.write_text(svg_land(centre, rotation_degrees, detalization), encoding="utf-8")
 
 
-def render_gif(output: Path, sequence_svg: Path) -> None:
+def parse_svg(path: Path) -> ET.Element:
+    source = path.read_text(encoding="utf-8")
+    if re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", source, re.IGNORECASE):
+        message = "SVG document types and entities are not supported"
+        raise ValueError(message)
+    return ET.fromstring(source)
+
+
+def render_gif(
+    output: Path,
+    sequence_svg: Path | None = None,
+    *,
+    svg_sprite: Path | None = None,
+) -> None:
+    if sequence_svg is not None and svg_sprite is None:
+        match = re.fullmatch(r"(.+)-(\d+)\.svg", sequence_svg.name)
+        if match is None:
+            message = "SVG output must be numbered, for example earth-globe-24.svg"
+            raise ValueError(message)
+        prefix = match.group(1)
+        sources: list[Path | ET.Element] = sorted(
+            (
+                path
+                for path in sequence_svg.parent.glob(f"{prefix}-*.svg")
+                if re.fullmatch(rf"{re.escape(prefix)}-\d+\.svg", path.name)
+            ),
+            key=lambda path: int(path.stem.removeprefix(f"{prefix}-")),
+        )
+        if len(sources) < MIN_GIF_FRAMES:
+            message = f"Need at least two numbered SVG frames matching {prefix}-<step>.svg"
+            raise ValueError(message)
+    elif svg_sprite is not None and sequence_svg is None:
+        sprite = parse_svg(svg_sprite)
+        sources = sprite.findall(f"{{{SVG_NAMESPACE}}}symbol")
+        if len(sources) < MIN_GIF_FRAMES:
+            message = "Need at least two SVG symbols in the sprite"
+            raise ValueError(message)
+    else:
+        message = "Provide exactly one of sequence_svg or svg_sprite"
+        raise ValueError(message)
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    images: list[Image.Image] = []
+    for source in sources:
+        if isinstance(source, Path):
+            png = resvg_py.svg_to_bytes(svg_path=str(source), width=200, height=200)
+        else:
+            root = ET.Element(
+                f"{{{SVG_NAMESPACE}}}svg",
+                {"viewBox": source.attrib["viewBox"]},
+            )
+            root.extend(source)
+            svg = ET.tostring(root, encoding="unicode")
+            png = resvg_py.svg_to_bytes(svg_string=svg, width=200, height=200)
+        with Image.open(BytesIO(png)) as image:
+            images.append(image.convert("RGB"))
+    images[0].save(
+        output,
+        save_all=True,
+        append_images=images[1:],
+        duration=120,
+        loop=0,
+    )
+
+
+def render_svg_sprite(sequence_svg: Path, output: Path) -> None:
     match = re.fullmatch(r"(.+)-(\d+)\.svg", sequence_svg.name)
     if match is None:
         message = "SVG output must be numbered, for example earth-globe-24.svg"
@@ -151,23 +219,24 @@ def render_gif(output: Path, sequence_svg: Path) -> None:
         ),
         key=lambda path: int(path.stem.removeprefix(f"{prefix}-")),
     )
-    if len(frames) < MIN_GIF_FRAMES:
-        message = f"Need at least two numbered SVG frames matching {prefix}-<step>.svg"
-        raise ValueError(message)
-
+    root = ET.Element(f"{{{SVG_NAMESPACE}}}svg")
+    attribution = None
+    for index, path in enumerate(frames, start=1):
+        frame = parse_svg(path)
+        if attribution is None:
+            attribution = frame.find(f"{{{SVG_NAMESPACE}}}metadata")
+            if attribution is not None:
+                root.append(ET.Element(f"{{{SVG_NAMESPACE}}}metadata"))
+                root[-1].text = attribution.text
+        symbol = ET.SubElement(
+            root,
+            f"{{{SVG_NAMESPACE}}}symbol",
+            {"id": f"frame-{index:02}", "viewBox": frame.attrib["viewBox"]},
+        )
+        symbol.extend(child for child in frame if child.tag != f"{{{SVG_NAMESPACE}}}metadata")
+    ET.register_namespace("", SVG_NAMESPACE)
     output.parent.mkdir(parents=True, exist_ok=True)
-    images: list[Image.Image] = []
-    for svg in frames:
-        png = resvg_py.svg_to_bytes(svg_path=str(svg), width=200, height=200)
-        with Image.open(BytesIO(png)) as image:
-            images.append(image.convert("RGB"))
-    images[0].save(
-        output,
-        save_all=True,
-        append_images=images[1:],
-        duration=120,
-        loop=0,
-    )
+    output.write_text(ET.tostring(root, encoding="unicode") + "\n", encoding="utf-8")
 
 
 def render_latitude_sequence(
@@ -212,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--center", "--centre", required=True, type=parse_center, metavar="LAT,LON")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--output-gif", type=Path)
+    parser.add_argument("--svg-sprite", action="store_true")
     parser.add_argument(
         "--latitude-steps",
         type=int,
@@ -223,9 +293,22 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("detalization must be finite and greater than zero")
     if args.latitude_steps is not None and args.latitude_steps <= 0:
         parser.error("latitude-steps must be greater than zero")
+    if args.svg_sprite and args.latitude_steps is None:
+        parser.error("--svg-sprite requires --latitude-steps")
     sequence_svg = args.output
+    output_svg = args.output
     if args.latitude_steps is None:
         render_globe(args.center, args.output, args.detalization)
+    elif args.svg_sprite:
+        with tempfile.TemporaryDirectory() as directory:
+            sequence_svg = render_latitude_sequence(
+                args.center,
+                Path(directory) / args.output.name,
+                args.latitude_steps,
+                args.detalization,
+            )
+            render_svg_sprite(sequence_svg, args.output)
+        sequence_svg = None
     else:
         sequence_svg = render_latitude_sequence(
             args.center,
@@ -235,10 +318,13 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.output_gif:
         try:
-            render_gif(args.output_gif, sequence_svg)
+            if args.svg_sprite:
+                render_gif(args.output_gif, svg_sprite=args.output)
+            else:
+                render_gif(args.output_gif, sequence_svg)
         except (OSError, ValueError) as error:
             parser.error(str(error))
-    print(sequence_svg)
+    print(output_svg if args.svg_sprite else sequence_svg)
     return 0
 
 
