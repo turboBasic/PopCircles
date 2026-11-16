@@ -188,6 +188,14 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(drawer).toBeVisible();
   await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(false);
+  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileResults = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  expect(mobileResults.x).toBeLessThan(4);
+  expect(mobileResults.width).toBeGreaterThan(350);
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(drawer).toBeVisible();
+  await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(false);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(

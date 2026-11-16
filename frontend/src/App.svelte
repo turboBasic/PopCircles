@@ -415,5 +415,8 @@
       grid-template-rows: minmax(0, 1fr);
       gap: 0;
     }
+    .explorer.nav-collapsed {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
