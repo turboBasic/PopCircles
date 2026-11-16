@@ -185,6 +185,30 @@ def test_country_frame_uses_an_explicit_orthographic_centre() -> None:
     assert view.horizon.covers(view.circle)
 
 
+def test_country_frame_dissolves_outline_parts_meeting_at_the_antimeridian() -> None:
+    built = cap(Coordinate(lat=65.0, lon=100.0), 100.0, EARTH_RADIUS_KM)
+    outline = MultiPolygon(
+        [
+            Polygon([(170, 60), (179.999988, 60), (179.999988, 70), (170, 70), (170, 60)]),
+            Polygon(
+                [(-179.999988, 60), (-170, 60), (-170, 70), (-179.999988, 70), (-179.999988, 60)]
+            ),
+        ],
+    )
+
+    view = country_frame(
+        built,
+        outline,
+        CountryFrameSettings(
+            projection="albers-equal-area",
+            projection_parameters={"lon_0": 100.0, "lat_0": 65.0, "lat_1": 50.0, "lat_2": 70.0},
+        ),
+    )
+
+    assert view.country_outline is not None
+    assert view.country_outline.geom_type == "Polygon"
+
+
 def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
     built = cap(Coordinate(lat=-40.0, lon=-72.0), 200.0, EARTH_RADIUS_KM)
     outline = box(-75, -45, -70, -35)
