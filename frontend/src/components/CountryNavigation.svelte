@@ -177,7 +177,7 @@
       <input type="checkbox" role="switch" checked={autoHide} onchange={onToggleAutoHide} />
       Auto-hide drawer
     </label>
-    <div class="map-links">
+    <div class="map-pinned-links">
       <a
         class:active={selectedEntry === null}
         aria-current={selectedEntry === null ? 'page' : undefined}
@@ -190,6 +190,8 @@
         href={`#${worldEntry.anchor}`}
         onclick={() => selectEntry(worldEntry)}>{worldEntry.name}</a
       >
+    </div>
+    <div class="map-links">
       {#each Object.entries(groups) as [letter, entries] (letter)}
         <section class:filtered={query.trim()} aria-label={letter}>
           {#if !query.trim()}<h3>{letter}</h3>{/if}
@@ -308,6 +310,11 @@
     gap: 0.35rem;
     margin-top: 1rem;
     overflow-y: auto;
+  }
+  .map-pinned-links {
+    flex: none;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
   }
   .desktop-collapsed {
     padding-inline: 0.4rem;
