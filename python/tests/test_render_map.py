@@ -424,8 +424,10 @@ def test_chile_extent_hides_remote_components_without_filtering_outline() -> Non
     document = json.loads(result.read_text(encoding="utf-8"))
     original_document = json.dumps(document, sort_keys=True)
     answer = circle_of(document)
-    outline = load_outline(answer, REGISTRY)
-    assert outline is not None
+    outline = MultiPolygon(
+        [box(-175 + 2 * index, -30, -174.5 + 2 * index, -29.5) for index in range(10)]
+        + [box(-75.7, -56.5, -66.5, -17.6)],
+    )
     original = outline.wkb
     original_circle = answer.circle.model_dump_json()
     settings = load_presentation_config().country_maps["CL"]
