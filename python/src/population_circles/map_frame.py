@@ -8,6 +8,7 @@ from shapely import get_coordinates, transform
 from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 
+from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
     HALF_TURN_DEG,
     METRES_PER_KM,
@@ -89,14 +90,49 @@ def orthographic(built: Cap) -> Frame:
     )
 
 
-def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
+def country_frame(
+    built: Cap,
+    country_outline: BaseGeometry,
+    projection: str = ORTHOGRAPHIC,
+    centre: Coordinate | None = None,
+) -> Frame:
+    if projection not in PROJECTIONS:
+        message = f"unsupported projection {projection!r}; choose from {', '.join(PROJECTIONS)}"
+        raise ValueError(message)
+    if projection == PLATE_CARREE:
+        world = plate_carree(built)
+        circle = world.circle
+        if not all(
+            math.isfinite(value)
+            for geometry in (country_outline, circle)
+            for point in get_coordinates(geometry)
+            for value in point
+        ):
+            message = "country circle or outline contains a non-finite coordinate"
+            raise ValueError(message)
+        west = min(country_outline.bounds[0], circle.bounds[0])
+        south = min(country_outline.bounds[1], circle.bounds[1])
+        east = max(country_outline.bounds[2], circle.bounds[2])
+        north = max(country_outline.bounds[3], circle.bounds[3])
+        return Frame(
+            crs=world.crs,
+            to_frame=world.to_frame,
+            visible=world.visible,
+            circle=circle,
+            horizon=box(west, south, east, north),
+            country_outline=country_outline,
+        )
+
     coordinates = get_coordinates(country_outline)
-    longitudes = [math.radians(point[0]) for point in coordinates]
-    centre_lon = math.degrees(
-        math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
-    )
-    centre_lat = math.fsum(point[1] for point in coordinates) / len(coordinates)
-    centre = type(built.centre)(lat=centre_lat, lon=centre_lon)
+    if centre is None:
+        longitudes = [math.radians(point[0]) for point in coordinates]
+        centre = type(built.centre)(
+            lat=math.fsum(point[1] for point in coordinates) / len(coordinates),
+            lon=math.degrees(
+                math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
+            ),
+        )
+    centre_lon = centre.lon
     face = projected_crs("ortho", centre, built.earth_radius_km)
     to_face = Transformer.from_crs(built.geodetic, face, always_xy=True)
 

@@ -164,6 +164,32 @@ def test_country_frame_contains_its_projected_outline_and_circle(
         assert view.horizon.covers(geometry)
 
 
+def test_country_frame_uses_an_explicit_orthographic_centre() -> None:
+    centre = Coordinate(lat=44.0, lon=-96.0)
+    built = cap(Coordinate(lat=40.0, lon=-100.0), 500.0, EARTH_RADIUS_KM)
+    outline = box(-125, 25, -66, 49)
+
+    view = country_frame(built, outline, ORTHOGRAPHIC, centre)
+
+    assert view.to_frame.transform(centre.lon, centre.lat) == pytest.approx((0.0, 0.0), abs=1e-6)
+    assert view.country_outline is not None
+    assert view.horizon.covers(view.country_outline)
+    assert view.horizon.covers(view.circle)
+
+
+def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
+    built = cap(Coordinate(lat=-40.0, lon=-72.0), 200.0, EARTH_RADIUS_KM)
+    outline = box(-75, -45, -70, -35)
+
+    view = country_frame(built, outline, PLATE_CARREE)
+
+    assert view.country_outline is outline
+    assert view.to_frame.transform(-72.0, -40.0) == (-72.0, -40.0)
+    assert view.horizon.covers(view.country_outline)
+    assert view.horizon.covers(view.circle)
+    assert view.horizon.bounds == pytest.approx(outline.union(view.circle).bounds)
+
+
 def test_country_frame_refuses_a_large_circle_beyond_the_horizon() -> None:
     built = cap(Coordinate(lat=51.0, lon=10.0), 15_000.0, EARTH_RADIUS_KM)
 
