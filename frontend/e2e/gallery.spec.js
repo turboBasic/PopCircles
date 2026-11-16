@@ -144,6 +144,11 @@ test('auto-hide persists and pointer exit respects focus and touch', async ({ pa
   expect(await drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
   await page.keyboard.press('Tab');
   expect(await drawer.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+  const results = page.getByRole('region', { name: 'Map results' });
+  const resultsScrollTop = await results.evaluate((region) => region.scrollTop);
+  await page.mouse.move(380, 500);
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(resultsScrollTop);
   await page.evaluate(() => {
     document.activeElement?.blur();
     document
@@ -182,6 +187,41 @@ test('auto-hide defaults on when local storage is unavailable', async ({ page })
   });
   await page.reload();
   await expect(page.getByRole('switch', { name: 'Auto-hide drawer' })).toBeChecked();
+});
+
+test('direct links, Back and Forward restore country selection and reset results', async ({
+  page,
+}) => {
+  await page.goto('/#country-42');
+  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await navigation.getByRole('switch', { name: 'Auto-hide drawer' }).uncheck();
+  const results = page.getByRole('region', { name: 'Map results' });
+  await results.evaluate((region) => (region.scrollTop = 200));
+  await navigation.getByRole('link', { name: 'Country 01' }).click();
+  await expect(page).toHaveURL(/#country-1$/);
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
+  await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(/#country-42$/);
+  await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.goForward();
+  await expect(page).toHaveURL(/#country-1$/);
+  await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(drawer).toBeVisible();
 });
 
 test('drawer presentation fits each viewport, theme, and motion preference', async ({ page }) => {
