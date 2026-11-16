@@ -375,15 +375,34 @@
   .map-links section.filtered ul {
     margin-top: 0.35rem;
   }
-  .map-links a {
+  .map-links a,
+  .map-pinned-links a {
+    position: relative;
     display: block;
     padding: 0.25rem 0;
     color: var(--muted);
     text-decoration: none;
     overflow-wrap: anywhere;
   }
+  .map-links a.active,
+  .map-pinned-links a.active {
+    padding-left: 0.75rem;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 0.25rem;
+  }
+  .map-links a.active::before,
+  .map-pinned-links a.active::before {
+    position: absolute;
+    inset: 0.2rem auto 0.2rem 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    content: '';
+  }
   .map-links a:hover,
-  .map-links a.active {
+  .map-pinned-links a:hover,
+  .map-links a.active,
+  .map-pinned-links a.active {
     color: var(--text);
     text-decoration: underline;
     text-underline-offset: 0.2em;

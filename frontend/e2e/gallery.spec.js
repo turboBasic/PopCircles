@@ -91,6 +91,9 @@ test('scrolls the selected country into view in the navigation list', async ({ p
   await expect(selectedLink).toHaveAttribute('aria-current', 'page');
   await expect(selectedLink).toBeInViewport();
   await expect
+    .poll(() => selectedLink.evaluate((link) => getComputedStyle(link, '::before').width))
+    .toBe('3px');
+  await expect
     .poll(() => navigation.locator('.map-links').evaluate((list) => list.scrollTop))
     .toBeGreaterThan(0);
 });
