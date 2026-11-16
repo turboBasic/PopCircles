@@ -24,6 +24,7 @@
   let drawerOpen = $state(false);
   /** @type {HTMLDialogElement | null} */
   let mobileDialog = $state(null);
+  let autoHide = $state(true);
   let themeLight = $state(false);
   let copyStatus = $state('');
   /** @type {number | undefined} */
@@ -74,6 +75,15 @@
   function toggleDrawer() {
     drawerOpen = !drawerOpen;
     syncDrawer();
+  }
+
+  function toggleAutoHide() {
+    autoHide = !autoHide;
+    try {
+      localStorage.setItem('popcircles-auto-hide-drawer', String(autoHide));
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
   }
 
   /** @param {GalleryEntry} entry */
@@ -127,6 +137,13 @@
     if (header) chromeObserver.observe(header);
     if (footer) chromeObserver.observe(footer);
     drawerOpen = !navigationQuery.matches;
+    try {
+      const savedAutoHide = localStorage.getItem('popcircles-auto-hide-drawer');
+      autoHide = savedAutoHide !== 'false';
+      localStorage.removeItem('popcircles-desktop-navigation-open');
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
     const handleNavigationChange = () => {
       syncDrawer();
     };
@@ -204,10 +221,12 @@
           {selectedEntry}
           {mobileNavigation}
           {drawerOpen}
+          {autoHide}
           bind:mobileDialog
           {browserTrigger}
           onSelect={selectEntry}
           onCloseDrawer={() => (drawerOpen = false)}
+          onToggleAutoHide={toggleAutoHide}
         />
 
         <GalleryWorkspace

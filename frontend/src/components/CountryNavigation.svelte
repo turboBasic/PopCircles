@@ -3,17 +3,19 @@
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
-  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileNavigation: MediaQueryList | null, drawerOpen: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void}} */
+  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileNavigation: MediaQueryList | null, drawerOpen: boolean, autoHide: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onToggleAutoHide: () => void}} */
   let {
     worldEntry,
     countries,
     selectedEntry,
     mobileNavigation,
     drawerOpen,
+    autoHide,
     mobileDialog = $bindable(),
     browserTrigger,
     onSelect,
     onCloseDrawer,
+    onToggleAutoHide,
   } = $props();
   let query = $state('');
   let matches = $derived(worldEntry ? [worldEntry, ...filterCountries(countries, query)] : []);
@@ -27,8 +29,26 @@
 
   /** @param {GalleryEntry} entry */
   function selectEntry(entry) {
-    if (mobileNavigation?.matches) closeDrawer();
+    if (autoHide) closeDrawer();
     onSelect(entry);
+  }
+
+  /** @param {PointerEvent} event */
+  function handlePointerLeave(event) {
+    if (
+      event.pointerType !== 'touch' &&
+      autoHide &&
+      !mobileDialog?.contains(document.activeElement)
+    ) {
+      closeDrawer();
+    }
+  }
+
+  /** @param {KeyboardEvent} event */
+  function handleKeydown(event) {
+    if (event.key !== 'Escape' || !drawerOpen) return;
+    event.preventDefault();
+    closeDrawer();
   }
 
   /** @param {Event} event */
@@ -43,15 +63,20 @@
   }
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <dialog
   id="country-browser-panel"
   bind:this={mobileDialog}
   class:open={drawerOpen}
   aria-labelledby="country-browser-title"
+  onpointerleave={handlePointerLeave}
   oncancel={handleCancel}
   onclose={handleDialogClose}
 >
-  <button class="close" type="button" aria-label="Close map drawer" onclick={closeDrawer}>×</button>
+  <button class="close" type="button" aria-label="Close map navigation" onclick={closeDrawer}
+    >☰</button
+  >
   <h2 id="country-browser-title">Browse maps</h2>
   <nav aria-label="Map navigation">
     <label for="country-search">Search maps <span class="status">{matches.length} maps</span></label
@@ -67,6 +92,10 @@
     <p class="visually-hidden" role="status" aria-live="polite">
       {query ? `${matches.length} matching maps` : ''}
     </p>
+    <label class="auto-hide">
+      <input type="checkbox" role="switch" checked={autoHide} onchange={onToggleAutoHide} />
+      Auto-hide drawer
+    </label>
     <div class="map-links">
       {#each matches as entry (entry.anchor)}
         <a
@@ -154,7 +183,21 @@
   .status {
     font-size: 0.85rem;
   }
+  .auto-hide {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .auto-hide input {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    accent-color: var(--accent);
+  }
   .close {
+    display: none;
     position: absolute;
     top: 0.75rem;
     right: 0.75rem;
@@ -184,6 +227,12 @@
       width: min(24rem, calc(100vw - 3rem));
       height: 100dvh;
       padding-top: calc(var(--navigation-header-space, 0px) + 1rem);
+    }
+    .close {
+      display: block;
+      top: 0.75rem;
+      right: auto;
+      left: 0.75rem;
     }
     dialog::backdrop {
       background: #0008;

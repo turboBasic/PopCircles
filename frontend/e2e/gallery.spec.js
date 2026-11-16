@@ -52,7 +52,6 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(page).toHaveURL(/#country-42$/);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Close map navigation' }).click();
   const mapLink = page.getByRole('link', { name: 'Country 42 map' });
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
@@ -78,7 +77,7 @@ test('drawer defaults by viewport and keeps the workspace fixed while resizing',
   await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
   expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).not.toBeNull();
   const mobileWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
-  await page.getByRole('button', { name: 'Close map drawer' }).click();
+  await drawer.getByRole('button', { name: 'Close map navigation' }).click();
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('button', { name: 'Open map navigation' })).toHaveAttribute(
     'aria-expanded',
@@ -106,6 +105,83 @@ test('drawer defaults by viewport and keeps the workspace fixed while resizing',
   expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
     closedWorkspace,
   );
+});
+
+test('auto-hide persists and pointer exit respects focus and touch', async ({ page }) => {
+  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  const autoHide = page.getByRole('switch', { name: 'Auto-hide drawer' });
+  await expect(autoHide).toBeChecked();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.mouse.move(200, 300);
+  await page.mouse.move(600, 300);
+  await expect(drawer).toBeHidden();
+
+  await page.getByRole('button', { name: 'Open map navigation' }).click();
+  await autoHide.uncheck();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.mouse.move(200, 300);
+  await page.mouse.move(600, 300);
+  await expect(drawer).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('switch', { name: 'Auto-hide drawer' })).not.toBeChecked();
+  const restoredAutoHide = page.getByRole('switch', { name: 'Auto-hide drawer' });
+  await restoredAutoHide.check();
+  await restoredAutoHide.focus();
+  await page.mouse.move(200, 300);
+  await page.mouse.move(600, 300);
+  await expect(drawer).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close map navigation' }).focus();
+  await page.mouse.move(200, 300);
+  await page.mouse.move(600, 300);
+  await expect(drawer).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.getByRole('button', { name: 'Open map navigation' }).click();
+  await expect(drawer).toBeVisible();
+  expect(await drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
+  await page.keyboard.press('Tab');
+  expect(await drawer.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+  await page.evaluate(() => {
+    document.activeElement?.blur();
+    document
+      .querySelector('#country-browser-panel')
+      ?.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'touch' }));
+  });
+  await expect(drawer).toBeVisible();
+  await drawer.getByRole('button', { name: 'Close map navigation' }).click();
+  await expect(drawer).toBeHidden();
+});
+
+test('auto-hide closes after selection only when enabled', async ({ page }) => {
+  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  await page
+    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('link', { name: 'Country 42' })
+    .click();
+  await expect(drawer).toBeHidden();
+
+  await page.getByRole('button', { name: 'Open map navigation' }).click();
+  await page.getByRole('switch', { name: 'Auto-hide drawer' }).uncheck();
+  await page
+    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('link', { name: 'Country 42' })
+    .click();
+  await expect(drawer).toBeVisible();
+});
+
+test('auto-hide defaults on when local storage is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      get() {
+        throw new Error('Storage is unavailable');
+      },
+    });
+  });
+  await page.reload();
+  await expect(page.getByRole('switch', { name: 'Auto-hide drawer' })).toBeChecked();
 });
 
 test('results scroll inside the viewport without scrolling the document', async ({ page }) => {
@@ -215,6 +291,12 @@ test('country navigation is keyboard operable and returns focus after Escape', a
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Open map navigation' })).toBeFocused();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.reload();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
 });
 
 test('interactive controls have accessible names', async ({ page }) => {
@@ -355,7 +437,10 @@ test('responsive layout, map ratio, and theme styles keep their expected values'
   await expect(page).toHaveScreenshot('gallery-desktop-light.png');
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'Close map drawer' }).click();
+  await page
+    .getByRole('dialog', { name: 'Browse maps' })
+    .getByRole('button', { name: 'Close map navigation' })
+    .click();
   await page.getByRole('button', { name: 'Switch to dark theme' }).click();
   visual = await visualProperties();
   expect(visual.background).toBe('#0b1020');
