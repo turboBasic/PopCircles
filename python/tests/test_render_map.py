@@ -19,10 +19,20 @@ import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import Answer, Circle, Coordinate, circle_of
-from population_circles.circle_geometry import cap
+from population_circles.circle_geometry import Cap, cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import Registry, load, parse
-from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, Cap, Frame, country_frame
+from population_circles.map_frame import (
+    ORTHOGRAPHIC,
+    PLATE_CARREE,
+    Frame,
+)
+from population_circles.map_frame import (
+    country_frame as build_country_frame,
+)
+from population_circles.map_frame import (
+    frame as world_frame,
+)
 from population_circles.presentation_config import CountryMap
 from population_circles.presentation_config import load as load_presentation_config
 from population_circles.render_map import (
@@ -342,7 +352,7 @@ def test_country_render_uses_presentation_settings_by_canonical_id(
     payload["result"]["country"]["id"] = country_id
     payload["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
     answer = circle_of(payload)
-    current_country_frame = render_map_module.country_frame
+    current_country_frame = build_country_frame
     observed: list[tuple[str, BaseGeometry, tuple[float, float] | None]] = []
 
     def capture_country_frame(
@@ -427,7 +437,7 @@ def test_country_render_selects_complete_chile_components() -> None:
 def test_world_render_uses_its_frame_without_country_presentation(
     projection: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    current_frame = render_map_module.frame
+    current_frame = world_frame
     observed: list[str] = []
 
     def capture_frame(selected_projection: str, built: Cap) -> Frame:
@@ -517,7 +527,7 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
     country = load_outline(answer, registry, tmp_path)
     assert country is not None
     circle = answer.circle
-    view = country_frame(
+    view = build_country_frame(
         cap(circle.centre, circle.radius_km, circle.earth_radius_km),
         country,
     )
