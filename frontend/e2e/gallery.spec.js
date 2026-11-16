@@ -630,6 +630,14 @@ test('interactive controls have accessible names', async ({ page }) => {
   await expect(page.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
 });
 
+test('theme choice persists after reload', async ({ page }) => {
+  await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await page.evaluate(() => localStorage.getItem('popcircles-theme'))).toBe('light');
+});
+
 test('animated logo keeps its brand text and selects valid sprite symbols', async ({ page }) => {
   const logo = page.getByRole('link', { name: 'PopCircles home' });
   const logoData = await logo.evaluate(async (link) => {

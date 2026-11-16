@@ -111,6 +111,11 @@
   function toggleTheme() {
     themeLight = !themeLight;
     document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
+    try {
+      localStorage.setItem('popcircles-theme', themeLight ? 'light' : 'dark');
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
   }
 
   function handleScroll() {
@@ -133,6 +138,12 @@
 
   onMount(() => {
     let active = true;
+    try {
+      themeLight = localStorage.getItem('popcircles-theme') === 'light';
+    } catch {
+      themeLight = false;
+    }
+    document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
     const navigationQuery = window.matchMedia('(max-width: 1023px)');
     mobileNavigation = navigationQuery;
     mobileMode = navigationQuery.matches;
