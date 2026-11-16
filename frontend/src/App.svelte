@@ -25,7 +25,6 @@
   let desktopNavigationCollapsed = $state(false);
   /** @type {HTMLDialogElement | null} */
   let mobileDialog = $state(null);
-  let autoHide = $state(true);
   let themeLight = $state(false);
   let copyStatus = $state('');
   /** @type {number | undefined} */
@@ -91,15 +90,6 @@
     requestAnimationFrame(() => document.getElementById('country-search')?.focus());
   }
 
-  function toggleAutoHide() {
-    autoHide = !autoHide;
-    try {
-      localStorage.setItem('popcircles-auto-hide-drawer', String(autoHide));
-    } catch {
-      // Browser privacy settings can disable storage.
-    }
-  }
-
   /** @param {GalleryEntry} entry */
   function selectEntry(entry) {
     selectedEntry = entry;
@@ -153,13 +143,6 @@
     if (header) chromeObserver.observe(header);
     if (footer) chromeObserver.observe(footer);
     mobileDrawerOpen = false;
-    try {
-      const savedAutoHide = localStorage.getItem('popcircles-auto-hide-drawer');
-      autoHide = savedAutoHide !== 'false';
-      localStorage.removeItem('popcircles-desktop-navigation-open');
-    } catch {
-      // Browser privacy settings can disable storage.
-    }
     const handleNavigationChange = () => {
       mobileDrawerOpen = false;
       mobileMode = navigationQuery.matches;
@@ -240,7 +223,6 @@
           {mobileMode}
           drawerOpen={mobileDrawerOpen}
           {desktopNavigationCollapsed}
-          {autoHide}
           bind:mobileDialog
           {browserTrigger}
           onSelect={selectEntry}
@@ -250,7 +232,6 @@
           }}
           onToggleDesktopNavigation={toggleDesktopNavigation}
           onExpandAndFocusSearch={expandDesktopNavigationAndFocusSearch}
-          onToggleAutoHide={toggleAutoHide}
         />
 
         <GalleryWorkspace

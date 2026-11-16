@@ -70,7 +70,6 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
   await expect(page).toHaveURL(/#country-42$/);
-  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
   await navigation.getByRole('link', { name: 'All countries' }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(navigation.getByRole('link', { name: 'All countries' })).toHaveAttribute(
@@ -204,90 +203,6 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   );
 });
 
-test('auto-hide persists and pointer exit respects focus and touch', async ({ page }) => {
-  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
-  const autoHide = page.getByRole('switch', { name: 'Auto-hide drawer' });
-  await expect(autoHide).toBeChecked();
-  await page.evaluate(() => document.activeElement?.blur());
-  await page.mouse.move(200, 300);
-  await page.mouse.move(600, 300);
-  await expect(drawer).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
-  await autoHide.uncheck();
-  await page.evaluate(() => document.activeElement?.blur());
-  await page.mouse.move(200, 300);
-  await page.mouse.move(600, 300);
-  await expect(drawer).toBeVisible();
-
-  await page.reload();
-  await expect(page.getByRole('switch', { name: 'Auto-hide drawer' })).not.toBeChecked();
-  const restoredAutoHide = page.getByRole('switch', { name: 'Auto-hide drawer' });
-  await restoredAutoHide.check();
-  await restoredAutoHide.focus();
-  await page.mouse.move(200, 300);
-  await page.mouse.move(600, 300);
-  await expect(drawer).toBeVisible();
-
-  await page.getByRole('button', { name: 'Collapse maps navigation' }).focus();
-  await page.mouse.move(200, 300);
-  await page.mouse.move(600, 300);
-  await expect(drawer).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeHidden();
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  await page.getByRole('button', { name: 'Open maps navigation' }).click();
-  await expect(drawer).toBeVisible();
-  expect(await drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
-  await page.keyboard.press('Tab');
-  expect(await drawer.evaluate((element) => element.contains(document.activeElement))).toBe(true);
-  const results = page.getByRole('region', { name: 'Map results' });
-  const resultsScrollTop = await results.evaluate((region) => region.scrollTop);
-  await page.mouse.move(380, 500);
-  await page.mouse.wheel(0, 500);
-  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(resultsScrollTop);
-  await page.evaluate(() => {
-    document.activeElement?.blur();
-    document
-      .querySelector('#country-browser-panel')
-      ?.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'touch' }));
-  });
-  await expect(drawer).toBeVisible();
-  await drawer.getByRole('button', { name: 'Close map navigation' }).click();
-  await expect(drawer).toBeHidden();
-});
-
-test('auto-hide closes after selection only when enabled', async ({ page }) => {
-  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
-  await page
-    .getByRole('navigation', { name: 'Map navigation' })
-    .getByRole('link', { name: 'Country 42' })
-    .click();
-  await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
-  await page.getByRole('switch', { name: 'Auto-hide drawer' }).uncheck();
-  await page
-    .getByRole('navigation', { name: 'Map navigation' })
-    .getByRole('link', { name: 'Country 42' })
-    .click();
-  await expect(drawer).toBeVisible();
-});
-
-test('auto-hide defaults on when local storage is unavailable', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(window, 'localStorage', {
-      get() {
-        throw new Error('Storage is unavailable');
-      },
-    });
-  });
-  await page.reload();
-  await expect(page.getByRole('switch', { name: 'Auto-hide drawer' })).toBeChecked();
-});
-
 test('direct links, Back and Forward restore country selection and reset results', async ({
   page,
 }) => {
@@ -298,7 +213,6 @@ test('direct links, Back and Forward restore country selection and reset results
     'aria-current',
     'page',
   );
-  await navigation.getByRole('switch', { name: 'Auto-hide drawer' }).uncheck();
   const results = page.getByRole('region', { name: 'Map results' });
   await results.evaluate((region) => (region.scrollTop = 200));
   await navigation.getByRole('link', { name: 'Country 01' }).click();
@@ -565,7 +479,6 @@ test('mobile selection and viewport changes preserve query and independent state
   expect(page.url()).toBe(startUrl);
   await trigger.click();
   await expect(search).toHaveValue('country 42');
-  await page.getByRole('switch', { name: 'Auto-hide drawer' }).uncheck();
   await dialog.getByRole('link', { name: 'Country 42', exact: true }).click();
   await expect(page).toHaveURL(/#country-42$/);
   await expect(dialog).toBeHidden();

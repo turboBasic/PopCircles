@@ -3,7 +3,7 @@
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
-  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, autoHide: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onToggleAutoHide: () => void, onToggleDesktopNavigation: () => void, onExpandAndFocusSearch: () => void}} */
+  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onToggleDesktopNavigation: () => void, onExpandAndFocusSearch: () => void}} */
   let {
     worldEntry,
     countries,
@@ -11,12 +11,10 @@
     mobileMode,
     drawerOpen,
     desktopNavigationCollapsed,
-    autoHide,
     mobileDialog = $bindable(),
     browserTrigger,
     onSelect,
     onCloseDrawer,
-    onToggleAutoHide,
     onToggleDesktopNavigation,
     onExpandAndFocusSearch,
   } = $props();
@@ -46,7 +44,7 @@
     if (mobileMode) {
       query = '';
       closeDrawer(false);
-    } else if (autoHide) closeDrawer(false);
+    }
     onSelect(entry);
   }
 
@@ -59,17 +57,6 @@
   /** @param {MouseEvent} event */
   function handleDialogClick(event) {
     if (event.target === mobileDialog) closeDrawer();
-  }
-
-  /** @param {PointerEvent} event */
-  function handlePointerLeave(event) {
-    if (
-      event.pointerType !== 'touch' &&
-      autoHide &&
-      !mobileDialog?.contains(document.activeElement)
-    ) {
-      closeDrawer();
-    }
   }
 
   /** @param {KeyboardEvent} event */
@@ -122,7 +109,6 @@
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
   aria-labelledby="country-browser-title"
   onclick={handleDialogClick}
-  onpointerleave={handlePointerLeave}
   oncancel={handleCancel}
   onclose={handleDialogClose}
 >
@@ -173,10 +159,6 @@
     <p class="visually-hidden" role="status" aria-live="polite">
       {query ? `${matches.length} matching countries` : ''}
     </p>
-    <label class="auto-hide">
-      <input type="checkbox" role="switch" checked={autoHide} onchange={onToggleAutoHide} />
-      Auto-hide drawer
-    </label>
     <div class="map-pinned-links">
       <a
         class:active={selectedEntry === null}
@@ -323,7 +305,6 @@
   .desktop-collapsed nav > label,
   .desktop-collapsed nav > input,
   .desktop-collapsed nav > .visually-hidden,
-  .desktop-collapsed nav > .auto-hide,
   .desktop-collapsed .map-links,
   .desktop-collapsed .desktop-controls {
     display: none;
@@ -373,19 +354,6 @@
   a:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-  }
-  .auto-hide {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .auto-hide input {
-    width: auto;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    accent-color: var(--accent);
   }
   .close {
     display: none;
