@@ -53,7 +53,7 @@
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
-    padding-bottom: 2rem;
+    padding: var(--header-space, 0px) 0 calc(var(--footer-space, 0px) + 2rem);
   }
   .country {
     scroll-margin-top: 1rem;

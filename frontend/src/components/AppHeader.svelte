@@ -2,9 +2,10 @@
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
+  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
   let {
     scrollPosition,
+    headerCollapseProgress,
     data,
     themeLight,
     browserOpen,
@@ -16,7 +17,11 @@
   } = $props();
 </script>
 
-<header>
+<header
+  class="app-header"
+  class:collapsed={headerCollapseProgress === 1}
+  style={`--header-padding: ${0.75 - 0.5 * headerCollapseProgress}rem; --art-opacity: ${0.16 * (1 - headerCollapseProgress)}; --intro-height: ${12 * (1 - headerCollapseProgress)}rem; --intro-margin: ${1.25 * (1 - headerCollapseProgress)}rem 0; --intro-opacity: ${1 - headerCollapseProgress}; --logo-size: ${1 - 0.12 * headerCollapseProgress}rem; --logo-spacing: ${0.16 - 0.03 * headerCollapseProgress}em`}
+>
   {#if data?.world[0]}
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
@@ -83,7 +88,7 @@
     {/if}
   </div>
   {#if data}
-    <div class="workspace-intro">
+    <div class="workspace-intro" aria-hidden={headerCollapseProgress === 1}>
       <h1>One circle, half the population.</h1>
       <p>Explore country and world population circles.</p>
     </div>
@@ -92,22 +97,37 @@
 
 <style>
   header {
-    position: relative;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
     z-index: 4;
-    isolation: isolate;
-    padding: 0.75rem 0;
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
+    padding: var(--header-padding);
+    background: transparent;
+    pointer-events: none;
+  }
+  header::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 auto;
+    height: 200%;
+    background: var(--chrome-bg);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+    mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50% 100%);
+    pointer-events: none;
+    content: '';
   }
   .header-art {
     position: absolute;
     inset: 0 auto 0 50%;
     width: 100vw;
     transform: translateX(-50%);
-    z-index: -1;
+    z-index: 1;
     overflow: hidden;
-    opacity: 0.16;
     pointer-events: none;
+    opacity: var(--art-opacity);
   }
   .header-art img {
     position: absolute;
@@ -120,13 +140,22 @@
     filter: grayscale(1) brightness(0.65);
   }
   .top-bar {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    pointer-events: auto;
   }
   .workspace-intro {
+    position: relative;
+    z-index: 2;
     margin: 1.25rem 0;
+    max-height: var(--intro-height);
+    overflow: hidden;
+    margin: var(--intro-margin);
+    opacity: var(--intro-opacity);
   }
   .workspace-intro h1 {
     max-width: 850px;

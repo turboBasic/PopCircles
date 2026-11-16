@@ -72,6 +72,84 @@ test('results scroll inside the viewport without scrolling the document', async 
   expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
 });
 
+test('header follows results scroll progress and restores at the top', async ({ page }) => {
+  const results = page.getByRole('region', { name: 'Map results' });
+  const header = page.locator('header');
+  const logo = page.getByRole('link', { name: 'PopCircles home' });
+  const intro = page.locator('.workspace-intro');
+
+  async function scrollResultsTo(top) {
+    await results.evaluate((region, position) => {
+      region.scrollTop = position;
+      region.dispatchEvent(new Event('scroll'));
+    }, top);
+  }
+
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await scrollResultsTo(80);
+    await expect(header).not.toHaveClass(/collapsed/);
+    await expect(intro).toHaveAttribute('aria-hidden', 'false');
+    expect(
+      Number(await intro.evaluate((element) => getComputedStyle(element).opacity)),
+    ).toBeCloseTo(0.5);
+    await scrollResultsTo(160);
+    await expect(header).toHaveClass(/collapsed/);
+    await expect(intro).toHaveAttribute('aria-hidden', 'true');
+    await expect(intro).toHaveCSS('opacity', '0');
+    await expect(logo).toBeVisible();
+    await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
+    const navigationButton = page.getByRole('button', {
+      name: viewport.width <= 800 ? 'Open map navigation' : 'Hide maps',
+    });
+    await expect(navigationButton).toBeVisible();
+    await navigationButton.click();
+    if (viewport.width <= 800) {
+      await expect(page.getByRole('dialog', { name: 'Browse maps' })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog', { name: 'Browse maps' })).toBeHidden();
+    } else {
+      const showMaps = page.getByRole('button', { name: 'Show maps' });
+      await expect(showMaps).toBeVisible();
+      await showMaps.click();
+    }
+    await page.getByRole('button', { name: 'Switch to light theme' }).click();
+    await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+
+    await scrollResultsTo(80);
+    await expect(header).not.toHaveClass(/collapsed/);
+    await scrollResultsTo(0);
+    await expect(header).not.toHaveClass(/collapsed/);
+    await expect(intro).toHaveAttribute('aria-hidden', 'false');
+    await expect(intro).toHaveCSS('opacity', '1');
+    const dimensions = await page.evaluate(() => ({
+      documentHeight: document.documentElement.scrollHeight,
+      viewportHeight: window.innerHeight,
+    }));
+    expect(dimensions.documentHeight).toBeLessThanOrEqual(dimensions.viewportHeight);
+  }
+});
+
+test('header collapse respects reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const results = page.getByRole('region', { name: 'Map results' });
+  await results.evaluate((region) => {
+    region.scrollTop = 160;
+    region.dispatchEvent(new Event('scroll'));
+  });
+  await expect(page.locator('header')).toHaveClass(/collapsed/);
+  await expect(page.locator('header')).toHaveCSS('transition-duration', '0s');
+  await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
+    'transition-duration',
+    '0s',
+  );
+});
+
 test('country navigation is keyboard operable and returns focus after Escape', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const trigger = page.getByRole('button', { name: 'Open map navigation' });

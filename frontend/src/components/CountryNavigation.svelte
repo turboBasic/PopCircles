@@ -99,6 +99,7 @@
     min-height: 0;
     flex-direction: column;
     overflow-y: auto;
+    margin-block: var(--navigation-header-space, 0px) var(--footer-space, 0px);
     padding: 1rem;
     background: var(--surface);
     border: 1px solid var(--line);

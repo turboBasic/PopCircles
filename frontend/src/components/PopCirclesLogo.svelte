@@ -45,6 +45,8 @@
     letter-spacing: 0.16em;
     text-decoration: none;
     text-transform: uppercase;
+    font-size: var(--logo-size);
+    letter-spacing: var(--logo-spacing);
   }
   .brand-text {
     display: flex;
