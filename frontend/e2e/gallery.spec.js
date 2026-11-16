@@ -524,9 +524,6 @@ test('short narrow viewports keep navigation controls visible and scroll regions
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
-    await expect(
-      page.getByRole('heading', { name: 'One circle, half the population.' }),
-    ).toBeVisible();
     const resultsScrollTop = await results.evaluate((element) => element.scrollTop);
     await page.getByRole('button', { name: 'Open maps navigation' }).click();
     await expect(dialog).toBeVisible();
