@@ -148,14 +148,27 @@
         >{matchCount} {matchCount === 1 ? 'country' : 'countries'}</span
       >
     </label>
-    <input
-      id="country-search"
-      type="search"
-      aria-label="Search maps"
-      bind:value={query}
-      placeholder="Search maps"
-      autocomplete="off"
-    />
+    <div class="search-field">
+      <input
+        id="country-search"
+        type="search"
+        aria-label="Search maps"
+        bind:value={query}
+        placeholder="Search maps"
+        autocomplete="off"
+      />
+      {#if query}
+        <button
+          class="clear-search"
+          type="button"
+          aria-label="Clear search"
+          onclick={() => {
+            query = '';
+            document.getElementById('country-search')?.focus();
+          }}>×</button
+        >
+      {/if}
+    </div>
     <p class="visually-hidden" role="status" aria-live="polite">
       {query ? `${matches.length} matching countries` : ''}
     </p>
@@ -257,6 +270,31 @@
     border: 1px solid var(--line);
     border-radius: 0.5rem;
     font: inherit;
+  }
+  .search-field {
+    position: relative;
+  }
+  .search-field input {
+    padding-right: 3rem;
+  }
+  .search-field input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+  .clear-search {
+    position: absolute;
+    top: 50%;
+    right: 0.35rem;
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    place-items: center;
+    padding: 0;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    transform: translateY(-50%);
   }
   nav {
     display: flex;

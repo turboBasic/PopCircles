@@ -57,6 +57,8 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
   await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('no result');
   await expect(navigation.getByText('No matching countries.')).toBeVisible();
+  await navigation.getByRole('button', { name: 'Clear search' }).click();
+  await expect(navigation.getByRole('searchbox', { name: 'Search maps' })).toHaveValue('');
   await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
   await page
     .getByRole('navigation', { name: 'Map navigation' })
