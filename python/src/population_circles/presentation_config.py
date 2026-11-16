@@ -1,7 +1,7 @@
 import re
 import tomllib
 from pathlib import Path
-from typing import Annotated, Literal, Self, cast
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
@@ -88,7 +88,7 @@ class PresentationConfig(_Model):
         if not isinstance(value, str):
             message = "country_maps.default_projection must be a projection"
             raise TypeError(message)
-        return cast(Projection, value)
+        return value
 
 
 def parse(text: str, *, source: Path = PRESENTATION_CONFIG) -> PresentationConfig:

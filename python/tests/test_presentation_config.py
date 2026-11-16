@@ -90,4 +90,4 @@ def test_country_map_key_must_be_a_canonical_id() -> None:
 
 
 def test_models_are_frozen() -> None:
-    assert load().model_config["frozen"] is True
+    assert load().model_config.get("frozen") is True
