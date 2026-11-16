@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from typing import cast
 
 from pyproj import CRS, Transformer
-from shapely import get_coordinates, transform
+from shapely import get_coordinates, set_precision, transform
 from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
 
 from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
@@ -39,6 +40,8 @@ COUNTRY_PROJECTIONS = (*PROJECTIONS, "albers-equal-area", "transverse-mercator")
 LIMB_SHAVE = 1e-4
 
 GRATICULE_STEP_DEG = 30
+ANTIMERIDIAN_LIMIT_DEG = 179.9
+ANTIMERIDIAN_SNAP_METRES = 25.0
 # Each side gets this share of the content width or height when no extent is configured.
 COUNTRY_FRAME_MARGIN = 0.02
 # A meridian and a parallel are straight only in the frame they are stated in, so each is walked at
@@ -72,6 +75,13 @@ def _country_extent(bounds: tuple[float, float, float, float]) -> tuple[float, f
     x_margin = (east - west) * COUNTRY_FRAME_MARGIN
     y_margin = (north - south) * COUNTRY_FRAME_MARGIN
     return west - x_margin, south - y_margin, east + x_margin, north + y_margin
+
+
+def _dissolve_projected_outline(outline: BaseGeometry, source: BaseGeometry) -> BaseGeometry:
+    if source.bounds[0] < -ANTIMERIDIAN_LIMIT_DEG and source.bounds[2] > ANTIMERIDIAN_LIMIT_DEG:
+        # GISCO's two antimeridian cuts are a few metres apart; close that display-only seam.
+        outline = set_precision(outline, grid_size=ANTIMERIDIAN_SNAP_METRES)
+    return unary_union(outline)
 
 
 def plate_carree(built: Cap) -> Frame:
@@ -193,6 +203,7 @@ def country_frame(
         include_z=None,
         interleaved=False,
     )
+    outline = _dissolve_projected_outline(outline, country_outline)
     circle_to_face = Transformer.from_crs(built.source, face, always_xy=True)
     circle = _transform(
         built.polygon,
