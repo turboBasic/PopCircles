@@ -74,8 +74,13 @@
   oncancel={handleCancel}
   onclose={handleDialogClose}
 >
-  <button class="close" type="button" aria-label="Close map navigation" onclick={closeDrawer}
-    >☰</button
+  <button
+    class="close"
+    type="button"
+    aria-controls="country-browser-panel"
+    aria-expanded={drawerOpen}
+    aria-label="Close map navigation"
+    onclick={closeDrawer}>☰</button
   >
   <h2 id="country-browser-title">Browse maps</h2>
   <nav aria-label="Map navigation">
@@ -126,13 +131,37 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 0;
-    box-shadow: 0 1rem 3rem #0005;
+    box-shadow: 0 1rem 3rem rgb(0 0 0 / 28%);
+    opacity: 0;
+    transform: translateX(-100%);
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease,
+      display 180ms allow-discrete,
+      overlay 180ms allow-discrete;
   }
   dialog:not(.open) {
     display: none;
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  dialog.open {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+  }
+  @starting-style {
+    dialog.open {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
   }
   dialog::backdrop {
     background: transparent;
+    transition: background-color 180ms ease;
+  }
+  dialog:modal::backdrop {
+    background: var(--chrome-bg);
   }
   h2 {
     margin: 0;
@@ -182,6 +211,12 @@
   }
   .status {
     font-size: 0.85rem;
+  }
+  button:focus-visible,
+  input:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
   .auto-hide {
     display: flex;
@@ -235,7 +270,13 @@
       left: 0.75rem;
     }
     dialog::backdrop {
-      background: #0008;
+      background: var(--chrome-bg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    dialog,
+    dialog::backdrop {
+      transition: none;
     }
   }
 </style>

@@ -184,6 +184,91 @@ test('auto-hide defaults on when local storage is unavailable', async ({ page })
   await expect(page.getByRole('switch', { name: 'Auto-hide drawer' })).toBeChecked();
 });
 
+test('drawer presentation fits each viewport, theme, and motion preference', async ({ page }) => {
+  const viewports = [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+    { width: 390, height: 844 },
+    { width: 320, height: 844 },
+  ];
+  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'One circle, half the population.' }),
+    ).toBeVisible();
+    const workspace = page.getByRole('region', { name: 'Map results' });
+    const workspaceBounds = await workspace.boundingBox();
+    if (viewport.width > 800) {
+      await page.getByRole('button', { name: 'Close map navigation' }).click();
+      expect(await workspace.boundingBox()).toEqual(workspaceBounds);
+      await page.getByRole('button', { name: 'Open map navigation' }).click();
+    } else {
+      await page.getByRole('button', { name: 'Open map navigation' }).click();
+    }
+    await expect(drawer).toBeVisible();
+    await expect
+      .poll(() => drawer.evaluate((element) => getComputedStyle(element).transform))
+      .toBe('matrix(1, 0, 0, 1, 0, 0)');
+    const bounds = await drawer.boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+    expect(await workspace.boundingBox()).toEqual(workspaceBounds);
+    const transitionDurations = await drawer.evaluate((element) =>
+      getComputedStyle(element)
+        .transitionDuration.split(',')
+        .map((duration) => Number.parseFloat(duration)),
+    );
+    expect(transitionDurations.some((duration) => duration > 0)).toBe(true);
+    if (viewport.width <= 800) {
+      const backdrop = await drawer.evaluate(
+        (element) => getComputedStyle(element, '::backdrop').backgroundColor,
+      );
+      expect(backdrop).not.toBe('rgba(0, 0, 0, 0)');
+      await page.keyboard.press('Shift+Tab');
+      await expect(drawer.getByRole('button', { name: 'Close map navigation' })).toHaveCSS(
+        'outline-style',
+        'solid',
+      );
+      await drawer.getByRole('searchbox', { name: 'Search maps' }).focus();
+    }
+
+    const scroll = await drawer.locator('.map-links').evaluate((links) => {
+      links.scrollTop = links.scrollHeight;
+      return links.scrollTop;
+    });
+    expect(scroll).toBeGreaterThan(0);
+    await drawer.locator('.map-links').evaluate((links) => (links.scrollTop = 0));
+
+    for (const [theme, surface, text] of [
+      ['dark', 'rgb(18, 26, 43)', 'rgb(238, 243, 255)'],
+      ['light', 'rgb(255, 255, 255)', 'rgb(23, 32, 51)'],
+    ]) {
+      const currentTheme = await page.evaluate(() => document.documentElement.dataset.theme);
+      if ((currentTheme === 'light') !== (theme === 'light')) {
+        const themeButton = page.getByRole('button', {
+          name: currentTheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme',
+        });
+        if (viewport.width <= 800) {
+          await drawer.getByRole('button', { name: 'Close map navigation' }).click();
+          await themeButton.click();
+          await page.getByRole('button', { name: 'Open map navigation' }).click();
+        } else await themeButton.click();
+      }
+      await expect(drawer).toHaveCSS('background-color', surface);
+      await expect(drawer).toHaveCSS('color', text);
+    }
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(drawer).toHaveCSS('transition-duration', '0s');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+  }
+});
+
 test('results scroll inside the viewport without scrolling the document', async ({ page }) => {
   const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
     results.scrollTop = results.scrollHeight;
