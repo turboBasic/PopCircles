@@ -15,6 +15,7 @@
       ><span class="globe-fallback">o</span><svg
         class="globe-letter"
         viewBox="0 0 512 512"
+        style:scale="1.07"
         aria-hidden="true"><use href={`${globeSprite}#${globeSymbol}`}></use></svg
       ></span
     >
@@ -72,7 +73,6 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    scale: 1.07;
     transform: translate(-50%, -50%);
   }
   .trailing-globe {
