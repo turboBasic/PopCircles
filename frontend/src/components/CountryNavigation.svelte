@@ -1,5 +1,5 @@
 <script>
-  import { filterCountries } from '../gallery.js';
+  import { countCountryMatches, filterCountries, groupCountries } from '../gallery.js';
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
@@ -18,8 +18,18 @@
     onToggleAutoHide,
   } = $props();
   let query = $state('');
-  let matches = $derived(worldEntry ? [worldEntry, ...filterCountries(countries, query)] : []);
+  let matches = $derived(filterCountries(countries, query));
+  let groups = $derived(groupCountries(matches));
+  let matchCount = $derived(countCountryMatches(countries, query));
   let restoreFocus = false;
+
+  $effect(() => {
+    const anchor = selectedEntry?.anchor;
+    if (anchor)
+      requestAnimationFrame(() =>
+        document.getElementById(`country-link-${anchor}`)?.scrollIntoView({ block: 'nearest' }),
+      );
+  });
 
   function closeDrawer() {
     restoreFocus = mobileNavigation?.matches ?? false;
@@ -84,8 +94,11 @@
   >
   <h2 id="country-browser-title">Browse maps</h2>
   <nav aria-label="Map navigation">
-    <label for="country-search">Search maps <span class="status">{matches.length} maps</span></label
-    >
+    <label for="country-search">
+      Search maps <span class="status"
+        >{matchCount} {matchCount === 1 ? 'country' : 'countries'}</span
+      >
+    </label>
     <input
       id="country-search"
       type="search"
@@ -102,14 +115,35 @@
       Auto-hide drawer
     </label>
     <div class="map-links">
-      {#each matches as entry (entry.anchor)}
-        <a
-          class:active={selectedEntry?.anchor === entry.anchor}
-          aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
-          href={`#${entry.anchor}`}
-          onclick={() => selectEntry(entry)}>{entry.name}</a
-        >
-      {:else}<p class="empty">No matching maps.</p>{/each}
+      <a
+        class:active={selectedEntry === null}
+        aria-current={selectedEntry === null ? 'page' : undefined}
+        href={`${window.location.pathname}${window.location.search}`}>All countries</a
+      >
+      <a
+        class:active={selectedEntry?.anchor === worldEntry.anchor}
+        aria-current={selectedEntry?.anchor === worldEntry.anchor ? 'page' : undefined}
+        href={`#${worldEntry.anchor}`}
+        onclick={() => selectEntry(worldEntry)}>{worldEntry.name}</a
+      >
+      {#each Object.entries(groups) as [letter, entries] (letter)}
+        <section class:filtered={query.trim()} aria-label={letter}>
+          {#if !query.trim()}<h3>{letter}</h3>{/if}
+          <ul>
+            {#each entries as entry (entry.anchor)}
+              <li>
+                <a
+                  id={`country-link-${entry.anchor}`}
+                  class:active={selectedEntry?.anchor === entry.anchor}
+                  aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
+                  href={`#${entry.anchor}`}
+                  onclick={() => selectEntry(entry)}>{entry.name}</a
+                >
+              </li>
+            {/each}
+          </ul>
+        </section>
+      {:else}<p class="empty">No matching countries.</p>{/each}
     </div>
   </nav>
 </dialog>
@@ -187,12 +221,26 @@
     flex-direction: column;
   }
   .map-links {
-    display: grid;
     flex: 1;
     min-height: 0;
     gap: 0.35rem;
     margin-top: 1rem;
     overflow-y: auto;
+  }
+  .map-links ul {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .map-links h3 {
+    margin: 0.75rem 0 0.25rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .map-links section.filtered ul {
+    margin-top: 0.35rem;
   }
   .map-links a {
     padding: 0.25rem 0;

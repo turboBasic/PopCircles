@@ -42,8 +42,22 @@ test.beforeEach(async ({ page }) => {
 
 test('searches country navigation and selects a country', async ({ page }) => {
   const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  await expect(navigation.getByRole('link', { name: 'All countries' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(navigation.getByRole('link', { name: 'World' })).toHaveAttribute(
+    'href',
+    '#world-result',
+  );
+  await expect(navigation.getByText('80 countries')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
-  await expect(navigation.getByRole('link')).toHaveCount(2);
+  await expect(navigation.getByRole('link')).toHaveCount(3);
+  await expect(navigation.getByText('1 country')).toBeVisible();
+  await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
+  await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('no result');
+  await expect(navigation.getByText('No matching countries.')).toBeVisible();
+  await navigation.getByRole('searchbox', { name: 'Search maps' }).fill('country 42');
   await page
     .getByRole('navigation', { name: 'Map navigation' })
     .getByRole('link', { name: 'Country 42' })
@@ -56,6 +70,17 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
   await expect(page).toHaveURL(/#country-42$/);
+  await page.getByRole('button', { name: 'Open map navigation' }).click();
+  await navigation.getByRole('link', { name: 'All countries' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(navigation.getByRole('link', { name: 'All countries' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(navigation.getByRole('link', { name: 'Country 42' })).not.toHaveAttribute(
+    'aria-current',
+    'page',
+  );
 });
 
 test('drawer defaults by viewport and keeps the workspace fixed while resizing', async ({
