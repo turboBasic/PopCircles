@@ -79,8 +79,11 @@
   }
   .figure-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     gap: 1rem;
+  }
+  #world-result .figure-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
     .results {
