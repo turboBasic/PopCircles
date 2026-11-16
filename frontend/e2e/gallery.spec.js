@@ -101,7 +101,7 @@ test('scrolls the selected country into view in the navigation list', async ({ p
 test('desktop navigation collapses to a rail without overlapping results', async ({ page }) => {
   for (const width of [1024, 1440]) {
     await page.setViewportSize({ width, height: 768 });
-    const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+    const drawer = page.getByRole('dialog', { name: 'Country navigation' });
     await expect(drawer).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Map navigation' })).toHaveCount(1);
     const workspaceBefore = await page.getByRole('region', { name: 'Map results' }).boundingBox();
@@ -175,7 +175,7 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   await expect(
     page.getByRole('heading', { name: 'One circle, half the population.' }),
   ).toBeVisible();
-  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
   await expect(drawer).toBeHidden();
   await page.getByRole('button', { name: 'Open maps navigation' }).click();
   await expect(drawer).toBeVisible();
@@ -214,7 +214,7 @@ test('direct links, Back and Forward restore country selection and reset results
   page,
 }) => {
   await page.goto('/#country-42');
-  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
   const navigation = page.getByRole('navigation', { name: 'Map navigation' });
   await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
     'aria-current',
@@ -251,7 +251,7 @@ test('drawer presentation fits each viewport, theme, and motion preference', asy
     { width: 390, height: 844 },
     { width: 320, height: 844 },
   ];
-  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
 
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
@@ -375,9 +375,9 @@ test('header follows results scroll progress and restores at the top', async ({ 
     await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
     if (viewport.width <= 1023) {
       await page.getByRole('button', { name: 'Open maps navigation' }).click();
-      await expect(page.getByRole('dialog', { name: 'Browse maps' })).toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Country navigation' })).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog', { name: 'Browse maps' })).toBeHidden();
+      await expect(page.getByRole('dialog', { name: 'Country navigation' })).toBeHidden();
     } else {
       const navigationButton = page.getByRole('button', { name: 'Collapse maps navigation' });
       await expect(navigationButton).toBeVisible();
@@ -434,7 +434,7 @@ test('country navigation is keyboard operable and returns focus after Escape', a
   await trigger.focus();
   await page.keyboard.press('Enter');
 
-  const dialog = page.getByRole('dialog', { name: 'Browse maps' });
+  const dialog = page.getByRole('dialog', { name: 'Country navigation' });
   await expect(dialog).toBeVisible();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeFocused();
@@ -462,7 +462,7 @@ test('mobile selection and viewport changes preserve query and independent state
     page.getByRole('heading', { name: 'One circle, half the population.' }),
   ).toBeVisible();
   const trigger = page.getByRole('button', { name: 'Open maps navigation' });
-  const dialog = page.getByRole('dialog', { name: 'Browse maps' });
+  const dialog = page.getByRole('dialog', { name: 'Country navigation' });
   const search = dialog.getByRole('searchbox', { name: 'Search countries' });
 
   await trigger.click();
@@ -513,7 +513,7 @@ test('short narrow viewports keep navigation controls visible and scroll regions
     page.getByRole('heading', { name: 'One circle, half the population.' }),
   ).toBeVisible();
 
-  const dialog = page.getByRole('dialog', { name: 'Browse maps' });
+  const dialog = page.getByRole('dialog', { name: 'Country navigation' });
   const results = page.getByRole('region', { name: 'Map results' });
   const list = dialog.locator('.map-links');
   const longLink = dialog.getByRole('link', { name: longCountry.name });
@@ -579,7 +579,7 @@ test('navigation fits viewports equivalent to 200% and 400% zoom', async ({ page
     expect(triggerBounds.x).toBeGreaterThanOrEqual(0);
     expect(triggerBounds.x + triggerBounds.width).toBeLessThanOrEqual(viewport.width);
     await trigger.click();
-    const dialog = page.getByRole('dialog', { name: 'Browse maps' });
+    const dialog = page.getByRole('dialog', { name: 'Country navigation' });
     await expect(dialog).toBeVisible();
     await expect
       .poll(() => dialog.evaluate((element) => getComputedStyle(element).transform))

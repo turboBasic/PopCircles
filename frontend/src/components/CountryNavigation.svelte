@@ -107,7 +107,7 @@
   bind:this={mobileDialog}
   class:open={!mobileMode || drawerOpen}
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
-  aria-labelledby="country-browser-title"
+  aria-label="Country navigation"
   onclick={handleDialogClick}
   oncancel={handleCancel}
   onclose={handleDialogClose}
@@ -141,7 +141,6 @@
     aria-label="Close map navigation"
     onclick={() => closeDrawer()}>☰</button
   >
-  <h2 id="country-browser-title">Browse maps</h2>
   <nav aria-label="Map navigation">
     <label class="search-label" for="country-search">
       Search countries <span class="status">Matching: {matchCount}</span>
@@ -252,9 +251,6 @@
   dialog:modal::backdrop {
     background: var(--chrome-bg);
   }
-  h2 {
-    margin: 0;
-  }
   label {
     display: block;
     margin: 0.8rem 0 0.5rem;
@@ -347,7 +343,6 @@
   .desktop-collapsed {
     padding-inline: 0.4rem;
   }
-  .desktop-collapsed h2,
   .desktop-collapsed nav > label,
   .desktop-collapsed nav > input,
   .desktop-collapsed nav > .visually-hidden,
