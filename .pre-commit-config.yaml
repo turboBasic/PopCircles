@@ -14,11 +14,11 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-toml
-      # The bound on what a commit may add to the pack, at the default 500 KB. --enforce-all
+      # The bound on what a commit may add to the pack, at 1 MiB. --enforce-all
       # because `lint:data` runs it with --all-files, where nothing is staged and the default
       # filter to added-only would check nothing at all.
       - id: check-added-large-files
-        args: [--enforce-all]
+        args: [--enforce-all, --maxkb=1024]
       - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

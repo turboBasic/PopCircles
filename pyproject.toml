@@ -75,6 +75,7 @@ ignore = [
 ]
 "python/src/population_circles/render_globe.py" = [
   "T201", # the path a globe was written to is this command's output, not debug printing
+  "S314", # parse_svg rejects DTDs and entities before ElementTree parses generated SVG files
 ]
 "python/src/population_circles/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
@@ -87,6 +88,9 @@ ignore = [
 ]
 "python/tests/*.py" = [
   "S101", # assert is how pytest asserts
+]
+"python/tests/test_render_globe.py" = [
+  "S314", # the test parses only its own fixed SVG fixtures
 ]
 
 [tool.ruff.lint.isort]

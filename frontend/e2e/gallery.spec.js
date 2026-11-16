@@ -99,6 +99,93 @@ test('interactive controls have accessible names', async ({ page }) => {
   await expect(page.getByRole('searchbox', { name: 'Search maps' })).toBeVisible();
 });
 
+test('animated logo keeps its brand text and selects valid sprite symbols', async ({ page }) => {
+  const logo = page.getByRole('link', { name: 'PopCircles home' });
+  const logoData = await logo.evaluate(async (link) => {
+    const brandText = link.querySelector('.brand-text');
+    const uses = [...link.querySelectorAll('use')];
+    const urls = uses.map((use) => new URL(use.getAttribute('href'), location.href));
+    const spriteUrl = new URL(urls[0]);
+    spriteUrl.hash = '';
+    const document = new DOMParser().parseFromString(
+      await fetch(spriteUrl).then((r) => r.text()),
+      'image/svg+xml',
+    );
+    return {
+      text: brandText?.textContent.replace(/\s/g, ''),
+      label: link.getAttribute('aria-label'),
+      symbolIds: [...document.querySelectorAll('symbol')].map((symbol) => symbol.id),
+      references: urls.map((url) => ({
+        id: url.hash.slice(1),
+        valid: Boolean(document.getElementById(url.hash.slice(1))),
+      })),
+    };
+  });
+  expect(logoData.text).toBe('PopCircles');
+  expect(logoData.label).toBe('PopCircles home');
+  expect(logoData.symbolIds).toEqual(
+    Array.from({ length: 72 }, (_, index) => `frame-${String(index + 1).padStart(2, '0')}`),
+  );
+  expect(logoData.references).toEqual([
+    { id: 'frame-01', valid: true },
+    { id: 'frame-01', valid: true },
+  ]);
+  await expect(logo.locator('svg[aria-hidden="true"]')).toHaveCount(2);
+
+  const results = page.getByRole('region', { name: 'Map results' });
+  for (const [scrollTop, symbol] of [
+    [4, 'frame-02'],
+    [239, 'frame-72'],
+    [240, 'frame-01'],
+  ]) {
+    await results.evaluate((region, top) => {
+      region.scrollTop = top;
+      region.dispatchEvent(new Event('scroll'));
+    }, scrollTop);
+    await expect
+      .poll(() => logo.locator('use').first().getAttribute('href'))
+      .toMatch(new RegExp(`#${symbol}$`));
+  }
+
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const alignment = await logo.evaluate((link) => {
+      const brandText = link.querySelector('.brand-text');
+      const slots = [...brandText.querySelectorAll('.letter-slot')].map((letter) =>
+        letter.getBoundingClientRect(),
+      );
+      const slot = brandText.querySelector('.globe-slot').getBoundingClientRect();
+      const globe = brandText.querySelector('.globe-letter').getBoundingClientRect();
+      const fontSize = Number.parseFloat(getComputedStyle(brandText).fontSize);
+      const slotGap = Number.parseFloat(getComputedStyle(brandText).columnGap);
+      return {
+        slotCenter: slot.left + slot.width / 2,
+        globeCenter: globe.left + globe.width / 2,
+        globeSize: globe.width,
+        slotSize: slot.width,
+        slotWidths: slots.map(({ width }) => width),
+        slotGaps: slots.slice(1).map((letter, index) => letter.left - slots[index].right),
+        expectedSlotGaps: slots
+          .slice(1)
+          .map((_, index) => slotGap + fontSize * (index === 0 ? -0.08 : index === 1 ? 0.1 : 0)),
+      };
+    });
+    expect(Math.abs(alignment.slotCenter - alignment.globeCenter)).toBeLessThan(1);
+    expect(alignment.globeSize).toBeCloseTo(alignment.slotSize, 1);
+    expect(
+      alignment.slotWidths.every((width) => Math.abs(width - alignment.slotWidths[0]) < 1),
+    ).toBe(true);
+    expect(
+      alignment.slotGaps.every(
+        (gap, index) => Math.abs(gap - alignment.expectedSlotGaps[index]) < 1,
+      ),
+    ).toBe(true);
+  }
+});
+
 test('responsive layout, map ratio, and theme styles keep their expected values', async ({
   page,
 }) => {
