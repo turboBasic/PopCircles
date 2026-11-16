@@ -113,6 +113,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
     );
     return {
       text: brandText?.textContent.replace(/\s/g, ''),
+      fallbackVisibility: getComputedStyle(link.querySelector('.globe-fallback')).visibility,
       label: link.getAttribute('aria-label'),
       symbolIds: [...document.querySelectorAll('symbol')].map((symbol) => symbol.id),
       references: urls.map((url) => ({
@@ -122,6 +123,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
     };
   });
   expect(logoData.text).toBe('PopCircles');
+  expect(logoData.fallbackVisibility).toBe('hidden');
   expect(logoData.label).toBe('PopCircles home');
   expect(logoData.symbolIds).toEqual(
     Array.from({ length: 72 }, (_, index) => `frame-${String(index + 1).padStart(2, '0')}`),

@@ -12,8 +12,10 @@
   <span class="brand-text" aria-hidden="true">
     <span class="letter-slot">P</span>
     <span class="letter-slot globe-slot"
-      >o<svg class="globe-letter" viewBox="0 0 512 512" aria-hidden="true"
-        ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
+      ><span class="globe-fallback">o</span><svg
+        class="globe-letter"
+        viewBox="0 0 512 512"
+        aria-hidden="true"><use href={`${globeSprite}#${globeSymbol}`}></use></svg
       ></span
     >
     <span class="letter-slot">p</span>
@@ -57,6 +59,9 @@
     position: relative;
     margin-left: -0.08em;
     margin-right: 0.1em;
+  }
+  .globe-fallback {
+    visibility: hidden;
   }
   .globe-letter {
     display: block;
