@@ -397,10 +397,13 @@ def test_country_render_selects_complete_chile_components() -> None:
         / "results"
         / ("country-gpw-2020-gisco-2024-2-CL-half.json")
     )
-    answer = circle_of(json.loads(result.read_text(encoding="utf-8")))
+    document = json.loads(result.read_text(encoding="utf-8"))
+    original_document = json.dumps(document, sort_keys=True)
+    answer = circle_of(document)
     outline = load_outline(answer, REGISTRY)
     assert outline is not None
     original = outline.wkb
+    original_circle = answer.circle.model_dump_json()
     settings = load_presentation_config().country_maps["CL"]
     assert isinstance(settings, CountryMap)
     assert settings.component_bounds is not None
@@ -412,6 +415,37 @@ def test_country_render_selects_complete_chile_components() -> None:
     assert len(outline.geoms) - len(selected.geoms) == EXPECTED_EXCLUDED_CHILE_COMPONENTS
     assert selected.bounds == pytest.approx((-75.72, -56.53, -66.42, -17.50), abs=0.01)
     assert outline.wkb == original
+
+    figure = render(answer, ORTHOGRAPHIC, coastline=None, country_outline=outline)
+    plt.close(figure)
+    assert json.dumps(document, sort_keys=True) == original_document
+    assert answer.circle.model_dump_json() == original_circle
+    assert outline.wkb == original
+
+
+@pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
+def test_world_render_uses_its_frame_without_country_presentation(
+    projection: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    current_frame = render_map_module.frame
+    observed: list[str] = []
+
+    def capture_frame(selected_projection: str, built: Cap) -> Frame:
+        observed.append(selected_projection)
+        return current_frame(selected_projection, built)
+
+    def refuse_country_display(*_args: object) -> None:
+        message = "world rendering consulted country presentation settings"
+        raise AssertionError(message)
+
+    monkeypatch.setattr(render_map_module, "frame", capture_frame)
+    monkeypatch.setattr(render_map_module, "country_map_display", refuse_country_display)
+    monkeypatch.setattr(render_map_module, "country_frame", refuse_country_display)
+    figure = render(circle_of(document()), projection, coastline=None)
+    try:
+        assert observed == [projection]
+    finally:
+        plt.close(figure)
 
 
 @pytest.mark.parametrize(("radius_km", "expected_patches"), [(0.0, 2), (200.0, 3)])
