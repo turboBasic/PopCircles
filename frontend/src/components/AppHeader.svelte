@@ -182,6 +182,11 @@
   .drawer-toggle {
     white-space: nowrap;
   }
+  @media (min-width: 1024px) {
+    .drawer-toggle {
+      display: none;
+    }
+  }
   button {
     padding: 0.55rem 0.85rem;
     color: var(--text);

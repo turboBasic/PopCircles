@@ -49,7 +49,7 @@
 
 <style>
   .results {
-    grid-column: 1 / -1;
+    grid-column: 2;
     height: 100%;
     min-width: 0;
     min-height: 0;
@@ -79,5 +79,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     gap: 1rem;
+  }
+  @media (max-width: 1023px) {
+    .results {
+      grid-column: 1;
+    }
   }
 </style>

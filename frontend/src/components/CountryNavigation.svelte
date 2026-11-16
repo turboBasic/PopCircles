@@ -3,19 +3,22 @@
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
-  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileNavigation: MediaQueryList | null, drawerOpen: boolean, autoHide: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onToggleAutoHide: () => void}} */
+  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, autoHide: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onToggleAutoHide: () => void, onToggleDesktopNavigation: () => void, onExpandAndFocusSearch: () => void}} */
   let {
     worldEntry,
     countries,
     selectedEntry,
-    mobileNavigation,
+    mobileMode,
     drawerOpen,
+    desktopNavigationCollapsed,
     autoHide,
     mobileDialog = $bindable(),
     browserTrigger,
     onSelect,
     onCloseDrawer,
     onToggleAutoHide,
+    onToggleDesktopNavigation,
+    onExpandAndFocusSearch,
   } = $props();
   let query = $state('');
   let matches = $derived(filterCountries(countries, query));
@@ -32,8 +35,8 @@
   });
 
   function closeDrawer() {
-    restoreFocus = mobileNavigation?.matches ?? false;
-    mobileDialog?.close();
+    restoreFocus = mobileMode;
+    if (restoreFocus) mobileDialog?.close();
     onCloseDrawer();
   }
 
@@ -56,7 +59,7 @@
 
   /** @param {KeyboardEvent} event */
   function handleKeydown(event) {
-    if (event.key !== 'Escape' || !drawerOpen) return;
+    if (event.key !== 'Escape' || (mobileMode ? !drawerOpen : desktopNavigationCollapsed)) return;
     event.preventDefault();
     closeDrawer();
   }
@@ -78,12 +81,33 @@
 <dialog
   id="country-browser-panel"
   bind:this={mobileDialog}
-  class:open={drawerOpen}
+  class:open={!mobileMode || drawerOpen}
+  class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
   aria-labelledby="country-browser-title"
   onpointerleave={handlePointerLeave}
   oncancel={handleCancel}
   onclose={handleDialogClose}
 >
+  <div class="desktop-controls">
+    <button
+      class="desktop-collapse"
+      type="button"
+      aria-label="Collapse maps navigation"
+      aria-controls="country-browser-panel"
+      aria-expanded={!desktopNavigationCollapsed}
+      onclick={onToggleDesktopNavigation}>‹</button
+    >
+  </div>
+  <div class="rail-controls">
+    <button
+      type="button"
+      aria-label="Expand maps navigation"
+      aria-controls="country-browser-panel"
+      aria-expanded={!desktopNavigationCollapsed}
+      onclick={onToggleDesktopNavigation}>›</button
+    >
+    <button type="button" aria-label="Search maps" onclick={onExpandAndFocusSearch}>⌕</button>
+  </div>
   <button
     class="close"
     type="button"
@@ -150,29 +174,24 @@
 
 <style>
   dialog {
-    position: fixed;
-    z-index: 3;
-    inset: var(--navigation-header-space, 0px) auto var(--footer-space, 0px)
-      max(1rem, calc((100vw - 1600px) / 2));
-    width: min(20rem, calc(100vw - 2rem));
+    position: relative;
+    z-index: auto;
+    grid-column: 1;
+    width: 100%;
     max-width: none;
-    height: auto;
+    height: 100%;
     max-height: none;
     margin: 0;
-    padding: 1rem;
+    padding: calc(var(--navigation-header-space, 0px) + 1rem) 1rem
+      calc(var(--footer-space, 0px) + 1rem);
     overflow: hidden;
     color: var(--text);
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 0;
-    box-shadow: 0 1rem 3rem rgb(0 0 0 / 28%);
-    opacity: 0;
-    transform: translateX(-100%);
-    transition:
-      opacity 180ms ease,
-      transform 180ms ease,
-      display 180ms allow-discrete,
-      overlay 180ms allow-discrete;
+    border-radius: 0.8rem;
+    box-shadow: none;
+    opacity: 1;
+    transform: none;
   }
   dialog:not(.open) {
     display: none;
@@ -181,8 +200,7 @@
   }
   dialog.open {
     display: block;
-    opacity: 1;
-    transform: translateX(0);
+    animation: none;
   }
   @starting-style {
     dialog.open {
@@ -220,12 +238,50 @@
     min-height: 0;
     flex-direction: column;
   }
+  .desktop-controls {
+    position: absolute;
+    top: calc(var(--navigation-header-space, 0px) + 0.65rem);
+    right: 1rem;
+  }
+  .desktop-controls button,
+  .rail-controls button {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    font: inherit;
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+  .rail-controls {
+    display: none;
+  }
   .map-links {
     flex: 1;
     min-height: 0;
     gap: 0.35rem;
     margin-top: 1rem;
     overflow-y: auto;
+  }
+  .desktop-collapsed {
+    padding-inline: 0.4rem;
+  }
+  .desktop-collapsed h2,
+  .desktop-collapsed nav > label,
+  .desktop-collapsed nav > input,
+  .desktop-collapsed nav > .visually-hidden,
+  .desktop-collapsed nav > .auto-hide,
+  .desktop-collapsed .map-links,
+  .desktop-collapsed .desktop-controls {
+    display: none;
+  }
+  .desktop-collapsed .rail-controls {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
   }
   .map-links ul {
     display: grid;
@@ -304,12 +360,29 @@
     white-space: nowrap;
     border: 0;
   }
-  @media (max-width: 800px) {
+  @media (max-width: 1023px) {
     dialog {
+      position: fixed;
+      z-index: 3;
       inset: 0;
-      width: min(24rem, calc(100vw - 3rem));
+      width: min(24rem, calc(100vw - 2rem));
       height: 100dvh;
-      padding-top: calc(var(--navigation-header-space, 0px) + 1rem);
+      padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+      opacity: 0;
+      transform: translateX(-100%);
+      transition:
+        opacity 180ms ease,
+        transform 180ms ease,
+        display 180ms allow-discrete,
+        overlay 180ms allow-discrete;
+    }
+    dialog.open {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .desktop-controls,
+    .rail-controls {
+      display: none;
     }
     .close {
       display: block;

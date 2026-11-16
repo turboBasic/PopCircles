@@ -21,7 +21,8 @@
         ]
       : [],
   );
-  let drawerOpen = $state(false);
+  let mobileDrawerOpen = $state(false);
+  let desktopNavigationCollapsed = $state(false);
   /** @type {HTMLDialogElement | null} */
   let mobileDialog = $state(null);
   let autoHide = $state(true);
@@ -31,6 +32,7 @@
   let copyTimeout;
   /** @type {MediaQueryList | null} */
   let mobileNavigation = $state(null);
+  let mobileMode = $state(false);
   /** @type {HTMLButtonElement | null} */
   let browserTrigger = $state(null);
   /** @type {HTMLDivElement | null} */
@@ -62,19 +64,31 @@
     requestAnimationFrame(resetView);
   }
 
-  function syncDrawer() {
+  function syncNavigation() {
     if (!mobileDialog || !mobileNavigation) return;
-    if (mobileDialog.open) mobileDialog.close();
-    if (!drawerOpen) return;
-    if (mobileNavigation.matches) {
-      mobileDialog.showModal();
-      requestAnimationFrame(() => mobileDialog?.querySelector('input')?.focus());
-    } else mobileDialog.show();
+    if (mobileMode) {
+      if (mobileDialog.open) mobileDialog.close();
+      if (mobileDrawerOpen) mobileDialog.showModal();
+    } else if (!mobileDialog.open || mobileDialog.matches(':modal')) {
+      if (mobileDialog.open) mobileDialog.close();
+      mobileDialog.show();
+    }
   }
 
-  function toggleDrawer() {
-    drawerOpen = !drawerOpen;
-    syncDrawer();
+  function toggleMobileNavigation() {
+    mobileDrawerOpen = !mobileDrawerOpen;
+    syncNavigation();
+    if (mobileDrawerOpen)
+      requestAnimationFrame(() => document.getElementById('country-search')?.focus());
+  }
+
+  function toggleDesktopNavigation() {
+    desktopNavigationCollapsed = !desktopNavigationCollapsed;
+  }
+
+  function expandDesktopNavigationAndFocusSearch() {
+    desktopNavigationCollapsed = false;
+    requestAnimationFrame(() => document.getElementById('country-search')?.focus());
   }
 
   function toggleAutoHide() {
@@ -128,15 +142,16 @@
 
   onMount(() => {
     let active = true;
-    const navigationQuery = window.matchMedia('(max-width: 800px)');
+    const navigationQuery = window.matchMedia('(max-width: 1023px)');
     mobileNavigation = navigationQuery;
+    mobileMode = navigationQuery.matches;
     const handleHistory = () => restoreEntry();
     const chromeObserver = new ResizeObserver(measureChrome);
     const header = document.querySelector('.app-header');
     const footer = document.querySelector('.site-footer');
     if (header) chromeObserver.observe(header);
     if (footer) chromeObserver.observe(footer);
-    drawerOpen = !navigationQuery.matches;
+    mobileDrawerOpen = false;
     try {
       const savedAutoHide = localStorage.getItem('popcircles-auto-hide-drawer');
       autoHide = savedAutoHide !== 'false';
@@ -145,12 +160,14 @@
       // Browser privacy settings can disable storage.
     }
     const handleNavigationChange = () => {
-      syncDrawer();
+      mobileDrawerOpen = false;
+      mobileMode = navigationQuery.matches;
+      syncNavigation();
     };
     handleScroll();
     measureChrome();
     navigationQuery.addEventListener('change', handleNavigationChange);
-    requestAnimationFrame(syncDrawer);
+    requestAnimationFrame(syncNavigation);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     fetch('./gallery-data.json')
@@ -161,7 +178,7 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        requestAnimationFrame(syncDrawer);
+        requestAnimationFrame(syncNavigation);
         restoreEntry([
           { name: 'World', anchor: 'world-result', figures: value.world, missing: false },
           ...value.countries,
@@ -198,10 +215,10 @@
     {headerCollapseProgress}
     {data}
     {themeLight}
-    {drawerOpen}
+    drawerOpen={mobileDrawerOpen}
     bind:browserTrigger
     onTheme={toggleTheme}
-    onToggleDrawer={toggleDrawer}
+    onToggleDrawer={toggleMobileNavigation}
   />
 
   <main>
@@ -214,18 +231,24 @@
         <p role="status">Loading gallery…</p>
       </div>
     {:else}
-      <div class="explorer">
+      <div class="explorer" class:nav-collapsed={desktopNavigationCollapsed}>
         <CountryNavigation
           worldEntry={entries[0]}
           countries={data.countries}
           {selectedEntry}
-          {mobileNavigation}
-          {drawerOpen}
+          {mobileMode}
+          drawerOpen={mobileDrawerOpen}
+          {desktopNavigationCollapsed}
           {autoHide}
           bind:mobileDialog
           {browserTrigger}
           onSelect={selectEntry}
-          onCloseDrawer={() => (drawerOpen = false)}
+          onCloseDrawer={() => {
+            if (mobileMode) mobileDrawerOpen = false;
+            else desktopNavigationCollapsed = true;
+          }}
+          onToggleDesktopNavigation={toggleDesktopNavigation}
+          onExpandAndFocusSearch={expandDesktopNavigationAndFocusSearch}
           onToggleAutoHide={toggleAutoHide}
         />
 
@@ -361,7 +384,7 @@
     display: grid;
     min-width: 0;
     min-height: 0;
-    grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: stretch;
   }
@@ -379,14 +402,17 @@
     border-radius: 0.75rem;
     box-shadow: 0 0.5rem 2rem #0005;
   }
-  @media (max-width: 800px) {
+  .explorer.nav-collapsed {
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+  @media (max-width: 1023px) {
     .app-shell {
       width: calc(100% - 2rem);
     }
     .explorer {
       grid-template-columns: 1fr;
-      grid-template-rows: auto minmax(0, 1fr);
-      gap: 0.75rem;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
     }
   }
 </style>
