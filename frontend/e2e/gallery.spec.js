@@ -83,6 +83,17 @@ test('searches country navigation and selects a country', async ({ page }) => {
   );
 });
 
+test('scrolls the selected country into view in the navigation list', async ({ page }) => {
+  await page.goto('/#country-80');
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const selectedLink = navigation.getByRole('link', { name: 'Country 80' });
+  await expect(selectedLink).toHaveAttribute('aria-current', 'page');
+  await expect(selectedLink).toBeInViewport();
+  await expect
+    .poll(() => navigation.locator('.map-links').evaluate((list) => list.scrollTop))
+    .toBeGreaterThan(0);
+});
+
 test('drawer defaults by viewport and keeps the workspace fixed while resizing', async ({
   page,
 }) => {
