@@ -84,12 +84,12 @@ def citation(registry: Registry, key: str) -> str:
     return dataset.attribution
 
 
-# Bottom to top: the graticule under the coastlines, the circle over both, its centre over that, and
-# the frame's own outline last so no fill reaching the limb draws over it.
-GRATICULE_LAYER = 1
+# Bottom to top: coastlines, country fills, graticule, circle, its centre, and the frame's own
+# outline last so no fill reaching the limb draws over it.
 COASTLINE_LAYER = 2
-CIRCLE_LAYER = 3
 COUNTRY_LAYER = 2.5
+GRATICULE_LAYER = 2.75
+CIRCLE_LAYER = 3
 OCEAN = "#DFFFFD"
 COUNTRY = "#65CBC1"
 OUTLINE_WIDTH = 0.6

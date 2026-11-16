@@ -97,6 +97,15 @@ y_min = -2111802.2
 x_max = 2419813.8
 y_max = 3835144.3
 
+[country_maps.RU]
+projection = "albers-equal-area"
+
+[country_maps.RU.projection_parameters]
+lon_0 = 100.0
+lat_0 = 55.0
+lat_1 = 50.0
+lat_2 = 70.0
+
 [country_maps.CL]
 projection = "plate-carree"
 

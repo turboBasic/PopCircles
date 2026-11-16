@@ -195,7 +195,15 @@ def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
     assert view.to_frame.transform(-72.0, -40.0) == (-72.0, -40.0)
     assert view.horizon.covers(view.country_outline)
     assert view.horizon.covers(view.circle)
-    assert view.horizon.bounds == pytest.approx(outline.union(view.circle).bounds)
+    west, south, east, north = outline.union(view.circle).bounds
+    assert view.horizon.bounds == pytest.approx(
+        (
+            west - (east - west) * 0.02,
+            south - (north - south) * 0.02,
+            east + (east - west) * 0.02,
+            north + (north - south) * 0.02,
+        ),
+    )
 
 
 @pytest.mark.parametrize(

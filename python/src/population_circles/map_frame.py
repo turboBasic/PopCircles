@@ -39,6 +39,8 @@ COUNTRY_PROJECTIONS = (*PROJECTIONS, "albers-equal-area", "transverse-mercator")
 LIMB_SHAVE = 1e-4
 
 GRATICULE_STEP_DEG = 30
+# Each side gets this share of the content width or height when no extent is configured.
+COUNTRY_FRAME_MARGIN = 0.02
 # A meridian and a parallel are straight only in the frame they are stated in, so each is walked at
 # this step rather than drawn end to end.
 GRATICULE_TRACE_DEG = 2
@@ -63,6 +65,13 @@ class CountryFrameSettings:
     projection: str = ORTHOGRAPHIC
     projection_parameters: Mapping[str, float] | None = None
     extent: tuple[float, float, float, float] | None = None
+
+
+def _country_extent(bounds: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    west, south, east, north = bounds
+    x_margin = (east - west) * COUNTRY_FRAME_MARGIN
+    y_margin = (north - south) * COUNTRY_FRAME_MARGIN
+    return west - x_margin, south - y_margin, east + x_margin, north + y_margin
 
 
 def plate_carree(built: Cap) -> Frame:
@@ -132,7 +141,11 @@ def country_frame(
             to_frame=world.to_frame,
             visible=world.visible,
             circle=circle,
-            horizon=box(*extent) if extent is not None else box(west, south, east, north),
+            horizon=(
+                box(*extent)
+                if extent is not None
+                else box(*_country_extent((west, south, east, north)))
+            ),
             country_outline=country_outline,
         )
 
@@ -204,7 +217,11 @@ def country_frame(
         to_frame=to_face,
         visible=WORLD,
         circle=circle,
-        horizon=box(*extent) if extent is not None else box(west, south, east, north),
+        horizon=(
+            box(*extent)
+            if extent is not None
+            else box(*_country_extent((west, south, east, north)))
+        ),
         country_outline=outline,
     )
 
