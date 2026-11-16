@@ -30,7 +30,7 @@
       type="button"
       aria-controls="country-browser-panel"
       aria-expanded={drawerOpen}
-      aria-label={drawerOpen ? 'Close map navigation' : 'Open map navigation'}
+      aria-label="Open maps navigation"
       onclick={onToggleDrawer}>☰</button
     >
     <PopCirclesLogo {scrollPosition} />
@@ -180,6 +180,8 @@
     height: 1.25rem;
   }
   .drawer-toggle {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     white-space: nowrap;
   }
   @media (min-width: 1024px) {

@@ -34,16 +34,31 @@
       );
   });
 
-  function closeDrawer() {
-    restoreFocus = mobileMode;
-    if (restoreFocus) mobileDialog?.close();
+  /** @param {boolean} returnFocus */
+  function closeDrawer(returnFocus = true) {
+    restoreFocus = mobileMode && returnFocus;
+    if (mobileMode) mobileDialog?.close();
     onCloseDrawer();
   }
 
   /** @param {GalleryEntry} entry */
   function selectEntry(entry) {
-    if (autoHide) closeDrawer();
+    if (mobileMode) {
+      query = '';
+      closeDrawer(false);
+    } else if (autoHide) closeDrawer(false);
     onSelect(entry);
+  }
+
+  function closeAfterGallerySelection() {
+    if (!mobileMode) return;
+    query = '';
+    closeDrawer(false);
+  }
+
+  /** @param {MouseEvent} event */
+  function handleDialogClick(event) {
+    if (event.target === mobileDialog) closeDrawer();
   }
 
   /** @param {PointerEvent} event */
@@ -59,6 +74,28 @@
 
   /** @param {KeyboardEvent} event */
   function handleKeydown(event) {
+    if (mobileMode && drawerOpen && event.key === 'Tab') {
+      const focusable = [
+        ...(mobileDialog?.querySelectorAll('button, input, a[href]') ?? []),
+      ].filter((element) => element.getClientRects().length > 0);
+      const first = focusable[0] instanceof HTMLElement ? focusable[0] : null;
+      const lastCandidate = focusable.at(-1);
+      const last = lastCandidate instanceof HTMLElement ? lastCandidate : null;
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || !mobileDialog?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        last?.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last || !mobileDialog?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first?.focus();
+      }
+      return;
+    }
     if (event.key !== 'Escape' || (mobileMode ? !drawerOpen : desktopNavigationCollapsed)) return;
     event.preventDefault();
     closeDrawer();
@@ -84,6 +121,7 @@
   class:open={!mobileMode || drawerOpen}
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
   aria-labelledby="country-browser-title"
+  onclick={handleDialogClick}
   onpointerleave={handlePointerLeave}
   oncancel={handleCancel}
   onclose={handleDialogClose}
@@ -110,11 +148,12 @@
   </div>
   <button
     class="close"
+    id="country-browser-close"
     type="button"
     aria-controls="country-browser-panel"
     aria-expanded={drawerOpen}
     aria-label="Close map navigation"
-    onclick={closeDrawer}>☰</button
+    onclick={() => closeDrawer()}>☰</button
   >
   <h2 id="country-browser-title">Browse maps</h2>
   <nav aria-label="Map navigation">
@@ -132,7 +171,7 @@
       autocomplete="off"
     />
     <p class="visually-hidden" role="status" aria-live="polite">
-      {query ? `${matches.length} matching maps` : ''}
+      {query ? `${matches.length} matching countries` : ''}
     </p>
     <label class="auto-hide">
       <input type="checkbox" role="switch" checked={autoHide} onchange={onToggleAutoHide} />
@@ -142,7 +181,8 @@
       <a
         class:active={selectedEntry === null}
         aria-current={selectedEntry === null ? 'page' : undefined}
-        href={`${window.location.pathname}${window.location.search}`}>All countries</a
+        href={`${window.location.pathname}${window.location.search}`}
+        onclick={closeAfterGallerySelection}>All countries</a
       >
       <a
         class:active={selectedEntry?.anchor === worldEntry.anchor}

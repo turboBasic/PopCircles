@@ -79,7 +79,7 @@
     mobileDrawerOpen = !mobileDrawerOpen;
     syncNavigation();
     if (mobileDrawerOpen)
-      requestAnimationFrame(() => document.getElementById('country-search')?.focus());
+      requestAnimationFrame(() => document.getElementById('country-browser-close')?.focus());
   }
 
   function toggleDesktopNavigation() {
@@ -107,6 +107,7 @@
     window.clearTimeout(copyTimeout);
     requestAnimationFrame(() => {
       resetView();
+      document.getElementById(`map-heading-${entry.anchor}`)?.focus();
     });
   }
 

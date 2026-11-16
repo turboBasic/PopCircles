@@ -22,7 +22,9 @@
     <div id="map-results-list">
       {#each visibleMapEntries as entry (entry.anchor)}
         <section class="country" id={entry.anchor}>
-          <h2><a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a></h2>
+          <h2 id={`map-heading-${entry.anchor}`} tabindex="-1">
+            <a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a>
+          </h2>
           {#if entry.missing}
             <p class="empty">No 50% result is available for this country.</p>
           {:else}
