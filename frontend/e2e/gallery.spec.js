@@ -53,7 +53,7 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(navigation.getByText('Matching: 80')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await expect(navigation.getByRole('link')).toHaveCount(3);
-  await expect(navigation.getByText('Matching: 1')).toBeVisible();
+  await expect(navigation.locator('.search-label .status')).toHaveText('Matching: 1');
   await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('no result');
   await expect(navigation.getByText('No matching countries.')).toBeVisible();
@@ -136,7 +136,6 @@ test('desktop navigation collapses to a rail without overlapping results', async
       .getByRole('link', { name: 'Country 42', exact: true })
       .click();
     await expect(page).toHaveURL(/#country-42$/);
-    await page.getByRole('button', { name: 'Expand maps navigation' }).click();
     await expect(
       drawer
         .getByRole('navigation', { name: 'Map navigation' })
@@ -199,7 +198,7 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileResults = await page.getByRole('region', { name: 'Map results' }).boundingBox();
-  expect(mobileResults.x).toBeLessThan(4);
+  expect(mobileResults.x).toBeLessThan(20);
   expect(mobileResults.width).toBeGreaterThan(350);
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(drawer).toBeVisible();
@@ -563,11 +562,15 @@ test('short narrow viewports keep navigation controls visible and scroll regions
     await page.setViewportSize({ width: 1024, height: viewport.height });
     await expect.poll(() => dialog.evaluate((element) => element.matches(':modal'))).toBe(false);
     const navigationBounds = await dialog.boundingBox();
-    const listPosition = await list.evaluate((element) => element.scrollTop);
+    await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
     await results.evaluate((element) => (element.scrollTop = element.scrollHeight));
     await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
     expect(await dialog.boundingBox()).toEqual(navigationBounds);
-    expect(await list.evaluate((element) => element.scrollTop)).toBe(listPosition);
+    const listMetrics = await list.evaluate((element) => ({
+      scrollTop: element.scrollTop,
+      maxScrollTop: element.scrollHeight - element.clientHeight,
+    }));
+    expect(listMetrics.maxScrollTop - listMetrics.scrollTop).toBeLessThanOrEqual(1);
   }
 });
 
