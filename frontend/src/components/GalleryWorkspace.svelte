@@ -79,7 +79,7 @@
   }
   .figure-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
   }
   @media (max-width: 1023px) {

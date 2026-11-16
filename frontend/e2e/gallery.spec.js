@@ -591,6 +591,32 @@ test('navigation fits viewports equivalent to 200% and 400% zoom', async ({ page
   }
 });
 
+test('World map figures stay stacked on desktop and mobile', async ({ page }) => {
+  await page.route('**/gallery-data.json', (route) =>
+    route.fulfill({
+      json: {
+        world: [...world, { ...world[0], map: 'world-second.svg', alt: 'Second world map' }],
+        countries,
+      },
+    }),
+  );
+  await page.route('**/world-second.svg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 6" />',
+    }),
+  );
+  await page.goto('/');
+  const maps = page.locator('#world-result figure');
+  await expect(maps).toHaveCount(2);
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const first = await maps.nth(0).boundingBox();
+    const second = await maps.nth(1).boundingBox();
+    expect(second.y).toBeGreaterThan(first.y);
+  }
+});
+
 test('interactive controls have accessible names', async ({ page }) => {
   const [buttons, namedButtons, links, namedLinks] = await Promise.all([
     page.locator('button:visible').count(),
