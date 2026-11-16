@@ -99,7 +99,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    total. The ledger records the full country identity so a resumed run cannot reuse another country's
    probes.
 5. **Rendering.** Python renders published documents in a separate layer from the Rust search. It reads
-   the committed basemap, dataset registry, and presentation config. The six modules in `population_circles`
+   the committed basemap, dataset registry, and presentation config. The modules in `population_circles`
    divide the work:
 
    - `circle_document` validates a document and turns it into an immutable answer with separate geometry,
