@@ -113,6 +113,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
     );
     return {
       text: brandText?.textContent.replace(/\s/g, ''),
+      fallbackVisibility: getComputedStyle(link.querySelector('.globe-fallback')).visibility,
       label: link.getAttribute('aria-label'),
       symbolIds: [...document.querySelectorAll('symbol')].map((symbol) => symbol.id),
       references: urls.map((url) => ({
@@ -122,6 +123,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
     };
   });
   expect(logoData.text).toBe('PopCircles');
+  expect(logoData.fallbackVisibility).toBe('hidden');
   expect(logoData.label).toBe('PopCircles home');
   expect(logoData.symbolIds).toEqual(
     Array.from({ length: 72 }, (_, index) => `frame-${String(index + 1).padStart(2, '0')}`),
@@ -158,14 +160,17 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
         letter.getBoundingClientRect(),
       );
       const slot = brandText.querySelector('.globe-slot').getBoundingClientRect();
-      const globe = brandText.querySelector('.globe-letter').getBoundingClientRect();
+      const globeElement = brandText.querySelector('.globe-letter');
+      const globe = globeElement.getBoundingClientRect();
       const fontSize = Number.parseFloat(getComputedStyle(brandText).fontSize);
       const slotGap = Number.parseFloat(getComputedStyle(brandText).columnGap);
       return {
         slotCenter: slot.left + slot.width / 2,
+        slotMiddle: slot.top + slot.height / 2,
         globeCenter: globe.left + globe.width / 2,
-        globeSize: globe.width,
-        slotSize: slot.width,
+        globeMiddle: globe.top + globe.height / 2,
+        globeScale: globe.width / slot.width,
+        inlineScale: globeElement.style.scale,
         slotWidths: slots.map(({ width }) => width),
         slotGaps: slots.slice(1).map((letter, index) => letter.left - slots[index].right),
         expectedSlotGaps: slots
@@ -174,7 +179,9 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
       };
     });
     expect(Math.abs(alignment.slotCenter - alignment.globeCenter)).toBeLessThan(1);
-    expect(alignment.globeSize).toBeCloseTo(alignment.slotSize, 1);
+    expect(Math.abs(alignment.slotMiddle - alignment.globeMiddle)).toBeLessThan(1);
+    expect(alignment.inlineScale).toBe('1.07');
+    expect(alignment.globeScale).toBeCloseTo(1.07, 2);
     expect(
       alignment.slotWidths.every((width) => Math.abs(width - alignment.slotWidths[0]) < 1),
     ).toBe(true);
