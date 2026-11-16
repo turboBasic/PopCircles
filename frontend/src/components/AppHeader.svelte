@@ -2,9 +2,10 @@
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
+  /** @type {{scrollPosition: number, headerCollapsed: boolean, data: GalleryData | null, themeLight: boolean, browserOpen: boolean, desktopNavigationOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleBrowser: () => void, onToggleDesktopNavigation: () => void}} */
   let {
     scrollPosition,
+    headerCollapsed,
     data,
     themeLight,
     browserOpen,
@@ -16,12 +17,12 @@
   } = $props();
 </script>
 
-<header>
+<header class:collapsed={headerCollapsed}>
   {#if data?.world[0]}
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
   <div class="top-bar">
-    <PopCirclesLogo {scrollPosition} />
+    <PopCirclesLogo {scrollPosition} compact={headerCollapsed} />
     {#if data}
       <div class="map-actions" role="group" aria-label="Gallery controls">
         <button
@@ -83,7 +84,7 @@
     {/if}
   </div>
   {#if data}
-    <div class="workspace-intro">
+    <div class="workspace-intro" aria-hidden={headerCollapsed}>
       <h1>One circle, half the population.</h1>
       <p>Explore country and world population circles.</p>
     </div>
@@ -98,6 +99,10 @@
     padding: 0.75rem 0;
     background: var(--bg);
     border-bottom: 1px solid var(--line);
+    transition: padding 180ms ease;
+  }
+  header.collapsed {
+    padding: 0.25rem 0;
   }
   .header-art {
     position: absolute;
@@ -108,6 +113,10 @@
     overflow: hidden;
     opacity: 0.16;
     pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+  header.collapsed .header-art {
+    opacity: 0;
   }
   .header-art img {
     position: absolute;
@@ -127,6 +136,18 @@
   }
   .workspace-intro {
     margin: 1.25rem 0;
+    max-height: 12rem;
+    overflow: hidden;
+    opacity: 1;
+    transition:
+      max-height 180ms ease,
+      margin 180ms ease,
+      opacity 120ms ease;
+  }
+  header.collapsed .workspace-intro {
+    max-height: 0;
+    margin: 0;
+    opacity: 0;
   }
   .workspace-intro h1 {
     max-width: 850px;
@@ -182,6 +203,13 @@
   :global(button:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    header,
+    .header-art,
+    .workspace-intro {
+      transition: none;
+    }
   }
   @media (max-width: 800px) {
     .mobile-browser-toggle {

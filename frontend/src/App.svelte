@@ -36,6 +36,7 @@
   /** @type {HTMLDivElement | null} */
   let resultsPanel = $state(null);
   let scrollPosition = $state(0);
+  let headerCollapsed = $state(false);
 
   function resetView() {
     resultsPanel?.scrollTo(0, 0);
@@ -92,6 +93,8 @@
 
   function handleScroll() {
     scrollPosition = resultsPanel?.scrollTop ?? 0;
+    if (scrollPosition > 60) headerCollapsed = true;
+    else if (scrollPosition === 0) headerCollapsed = false;
   }
 
   /** @param {MouseEvent} event @param {string} anchor */
@@ -163,6 +166,7 @@
 <div class="app-shell">
   <AppHeader
     {scrollPosition}
+    {headerCollapsed}
     {data}
     {themeLight}
     {browserOpen}
