@@ -638,7 +638,7 @@ test('short narrow viewports keep navigation controls visible and scroll regions
   }
 });
 
-test('navigation fits the effective viewport at 200% and 400% zoom', async ({ page }) => {
+test('navigation fits viewports equivalent to 200% and 400% zoom', async ({ page }) => {
   for (const zoom of [2, 4]) {
     const viewport = { width: Math.floor(1440 / zoom), height: Math.floor(900 / zoom) };
     await page.setViewportSize(viewport);
