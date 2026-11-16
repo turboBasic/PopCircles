@@ -72,6 +72,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
+    scale: 1.07;
     transform: translate(-50%, -50%);
   }
   .trailing-globe {

@@ -165,9 +165,10 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
       const slotGap = Number.parseFloat(getComputedStyle(brandText).columnGap);
       return {
         slotCenter: slot.left + slot.width / 2,
+        slotMiddle: slot.top + slot.height / 2,
         globeCenter: globe.left + globe.width / 2,
-        globeSize: globe.width,
-        slotSize: slot.width,
+        globeMiddle: globe.top + globe.height / 2,
+        globeScale: globe.width / slot.width,
         slotWidths: slots.map(({ width }) => width),
         slotGaps: slots.slice(1).map((letter, index) => letter.left - slots[index].right),
         expectedSlotGaps: slots
@@ -176,7 +177,8 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
       };
     });
     expect(Math.abs(alignment.slotCenter - alignment.globeCenter)).toBeLessThan(1);
-    expect(alignment.globeSize).toBeCloseTo(alignment.slotSize, 1);
+    expect(Math.abs(alignment.slotMiddle - alignment.globeMiddle)).toBeLessThan(1);
+    expect(alignment.globeScale).toBeCloseTo(1.07, 2);
     expect(
       alignment.slotWidths.every((width) => Math.abs(width - alignment.slotWidths[0]) < 1),
     ).toBe(true);
