@@ -566,6 +566,14 @@ test('short narrow viewports keep navigation controls visible and scroll regions
       )
       .toEqual({ open: true, modal: false });
     await expect(dialog.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
+    await expect
+      .poll(() =>
+        dialog.evaluate((element) => ({
+          position: getComputedStyle(element).position,
+          width: element.getBoundingClientRect().width,
+        })),
+      )
+      .toEqual({ position: 'relative', width: 320 });
     const navigationBounds = await dialog.boundingBox();
     await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
     await results.evaluate((element) => (element.scrollTop = element.scrollHeight));
