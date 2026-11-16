@@ -72,7 +72,7 @@ test('results scroll inside the viewport without scrolling the document', async 
   expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
 });
 
-test('header collapses with results scrolling and restores at the top', async ({ page }) => {
+test('header follows results scroll progress and restores at the top', async ({ page }) => {
   const results = page.getByRole('region', { name: 'Map results' });
   const header = page.locator('header');
   const logo = page.getByRole('link', { name: 'PopCircles home' });
@@ -90,9 +90,13 @@ test('header collapses with results scrolling and restores at the top', async ({
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
-    await scrollResultsTo(60);
+    await scrollResultsTo(80);
     await expect(header).not.toHaveClass(/collapsed/);
-    await scrollResultsTo(61);
+    await expect(intro).toHaveAttribute('aria-hidden', 'false');
+    expect(
+      Number(await intro.evaluate((element) => getComputedStyle(element).opacity)),
+    ).toBeCloseTo(0.5);
+    await scrollResultsTo(160);
     await expect(header).toHaveClass(/collapsed/);
     await expect(intro).toHaveAttribute('aria-hidden', 'true');
     await expect(intro).toHaveCSS('opacity', '0');
@@ -117,8 +121,8 @@ test('header collapses with results scrolling and restores at the top', async ({
     await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
 
-    await scrollResultsTo(30);
-    await expect(header).toHaveClass(/collapsed/);
+    await scrollResultsTo(80);
+    await expect(header).not.toHaveClass(/collapsed/);
     await scrollResultsTo(0);
     await expect(header).not.toHaveClass(/collapsed/);
     await expect(intro).toHaveAttribute('aria-hidden', 'false');
@@ -135,7 +139,7 @@ test('header collapse respects reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const results = page.getByRole('region', { name: 'Map results' });
   await results.evaluate((region) => {
-    region.scrollTop = 61;
+    region.scrollTop = 160;
     region.dispatchEvent(new Event('scroll'));
   });
   await expect(page.locator('header')).toHaveClass(/collapsed/);

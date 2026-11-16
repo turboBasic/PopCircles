@@ -36,7 +36,16 @@
   /** @type {HTMLDivElement | null} */
   let resultsPanel = $state(null);
   let scrollPosition = $state(0);
-  let headerCollapsed = $state(false);
+  let headerCollapseProgress = $state(0);
+  let headerSpace = $state(0);
+  let footerSpace = $state(0);
+
+  function measureChrome() {
+    const header = document.querySelector('.app-header');
+    const footer = document.querySelector('.site-footer');
+    if (header && scrollPosition === 0) headerSpace = header.getBoundingClientRect().height;
+    if (footer) footerSpace = footer.getBoundingClientRect().height;
+  }
 
   function resetView() {
     resultsPanel?.scrollTo(0, 0);
@@ -93,8 +102,8 @@
 
   function handleScroll() {
     scrollPosition = resultsPanel?.scrollTop ?? 0;
-    if (scrollPosition > 60) headerCollapsed = true;
-    else if (scrollPosition === 0) headerCollapsed = false;
+    headerCollapseProgress = Math.min(scrollPosition / 160, 1);
+    if (scrollPosition === 0) requestAnimationFrame(measureChrome);
   }
 
   /** @param {MouseEvent} event @param {string} anchor */
@@ -114,6 +123,11 @@
     const navigationQuery = window.matchMedia('(max-width: 800px)');
     mobileNavigation = navigationQuery;
     const handleHistory = () => restoreEntry();
+    const chromeObserver = new ResizeObserver(measureChrome);
+    const header = document.querySelector('.app-header');
+    const footer = document.querySelector('.site-footer');
+    if (header) chromeObserver.observe(header);
+    if (footer) chromeObserver.observe(footer);
     try {
       desktopNavigationOpen =
         localStorage.getItem('popcircles-desktop-navigation-open') !== 'false';
@@ -126,6 +140,7 @@
       if (!navigationQuery.matches && mobileDialog?.open) mobileDialog.close();
     };
     handleScroll();
+    measureChrome();
     navigationQuery.addEventListener('change', handleNavigationChange);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
@@ -152,6 +167,7 @@
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
       navigationQuery.removeEventListener('change', handleNavigationChange);
+      chromeObserver.disconnect();
     };
   });
 </script>
@@ -163,10 +179,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<div class="app-shell">
+<div class="app-shell" style={`--header-space: ${headerSpace}px; --footer-space: ${footerSpace}px`}>
   <AppHeader
     {scrollPosition}
-    {headerCollapsed}
+    {headerCollapseProgress}
     {data}
     {themeLight}
     {browserOpen}
@@ -242,6 +258,7 @@
     --accent: #80e0c0;
     --line: #29364d;
     --glow: #203456;
+    --chrome-bg: rgb(11 16 32 / 69%);
   }
   :global(:root[data-theme='light']) {
     color-scheme: light;
@@ -253,6 +270,7 @@
     --accent: #145c4e;
     --line: #cbd5e1;
     --glow: #e5edf7;
+    --chrome-bg: rgb(245 247 251 / 69%);
   }
   :global(*) {
     box-sizing: border-box;
@@ -268,12 +286,13 @@
       sans-serif;
   }
   .app-shell {
+    position: relative;
     display: grid;
     width: min(1600px, calc(100% - 2rem));
     height: 100dvh;
     min-height: 0;
     margin: auto;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
   }
   main {
     display: grid;
@@ -290,12 +309,32 @@
     margin-block: 1rem;
   }
   .site-footer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 4;
     padding: 0.5rem 0;
     color: var(--muted);
-    border-top: 1px solid var(--line);
+    background: transparent;
     font-size: 0.72rem;
   }
+  .site-footer::before {
+    position: absolute;
+    z-index: 0;
+    inset: auto 0 0;
+    height: 200%;
+    background: var(--chrome-bg);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0 50%, #000 50% 100%);
+    mask-image: linear-gradient(to bottom, transparent 0 50%, #000 50% 100%);
+    pointer-events: none;
+    content: '';
+  }
   .site-footer a {
+    position: relative;
+    z-index: 1;
     color: var(--text);
     text-decoration: none;
   }

@@ -1,14 +1,14 @@
 <script>
   import globeSprite from '../../assets/earth-globe.svg?url';
 
-  /** @type {{scrollPosition: number, compact?: boolean}} */
-  let { scrollPosition, compact = false } = $props();
+  /** @type {{scrollPosition: number}} */
+  let { scrollPosition } = $props();
   const globeFrameCount = 72;
   let globeFrame = $derived(Math.floor((scrollPosition / 240) * globeFrameCount) % globeFrameCount);
   let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
 </script>
 
-<a class="home-link" class:compact href="./" aria-label="PopCircles home">
+<a class="home-link" href="./" aria-label="PopCircles home">
   <span class="brand-text" aria-hidden="true">
     <span class="letter-slot">P</span>
     <span class="letter-slot globe-slot"
@@ -45,13 +45,8 @@
     letter-spacing: 0.16em;
     text-decoration: none;
     text-transform: uppercase;
-    transition:
-      font-size 180ms ease,
-      letter-spacing 180ms ease;
-  }
-  .home-link.compact {
-    font-size: 0.88rem;
-    letter-spacing: 0.13em;
+    font-size: var(--logo-size);
+    letter-spacing: var(--logo-spacing);
   }
   .brand-text {
     display: flex;
@@ -86,10 +81,5 @@
     display: none;
     width: 24px;
     height: 24px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .home-link {
-      transition: none;
-    }
   }
 </style>
