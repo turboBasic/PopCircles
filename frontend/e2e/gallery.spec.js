@@ -52,10 +52,60 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await expect(page).toHaveURL(/#country-42$/);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Close map navigation' }).click();
   const mapLink = page.getByRole('link', { name: 'Country 42 map' });
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
   await expect(page).toHaveURL(/#country-42$/);
+});
+
+test('drawer defaults by viewport and keeps the workspace fixed while resizing', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const drawer = page.getByRole('dialog', { name: 'Browse maps' });
+  await expect(drawer).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Map navigation' })).toHaveCount(1);
+  const workspaceBefore = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  const drawerBounds = await drawer.boundingBox();
+  expect(drawerBounds.x).toBeGreaterThanOrEqual(0);
+  expect(drawerBounds.width).toBeLessThan(1024);
+  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
+    workspaceBefore,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(drawer).toBeVisible();
+  await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
+  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).not.toBeNull();
+  const mobileWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  await page.getByRole('button', { name: 'Close map drawer' }).click();
+  await expect(drawer).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Open map navigation' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
+    mobileWorkspace,
+  );
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(drawer).toBeHidden();
+  await page.getByRole('button', { name: 'Open map navigation' }).click();
+  await expect(drawer).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'One circle, half the population.' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open map navigation' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  const closedWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  await page.getByRole('button', { name: 'Open map navigation' }).click();
+  await expect(drawer).toBeVisible();
+  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
+    closedWorkspace,
+  );
 });
 
 test('results scroll inside the viewport without scrolling the document', async ({ page }) => {
@@ -103,19 +153,17 @@ test('header follows results scroll progress and restores at the top', async ({ 
     await expect(logo).toBeVisible();
     await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
-    const navigationButton = page.getByRole('button', {
-      name: viewport.width <= 800 ? 'Open map navigation' : 'Hide maps',
-    });
-    await expect(navigationButton).toBeVisible();
-    await navigationButton.click();
     if (viewport.width <= 800) {
       await expect(page.getByRole('dialog', { name: 'Browse maps' })).toBeVisible();
       await page.keyboard.press('Escape');
       await expect(page.getByRole('dialog', { name: 'Browse maps' })).toBeHidden();
     } else {
-      const showMaps = page.getByRole('button', { name: 'Show maps' });
-      await expect(showMaps).toBeVisible();
-      await showMaps.click();
+      const navigationButton = page.getByRole('button', { name: 'Close map navigation' });
+      await expect(navigationButton).toBeVisible();
+      await navigationButton.click();
+      const openMaps = page.getByRole('button', { name: 'Open map navigation' });
+      await expect(openMaps).toBeVisible();
+      await openMaps.click();
     }
     await page.getByRole('button', { name: 'Switch to light theme' }).click();
     await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
@@ -152,6 +200,11 @@ test('header collapse respects reduced motion', async ({ page }) => {
 
 test('country navigation is keyboard operable and returns focus after Escape', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Open map navigation' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
   const trigger = page.getByRole('button', { name: 'Open map navigation' });
   await trigger.focus();
   await page.keyboard.press('Enter');
@@ -302,6 +355,7 @@ test('responsive layout, map ratio, and theme styles keep their expected values'
   await expect(page).toHaveScreenshot('gallery-desktop-light.png');
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Close map drawer' }).click();
   await page.getByRole('button', { name: 'Switch to dark theme' }).click();
   visual = await visualProperties();
   expect(visual.background).toBe('#0b1020');

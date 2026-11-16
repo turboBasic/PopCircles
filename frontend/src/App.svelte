@@ -21,10 +21,9 @@
         ]
       : [],
   );
-  let browserOpen = $state(false);
+  let drawerOpen = $state(false);
   /** @type {HTMLDialogElement | null} */
   let mobileDialog = $state(null);
-  let desktopNavigationOpen = $state(true);
   let themeLight = $state(false);
   let copyStatus = $state('');
   /** @type {number | undefined} */
@@ -62,24 +61,19 @@
     requestAnimationFrame(resetView);
   }
 
-  function toggleBrowser() {
-    if (!mobileNavigation?.matches || !mobileDialog) return;
-    if (mobileDialog.open) {
-      mobileDialog.close();
-      browserOpen = false;
-    } else {
+  function syncDrawer() {
+    if (!mobileDialog || !mobileNavigation) return;
+    if (mobileDialog.open) mobileDialog.close();
+    if (!drawerOpen) return;
+    if (mobileNavigation.matches) {
       mobileDialog.showModal();
-      browserOpen = true;
-    }
+      requestAnimationFrame(() => mobileDialog?.querySelector('input')?.focus());
+    } else mobileDialog.show();
   }
 
-  function toggleDesktopNavigation() {
-    desktopNavigationOpen = !desktopNavigationOpen;
-    try {
-      localStorage.setItem('popcircles-desktop-navigation-open', String(desktopNavigationOpen));
-    } catch {
-      // Browser privacy settings can disable storage.
-    }
+  function toggleDrawer() {
+    drawerOpen = !drawerOpen;
+    syncDrawer();
   }
 
   /** @param {GalleryEntry} entry */
@@ -132,20 +126,14 @@
     const footer = document.querySelector('.site-footer');
     if (header) chromeObserver.observe(header);
     if (footer) chromeObserver.observe(footer);
-    try {
-      desktopNavigationOpen =
-        localStorage.getItem('popcircles-desktop-navigation-open') !== 'false';
-    } catch {
-      // Browser privacy settings can disable storage.
-    }
-    browserOpen = false;
+    drawerOpen = !navigationQuery.matches;
     const handleNavigationChange = () => {
-      browserOpen = false;
-      if (!navigationQuery.matches && mobileDialog?.open) mobileDialog.close();
+      syncDrawer();
     };
     handleScroll();
     measureChrome();
     navigationQuery.addEventListener('change', handleNavigationChange);
+    requestAnimationFrame(syncDrawer);
     window.addEventListener('hashchange', handleHistory);
     window.addEventListener('popstate', handleHistory);
     fetch('./gallery-data.json')
@@ -156,6 +144,7 @@
       .then((value) => {
         if (!active) return;
         data = value;
+        requestAnimationFrame(syncDrawer);
         restoreEntry([
           { name: 'World', anchor: 'world-result', figures: value.world, missing: false },
           ...value.countries,
@@ -192,12 +181,10 @@
     {headerCollapseProgress}
     {data}
     {themeLight}
-    {browserOpen}
-    {desktopNavigationOpen}
+    {drawerOpen}
     bind:browserTrigger
     onTheme={toggleTheme}
-    onToggleBrowser={toggleBrowser}
-    onToggleDesktopNavigation={toggleDesktopNavigation}
+    onToggleDrawer={toggleDrawer}
   />
 
   <main>
@@ -210,17 +197,17 @@
         <p role="status">Loading gallery…</p>
       </div>
     {:else}
-      <div class:collapsed={!mobileNavigation?.matches && !desktopNavigationOpen} class="explorer">
+      <div class="explorer">
         <CountryNavigation
           worldEntry={entries[0]}
           countries={data.countries}
           {selectedEntry}
           {mobileNavigation}
-          {desktopNavigationOpen}
+          {drawerOpen}
           bind:mobileDialog
-          bind:browserOpen
           {browserTrigger}
           onSelect={selectEntry}
+          onCloseDrawer={() => (drawerOpen = false)}
         />
 
         <GalleryWorkspace
@@ -358,9 +345,6 @@
     grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: stretch;
-  }
-  .explorer.collapsed {
-    grid-template-columns: minmax(0, 1fr);
   }
   .copy-toast {
     position: fixed;
