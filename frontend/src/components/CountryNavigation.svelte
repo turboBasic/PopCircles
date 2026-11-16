@@ -369,7 +369,7 @@
   }
   .map-links h3 {
     margin: 0.75rem 0 0.25rem;
-    color: var(--muted);
+    color: var(--accent);
     font-size: 0.8rem;
   }
   .map-links section.filtered ul {
