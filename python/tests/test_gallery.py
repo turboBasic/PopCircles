@@ -13,8 +13,8 @@ from PIL import Image
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.dataset_registry as dataset_registry_module
 import population_circles.gallery as gallery_module
+import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
@@ -491,12 +491,16 @@ def test_map_text_rendering_change_misses_the_gallery_map_cache(
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
     config_root = tmp_path / "config-root"
-    config_path = config_root / "data" / "config.toml"
+    config_path = config_root / "data" / "presentation.toml"
     config_path.parent.mkdir(parents=True)
+    settings = presentation_config_module.PRESENTATION_CONFIG.read_text(encoding="utf-8")
     config_path.write_text(
-        "[map_text]\nrender_title = false\nrender_description = false\n", encoding="utf-8"
+        settings.replace("render_title = true", "render_title = false").replace(
+            "render_description = true", "render_description = false"
+        ),
+        encoding="utf-8",
     )
-    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", config_root)
+    monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
     monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (config_path,))
     corpus = tmp_path / "corpus"
     corpus.mkdir()
@@ -514,7 +518,8 @@ def test_map_text_rendering_change_misses_the_gallery_map_cache(
     assert second[0].figure.read_bytes() == first_bytes
 
     config_path.write_text(
-        "[map_text]\nrender_title = true\nrender_description = false\n", encoding="utf-8"
+        settings.replace("render_description = true", "render_description = false"),
+        encoding="utf-8",
     )
     third, _ = build(corpus, output, country_cli([], [])[0])
 
@@ -639,6 +644,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "mise.toml" not in gallery_module.RENDER_INPUTS
     assert CORPUS.parent / "pyproject.toml" not in gallery_module.RENDER_INPUTS
     assert CORPUS.parent / "uv.lock" not in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "data" / "presentation.toml" in gallery_module.RENDER_INPUTS
 
 
 def test_render_context_hashes_source_and_configuration_files(

@@ -1,3 +1,8 @@
+[map_text]
+render_title = true
+render_description = true
+
+[gallery]
 # GISCO feature IDs outside the UN Member States list (2026-08-17 snapshot).
 # Zero-total population territories are excluded independently of membership.
 excluded_country_ids = [
@@ -72,3 +77,41 @@ excluded_country_ids = [
   "XXW", # Belize/Guatemala disputed territory
   "XXY", # Essequibo
 ]
+
+[country_maps]
+default_projection = "orthographic"
+
+[country_maps.US]
+projection = "orthographic"
+
+# Parameters are named for the selected projection. The rectangle uses its output x/y units.
+[country_maps.US.projection_parameters]
+lon_0 = -96.0
+lat_0 = 44.0
+
+# Orthographic coordinates in metres; these reproduce the current USA image rectangle.
+[country_maps.US.extent]
+units = "metres"
+x_min = -5397723.3
+y_min = -2111802.2
+x_max = 2419813.8
+y_max = 3835144.3
+
+[country_maps.RU]
+projection = "albers-equal-area"
+
+[country_maps.RU.projection_parameters]
+lon_0 = 100.0
+lat_0 = 55.0
+lat_1 = 50.0
+lat_2 = 70.0
+
+[country_maps.CL]
+projection = "plate-carree"
+
+[country_maps.CL.extent]
+units = "degrees"
+x_min = -75.724713888
+y_min = -56.528847748
+x_max = -66.418757789
+y_max = -17.498400217

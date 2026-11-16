@@ -99,7 +99,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    total. The ledger records the full country identity so a resumed run cannot reuse another country's
    probes.
 5. **Rendering.** Python renders published documents in a separate layer from the Rust search. It reads
-   two committed inputs: the basemap and dataset registry. The six modules in `population_circles`
+   the committed basemap, dataset registry, and presentation config. The modules in `population_circles`
    divide the work:
 
    - `circle_document` validates a document and turns it into an immutable answer with separate geometry,
@@ -108,14 +108,16 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      required credit.
    - `dataset_registry` reads `data/registry.toml`. It rejects rows whose dataset key does not match the
      file stem and supplies the attribution required for each figure.
+   - `presentation_config` reads `data/presentation.toml`, which owns renderer text and country display
+     settings.
    - `circle_geometry` builds the circle cap and owns the only PROJ definition.
    - `map_frame` defines the display projection, visible extent, and graticule.
    - `centre_caption` formats the centre for Markdown and figure titles.
    - `render_map` draws figures and resolves datasets only from keys in the answer. For a country
-     result, it selects the outline by canonical ID and checks the boundary revision and digest. It
-     derives the map extent from the outline and result circle. Population and boundary credits come
-     from registry rows. The renderer measures country captions and credits before allocating footer
-     space.
+     result, it selects the outline by canonical ID, applies presentation settings, and checks the
+     boundary revision and digest. It derives the map extent from the outline and result circle.
+     Population and boundary credits come from registry rows. The renderer measures country captions
+     and credits before allocating footer space.
 
    Build circles as azimuthal-equidistant buffers and pass them to PROJ's polygon transform
    ([ADR 0008](../decisions/0008-a-circle-is-projected-never-drawn.md)). Keep the buffer vertices and

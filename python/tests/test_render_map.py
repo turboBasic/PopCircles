@@ -12,17 +12,30 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
 from PIL import Image
-from shapely.geometry import box
+from shapely.geometry import MultiPolygon, box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.dataset_registry as dataset_registry_module
+import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import Answer, Circle, circle_of
-from population_circles.circle_geometry import cap
+from population_circles.circle_geometry import Cap, cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import Registry, load, parse
-from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE, country_frame
+from population_circles.map_frame import (
+    ORTHOGRAPHIC,
+    PLATE_CARREE,
+    CountryFrameSettings,
+    Frame,
+)
+from population_circles.map_frame import (
+    country_frame as build_country_frame,
+)
+from population_circles.map_frame import (
+    frame as world_frame,
+)
+from population_circles.presentation_config import CountryMap
+from population_circles.presentation_config import load as load_presentation_config
 from population_circles.render_map import (
     COASTLINE_DATASET,
     COUNTRY,
@@ -47,6 +60,14 @@ CENTRE_LON = 79.708
 RADIUS_KM = 1000.0
 WORLD_POPULATION = 1_254_363_867.93
 TERRITORY_SHARE = 0.375
+EXPECTED_OFFSCREEN_CHILE_COMPONENTS = 10
+CountryPresentationCase = tuple[
+    str,
+    tuple[float, float],
+    BaseGeometry,
+    str,
+    tuple[float, float] | None,
+]
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MAX_LOCAL_EXTENT_METRES = 5_000_000
@@ -76,40 +97,6 @@ def empty_boundaries(
 def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
     with Image.open(path) as image:
         return image.info
-
-
-@pytest.mark.parametrize(
-    ("settings", "expected"),
-    [
-        ("", (False, False)),
-        (
-            "[map_text]\nrender_title = true\nrender_description = false\n",
-            (True, False),
-        ),
-    ],
-)
-def test_map_text_rendering_defaults_to_false_and_accepts_booleans(
-    settings: str,
-    expected: tuple[bool, bool],
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    (tmp_path / "data").mkdir()
-    (tmp_path / "data" / "config.toml").write_text(settings, encoding="utf-8")
-    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    assert dataset_registry_module.map_text_rendering() == expected
-
-
-def test_map_text_rendering_rejects_non_boolean_values(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    (tmp_path / "data").mkdir()
-    (tmp_path / "data" / "config.toml").write_text(
-        '[map_text]\nrender_title = "yes"\n', encoding="utf-8"
-    )
-    monkeypatch.setattr(dataset_registry_module, "REPO_ROOT", tmp_path)
-    with pytest.raises(TypeError, match=r"config.toml: map_text\.render_title"):
-        dataset_registry_module.map_text_rendering()
 
 
 @pytest.fixture(autouse=True)
@@ -348,6 +335,154 @@ def test_a_country_result_is_not_rendered_without_its_outline() -> None:
     assert plt.get_fignums() == before
 
 
+@pytest.mark.parametrize(
+    "case",
+    [
+        ("US", (44.0, -96.0), box(-110, 30, -80, 50), ORTHOGRAPHIC, (44.0, -96.0)),
+        ("CL", (-40.0, -72.0), box(-75, -45, -70, -35), PLATE_CARREE, None),
+        ("DE", (51.0, 10.0), box(8, 49, 12, 53), ORTHOGRAPHIC, None),
+    ],
+    ids=["configured-US", "configured-CL", "default-country"],
+)
+def test_country_render_uses_presentation_settings_by_canonical_id(
+    case: CountryPresentationCase,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    country_id, centre, outline, expected_projection, expected_centre = case
+    payload = country_circle_document()
+    payload["result"]["country"]["id"] = country_id
+    payload["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
+    answer = circle_of(payload)
+    current_country_frame = build_country_frame
+    observed: list[tuple[CountryFrameSettings, BaseGeometry]] = []
+
+    def capture_country_frame(
+        built: Cap,
+        selected: BaseGeometry,
+        settings: CountryFrameSettings | None = None,
+    ) -> Frame:
+        frame_settings = settings or CountryFrameSettings()
+        observed.append((frame_settings, selected))
+        return current_country_frame(built, selected, frame_settings)
+
+    monkeypatch.setattr(render_map_module, "country_frame", capture_country_frame)
+    figure = render(answer, PLATE_CARREE, coastline=None, country_outline=outline)
+    try:
+        frame_settings, selected_outline = observed[0]
+        assert frame_settings.projection == expected_projection
+        observed_centre = frame_settings.projection_parameters
+        assert (
+            (observed_centre.get("lat_0"), observed_centre.get("lon_0"))
+            if observed_centre is not None and "lat_0" in observed_centre
+            else None
+        ) == expected_centre
+        assert selected_outline.equals(outline)
+        if country_id == "US":
+            assert frame_settings.projection_parameters == {"lon_0": -96.0, "lat_0": 44.0}
+            assert frame_settings.extent == (
+                -5397723.3,
+                -2111802.2,
+                2419813.8,
+                3835144.3,
+            )
+    finally:
+        plt.close(figure)
+
+
+def test_country_render_rejects_an_invalid_presentation_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "presentation.toml"
+    settings = presentation_config_module.PRESENTATION_CONFIG.read_text(encoding="utf-8")
+    config_path.write_text(
+        settings.replace(
+            '[country_maps.US]\nprojection = "orthographic"',
+            '[country_maps.US]\nprojection = "mercator"',
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
+    payload = country_circle_document()
+    payload["result"]["country"]["id"] = "US"
+    payload["result"]["circle"]["centre"] = {"lat": 44.0, "lon": -96.0}
+
+    with pytest.raises(ValueError, match=r"presentation\.toml:.*country_maps\.US"):
+        render(
+            circle_of(payload),
+            PLATE_CARREE,
+            coastline=None,
+            country_outline=box(-110, 30, -80, 50),
+        )
+
+
+def test_chile_extent_hides_remote_components_without_filtering_outline() -> None:
+    result = (
+        Path(__file__).resolve().parents[2]
+        / "results"
+        / ("country-gpw-2020-gisco-2024-2-CL-half.json")
+    )
+    document = json.loads(result.read_text(encoding="utf-8"))
+    original_document = json.dumps(document, sort_keys=True)
+    answer = circle_of(document)
+    outline = MultiPolygon(
+        [box(-175 + 2 * index, -30, -174.5 + 2 * index, -29.5) for index in range(10)]
+        + [box(-75.7, -56.5, -66.5, -17.6)],
+    )
+    original = outline.wkb
+    original_circle = answer.circle.model_dump_json()
+    settings = load_presentation_config().country_maps["CL"]
+    assert isinstance(settings, CountryMap)
+    assert isinstance(outline, MultiPolygon)
+    assert settings.extent is not None
+    assert settings.extent.units == "degrees"
+    rendered_outline, frame_settings = render_map_module.country_map_display("CL", outline)
+    assert rendered_outline is outline
+    assert frame_settings.extent is not None
+    assert sum(component.bounds[2] < frame_settings.extent[0] for component in outline.geoms) == (
+        EXPECTED_OFFSCREEN_CHILE_COMPONENTS
+    )
+    view = build_country_frame(
+        cap(answer.circle.centre, answer.circle.radius_km, answer.circle.earth_radius_km),
+        rendered_outline,
+        frame_settings,
+    )
+    assert view.horizon.bounds == pytest.approx(
+        (-75.724713888, -56.528847748, -66.418757789, -17.498400217)
+    )
+    assert outline.wkb == original
+
+    figure = render(answer, ORTHOGRAPHIC, coastline=None, country_outline=outline)
+    plt.close(figure)
+    assert json.dumps(document, sort_keys=True) == original_document
+    assert answer.circle.model_dump_json() == original_circle
+    assert outline.wkb == original
+
+
+@pytest.mark.parametrize("projection", [PLATE_CARREE, ORTHOGRAPHIC])
+def test_world_render_uses_its_frame_without_country_presentation(
+    projection: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    current_frame = world_frame
+    observed: list[str] = []
+
+    def capture_frame(selected_projection: str, built: Cap) -> Frame:
+        observed.append(selected_projection)
+        return current_frame(selected_projection, built)
+
+    def refuse_country_display(*_args: object) -> None:
+        message = "world rendering consulted country presentation settings"
+        raise AssertionError(message)
+
+    monkeypatch.setattr(render_map_module, "frame", capture_frame)
+    monkeypatch.setattr(render_map_module, "country_map_display", refuse_country_display)
+    monkeypatch.setattr(render_map_module, "country_frame", refuse_country_display)
+    figure = render(circle_of(document()), projection, coastline=None)
+    try:
+        assert observed == [projection]
+    finally:
+        plt.close(figure)
+
+
 @pytest.mark.parametrize(("radius_km", "expected_patches"), [(0.0, 2), (200.0, 3)])
 def test_country_figure_renders_zero_radius_as_only_its_centre_marker(
     radius_km: float,
@@ -417,7 +552,7 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
     country = load_outline(answer, registry, tmp_path)
     assert country is not None
     circle = answer.circle
-    view = country_frame(
+    view = build_country_frame(
         cap(circle.centre, circle.radius_km, circle.earth_radius_km),
         country,
     )

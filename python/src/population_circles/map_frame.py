@@ -1,5 +1,5 @@
 import math
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import cast
 
@@ -8,6 +8,7 @@ from shapely import get_coordinates, transform
 from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 
+from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
     HALF_TURN_DEG,
     METRES_PER_KM,
@@ -27,6 +28,7 @@ _transform = cast(Callable[..., BaseGeometry], transform)
 PLATE_CARREE = "plate-carree"
 ORTHOGRAPHIC = "orthographic"
 PROJECTIONS = (PLATE_CARREE, ORTHOGRAPHIC)
+COUNTRY_PROJECTIONS = (*PROJECTIONS, "albers-equal-area", "transverse-mercator")
 
 # The orthographic clip stops this far short of the limb, as a fraction of the radius reaching it —
 # 1 km on this sphere. Cutting a shape against a polygon synthesises vertices on lines straight in
@@ -37,6 +39,8 @@ PROJECTIONS = (PLATE_CARREE, ORTHOGRAPHIC)
 LIMB_SHAVE = 1e-4
 
 GRATICULE_STEP_DEG = 30
+# Each side gets this share of the content width or height when no extent is configured.
+COUNTRY_FRAME_MARGIN = 0.02
 # A meridian and a parallel are straight only in the frame they are stated in, so each is walked at
 # this step rather than drawn end to end.
 GRATICULE_TRACE_DEG = 2
@@ -54,6 +58,20 @@ class Frame:
     circle: BaseGeometry
     horizon: BaseGeometry
     country_outline: BaseGeometry | None = None
+
+
+@dataclass(frozen=True)
+class CountryFrameSettings:
+    projection: str = ORTHOGRAPHIC
+    projection_parameters: Mapping[str, float] | None = None
+    extent: tuple[float, float, float, float] | None = None
+
+
+def _country_extent(bounds: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    west, south, east, north = bounds
+    x_margin = (east - west) * COUNTRY_FRAME_MARGIN
+    y_margin = (north - south) * COUNTRY_FRAME_MARGIN
+    return west - x_margin, south - y_margin, east + x_margin, north + y_margin
 
 
 def plate_carree(built: Cap) -> Frame:
@@ -89,15 +107,63 @@ def orthographic(built: Cap) -> Frame:
     )
 
 
-def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
+def country_frame(
+    built: Cap,
+    country_outline: BaseGeometry,
+    settings: CountryFrameSettings | None = None,
+) -> Frame:
+    settings = settings or CountryFrameSettings()
+    projection = settings.projection
+    extent = settings.extent
+    parameters = settings.projection_parameters or {}
+    if projection not in COUNTRY_PROJECTIONS:
+        message = (
+            f"unsupported projection {projection!r}; choose from {', '.join(COUNTRY_PROJECTIONS)}"
+        )
+        raise ValueError(message)
+    if projection == PLATE_CARREE:
+        world = plate_carree(built)
+        circle = world.circle
+        if not all(
+            math.isfinite(value)
+            for geometry in (country_outline, circle)
+            for point in get_coordinates(geometry)
+            for value in point
+        ):
+            message = "country circle or outline contains a non-finite coordinate"
+            raise ValueError(message)
+        west = min(country_outline.bounds[0], circle.bounds[0])
+        south = min(country_outline.bounds[1], circle.bounds[1])
+        east = max(country_outline.bounds[2], circle.bounds[2])
+        north = max(country_outline.bounds[3], circle.bounds[3])
+        return Frame(
+            crs=world.crs,
+            to_frame=world.to_frame,
+            visible=world.visible,
+            circle=circle,
+            horizon=(
+                box(*extent)
+                if extent is not None
+                else box(*_country_extent((west, south, east, north)))
+            ),
+            country_outline=country_outline,
+        )
+
     coordinates = get_coordinates(country_outline)
-    longitudes = [math.radians(point[0]) for point in coordinates]
-    centre_lon = math.degrees(
-        math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
-    )
-    centre_lat = math.fsum(point[1] for point in coordinates) / len(coordinates)
-    centre = type(built.centre)(lat=centre_lat, lon=centre_lon)
-    face = projected_crs("ortho", centre, built.earth_radius_km)
+    centre: Coordinate | None = None
+    if centre is None:
+        if "lat_0" in parameters and "lon_0" in parameters:
+            centre = Coordinate(lat=parameters["lat_0"], lon=parameters["lon_0"])
+        else:
+            longitudes = [math.radians(point[0]) for point in coordinates]
+            centre = type(built.centre)(
+                lat=math.fsum(point[1] for point in coordinates) / len(coordinates),
+                lon=math.degrees(
+                    math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),
+                ),
+            )
+    centre_lon = centre.lon
+    face = projected_crs(projection, centre, built.earth_radius_km, parameters)
     to_face = Transformer.from_crs(built.geodetic, face, always_xy=True)
 
     def unwrap_lon(lon: float) -> float:
@@ -140,7 +206,7 @@ def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
         for point in get_coordinates(geometry)
         for value in point
     ):
-        message = "country circle or outline extends beyond the orthographic horizon"
+        message = f"country circle or outline extends beyond the {projection} projection domain"
         raise ValueError(message)
     west = min(outline.bounds[0], circle.bounds[0])
     south = min(outline.bounds[1], circle.bounds[1])
@@ -151,7 +217,11 @@ def country_frame(built: Cap, country_outline: BaseGeometry) -> Frame:
         to_frame=to_face,
         visible=WORLD,
         circle=circle,
-        horizon=box(west, south, east, north),
+        horizon=(
+            box(*extent)
+            if extent is not None
+            else box(*_country_extent((west, south, east, north)))
+        ),
         country_outline=outline,
     )
 

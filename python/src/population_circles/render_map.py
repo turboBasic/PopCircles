@@ -35,16 +35,23 @@ from population_circles.dataset_registry import (
     Registry,
     coastline_dataset_key,
     load,
-    map_text_rendering,
 )
 from population_circles.map_frame import (
     PLATE_CARREE,
     PROJECTIONS,
+    CountryFrameSettings,
     Frame,
     country_frame,
     frame,
     graticule,
     project,
+)
+from population_circles.presentation_config import (
+    CountryMap,
+    map_text_rendering,
+)
+from population_circles.presentation_config import (
+    load as load_presentation_config,
 )
 from population_circles.territory_coverage import enrich_document
 
@@ -77,12 +84,12 @@ def citation(registry: Registry, key: str) -> str:
     return dataset.attribution
 
 
-# Bottom to top: the graticule under the coastlines, the circle over both, its centre over that, and
-# the frame's own outline last so no fill reaching the limb draws over it.
-GRATICULE_LAYER = 1
+# Bottom to top: coastlines, country fills, graticule, circle, its centre, and the frame's own
+# outline last so no fill reaching the limb draws over it.
 COASTLINE_LAYER = 2
-CIRCLE_LAYER = 3
 COUNTRY_LAYER = 2.5
+GRATICULE_LAYER = 2.75
+CIRCLE_LAYER = 3
 OCEAN = "#DFFFFD"
 COUNTRY = "#65CBC1"
 OUTLINE_WIDTH = 0.6
@@ -537,8 +544,12 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         raise MissingCountryOutlineError
     circle = answer.circle
     built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
+    if answer.country is not None:
+        country_outline, frame_settings = country_map_display(answer.country.id, country_outline)
+    else:
+        frame_settings = None
     view = (
-        country_frame(built, country_outline)
+        country_frame(built, country_outline, frame_settings)
         if country_outline is not None
         else frame(projection, built)
     )
@@ -600,6 +611,30 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         plt.close(figure)
         raise
     return figure
+
+
+def country_map_display(
+    country_id: str, outline: BaseGeometry | None
+) -> tuple[BaseGeometry, CountryFrameSettings]:
+    if outline is None:
+        raise MissingCountryOutlineError
+    config = load_presentation_config()
+    settings = config.country_maps.get(country_id)
+    if not isinstance(settings, CountryMap):
+        return outline, CountryFrameSettings(projection=config.default_projection)
+    extent = None
+    if settings.extent is not None:
+        extent = (
+            settings.extent.x_min,
+            settings.extent.y_min,
+            settings.extent.x_max,
+            settings.extent.y_max,
+        )
+    return outline, CountryFrameSettings(
+        projection=settings.projection,
+        projection_parameters=settings.projection_parameters,
+        extent=extent,
+    )
 
 
 def parse(argv: list[str] | None = None) -> argparse.Namespace:

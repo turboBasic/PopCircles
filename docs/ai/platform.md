@@ -72,6 +72,11 @@ renderer use this registry; builds name the row they need. [`data/README.md`](..
 describes the datasets for readers, records their provenance, and explains how to fetch them ([Getting
 it](../../data/README.md#getting-it)). Add a dataset to both files in the same change.
 
+Configuration has three owners: [`data/presentation.toml`](../../data/presentation.toml) owns renderer
+text and display settings; [`data/config.toml`](../../data/config.toml) owns CLI defaults and prepared
+combinations; [`data/registry.toml`](../../data/registry.toml) owns dataset metadata. Keep these concerns
+in their owners rather than duplicating them across files.
+
 The judgment around that mechanism:
 
 - Add a new **input** dataset to `data/<kind>/` with a registry entry. Do so only deliberately.

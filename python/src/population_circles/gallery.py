@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import sys
 import time
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, NotRequired, TypedDict, cast
@@ -29,9 +28,10 @@ from population_circles.dataset_registry import (
     REPO_ROOT,
     Registry,
     load,
-    map_text_rendering,
 )
 from population_circles.map_frame import PLATE_CARREE
+from population_circles.presentation_config import load as load_presentation_config
+from population_circles.presentation_config import map_text_rendering
 from population_circles.render_map import (
     OCEAN,
     citation,
@@ -60,7 +60,7 @@ RENDER_INPUTS = tuple(
         [
             *Path(__file__).parent.rglob("*.py"),
             REPO_ROOT / "data" / "config.toml",
-            REPO_ROOT / "data" / "gallery.toml",
+            REPO_ROOT / "data" / "presentation.toml",
             REPO_ROOT / "data" / "registry.toml",
         ],
         key=lambda path: path.as_posix(),
@@ -69,8 +69,7 @@ RENDER_INPUTS = tuple(
 
 
 def excluded_country_ids() -> set[str]:
-    config = tomllib.loads((REPO_ROOT / "data" / "gallery.toml").read_text(encoding="utf-8"))
-    return set(config["excluded_country_ids"])
+    return set(load_presentation_config().gallery.excluded_country_ids)
 
 
 class SettlementCaption(TypedDict):

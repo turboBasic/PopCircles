@@ -1,4 +1,5 @@
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from pyproj import CRS, Transformer
@@ -41,13 +42,25 @@ class Cap:
     earth_radius_km: float
 
 
-def projected_crs(projection: str, centre: Coordinate, earth_radius_km: float) -> CRS:
+def projected_crs(
+    projection: str,
+    centre: Coordinate,
+    earth_radius_km: float,
+    parameters: Mapping[str, float] | None = None,
+) -> CRS:
     # The one place a PROJ definition is spelled, so the sphere every CRS a figure holds is built on
     # is the document's own earth model rather than a default ellipsoid in whichever one was written
     # second.
+    proj_name = {
+        "orthographic": "ortho",
+        "albers-equal-area": "aea",
+        "transverse-mercator": "tmerc",
+    }.get(projection, projection)
+    values = {"lat_0": centre.lat, "lon_0": centre.lon, **(parameters or {})}
+    parameter_text = " ".join(f"+{name}={value}" for name, value in values.items())
     return CRS.from_proj4(
-        f"+proj={projection} +lat_0={centre.lat} +lon_0={centre.lon} "
-        f"+R={earth_radius_km * METRES_PER_KM} +units=m +no_defs",
+        f"+proj={proj_name} {parameter_text} +R={earth_radius_km * METRES_PER_KM} "
+        "+units=m +no_defs",
     )
 
 
