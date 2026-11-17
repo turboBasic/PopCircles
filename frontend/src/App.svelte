@@ -345,7 +345,7 @@
   }
   @media (max-width: 1023px) {
     .app-shell {
-      width: calc(100% - 2rem);
+      width: calc(100% - 1rem);
     }
     .explorer {
       grid-template-columns: 1fr;

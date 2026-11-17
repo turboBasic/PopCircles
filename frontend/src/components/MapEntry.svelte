@@ -58,4 +58,12 @@
   #world-result .figure-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+  @media (max-width: 1023px) {
+    .country {
+      padding: 0.5rem;
+    }
+    .country h2 {
+      margin-block-start: 0.4em;
+    }
+  }
 </style>
