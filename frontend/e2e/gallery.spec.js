@@ -85,12 +85,17 @@ test('[navigation-and-history] searches country navigation and selects a country
     'href',
     '#world-result',
   );
+  await expect(page.getByRole('dialog', { name: 'Country navigation' })).toContainText(
+    'Country navigation',
+  );
+  await expect(navigation.getByRole('search', { name: 'Filter map navigation' })).toBeVisible();
   await expect(navigation.getByText('Matching: 80')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await expect(page.locator('.map-results > .country')).toHaveCount(81);
   await expect(navigation.getByRole('link')).toHaveCount(2);
   await expect(navigation.locator('.search-label .status')).toHaveText('Matching: 1');
-  await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
+  const countryGroup = navigation.getByRole('heading', { name: 'C', exact: true });
+  await expect(countryGroup).toHaveClass(/visually-hidden/);
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('no result');
   await expect(navigation.getByText('No matching countries.')).toBeVisible();
   await navigation.getByRole('button', { name: 'Clear search' }).click();
@@ -168,7 +173,7 @@ test('scrolls the selected country into view in the navigation list', async ({ p
     .poll(() => selectedLink.evaluate((link) => getComputedStyle(link, '::before').width))
     .toBe('3px');
   await expect
-    .poll(() => navigation.locator('.map-links').evaluate((list) => list.scrollTop))
+    .poll(() => navigation.locator('.map-links-scroll').evaluate((list) => list.scrollTop))
     .toBeGreaterThan(0);
 });
 
@@ -297,7 +302,7 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
       .getByRole('region', { name: 'Map results' })
       .boundingBox();
     expect(workspaceAfterExpand.width).toBeLessThan(workspaceExpanded.width);
-    const list = drawer.locator('.map-links');
+    const list = drawer.locator('.map-links-scroll');
     await list.evaluate((element) => (element.scrollTop = 500));
     const listScrollTop = await list.evaluate((element) => element.scrollTop);
     await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
@@ -530,12 +535,12 @@ test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer prese
       await drawer.getByRole('searchbox', { name: 'Search countries' }).focus();
     }
 
-    const scroll = await drawer.locator('.map-links').evaluate((links) => {
+    const scroll = await drawer.locator('.map-links-scroll').evaluate((links) => {
       links.scrollTop = links.scrollHeight;
       return links.scrollTop;
     });
     expect(scroll).toBeGreaterThan(0);
-    await drawer.locator('.map-links').evaluate((links) => (links.scrollTop = 0));
+    await drawer.locator('.map-links-scroll').evaluate((links) => (links.scrollTop = 0));
 
     for (const [theme, surface, text] of [
       ['dark', 'rgb(18, 26, 43)', 'rgb(238, 243, 255)'],
@@ -668,7 +673,7 @@ test('[viewport-and-scrolling] short narrow viewports keep navigation controls v
 
   const dialog = page.getByRole('dialog', { name: 'Country navigation' });
   const results = page.getByRole('region', { name: 'Map results' });
-  const list = dialog.locator('.map-links');
+  const list = dialog.locator('.map-links-scroll');
   const longLink = dialog.getByRole('link', { name: longCountry.name });
 
   for (const viewport of [

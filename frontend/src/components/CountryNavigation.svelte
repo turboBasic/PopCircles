@@ -116,7 +116,7 @@
   bind:this={dialog}
   class:closing={drawerClosing}
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
-  aria-label="Country navigation"
+  aria-labelledby="navigation-title"
   onclick={(event) => {
     if (event.target === dialog) onCloseDrawer();
   }}
@@ -124,10 +124,11 @@
   onclose={handleDialogClose}
   onanimationend={finishDrawerClose}
 >
-  <div class="navigation-header">
+  <header class="navigation-header">
     <svg class="drawer-globe" viewBox="0 0 512 512" aria-hidden="true">
       <use href={`${globeSprite}#${globeSymbol}`}></use>
     </svg>
+    <h2 id="navigation-title">Country navigation</h2>
     <button
       class="desktop-collapse"
       type="button"
@@ -144,7 +145,7 @@
       aria-label="Close map navigation"
       onclick={onCloseDrawer}>×</button
     >
-  </div>
+  </header>
   <div class="rail-controls">
     <button
       type="button"
@@ -156,67 +157,75 @@
     <button type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>⌕</button>
   </div>
   <nav aria-label="Map navigation">
-    <label class="search-label" for="country-search">
-      Search countries <span class="status">Matching: {matches.length}</span>
-    </label>
-    <div class="search-field">
-      <input
-        bind:this={searchInput}
-        id="country-search"
-        type="search"
-        aria-label="Search countries"
-        bind:value={query}
-        placeholder="Search countries"
-        autocomplete="off"
-      />
-      {#if query}
-        <button
-          class="clear-search"
-          type="button"
-          aria-label="Clear search"
-          onclick={() => {
-            query = '';
-            searchInput?.focus();
-          }}>×</button
-        >
-      {/if}
-    </div>
-    <p class="visually-hidden" role="status" aria-live="polite">
-      {query ? `Matching: ${matches.length}` : ''}
-    </p>
-    <div class="map-pinned-links">
-      <a
-        class:active={selectedEntry?.anchor === worldEntry.anchor}
-        aria-current={selectedEntry?.anchor === worldEntry.anchor ? 'page' : undefined}
-        href={`#${worldEntry.anchor}`}
-        onclick={(event) => selectEntry(worldEntry, event)}>{worldEntry.name}</a
+    <search aria-label="Filter map navigation">
+      <label class="search-label" for="country-search">
+        Search countries <span class="status">Matching: {matches.length}</span>
+      </label>
+      <div class="search-field">
+        <input
+          bind:this={searchInput}
+          id="country-search"
+          type="search"
+          aria-label="Search countries"
+          bind:value={query}
+          placeholder="Search countries"
+          autocomplete="off"
+        />
+        {#if query}
+          <button
+            class="clear-search"
+            type="button"
+            aria-label="Clear search"
+            onclick={() => {
+              query = '';
+              searchInput?.focus();
+            }}>×</button
+          >
+        {/if}
+      </div>
+      <p class="visually-hidden" role="status" aria-live="polite">
+        {query ? `Matching: ${matches.length}` : ''}
+      </p>
+    </search>
+    <section class="map-links" aria-label="Map choices">
+      <header class="map-links-header">
+        <ul class="map-pinned-links">
+          <li>
+            <a
+              class:active={selectedEntry?.anchor === worldEntry.anchor}
+              aria-current={selectedEntry?.anchor === worldEntry.anchor ? 'page' : undefined}
+              href={`#${worldEntry.anchor}`}
+              onclick={(event) => selectEntry(worldEntry, event)}>{worldEntry.name}</a
+            >
+          </li>
+        </ul>
+      </header>
+      <div
+        class="map-links-scroll"
+        onscroll={(event) => {
+          globeFrame = Math.floor((event.currentTarget.scrollTop / 240) * 72) % 72;
+        }}
       >
-    </div>
-    <div
-      class="map-links"
-      onscroll={(event) => {
-        globeFrame = Math.floor((event.currentTarget.scrollTop / 240) * 72) % 72;
-      }}
-    >
-      {#each Object.entries(groups) as [letter, entries] (letter)}
-        <section class:filtered={query.trim()} aria-label={letter}>
-          {#if !query.trim()}<h3>{letter}</h3>{/if}
-          <ul>
-            {#each entries as entry (entry.anchor)}
-              <li>
-                <a
-                  id={`country-link-${entry.anchor}`}
-                  class:active={selectedEntry?.anchor === entry.anchor}
-                  aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
-                  href={`#${entry.anchor}`}
-                  onclick={(event) => selectEntry(entry, event)}>{entry.name}</a
-                >
-              </li>
-            {/each}
-          </ul>
-        </section>
-      {:else}<p class="empty">No matching countries.</p>{/each}
-    </div>
+        {#each Object.entries(groups) as [letter, entries] (letter)}
+          <section class:filtered={query.trim()} aria-labelledby={`country-group-${letter}`}>
+            <h3 id={`country-group-${letter}`} class:visually-hidden={query.trim()}>{letter}</h3>
+            <ul>
+              {#each entries as entry (entry.anchor)}
+                <li>
+                  <a
+                    id={`country-link-${entry.anchor}`}
+                    class:active={selectedEntry?.anchor === entry.anchor}
+                    aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
+                    href={`#${entry.anchor}`}
+                    onclick={(event) => selectEntry(entry, event)}>{entry.name}</a
+                  >
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {:else}<p class="empty">No matching countries.</p>{/each}
+      </div>
+    </section>
   </nav>
 </dialog>
 
@@ -321,6 +330,10 @@
     min-height: 0;
     flex-direction: column;
   }
+  search {
+    display: block;
+    flex: none;
+  }
   .navigation-header {
     display: flex;
     flex: none;
@@ -330,11 +343,15 @@
     gap: 0.5rem;
     margin-bottom: 0.75rem;
   }
+  .navigation-header h2 {
+    margin: 0 auto 0 0;
+    font-size: 1rem;
+  }
   .drawer-globe {
     display: none;
     width: 3rem;
     height: 3rem;
-    margin-right: auto;
+    margin-right: 0.5rem;
   }
   .navigation-header button,
   .rail-controls button {
@@ -353,6 +370,20 @@
     display: none;
   }
   .map-links {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    transition:
+      opacity 180ms ease,
+      visibility 180ms allow-discrete;
+  }
+  .map-links-header {
+    flex: none;
+  }
+  .map-links-scroll {
     flex: 1;
     min-height: 0;
     gap: 0.35rem;
@@ -360,22 +391,19 @@
     overflow-y: auto;
     /* Keeps the list position while the collapsing panel width reflows it. */
     overflow-anchor: none;
-    transition:
-      opacity 180ms ease,
-      visibility 180ms allow-discrete;
   }
   .map-pinned-links {
     flex: none;
-    margin-top: 0.75rem;
+    margin: 0;
     padding-bottom: 0.75rem;
+    padding-left: 0;
     border-bottom: 1px solid var(--line);
+    list-style: none;
   }
   .desktop-collapsed {
     padding-inline: 0.4rem;
   }
-  .desktop-collapsed nav > label,
-  .desktop-collapsed nav > .search-field,
-  .desktop-collapsed nav > .visually-hidden,
+  .desktop-collapsed nav > search,
   .desktop-collapsed .map-pinned-links,
   .desktop-collapsed .navigation-header {
     display: none;
@@ -389,22 +417,22 @@
     justify-items: center;
     gap: 0.5rem;
   }
-  .map-links ul {
+  .map-links-scroll ul {
     display: grid;
     gap: 0.35rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .map-links h3 {
+  .map-links-scroll h3 {
     margin: 0.75rem 0 0.25rem;
     color: var(--accent);
     font-size: 0.8rem;
   }
-  .map-links section.filtered ul {
+  .map-links-scroll section.filtered ul {
     margin-top: 0.35rem;
   }
-  .map-links a,
+  .map-links-scroll a,
   .map-pinned-links a {
     position: relative;
     display: block;
@@ -413,13 +441,13 @@
     text-decoration: none;
     overflow-wrap: anywhere;
   }
-  .map-links a.active,
+  .map-links-scroll a.active,
   .map-pinned-links a.active {
     padding-left: 0.75rem;
     background: color-mix(in srgb, var(--accent) 12%, transparent);
     border-radius: 0.25rem;
   }
-  .map-links a.active::before,
+  .map-links-scroll a.active::before,
   .map-pinned-links a.active::before {
     position: absolute;
     inset: 0.2rem auto 0.2rem 0;
@@ -428,9 +456,9 @@
     border-radius: 2px;
     content: '';
   }
-  .map-links a:hover,
+  .map-links-scroll a:hover,
   .map-pinned-links a:hover,
-  .map-links a.active,
+  .map-links-scroll a.active,
   .map-pinned-links a.active {
     color: var(--text);
     text-decoration: underline;
