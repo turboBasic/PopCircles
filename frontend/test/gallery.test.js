@@ -20,6 +20,8 @@ const countries = [
 ];
 const entries = [{ name: 'World', anchor: 'world-result' }, ...countries];
 
+// --- Country list ---
+
 test('filters countries by trimmed, case-insensitive names, including missing entries', () => {
   assert.deepEqual(filterCountries(countries, '  ALP '), [countries[0]]);
   assert.deepEqual(filterCountries(countries, ''), countries);
@@ -42,6 +44,8 @@ test('sorts and groups countries alphabetically and counts normalized substring 
   assert.deepEqual(filterCountries(unsorted, ''), unsorted);
   assert.deepEqual(filterCountries(unsorted, 'zz'), []);
 });
+
+// --- URL and display text ---
 
 test('[navigation-and-history] resolves World and country entries from URL fragments, with the base URL unselected', () => {
   assert.equal(entryFromHash(entries, '#world-result'), entries[0]);

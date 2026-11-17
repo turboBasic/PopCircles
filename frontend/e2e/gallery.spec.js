@@ -40,6 +40,8 @@ test.beforeEach(async ({ page }) => {
   ).toBeVisible();
 });
 
+// --- Navigation and history ---
+
 test('[navigation-and-history] searches country navigation and selects a country', async ({
   page,
 }) => {
@@ -79,6 +81,58 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
 });
 
+test('scrolls the selected country into view in the navigation list', async ({ page }) => {
+  await page.goto('/#country-80');
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const selectedLink = navigation.getByRole('link', { name: 'Country 80' });
+  await expect(selectedLink).toHaveAttribute('aria-current', 'page');
+  await expect(selectedLink).toBeInViewport();
+  await expect
+    .poll(() => selectedLink.evaluate((link) => getComputedStyle(link, '::before').width))
+    .toBe('3px');
+  await expect
+    .poll(() => navigation.locator('.map-links').evaluate((list) => list.scrollTop))
+    .toBeGreaterThan(0);
+});
+
+test('[navigation-and-history] direct links, Back and Forward scroll to the selected result and keep every card rendered', async ({
+  page,
+}) => {
+  await page.goto('/#country-42');
+  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  const results = page.getByRole('region', { name: 'Map results' });
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('#country-42')).toBeInViewport();
+  await navigation.getByRole('link', { name: 'Country 01' }).click();
+  await expect(page).toHaveURL(/#country-1$/);
+  await expect(page.locator('#country-1')).toBeInViewport();
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
+  await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(/#country-42$/);
+  await expect(page.locator('#country-42')).toBeInViewport();
+  await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.goForward();
+  await expect(page).toHaveURL(/#country-1$/);
+  await expect(page.locator('#country-1')).toBeInViewport();
+  await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(drawer).toBeVisible();
+});
+
 test('drawer selection scrolls the results smoothly instead of jumping', async ({ page }) => {
   const results = page.getByRole('region', { name: 'Map results' });
   await results.evaluate((region) => {
@@ -101,19 +155,29 @@ test('drawer selection scrolls the results smoothly instead of jumping', async (
     .toBeGreaterThan(2);
 });
 
-test('scrolls the selected country into view in the navigation list', async ({ page }) => {
-  await page.goto('/#country-80');
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
-  const selectedLink = navigation.getByRole('link', { name: 'Country 80' });
-  await expect(selectedLink).toHaveAttribute('aria-current', 'page');
-  await expect(selectedLink).toBeInViewport();
-  await expect
-    .poll(() => selectedLink.evaluate((link) => getComputedStyle(link, '::before').width))
-    .toBe('3px');
-  await expect
-    .poll(() => navigation.locator('.map-links').evaluate((list) => list.scrollTop))
-    .toBeGreaterThan(0);
+test('navigation-only transitions do not request map assets', async ({ page }) => {
+  const mapRequests = () =>
+    page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .map((resource) => resource.name)
+        .filter((url) => /\.(svg|json)(?:$|\?)/.test(url)),
+    );
+  const initialRequests = await mapRequests();
+
+  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+  await page.getByRole('button', { name: 'Search countries' }).click();
+  await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
+  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Open maps navigation' }).click();
+  await page.getByRole('button', { name: 'Close map navigation' }).click();
+
+  expect(await mapRequests()).toEqual(initialRequests);
 });
+
+// --- Responsive navigation ---
 
 test('[responsive-navigation] desktop navigation collapses to a rail without overlapping results', async ({
   page,
@@ -200,28 +264,6 @@ test('[responsive-navigation] desktop navigation defaults expanded and remembers
   await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
 });
 
-test('navigation-only transitions do not request map assets', async ({ page }) => {
-  const mapRequests = () =>
-    page.evaluate(() =>
-      performance
-        .getEntriesByType('resource')
-        .map((resource) => resource.name)
-        .filter((url) => /\.(svg|json)(?:$|\?)/.test(url)),
-    );
-  const initialRequests = await mapRequests();
-
-  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
-  await page.getByRole('button', { name: 'Search countries' }).click();
-  await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
-  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
-  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'Open maps navigation' }).click();
-  await page.getByRole('button', { name: 'Close map navigation' }).click();
-
-  expect(await mapRequests()).toEqual(initialRequests);
-});
-
 test('[responsive-navigation] mobile navigation remains modal and closes on resize', async ({
   page,
 }) => {
@@ -262,217 +304,6 @@ test('[responsive-navigation] mobile navigation remains modal and closes on resi
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(
     'aria-expanded',
     'false',
-  );
-});
-
-test('[navigation-and-history] direct links, Back and Forward scroll to the selected result and keep every card rendered', async ({
-  page,
-}) => {
-  await page.goto('/#country-42');
-  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
-  await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  const results = page.getByRole('region', { name: 'Map results' });
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
-  await expect(page.locator('#country-42')).toBeInViewport();
-  await navigation.getByRole('link', { name: 'Country 01' }).click();
-  await expect(page).toHaveURL(/#country-1$/);
-  await expect(page.locator('#country-1')).toBeInViewport();
-  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
-  await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await page.goBack();
-  await expect(page).toHaveURL(/#country-42$/);
-  await expect(page.locator('#country-42')).toBeInViewport();
-  await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await page.goForward();
-  await expect(page).toHaveURL(/#country-1$/);
-  await expect(page.locator('#country-1')).toBeInViewport();
-  await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await expect(drawer).toBeVisible();
-});
-
-test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer presentation fits each viewport, theme, and motion preference', async ({
-  page,
-}) => {
-  const viewports = [
-    { width: 1440, height: 900 },
-    { width: 1024, height: 768 },
-    { width: 390, height: 844 },
-    { width: 320, height: 844 },
-  ];
-  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
-
-  for (const viewport of viewports) {
-    await page.setViewportSize(viewport);
-    await page.reload();
-    await expect(
-      page.getByRole('heading', { name: 'One circle, half the population.' }),
-    ).toBeVisible();
-    const workspace = page.getByRole('region', { name: 'Map results' });
-    const workspaceBounds = await workspace.boundingBox();
-    if (viewport.width > 1023) {
-      const navBounds = await drawer.boundingBox();
-      expect(navBounds.x + navBounds.width).toBeLessThanOrEqual(workspaceBounds.x);
-    } else {
-      await page.getByRole('button', { name: 'Open maps navigation' }).click();
-    }
-    await expect(drawer).toBeVisible();
-    if (viewport.width <= 1023) {
-      await expect
-        .poll(() => drawer.evaluate((element) => getComputedStyle(element).transform))
-        .toBe('matrix(1, 0, 0, 1, 0, 0)');
-    }
-    const bounds = await drawer.boundingBox();
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
-    if (viewport.width <= 1023)
-      expect(viewport.width - (bounds.x + bounds.width)).toBeGreaterThanOrEqual(48);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
-    expect(await workspace.boundingBox()).toEqual(workspaceBounds);
-    const transitionDurations = await drawer.evaluate((element) =>
-      getComputedStyle(element)
-        .transitionDuration.split(',')
-        .map((duration) => Number.parseFloat(duration)),
-    );
-    if (viewport.width <= 1023)
-      expect(transitionDurations.some((duration) => duration > 0)).toBe(true);
-    if (viewport.width <= 1023) {
-      const backdrop = await drawer.evaluate(
-        (element) => getComputedStyle(element, '::backdrop').backgroundColor,
-      );
-      expect(backdrop).not.toBe('rgba(0, 0, 0, 0)');
-      await page.keyboard.press('Shift+Tab');
-      await expect(drawer.locator(':focus-visible')).toHaveCSS('outline-style', 'solid');
-      await drawer.getByRole('searchbox', { name: 'Search countries' }).focus();
-    }
-
-    const scroll = await drawer.locator('.map-links').evaluate((links) => {
-      links.scrollTop = links.scrollHeight;
-      return links.scrollTop;
-    });
-    expect(scroll).toBeGreaterThan(0);
-    await drawer.locator('.map-links').evaluate((links) => (links.scrollTop = 0));
-
-    for (const [theme, surface, text] of [
-      ['dark', 'rgb(18, 26, 43)', 'rgb(238, 243, 255)'],
-      ['light', 'rgb(255, 255, 255)', 'rgb(23, 32, 51)'],
-    ]) {
-      const currentTheme = await page.evaluate(() => document.documentElement.dataset.theme);
-      if ((currentTheme === 'light') !== (theme === 'light')) {
-        const themeButton = page.getByRole('button', {
-          name: currentTheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme',
-        });
-        if (viewport.width <= 1023) {
-          await drawer.getByRole('button', { name: 'Close map navigation' }).click();
-          await themeButton.click();
-          await page.getByRole('button', { name: 'Open maps navigation' }).click();
-        } else await themeButton.click();
-      }
-      await expect(drawer).toHaveCSS('background-color', surface);
-      await expect(drawer).toHaveCSS('color', text);
-    }
-
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await expect(drawer).toHaveCSS('transition-duration', '0s');
-    await page.emulateMedia({ reducedMotion: 'no-preference' });
-  }
-});
-
-test('[viewport-and-scrolling] results scroll inside the viewport without scrolling the document', async ({
-  page,
-}) => {
-  const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
-    results.scrollTop = results.scrollHeight;
-    return {
-      scrollTop: results.scrollTop,
-      bodyHeight: document.documentElement.scrollHeight,
-      viewportHeight: window.innerHeight,
-    };
-  });
-
-  expect(metrics.scrollTop).toBeGreaterThan(0);
-  expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
-});
-
-test('header follows results scroll progress and restores at the top', async ({ page }) => {
-  const results = page.getByRole('region', { name: 'Map results' });
-  const header = page.locator('header');
-  const logo = page.getByRole('link', { name: 'PopCircles home' });
-  const intro = page.locator('.workspace-intro');
-
-  async function scrollResultsTo(top) {
-    await results.evaluate((region, position) => {
-      region.scrollTop = position;
-      region.dispatchEvent(new Event('scroll'));
-    }, top);
-  }
-
-  for (const viewport of [
-    { width: 1280, height: 800 },
-    { width: 390, height: 844 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await scrollResultsTo(80);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'false');
-    expect(
-      Number(await intro.evaluate((element) => getComputedStyle(element).opacity)),
-    ).toBeCloseTo(0.5);
-    await scrollResultsTo(160);
-    await expect(header).toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'true');
-    await expect(intro).toHaveCSS('opacity', '0');
-    await expect(logo).toBeVisible();
-    await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
-    await expect(
-      page.getByRole('button', {
-        name: viewport.width <= 1023 ? 'Open maps navigation' : 'Collapse maps navigation',
-      }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'Switch to light theme' }).click();
-    await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
-    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
-
-    await scrollResultsTo(80);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await scrollResultsTo(0);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'false');
-    await expect(intro).toHaveCSS('opacity', '1');
-    const dimensions = await page.evaluate(() => ({
-      documentHeight: document.documentElement.scrollHeight,
-      viewportHeight: window.innerHeight,
-    }));
-    expect(dimensions.documentHeight).toBeLessThanOrEqual(dimensions.viewportHeight);
-  }
-});
-
-test('header collapse respects reduced motion', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  const results = page.getByRole('region', { name: 'Map results' });
-  await results.evaluate((region) => {
-    region.scrollTop = 160;
-    region.dispatchEvent(new Event('scroll'));
-  });
-  await expect(page.locator('header')).toHaveClass(/collapsed/);
-  await expect(page.locator('header')).toHaveCSS('transition-duration', '0s');
-  await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
-    'transition-duration',
-    '0s',
   );
 });
 
@@ -564,6 +395,181 @@ test('[responsive-navigation] mobile selection and viewport changes preserve que
   await expect(search).toHaveValue('');
   await dialog.getByRole('button', { name: 'Close map navigation' }).click();
   await expect(trigger).toBeFocused();
+});
+
+test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer presentation fits each viewport, theme, and motion preference', async ({
+  page,
+}) => {
+  const viewports = [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+    { width: 390, height: 844 },
+    { width: 320, height: 844 },
+  ];
+  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'One circle, half the population.' }),
+    ).toBeVisible();
+    const workspace = page.getByRole('region', { name: 'Map results' });
+    const workspaceBounds = await workspace.boundingBox();
+    if (viewport.width > 1023) {
+      const navBounds = await drawer.boundingBox();
+      expect(navBounds.x + navBounds.width).toBeLessThanOrEqual(workspaceBounds.x);
+    } else {
+      await page.getByRole('button', { name: 'Open maps navigation' }).click();
+    }
+    await expect(drawer).toBeVisible();
+    if (viewport.width <= 1023) {
+      await expect
+        .poll(() => drawer.evaluate((element) => getComputedStyle(element).transform))
+        .toBe('matrix(1, 0, 0, 1, 0, 0)');
+    }
+    const bounds = await drawer.boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+    if (viewport.width <= 1023)
+      expect(viewport.width - (bounds.x + bounds.width)).toBeGreaterThanOrEqual(48);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+    expect(await workspace.boundingBox()).toEqual(workspaceBounds);
+    const transitionDurations = await drawer.evaluate((element) =>
+      getComputedStyle(element)
+        .transitionDuration.split(',')
+        .map((duration) => Number.parseFloat(duration)),
+    );
+    if (viewport.width <= 1023)
+      expect(transitionDurations.some((duration) => duration > 0)).toBe(true);
+    if (viewport.width <= 1023) {
+      const backdrop = await drawer.evaluate(
+        (element) => getComputedStyle(element, '::backdrop').backgroundColor,
+      );
+      expect(backdrop).not.toBe('rgba(0, 0, 0, 0)');
+      await page.keyboard.press('Shift+Tab');
+      await expect(drawer.locator(':focus-visible')).toHaveCSS('outline-style', 'solid');
+      await drawer.getByRole('searchbox', { name: 'Search countries' }).focus();
+    }
+
+    const scroll = await drawer.locator('.map-links').evaluate((links) => {
+      links.scrollTop = links.scrollHeight;
+      return links.scrollTop;
+    });
+    expect(scroll).toBeGreaterThan(0);
+    await drawer.locator('.map-links').evaluate((links) => (links.scrollTop = 0));
+
+    for (const [theme, surface, text] of [
+      ['dark', 'rgb(18, 26, 43)', 'rgb(238, 243, 255)'],
+      ['light', 'rgb(255, 255, 255)', 'rgb(23, 32, 51)'],
+    ]) {
+      const currentTheme = await page.evaluate(() => document.documentElement.dataset.theme);
+      if ((currentTheme === 'light') !== (theme === 'light')) {
+        const themeButton = page.getByRole('button', {
+          name: currentTheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme',
+        });
+        if (viewport.width <= 1023) {
+          await drawer.getByRole('button', { name: 'Close map navigation' }).click();
+          await themeButton.click();
+          await page.getByRole('button', { name: 'Open maps navigation' }).click();
+        } else await themeButton.click();
+      }
+      await expect(drawer).toHaveCSS('background-color', surface);
+      await expect(drawer).toHaveCSS('color', text);
+    }
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(drawer).toHaveCSS('transition-duration', '0s');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+  }
+});
+
+// --- Viewport and scrolling ---
+
+test('[viewport-and-scrolling] results scroll inside the viewport without scrolling the document', async ({
+  page,
+}) => {
+  const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
+    results.scrollTop = results.scrollHeight;
+    return {
+      scrollTop: results.scrollTop,
+      bodyHeight: document.documentElement.scrollHeight,
+      viewportHeight: window.innerHeight,
+    };
+  });
+
+  expect(metrics.scrollTop).toBeGreaterThan(0);
+  expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
+});
+
+test('header follows results scroll progress and restores at the top', async ({ page }) => {
+  const results = page.getByRole('region', { name: 'Map results' });
+  const header = page.locator('header');
+  const logo = page.getByRole('link', { name: 'PopCircles home' });
+  const intro = page.locator('.workspace-intro');
+
+  async function scrollResultsTo(top) {
+    await results.evaluate((region, position) => {
+      region.scrollTop = position;
+      region.dispatchEvent(new Event('scroll'));
+    }, top);
+  }
+
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await scrollResultsTo(80);
+    await expect(header).not.toHaveClass(/collapsed/);
+    await expect(intro).toHaveAttribute('aria-hidden', 'false');
+    expect(
+      Number(await intro.evaluate((element) => getComputedStyle(element).opacity)),
+    ).toBeCloseTo(0.5);
+    await scrollResultsTo(160);
+    await expect(header).toHaveClass(/collapsed/);
+    await expect(intro).toHaveAttribute('aria-hidden', 'true');
+    await expect(intro).toHaveCSS('opacity', '0');
+    await expect(logo).toBeVisible();
+    await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
+    await expect(
+      page.getByRole('button', {
+        name: viewport.width <= 1023 ? 'Open maps navigation' : 'Collapse maps navigation',
+      }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Switch to light theme' }).click();
+    await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+
+    await scrollResultsTo(80);
+    await expect(header).not.toHaveClass(/collapsed/);
+    await scrollResultsTo(0);
+    await expect(header).not.toHaveClass(/collapsed/);
+    await expect(intro).toHaveAttribute('aria-hidden', 'false');
+    await expect(intro).toHaveCSS('opacity', '1');
+    const dimensions = await page.evaluate(() => ({
+      documentHeight: document.documentElement.scrollHeight,
+      viewportHeight: window.innerHeight,
+    }));
+    expect(dimensions.documentHeight).toBeLessThanOrEqual(dimensions.viewportHeight);
+  }
+});
+
+test('header collapse respects reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const results = page.getByRole('region', { name: 'Map results' });
+  await results.evaluate((region) => {
+    region.scrollTop = 160;
+    region.dispatchEvent(new Event('scroll'));
+  });
+  await expect(page.locator('header')).toHaveClass(/collapsed/);
+  await expect(page.locator('header')).toHaveCSS('transition-duration', '0s');
+  await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
+    'transition-duration',
+    '0s',
+  );
 });
 
 test('[viewport-and-scrolling] short narrow viewports keep navigation controls visible and scroll regions separate', async ({
@@ -684,6 +690,8 @@ test('[viewport-and-scrolling] navigation fits viewports equivalent to 200% and 
   }
 });
 
+// --- Map presentation ---
+
 test('World map figures stay stacked on desktop and mobile', async ({ page }) => {
   await page.route('**/gallery-data.json', (route) =>
     route.fulfill({
@@ -710,6 +718,8 @@ test('World map figures stay stacked on desktop and mobile', async ({ page }) =>
   }
 });
 
+// --- Keyboard and accessibility ---
+
 test('[keyboard-and-accessibility] interactive controls have accessible names', async ({
   page,
 }) => {
@@ -725,6 +735,8 @@ test('[keyboard-and-accessibility] interactive controls have accessible names', 
   await expect(page.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
 });
 
+// --- Themes ---
+
 test('theme choice persists after reload', async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to light theme' }).click();
   await page.reload();
@@ -732,6 +744,8 @@ test('theme choice persists after reload', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   expect(await page.evaluate(() => localStorage.getItem('popcircles-theme'))).toBe('light');
 });
+
+// --- Branding ---
 
 test('animated logo keeps its brand text and selects valid sprite symbols', async ({ page }) => {
   const logo = page.getByRole('link', { name: 'PopCircles home' });
@@ -826,6 +840,8 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
     ).toBe(true);
   }
 });
+
+// --- Responsive layout and themes ---
 
 test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, map ratio, and theme styles keep their expected values', async ({
   page,
