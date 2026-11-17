@@ -80,14 +80,14 @@ test('[navigation-and-history] searches country navigation and selects a country
   page,
 }) => {
   const navigation = page.getByRole('navigation', { name: 'Map navigation' });
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('.map-results > .country')).toHaveCount(81);
   await expect(navigation.getByRole('link', { name: 'World' })).toHaveAttribute(
     'href',
     '#world-result',
   );
   await expect(navigation.getByText('Matching: 80')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('.map-results > .country')).toHaveCount(81);
   await expect(navigation.getByRole('link')).toHaveCount(2);
   await expect(navigation.locator('.search-label .status')).toHaveText('Matching: 1');
   await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
@@ -104,7 +104,7 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(page).toHaveURL(/#country-42$/);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toBeVisible();
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('.map-results > .country')).toHaveCount(81);
   const mapLink = page.getByRole('link', { name: 'Country 42 map' });
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
@@ -112,7 +112,7 @@ test('[navigation-and-history] searches country navigation and selects a country
   await navigation.getByRole('link', { name: 'World' }).click();
   await expect(page).toHaveURL(/#world-result$/);
   await expect(page.locator('#world-result')).toBeInViewport();
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('.map-results > .country')).toHaveCount(81);
 });
 
 test('[navigation-and-history] logo returns to the start and clears the country selection without reloading', async ({
@@ -138,7 +138,7 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   await expect(
     page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
   ).toHaveCount(0);
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('.map-results > .country')).toHaveCount(81);
   expect(galleryDataRequests).toBe(0);
 
   await page.goBack();
@@ -183,7 +183,7 @@ test('[navigation-and-history] direct links, Back and Forward scroll to the sele
     'page',
   );
   const results = page.getByRole('region', { name: 'Map results' });
-  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('.map-results > .country')).toHaveCount(81);
   await expect(page.locator('#country-42')).toBeInViewport();
   await navigation.getByRole('link', { name: 'Country 01' }).click();
   await expect(page).toHaveURL(/#country-1$/);
@@ -582,7 +582,7 @@ test('[viewport-and-scrolling] results scroll inside the viewport without scroll
 
 test('header follows results scroll progress and restores at the top', async ({ page }) => {
   const results = page.getByRole('region', { name: 'Map results' });
-  const header = page.locator('header');
+  const header = page.locator('.app-header');
   const logo = page.getByRole('link', { name: 'PopCircles home' });
   const intro = page.locator('.workspace-intro');
 
@@ -641,8 +641,8 @@ test('header collapse respects reduced motion', async ({ page }) => {
     region.scrollTop = 160;
     region.dispatchEvent(new Event('scroll'));
   });
-  await expect(page.locator('header')).toHaveClass(/collapsed/);
-  await expect(page.locator('header')).toHaveCSS('transition-duration', '0s');
+  await expect(page.locator('.app-header')).toHaveClass(/collapsed/);
+  await expect(page.locator('.app-header')).toHaveCSS('transition-duration', '0s');
   await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
     'transition-duration',
     '0s',
