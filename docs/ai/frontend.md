@@ -28,6 +28,8 @@
 ### Map presentation
 
 - Maps preserve their aspect ratios without layout shifts as images load.
+- Result-data links and boundary attribution share a quiet panel flush with the figure's sides and
+  bottom, with text one size step smaller than the caption.
 
 Verification gap: existing assertions do not measure surrounding content before and after delayed
 image loading.
@@ -52,6 +54,7 @@ has its own data colors and is not part of the page palette.
 | `--bg` | Page canvas |
 | `--surface` | Primary workspace surfaces |
 | `--surface-2` | Raised controls and supporting panels |
+| `--surface-quiet` | Quiet inset panels |
 | `--text` | Primary text on neutral surfaces |
 | `--muted` | Supporting text |
 | `--accent` | Brand emphasis and active or focused states |

@@ -929,6 +929,7 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
           '--bg',
           '--surface',
           '--surface-2',
+          '--surface-quiet',
           '--glow',
           '--text',
           '--muted',
@@ -940,7 +941,7 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
     });
 
     for (const foreground of ['--text', '--muted', '--accent']) {
-      for (const background of ['--bg', '--surface', '--surface-2', '--glow']) {
+      for (const background of ['--bg', '--surface', '--surface-2', '--surface-quiet', '--glow']) {
         expect(
           contrastRatio(palette[foreground], palette[background]),
           `${theme}: ${foreground} on ${background}`,
@@ -948,7 +949,7 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
       }
     }
 
-    for (const background of ['--bg', '--surface', '--surface-2']) {
+    for (const background of ['--bg', '--surface', '--surface-2', '--surface-quiet']) {
       expect(
         contrastRatio(palette['--line'], palette[background]),
         `${theme}: --line against ${background}`,
@@ -963,6 +964,64 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
         `${theme}: ${foreground} over composited chrome`,
       ).toBeGreaterThanOrEqual(4.5);
     }
+
+    if (theme === 'dark') await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  }
+});
+
+test('[map-presentation] result links and boundary attribution use a quiet, smaller panel', async ({
+  page,
+}) => {
+  const footer = page.locator('.figure-footer').first();
+
+  for (const theme of ['dark', 'light']) {
+    const styles = await footer.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const caption = getComputedStyle(element.closest('figure').querySelector('figcaption'));
+      const palette = getComputedStyle(document.documentElement);
+      const figure = element.closest('figure');
+      const figureStyle = getComputedStyle(figure);
+      const panelBounds = element.getBoundingClientRect();
+      const figureBounds = figure.getBoundingClientRect();
+      return {
+        background: style.backgroundColor,
+        paletteBackground: palette.getPropertyValue('--surface-quiet').trim(),
+        color: style.color,
+        muted: palette.getPropertyValue('--muted').trim(),
+        fontSize: style.fontSize,
+        captionFontSize: caption.fontSize,
+        fontWeight: style.fontWeight,
+        parentTag: element.tagName,
+        edgeInsets: {
+          left:
+            panelBounds.left - figureBounds.left - Number.parseFloat(figureStyle.borderLeftWidth),
+          right:
+            figureBounds.right -
+            panelBounds.right -
+            Number.parseFloat(figureStyle.borderRightWidth),
+          bottom:
+            figureBounds.bottom -
+            panelBounds.bottom -
+            Number.parseFloat(figureStyle.borderBottomWidth),
+        },
+      };
+    });
+
+    expect(styles.background).toBe(`rgb(${colorChannels(styles.paletteBackground).join(', ')})`);
+    expect(styles.color).toBe(`rgb(${colorChannels(styles.muted).join(', ')})`);
+    expect(Number.parseFloat(styles.fontSize)).toBeLessThan(
+      Number.parseFloat(styles.captionFontSize),
+    );
+    expect(styles.fontSize).toBe('12px');
+    expect(styles.fontWeight).toBe('400');
+    expect(styles.parentTag).toBe('FOOTER');
+    expect(styles.edgeInsets.left).toBeCloseTo(0, 1);
+    expect(styles.edgeInsets.right).toBeCloseTo(0, 1);
+    expect(styles.edgeInsets.bottom).toBeCloseTo(0, 1);
+    await expect(footer.getByRole('link', { name: 'View result data' })).toBeVisible();
+    await expect(
+      footer.getByText('© EuroGeographics for the administrative boundaries'),
+    ).toBeVisible();
 
     if (theme === 'dark') await page.getByRole('button', { name: 'Switch to light theme' }).click();
   }

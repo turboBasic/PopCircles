@@ -41,39 +41,41 @@
         figure.caption.territory_share,
         figure.caption.territory_name,
       )}
-      <p>
-        {figure.caption.radius_km.toLocaleString()} km radius ·
-        {(figure.caption.share * 100).toFixed(1)}% of the population ·
-        {#if territory}
-          {territory} ·
-        {/if}
-        {figure.caption.population.toLocaleString('en-US', { maximumFractionDigits: 0 })} people · centre
-        <a
-          href={`https://www.openstreetmap.org/?mlat=${figure.caption.centre_lat.toFixed(4)}&mlon=${figure.caption.centre_lon.toFixed(4)}#map=12/${figure.caption.centre_lat.toFixed(4)}/${figure.caption.centre_lon.toFixed(4)}`}
-          target="_blank"
-          rel="noopener"
-        >
-          {figure.caption.centre_lat.toFixed(4)}, {figure.caption.centre_lon.toFixed(4)}
-        </a>
-        {#if figure.caption.settlement}
-          · nearest city: {figure.caption.settlement.name},
-          {figure.caption.settlement.country}
-          ({Math.round(figure.caption.settlement.distance_km).toLocaleString()} km away)
-        {/if}
-      </p>
+      <div class="figure-caption">
+        <p>
+          {figure.caption.radius_km.toLocaleString()} km radius ·
+          {(figure.caption.share * 100).toFixed(1)}% of the population ·
+          {#if territory}
+            {territory} ·
+          {/if}
+          {figure.caption.population.toLocaleString('en-US', { maximumFractionDigits: 0 })} people · centre
+          <a
+            href={`https://www.openstreetmap.org/?mlat=${figure.caption.centre_lat.toFixed(4)}&mlon=${figure.caption.centre_lon.toFixed(4)}#map=12/${figure.caption.centre_lat.toFixed(4)}/${figure.caption.centre_lon.toFixed(4)}`}
+            target="_blank"
+            rel="noopener"
+          >
+            {figure.caption.centre_lat.toFixed(4)}, {figure.caption.centre_lon.toFixed(4)}
+          </a>
+          {#if figure.caption.settlement}
+            · nearest city: {figure.caption.settlement.name},
+            {figure.caption.settlement.country}
+            ({Math.round(figure.caption.settlement.distance_km).toLocaleString()} km away)
+          {/if}
+        </p>
+      </div>
     {/if}
-    <div class="figure-footer">
+    <footer class="figure-footer">
       <span class="figure-actions">
-        <a href={figure.document}>View result data</a>
+        <a href={figure.document}>View data</a>
         {#if countryAnchor}
           · <a
             href={countryUrl(window.location.href, countryAnchor)}
-            onclick={(event) => onCopy(event, countryAnchor)}>Copy country URL</a
+            onclick={(event) => onCopy(event, countryAnchor)}>Copy URL</a
           >
         {/if}
       </span>
       <span class="figure-attribution">© EuroGeographics for the administrative boundaries</span>
-    </div>
+    </footer>
   </figcaption>
 </figure>
 
@@ -117,9 +119,12 @@
     text-align: center;
   }
   figcaption {
-    padding: 0.75rem 1rem;
+    padding: 0;
     color: var(--muted);
     font-size: 0.85rem;
+  }
+  .figure-caption {
+    padding: 0.75rem 1rem;
   }
   figcaption p {
     margin: 0 0 0.5rem;
@@ -129,11 +134,16 @@
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    color: var(--muted);
+    background: var(--surface-quiet);
+    font-size: 0.75rem;
   }
   .figure-attribution {
     text-align: right;
   }
-  figcaption a {
+  figcaption a,
+  .figure-footer a {
     color: inherit;
     text-decoration-color: var(--line);
     text-underline-offset: 3px;
