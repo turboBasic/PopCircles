@@ -110,6 +110,12 @@ test('desktop navigation collapses to a rail without overlapping results', async
     expect(drawerBounds.width).toBeGreaterThanOrEqual(300);
     expect(workspaceBefore.x).toBeGreaterThan(drawerBounds.x + drawerBounds.width);
     await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+    await expect
+      .poll(() => drawer.evaluate((element) => element.getBoundingClientRect().width))
+      .toBeGreaterThanOrEqual(56);
+    await expect
+      .poll(() => drawer.evaluate((element) => element.getBoundingClientRect().width))
+      .toBeLessThanOrEqual(64);
     const rail = await drawer.boundingBox();
     const workspaceExpanded = await page.getByRole('region', { name: 'Map results' }).boundingBox();
     expect(rail.width).toBeGreaterThanOrEqual(56);
@@ -120,6 +126,13 @@ test('desktop navigation collapses to a rail without overlapping results', async
     expect(workspaceExpanded.x).toBeGreaterThan(rail.x + rail.width);
     await page.getByRole('button', { name: 'Search countries' }).click();
     await expect(drawer.getByRole('searchbox', { name: 'Search countries' })).toBeFocused();
+    await expect
+      .poll(() =>
+        page
+          .getByRole('region', { name: 'Map results' })
+          .evaluate((element) => element.getBoundingClientRect().width),
+      )
+      .toBeLessThan(workspaceExpanded.width);
     const workspaceAfterExpand = await page
       .getByRole('region', { name: 'Map results' })
       .boundingBox();
@@ -129,7 +142,10 @@ test('desktop navigation collapses to a rail without overlapping results', async
     const listScrollTop = await list.evaluate((element) => element.scrollTop);
     await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
     await page.getByRole('button', { name: 'Expand maps navigation' }).click();
-    expect(await list.evaluate((element) => element.scrollTop)).toBe(listScrollTop);
+    await expect
+      .poll(() => drawer.evaluate((element) => element.getBoundingClientRect().width))
+      .toBeGreaterThanOrEqual(300);
+    await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(listScrollTop);
     await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
     await drawer
       .getByRole('navigation', { name: 'Map navigation' })
@@ -184,6 +200,10 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).not.toBeNull();
   const mobileWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
   await drawer.getByRole('button', { name: 'Close map navigation' }).click();
+  await expect(drawer).toHaveClass(/closing/);
+  expect(await drawer.evaluate((element) => getComputedStyle(element).animationName)).toMatch(
+    /navigation-drawer-out$/,
+  );
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(
     'aria-expanded',
@@ -278,6 +298,8 @@ test('drawer presentation fits each viewport, theme, and motion preference', asy
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.y).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+    if (viewport.width <= 1023)
+      expect(viewport.width - (bounds.x + bounds.width)).toBeGreaterThanOrEqual(48);
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
     expect(await workspace.boundingBox()).toEqual(workspaceBounds);
     const transitionDurations = await drawer.evaluate((element) =>
@@ -437,7 +459,7 @@ test('country navigation is keyboard operable and returns focus after Escape', a
 
   const dialog = page.getByRole('dialog', { name: 'Country navigation' });
   await expect(dialog).toBeVisible();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(trigger).toBeHidden();
   await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
@@ -450,6 +472,7 @@ test('country navigation is keyboard operable and returns focus after Escape', a
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.reload();
   await expect(dialog).toBeVisible();
+  await expect(dialog.locator(':focus')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
 });
@@ -467,10 +490,21 @@ test('mobile selection and viewport changes preserve query and independent state
   const search = dialog.getByRole('searchbox', { name: 'Search countries' });
 
   await trigger.click();
+  expect(await dialog.evaluate((element) => getComputedStyle(element).animationName)).toMatch(
+    /navigation-drawer-in$/,
+  );
+  expect(await dialog.evaluate((element) => getComputedStyle(element).animationDuration)).toBe(
+    '0.4s',
+  );
   await expect(dialog.getByRole('button', { name: 'Close map navigation' })).toBeFocused();
   await search.fill('country 42');
   const startUrl = page.url();
   await page.mouse.click(380, 500);
+  await expect(dialog).toHaveClass(/closing/);
+  expect(await dialog.evaluate((element) => getComputedStyle(element).animationName)).toMatch(
+    /navigation-drawer-out$/,
+  );
+  await expect(dialog).toBeVisible();
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
   await trigger.click();
@@ -539,6 +573,7 @@ test('short narrow viewports keep navigation controls visible and scroll regions
       .boundingBox();
     expect(closeBounds.width).toBeGreaterThanOrEqual(44);
     expect(closeBounds.height).toBeGreaterThanOrEqual(44);
+    await expect(dialog.getByRole('button', { name: 'Collapse maps navigation' })).toBeHidden();
     await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
     expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
     await expect(dialog.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
