@@ -338,7 +338,7 @@
     background: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: 0.75rem;
-    box-shadow: 0 0.5rem 2rem #0005;
+    box-shadow: 0 0.5rem 2rem var(--shadow);
   }
   .explorer.nav-collapsed {
     grid-template-columns: minmax(60px, 60px) minmax(0, 1fr);

@@ -135,7 +135,7 @@
   }
   figcaption a {
     color: inherit;
-    text-decoration-color: #65758e;
+    text-decoration-color: var(--line);
     text-underline-offset: 3px;
   }
 </style>

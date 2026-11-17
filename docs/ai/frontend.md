@@ -36,8 +36,37 @@ image loading.
 
 - The theme control switches all page surfaces and text between readable light and dark palettes.
 
-Partial verification: selected colour assertions and screenshots do not establish readability of
-every surface. Review both palettes, including contrast and focus visibility, when changing them.
+Partial verification: token-pair contrast assertions and screenshots do not establish readability of
+every rendered component. Review both palettes, including component states and focus visibility, when
+changing them.
+
+### Palette
+
+[`app.css`](../../frontend/src/app.css) owns the exact theme colors. Keep its semantic tokens as the
+single source; do not add component-local colors for page chrome. The visual direction is cool neutral
+surfaces with restrained mint emphasis in dark mode and deep green emphasis in light mode. Map imagery
+has its own data colors and is not part of the page palette.
+
+| Token | Role |
+| --- | --- |
+| `--bg` | Page canvas |
+| `--surface` | Primary workspace surfaces |
+| `--surface-2` | Raised controls and supporting panels |
+| `--text` | Primary text on neutral surfaces |
+| `--muted` | Supporting text |
+| `--accent` | Brand emphasis and active or focused states |
+| `--line` | Borders and dividers |
+| `--glow` | Ambient page background |
+| `--chrome-bg` | Translucent viewport chrome |
+| `--shadow` | Raised-element shadow |
+
+When adding a color role, define its intentional light and dark values in `app.css` and update this
+table. Do not derive a theme by inversion or choose colors by eye alone. Check rendered foreground and
+background pairs in both themes: WCAG 2.2 AA requires 4.5:1 for normal text, 3:1 for large text, and
+3:1 for visual information needed to identify controls and their states. Check focus indicators
+against adjacent colors, and evaluate translucent surfaces after compositing. Never use color as the
+only way to convey meaning. Automated checks cover semantic token pairs and worst-case chrome
+compositing; inspect component-specific color combinations separately.
 
 ### Keyboard and accessibility
 

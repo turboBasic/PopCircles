@@ -18,6 +18,40 @@ const countries = Array.from({ length: 80 }, (_, index) => ({
 }));
 const world = [{ map: 'world.svg', document: 'world.json', country_id: null, alt: 'World map' }];
 
+function colorChannels(color) {
+  if (color.startsWith('#')) {
+    let hex = color.slice(1);
+    if (hex.length === 3) hex = [...hex].map((channel) => channel + channel).join('');
+    return [0, 2, 4].map((index) => Number.parseInt(hex.slice(index, index + 2), 16));
+  }
+  return color
+    .match(/[\d.]+/g)
+    .slice(0, 3)
+    .map(Number);
+}
+
+function compositeColor(foreground, background) {
+  const alphaMatch = foreground.match(/\/\s*([\d.]+)%/);
+  const alpha = alphaMatch ? Number(alphaMatch[1]) / 100 : 1;
+  const backgroundChannels = colorChannels(background);
+  const blended = colorChannels(foreground).map((channel, index) =>
+    Math.round(channel * alpha + backgroundChannels[index] * (1 - alpha)),
+  );
+  return `rgb(${blended.join(' ')})`;
+}
+
+function contrastRatio(first, second) {
+  const luminance = (color) => {
+    const channels = colorChannels(color).map((channel) => channel / 255);
+    const [red, green, blue] = channels.map((channel) =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+    );
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.route('**/gallery-data.json', (route) =>
     route.fulfill({ json: { world, countries } }),
@@ -885,6 +919,54 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
 });
 
 // --- Responsive layout and themes ---
+
+test('[themes] palette text and control colors meet contrast thresholds', async ({ page }) => {
+  for (const theme of ['dark', 'light']) {
+    const palette = await page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement);
+      return Object.fromEntries(
+        [
+          '--bg',
+          '--surface',
+          '--surface-2',
+          '--glow',
+          '--text',
+          '--muted',
+          '--accent',
+          '--line',
+          '--chrome-bg',
+        ].map((token) => [token, style.getPropertyValue(token).trim()]),
+      );
+    });
+
+    for (const foreground of ['--text', '--muted', '--accent']) {
+      for (const background of ['--bg', '--surface', '--surface-2', '--glow']) {
+        expect(
+          contrastRatio(palette[foreground], palette[background]),
+          `${theme}: ${foreground} on ${background}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+
+    for (const background of ['--bg', '--surface', '--surface-2']) {
+      expect(
+        contrastRatio(palette['--line'], palette[background]),
+        `${theme}: --line against ${background}`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+
+    const worstCaseBackdrop = theme === 'dark' ? '#fff' : '#000';
+    const compositedChrome = compositeColor(palette['--chrome-bg'], worstCaseBackdrop);
+    for (const foreground of ['--text', '--muted', '--accent']) {
+      expect(
+        contrastRatio(palette[foreground], compositedChrome),
+        `${theme}: ${foreground} over composited chrome`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+
+    if (theme === 'dark') await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  }
+});
 
 test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, map ratio, and theme styles keep their expected values', async ({
   page,
