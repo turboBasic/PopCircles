@@ -66,11 +66,6 @@ export function groupCountries(countries) {
   );
 }
 
-/** @param {GalleryEntry[]} countries @param {string} query */
-export function countCountryMatches(countries, query) {
-  return filterCountries(countries, query).length;
-}
-
 /** @param {GalleryEntry[]} entries @param {string} hash */
 export function entryFromHash(entries, hash) {
   const anchor = hash.startsWith('#') ? hash.slice(1) : hash;

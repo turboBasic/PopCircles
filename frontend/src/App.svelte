@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import { prefersReducedMotion } from 'svelte/motion';
+  import { MediaQuery } from 'svelte/reactivity';
   import { fade } from 'svelte/transition';
   import AppHeader from './components/AppHeader.svelte';
   import CountryNavigation from './components/CountryNavigation.svelte';
@@ -11,11 +13,31 @@
   /** @typedef {import('./gallery.js').GalleryEntry} GalleryEntry */
 
   const desktopNavigationStorageKey = 'popcircles-desktop-navigation-collapsed';
+  const themeStorageKey = 'popcircles-theme';
 
+  /** @param {string} key */
+  function readStorage(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      // Browser privacy settings can disable storage.
+      return null;
+    }
+  }
+
+  /** @param {string} key @param {string} value */
+  function writeStorage(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
+  }
+
+  const narrowViewport = new MediaQuery('(max-width: 1023px)');
   let data = $state(/** @type {GalleryData | null} */ (null));
   let error = $state('');
-  /** @type {GalleryEntry | null} */
-  let selectedEntry = $state(null);
+  let hash = $state(window.location.hash);
   let entries = $derived(
     data
       ? [
@@ -24,23 +46,15 @@
         ]
       : [],
   );
-  let mobileDrawerOpen = $state(false);
-  let desktopNavigationCollapsed = $state(false);
-  let desktopNavigationScrollTop = 0;
-  /** @type {number | undefined} */
-  let desktopNavigationScrollTimeout;
-  /** @type {HTMLDialogElement | null} */
-  let mobileDialog = $state(null);
-  let themeLight = $state(false);
+  let selectedEntry = $derived(entryFromHash(entries, hash));
+  let drawerOpen = $state(false);
+  /** @type {GalleryEntry | null} */
+  let entryAwaitingDrawerClose = null;
+  let desktopNavigationCollapsed = $state(readStorage(desktopNavigationStorageKey) === 'true');
+  let themeLight = $state(readStorage(themeStorageKey) === 'light');
   let copyStatus = $state('');
   /** @type {number | undefined} */
   let copyTimeout;
-  /** @type {MediaQueryList | null} */
-  let mobileNavigation = $state(null);
-  let mobileMode = $state(false);
-  let initialNavigationSync = true;
-  /** @type {HTMLButtonElement | null} */
-  let browserTrigger = $state(null);
   /** @type {HTMLDivElement | null} */
   let resultsPanel = $state(null);
   /** @type {HTMLElement | null} */
@@ -53,96 +67,64 @@
     () => footerElement,
   );
 
-  /** @param {GalleryEntry | null} entry @param {'auto' | 'smooth'} [behavior='auto'] */
-  function scrollToEntry(entry, behavior = 'auto') {
-    if (!resultsPanel) return;
+  $effect(() => {
+    document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
+  });
+
+  /** @param {GalleryEntry | null} entry @param {'auto' | 'smooth'} behavior */
+  function scrollToEntry(entry, behavior) {
     const result = entry && document.getElementById(entry.anchor);
     if (!result) {
-      resultsPanel.scrollTo(0, 0);
+      resultsPanel?.scrollTo(0, 0);
       return;
     }
-    resultsPanel.scrollTo({
-      top:
-        resultsPanel.scrollTop +
-        result.getBoundingClientRect().top -
-        resultsPanel.getBoundingClientRect().top -
-        16,
-      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : behavior,
+    result.scrollIntoView({
+      block: 'start',
+      behavior: prefersReducedMotion.current ? 'auto' : behavior,
     });
   }
 
-  /** @param {GalleryEntry[]} availableEntries @param {'auto' | 'smooth'} [behavior='auto'] */
-  function restoreEntry(availableEntries = entries, behavior = 'auto') {
-    const entry = entryFromHash(availableEntries, window.location.hash);
-    selectedEntry = entry;
-    requestAnimationFrame(() => scrollToEntry(entry, behavior));
+  /** @param {GalleryEntry} entry */
+  function revealEntry(entry) {
+    requestAnimationFrame(() => {
+      scrollToEntry(entry, 'smooth');
+      document.getElementById(`map-heading-${entry.anchor}`)?.focus({ preventScroll: true });
+    });
+  }
+
+  /** @param {GalleryEntry} entry */
+  function selectEntry(entry) {
+    const url = countryUrl(window.location.href, entry.anchor);
+    if (url !== window.location.href) window.history.pushState(null, '', url);
+    hash = window.location.hash;
+    copyStatus = '';
+    window.clearTimeout(copyTimeout);
+    if (drawerOpen) {
+      entryAwaitingDrawerClose = entry;
+      drawerOpen = false;
+    } else revealEntry(entry);
+  }
+
+  function handleDrawerClosed() {
+    drawerOpen = false;
+    if (entryAwaitingDrawerClose) revealEntry(entryAwaitingDrawerClose);
+    entryAwaitingDrawerClose = null;
+  }
+
+  function handleHistory() {
+    hash = window.location.hash;
+    requestAnimationFrame(() => scrollToEntry(selectedEntry, 'smooth'));
   }
 
   /** @param {boolean} collapsed */
   function setDesktopNavigationCollapsed(collapsed) {
     desktopNavigationCollapsed = collapsed;
-    try {
-      localStorage.setItem(desktopNavigationStorageKey, String(collapsed));
-    } catch {
-      // Browser privacy settings can disable storage.
-    }
+    writeStorage(desktopNavigationStorageKey, String(collapsed));
   }
 
-  function syncNavigation() {
-    if (!mobileDialog || !mobileNavigation) return;
-    const initialSync = initialNavigationSync;
-    initialNavigationSync = false;
-    if (mobileMode) {
-      if (mobileDialog.open && !mobileDialog.matches(':modal')) mobileDialog.close();
-      if (mobileDrawerOpen && !mobileDialog.open) mobileDialog.showModal();
-    } else if (!mobileDialog.open || mobileDialog.matches(':modal')) {
-      if (mobileDialog.open) mobileDialog.close();
-      mobileDialog.show();
-      const focusedElement = document.activeElement;
-      if (
-        initialSync &&
-        focusedElement instanceof HTMLElement &&
-        mobileDialog.contains(focusedElement)
-      )
-        focusedElement.blur();
-    }
-  }
-
-  function toggleMobileNavigation() {
-    mobileDrawerOpen = !mobileDrawerOpen;
-    syncNavigation();
-    if (mobileDrawerOpen)
-      requestAnimationFrame(() => document.getElementById('country-browser-close')?.focus());
-  }
-
-  function toggleDesktopNavigation() {
-    window.clearTimeout(desktopNavigationScrollTimeout);
-    if (!desktopNavigationCollapsed) {
-      desktopNavigationScrollTop = document.querySelector('.map-links')?.scrollTop ?? 0;
-    }
-    setDesktopNavigationCollapsed(!desktopNavigationCollapsed);
-    if (!desktopNavigationCollapsed) {
-      desktopNavigationScrollTimeout = window.setTimeout(
-        () => document.querySelector('.map-links')?.scrollTo(0, desktopNavigationScrollTop),
-        200,
-      );
-    }
-  }
-
-  function expandDesktopNavigationAndFocusSearch() {
-    setDesktopNavigationCollapsed(false);
-    requestAnimationFrame(() => document.getElementById('country-search')?.focus());
-  }
-
-  /** @param {GalleryEntry} entry */
-  function selectEntry(entry) {
-    selectedEntry = entry;
-    copyStatus = '';
-    window.clearTimeout(copyTimeout);
-    requestAnimationFrame(() => {
-      scrollToEntry(entry, 'smooth');
-      document.getElementById(`map-heading-${entry.anchor}`)?.focus({ preventScroll: true });
-    });
+  function toggleTheme() {
+    themeLight = !themeLight;
+    writeStorage(themeStorageKey, themeLight ? 'light' : 'dark');
   }
 
   /** @param {string} message */
@@ -150,16 +132,6 @@
     copyStatus = message;
     window.clearTimeout(copyTimeout);
     copyTimeout = window.setTimeout(() => (copyStatus = ''), 2400);
-  }
-
-  function toggleTheme() {
-    themeLight = !themeLight;
-    document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
-    try {
-      localStorage.setItem('popcircles-theme', themeLight ? 'light' : 'dark');
-    } catch {
-      // Browser privacy settings can disable storage.
-    }
   }
 
   /** @param {MouseEvent} event @param {string} anchor */
@@ -176,31 +148,6 @@
 
   onMount(() => {
     let active = true;
-    try {
-      themeLight = localStorage.getItem('popcircles-theme') === 'light';
-    } catch {
-      themeLight = false;
-    }
-    try {
-      desktopNavigationCollapsed = localStorage.getItem(desktopNavigationStorageKey) === 'true';
-    } catch {
-      desktopNavigationCollapsed = false;
-    }
-    document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
-    const navigationQuery = window.matchMedia('(max-width: 1023px)');
-    mobileNavigation = navigationQuery;
-    mobileMode = navigationQuery.matches;
-    const handleHistory = () => restoreEntry(entries, 'smooth');
-    mobileDrawerOpen = false;
-    const handleNavigationChange = () => {
-      mobileDrawerOpen = false;
-      mobileMode = navigationQuery.matches;
-      syncNavigation();
-    };
-    navigationQuery.addEventListener('change', handleNavigationChange);
-    requestAnimationFrame(syncNavigation);
-    window.addEventListener('hashchange', handleHistory);
-    window.addEventListener('popstate', handleHistory);
     fetch('./gallery-data.json')
       .then((response) => {
         if (!response.ok) throw new Error(`Gallery data request failed (${response.status})`);
@@ -209,11 +156,7 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        requestAnimationFrame(syncNavigation);
-        restoreEntry([
-          { name: 'World', anchor: 'world-result', figures: value.world, missing: false },
-          ...value.countries,
-        ]);
+        requestAnimationFrame(() => scrollToEntry(selectedEntry, 'auto'));
       })
       .catch((cause) => {
         if (active) error = cause.message;
@@ -222,13 +165,11 @@
     return () => {
       active = false;
       window.clearTimeout(copyTimeout);
-      window.clearTimeout(desktopNavigationScrollTimeout);
-      window.removeEventListener('hashchange', handleHistory);
-      window.removeEventListener('popstate', handleHistory);
-      navigationQuery.removeEventListener('change', handleNavigationChange);
     };
   });
 </script>
+
+<svelte:window onpopstate={handleHistory} />
 
 <svelte:head>
   <title>PopCircles</title>
@@ -246,11 +187,10 @@
     headerCollapseProgress={viewportChrome.headerCollapseProgress}
     {data}
     {themeLight}
-    drawerOpen={mobileDrawerOpen}
+    {drawerOpen}
     bind:headerElement
-    bind:browserTrigger
     onTheme={toggleTheme}
-    onToggleDrawer={toggleMobileNavigation}
+    onOpenDrawer={() => (drawerOpen = true)}
   />
 
   <main>
@@ -268,25 +208,19 @@
           worldEntry={entries[0]}
           countries={data.countries}
           {selectedEntry}
-          {mobileMode}
-          drawerOpen={mobileDrawerOpen}
+          mobileMode={narrowViewport.current}
+          {drawerOpen}
           {desktopNavigationCollapsed}
-          bind:mobileDialog
-          {browserTrigger}
           onSelect={selectEntry}
-          onCloseDrawer={() => {
-            if (mobileMode) mobileDrawerOpen = false;
-            else setDesktopNavigationCollapsed(true);
-          }}
-          onToggleDesktopNavigation={toggleDesktopNavigation}
-          onExpandAndFocusSearch={expandDesktopNavigationAndFocusSearch}
+          onCloseDrawer={() => (drawerOpen = false)}
+          onDrawerClosed={handleDrawerClosed}
+          onDesktopCollapsedChange={setDesktopNavigationCollapsed}
         />
 
         <GalleryWorkspace
           {entries}
           {selectedEntry}
           bind:resultsPanel
-          onSelect={selectEntry}
           onScroll={viewportChrome.handleScroll}
           onCopy={copyCountryUrl}
         />
