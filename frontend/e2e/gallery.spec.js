@@ -1058,7 +1058,7 @@ test('[map-presentation] result links and boundary attribution use a quiet, smal
     expect(styles.edgeInsets.left).toBeCloseTo(0, 1);
     expect(styles.edgeInsets.right).toBeCloseTo(0, 1);
     expect(styles.edgeInsets.bottom).toBeCloseTo(0, 1);
-    await expect(footer.getByRole('link', { name: 'View result data' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'View data' })).toBeVisible();
     await expect(
       footer.getByText('© EuroGeographics for the administrative boundaries'),
     ).toBeVisible();
