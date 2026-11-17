@@ -267,6 +267,9 @@ downloaded checksum file as the first argument.
 
 ## The conventions
 
+For frontend interactions and their verification, start with the
+[frontend reference](docs/ai/frontend.md#behaviour).
+
 The conventions AI tools follow are the conventions humans follow here.
 [`docs/ai-instructions.md`](docs/ai-instructions.md) holds the project invariants and maps the rest;
 [`docs/ai/`](docs/ai/) holds the per-subject detail, and every file in it applies to every change —

@@ -44,7 +44,7 @@ test('sorts and groups countries alphabetically and counts normalized substring 
   assert.equal(countCountryMatches(unsorted, 'zz'), 0);
 });
 
-test('resolves World and country entries from URL fragments, with the base URL unselected', () => {
+test('[navigation-and-history] resolves World and country entries from URL fragments, with the base URL unselected', () => {
   assert.equal(entryFromHash(entries, '#world-result'), entries[0]);
   assert.equal(entryFromHash(entries, '#country-result-AA'), countries[0]);
   assert.equal(
