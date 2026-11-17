@@ -2,17 +2,16 @@
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, browserTrigger: HTMLButtonElement | null, headerElement: HTMLElement | null, onTheme: () => void, onToggleDrawer: () => void}} */
+  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, headerElement: HTMLElement | null, onTheme: () => void, onOpenDrawer: () => void}} */
   let {
     scrollPosition,
     headerCollapseProgress,
     data,
     themeLight,
     drawerOpen,
-    browserTrigger = $bindable(),
     headerElement = $bindable(),
     onTheme,
-    onToggleDrawer,
+    onOpenDrawer,
   } = $props();
 </script>
 
@@ -27,14 +26,13 @@
   {/if}
   <div class="top-bar">
     <button
-      bind:this={browserTrigger}
       class="drawer-toggle"
       class:hidden={drawerOpen}
       type="button"
       aria-controls="country-browser-panel"
       aria-expanded={drawerOpen}
       aria-label="Open maps navigation"
-      onclick={onToggleDrawer}>☰</button
+      onclick={onOpenDrawer}>☰</button
     >
     <PopCirclesLogo {scrollPosition} />
     {#if data}

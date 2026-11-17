@@ -6,7 +6,6 @@ import {
   filterCountries,
   sortCountries,
   groupCountries,
-  countCountryMatches,
   territoryCaption,
 } from '../src/gallery.js';
 
@@ -39,9 +38,9 @@ test('sorts and groups countries alphabetically and counts normalized substring 
   assert.deepEqual(groupCountries(unsorted).A, [unsorted[2]]);
   assert.deepEqual(filterCountries(unsorted, '  IRE '), [unsorted[0]]);
   assert.deepEqual(filterCountries(unsorted, 'land'), [unsorted[2]]);
-  assert.equal(countCountryMatches(unsorted, 'a'), 2);
-  assert.equal(countCountryMatches(unsorted, ''), unsorted.length);
-  assert.equal(countCountryMatches(unsorted, 'zz'), 0);
+  assert.equal(filterCountries(unsorted, 'a').length, 2);
+  assert.deepEqual(filterCountries(unsorted, ''), unsorted);
+  assert.deepEqual(filterCountries(unsorted, 'zz'), []);
 });
 
 test('[navigation-and-history] resolves World and country entries from URL fragments, with the base URL unselected', () => {

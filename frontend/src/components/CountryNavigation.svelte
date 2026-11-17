@@ -1,10 +1,12 @@
 <script>
+  import { tick } from 'svelte';
+  import { prefersReducedMotion } from 'svelte/motion';
   import globeSprite from '../../assets/earth-globe.svg?url';
-  import { countCountryMatches, countryUrl, filterCountries, groupCountries } from '../gallery.js';
+  import { filterCountries, groupCountries } from '../gallery.js';
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
-  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, mobileDialog: HTMLDialogElement | null, browserTrigger: HTMLButtonElement | null, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onToggleDesktopNavigation: () => void, onExpandAndFocusSearch: () => void}} */
+  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onDrawerClosed: () => void, onDesktopCollapsedChange: (collapsed: boolean) => void}} */
   let {
     worldEntry,
     countries,
@@ -12,23 +14,21 @@
     mobileMode,
     drawerOpen,
     desktopNavigationCollapsed,
-    mobileDialog = $bindable(),
-    browserTrigger,
     onSelect,
     onCloseDrawer,
-    onToggleDesktopNavigation,
-    onExpandAndFocusSearch,
+    onDrawerClosed,
+    onDesktopCollapsedChange,
   } = $props();
   let query = $state('');
   let matches = $derived(filterCountries(countries, query));
   let groups = $derived(groupCountries(matches));
-  let matchCount = $derived(countCountryMatches(countries, query));
   let globeFrame = $state(0);
   let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
   let drawerClosing = $state(false);
-  /** @type {GalleryEntry | null} */
-  let pendingSelection = null;
-  let restoreFocus = false;
+  /** @type {HTMLDialogElement | null} */
+  let dialog = $state(null);
+  /** @type {HTMLInputElement | null} */
+  let searchInput = $state(null);
 
   $effect(() => {
     const anchor = selectedEntry?.anchor;
@@ -38,22 +38,30 @@
       );
   });
 
-  /** @param {boolean} returnFocus */
-  function closeDrawer(returnFocus = true) {
-    restoreFocus = mobileMode && returnFocus;
-    if (mobileMode && mobileDialog?.open) {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) mobileDialog.close();
-      else drawerClosing = true;
+  // Wide screens show the panel in place; narrow screens present it as a modal drawer.
+  $effect(() => {
+    if (!dialog) return;
+    if (!mobileMode) {
+      if (dialog.matches(':modal')) dialog.close();
+      // Setting `open` directly shows the panel without the focus move that show() performs.
+      dialog.open = true;
+    } else if (drawerOpen) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      if (dialog.matches(':modal') && !prefersReducedMotion.current) drawerClosing = true;
+      else dialog.close();
     }
-    onCloseDrawer();
-  }
+  });
 
   /** @param {AnimationEvent} event */
   function finishDrawerClose(event) {
-    if (event.target !== mobileDialog || !event.animationName.endsWith('navigation-drawer-out'))
-      return;
+    if (event.target === dialog && event.animationName.endsWith('navigation-drawer-out'))
+      dialog?.close();
+  }
+
+  function handleDialogClose() {
     drawerClosing = false;
-    mobileDialog?.close();
+    onDrawerClosed();
   }
 
   /** @param {GalleryEntry} entry @param {MouseEvent} event */
@@ -61,63 +69,43 @@
     if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
       return;
     event.preventDefault();
-    const url = countryUrl(window.location.href, entry.anchor);
-    if (url !== window.location.href) window.history.pushState(null, '', url);
-    if (mobileMode) {
-      query = '';
-      pendingSelection = entry;
-      closeDrawer(false);
-      return;
-    }
+    if (mobileMode) query = '';
     onSelect(entry);
-  }
-
-  /** @param {MouseEvent} event */
-  function handleDialogClick(event) {
-    if (event.target === mobileDialog) closeDrawer();
   }
 
   /** @param {KeyboardEvent} event */
   function handleKeydown(event) {
-    if (mobileMode && drawerOpen && event.key === 'Tab') {
-      const focusable = [
-        ...(mobileDialog?.querySelectorAll('button, input, a[href]') ?? []),
-      ].filter((element) => element.getClientRects().length > 0);
-      const first = focusable[0] instanceof HTMLElement ? focusable[0] : null;
-      const lastCandidate = focusable.at(-1);
-      const last = lastCandidate instanceof HTMLElement ? lastCandidate : null;
+    // A native modal releases Tab focus to the browser chrome at its edges.
+    if (event.key === 'Tab' && dialog?.matches(':modal')) {
+      const focusable = [...dialog.querySelectorAll('button, input, a[href]')].filter(
+        (element) => element.getClientRects().length > 0,
+      );
+      const edge = event.shiftKey ? focusable[0] : focusable.at(-1);
+      const wrap = event.shiftKey ? focusable.at(-1) : focusable[0];
       if (
-        event.shiftKey &&
-        (document.activeElement === first || !mobileDialog?.contains(document.activeElement))
+        wrap instanceof HTMLElement &&
+        (document.activeElement === edge || !dialog.contains(document.activeElement))
       ) {
         event.preventDefault();
-        last?.focus();
-      } else if (
-        !event.shiftKey &&
-        (document.activeElement === last || !mobileDialog?.contains(document.activeElement))
-      ) {
-        event.preventDefault();
-        first?.focus();
+        wrap.focus();
       }
       return;
     }
-    if (event.key !== 'Escape' || (mobileMode ? !drawerOpen : desktopNavigationCollapsed)) return;
+    if (event.key !== 'Escape' || mobileMode || desktopNavigationCollapsed) return;
     event.preventDefault();
-    closeDrawer();
+    onDesktopCollapsedChange(true);
   }
 
   /** @param {Event} event */
   function handleCancel(event) {
     event.preventDefault();
-    closeDrawer();
+    onCloseDrawer();
   }
 
-  function handleDialogClose() {
-    if (restoreFocus) requestAnimationFrame(() => browserTrigger?.focus());
-    drawerClosing = false;
-    restoreFocus = false;
-    if (pendingSelection) onSelect(pendingSelection);
-    pendingSelection = null;
+  async function expandAndFocusSearch() {
+    onDesktopCollapsedChange(false);
+    await tick();
+    searchInput?.focus();
   }
 </script>
 
@@ -125,14 +113,13 @@
 
 <dialog
   id="country-browser-panel"
-  bind:this={mobileDialog}
-  class:open={!mobileMode || drawerOpen || drawerClosing}
+  bind:this={dialog}
   class:closing={drawerClosing}
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
   aria-label="Country navigation"
-  tabindex="-1"
-  autofocus
-  onclick={handleDialogClick}
+  onclick={(event) => {
+    if (event.target === dialog) onCloseDrawer();
+  }}
   oncancel={handleCancel}
   onclose={handleDialogClose}
   onanimationend={finishDrawerClose}
@@ -147,16 +134,15 @@
       aria-label="Collapse maps navigation"
       aria-controls="country-browser-panel"
       aria-expanded={!desktopNavigationCollapsed}
-      onclick={onToggleDesktopNavigation}>‹</button
+      onclick={() => onDesktopCollapsedChange(true)}>‹</button
     >
     <button
       class="close"
-      id="country-browser-close"
       type="button"
       aria-controls="country-browser-panel"
       aria-expanded={drawerOpen}
       aria-label="Close map navigation"
-      onclick={() => closeDrawer()}>×</button
+      onclick={onCloseDrawer}>×</button
     >
   </div>
   <div class="rail-controls">
@@ -165,16 +151,17 @@
       aria-label="Expand maps navigation"
       aria-controls="country-browser-panel"
       aria-expanded={!desktopNavigationCollapsed}
-      onclick={onToggleDesktopNavigation}>›</button
+      onclick={() => onDesktopCollapsedChange(false)}>›</button
     >
-    <button type="button" aria-label="Search countries" onclick={onExpandAndFocusSearch}>⌕</button>
+    <button type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>⌕</button>
   </div>
   <nav aria-label="Map navigation">
     <label class="search-label" for="country-search">
-      Search countries <span class="status">Matching: {matchCount}</span>
+      Search countries <span class="status">Matching: {matches.length}</span>
     </label>
     <div class="search-field">
       <input
+        bind:this={searchInput}
         id="country-search"
         type="search"
         aria-label="Search countries"
@@ -189,7 +176,7 @@
           aria-label="Clear search"
           onclick={() => {
             query = '';
-            document.getElementById('country-search')?.focus();
+            searchInput?.focus();
           }}>×</button
         >
       {/if}
@@ -256,17 +243,17 @@
     opacity: 1;
     transform: none;
   }
-  dialog:not(.open) {
+  dialog:not([open]) {
     display: none;
     opacity: 0;
     transform: translateX(-100%);
   }
-  dialog.open {
+  dialog[open] {
     display: flex;
     animation: none;
   }
   @starting-style {
-    dialog.open {
+    dialog[open] {
       opacity: 0;
       transform: translateX(-100%);
     }
@@ -371,6 +358,8 @@
     gap: 0.35rem;
     margin-top: 1rem;
     overflow-y: auto;
+    /* Keeps the list position while the collapsing panel width reflows it. */
+    overflow-anchor: none;
     transition:
       opacity 180ms ease,
       visibility 180ms allow-discrete;
@@ -517,7 +506,7 @@
         display 400ms allow-discrete,
         overlay 400ms allow-discrete;
     }
-    dialog.open {
+    dialog[open] {
       display: flex;
       opacity: 1;
       transform: translateX(0);

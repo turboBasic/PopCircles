@@ -3,8 +3,8 @@
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
-  /** @type {{entries: GalleryEntry[], selectedEntry: GalleryEntry | null, resultsPanel: HTMLDivElement | null, onSelect: (entry: GalleryEntry) => void, onScroll: () => void, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
-  let { entries, selectedEntry, resultsPanel = $bindable(), onSelect, onScroll, onCopy } = $props();
+  /** @type {{entries: GalleryEntry[], selectedEntry: GalleryEntry | null, resultsPanel: HTMLDivElement | null, onScroll: () => void, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
+  let { entries, selectedEntry, resultsPanel = $bindable(), onScroll, onCopy } = $props();
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus the results scroll region) -->
@@ -21,7 +21,7 @@
       {#each entries as entry (entry.anchor)}
         <section class="country" id={entry.anchor}>
           <h2 id={`map-heading-${entry.anchor}`} tabindex="-1">
-            <a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a>
+            <a href={`#${entry.anchor}`}>{entry.name}</a>
           </h2>
           {#if entry.missing}
             <p class="empty">No 50% result is available for this country.</p>
@@ -35,7 +35,6 @@
                   loading={entry.anchor === (selectedEntry?.anchor ?? 'world-result')
                     ? 'eager'
                     : 'lazy'}
-                  onSelect={() => onSelect(entry)}
                   {onCopy}
                 />
               {/each}

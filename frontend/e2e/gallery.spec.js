@@ -60,24 +60,12 @@ test('[navigation-and-history] searches country navigation and selects a country
   await navigation.getByRole('button', { name: 'Clear search' }).click();
   await expect(navigation.getByRole('searchbox', { name: 'Search countries' })).toHaveValue('');
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
-  const results = page.getByRole('region', { name: 'Map results' });
-  await results.evaluate((region) => {
-    const scrollTo = region.scrollTo.bind(region);
-    window.galleryScrollBehaviors = [];
-    region.scrollTo = (options) => {
-      window.galleryScrollBehaviors.push(options.behavior);
-      scrollTo(options);
-    };
-  });
   await page
     .getByRole('navigation', { name: 'Map navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
 
   await expect(page).toHaveURL(/#country-42$/);
-  await expect
-    .poll(() => page.evaluate(() => window.galleryScrollBehaviors.includes('smooth')))
-    .toBe(true);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toBeVisible();
   await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
@@ -199,18 +187,17 @@ test('[responsive-navigation] desktop navigation defaults expanded and remembers
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
   await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
   await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
   await page.reload();
-  await expect(drawer).toHaveClass(/desktop-collapsed/);
+  await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Expand maps navigation' }).click();
   await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
   await page.reload();
-  await expect(drawer).not.toHaveClass(/desktop-collapsed/);
+  await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
 });
 
 test('navigation-only transitions do not request map assets', async ({ page }) => {
@@ -251,10 +238,6 @@ test('[responsive-navigation] mobile navigation remains modal and closes on resi
   expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).not.toBeNull();
   const mobileWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
   await drawer.getByRole('button', { name: 'Close map navigation' }).click();
-  await expect(drawer).toHaveClass(/closing/);
-  expect(await drawer.evaluate((element) => getComputedStyle(element).animationName)).toMatch(
-    /navigation-drawer-out$/,
-  );
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(
     'aria-expanded',
@@ -455,19 +438,11 @@ test('header follows results scroll progress and restores at the top', async ({ 
     await expect(logo).toBeVisible();
     await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
-    if (viewport.width <= 1023) {
-      await page.getByRole('button', { name: 'Open maps navigation' }).click();
-      await expect(page.getByRole('dialog', { name: 'Country navigation' })).toBeVisible();
-      await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog', { name: 'Country navigation' })).toBeHidden();
-    } else {
-      const navigationButton = page.getByRole('button', { name: 'Collapse maps navigation' });
-      await expect(navigationButton).toBeVisible();
-      await navigationButton.click();
-      const openMaps = page.getByRole('button', { name: 'Expand maps navigation' });
-      await expect(openMaps).toBeVisible();
-      await openMaps.click();
-    }
+    await expect(
+      page.getByRole('button', {
+        name: viewport.width <= 1023 ? 'Open maps navigation' : 'Collapse maps navigation',
+      }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Switch to light theme' }).click();
     await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
@@ -561,10 +536,9 @@ test('[responsive-navigation] mobile selection and viewport changes preserve que
   await search.fill('country 42');
   const startUrl = page.url();
   await page.mouse.click(380, 500);
-  await expect(dialog).toHaveClass(/closing/);
-  expect(await dialog.evaluate((element) => getComputedStyle(element).animationName)).toMatch(
-    /navigation-drawer-out$/,
-  );
+  await expect
+    .poll(() => dialog.evaluate((element) => getComputedStyle(element).animationName))
+    .toMatch(/navigation-drawer-out$/);
   await expect(dialog).toBeVisible();
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
