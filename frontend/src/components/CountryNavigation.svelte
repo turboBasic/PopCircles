@@ -1,4 +1,5 @@
 <script>
+  import globeSprite from '../../assets/earth-globe.svg?url';
   import { countCountryMatches, filterCountries, groupCountries } from '../gallery.js';
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
@@ -22,6 +23,11 @@
   let matches = $derived(filterCountries(countries, query));
   let groups = $derived(groupCountries(matches));
   let matchCount = $derived(countCountryMatches(countries, query));
+  let globeFrame = $state(0);
+  let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
+  let drawerClosing = $state(false);
+  /** @type {GalleryEntry | null} */
+  let pendingSelection = null;
   let restoreFocus = false;
 
   $effect(() => {
@@ -35,15 +41,28 @@
   /** @param {boolean} returnFocus */
   function closeDrawer(returnFocus = true) {
     restoreFocus = mobileMode && returnFocus;
-    if (mobileMode) mobileDialog?.close();
+    if (mobileMode && mobileDialog?.open) {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) mobileDialog.close();
+      else drawerClosing = true;
+    }
     onCloseDrawer();
+  }
+
+  /** @param {AnimationEvent} event */
+  function finishDrawerClose(event) {
+    if (event.target !== mobileDialog || !event.animationName.endsWith('navigation-drawer-out'))
+      return;
+    drawerClosing = false;
+    mobileDialog?.close();
   }
 
   /** @param {GalleryEntry} entry */
   function selectEntry(entry) {
     if (mobileMode) {
       query = '';
+      pendingSelection = entry;
       closeDrawer(false);
+      return;
     }
     onSelect(entry);
   }
@@ -96,7 +115,10 @@
 
   function handleDialogClose() {
     if (restoreFocus) requestAnimationFrame(() => browserTrigger?.focus());
+    drawerClosing = false;
     restoreFocus = false;
+    if (pendingSelection) onSelect(pendingSelection);
+    pendingSelection = null;
   }
 </script>
 
@@ -105,14 +127,21 @@
 <dialog
   id="country-browser-panel"
   bind:this={mobileDialog}
-  class:open={!mobileMode || drawerOpen}
+  class:open={!mobileMode || drawerOpen || drawerClosing}
+  class:closing={drawerClosing}
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
   aria-label="Country navigation"
+  tabindex="-1"
+  autofocus
   onclick={handleDialogClick}
   oncancel={handleCancel}
   onclose={handleDialogClose}
+  onanimationend={finishDrawerClose}
 >
-  <div class="desktop-controls">
+  <div class="navigation-header">
+    <svg class="drawer-globe" viewBox="0 0 512 512" aria-hidden="true">
+      <use href={`${globeSprite}#${globeSymbol}`}></use>
+    </svg>
     <button
       class="desktop-collapse"
       type="button"
@@ -120,6 +149,15 @@
       aria-controls="country-browser-panel"
       aria-expanded={!desktopNavigationCollapsed}
       onclick={onToggleDesktopNavigation}>‹</button
+    >
+    <button
+      class="close"
+      id="country-browser-close"
+      type="button"
+      aria-controls="country-browser-panel"
+      aria-expanded={drawerOpen}
+      aria-label="Close map navigation"
+      onclick={() => closeDrawer()}>×</button
     >
   </div>
   <div class="rail-controls">
@@ -132,15 +170,6 @@
     >
     <button type="button" aria-label="Search countries" onclick={onExpandAndFocusSearch}>⌕</button>
   </div>
-  <button
-    class="close"
-    id="country-browser-close"
-    type="button"
-    aria-controls="country-browser-panel"
-    aria-expanded={drawerOpen}
-    aria-label="Close map navigation"
-    onclick={() => closeDrawer()}>☰</button
-  >
   <nav aria-label="Map navigation">
     <label class="search-label" for="country-search">
       Search countries <span class="status">Matching: {matchCount}</span>
@@ -183,7 +212,12 @@
         onclick={() => selectEntry(worldEntry)}>{worldEntry.name}</a
       >
     </div>
-    <div class="map-links">
+    <div
+      class="map-links"
+      onscroll={(event) => {
+        globeFrame = Math.floor((event.currentTarget.scrollTop / 240) * 72) % 72;
+      }}
+    >
       {#each Object.entries(groups) as [letter, entries] (letter)}
         <section class:filtered={query.trim()} aria-label={letter}>
           {#if !query.trim()}<h3>{letter}</h3>{/if}
@@ -223,8 +257,8 @@
     overflow: hidden;
     color: var(--text);
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border: 0;
+    border-radius: 0;
     box-shadow: none;
     opacity: 1;
     transform: none;
@@ -253,7 +287,7 @@
   }
   label {
     display: block;
-    margin: 0.8rem 0 0.5rem;
+    margin: 0 0 0.5rem;
     font-weight: 600;
   }
   .search-label {
@@ -307,12 +341,22 @@
     min-height: 0;
     flex-direction: column;
   }
-  .desktop-controls {
-    position: absolute;
-    top: calc(var(--navigation-header-space, 0px) + 0.65rem);
-    right: 1rem;
+  .navigation-header {
+    display: flex;
+    flex: none;
+    height: 3rem;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
-  .desktop-controls button,
+  .drawer-globe {
+    display: none;
+    width: 3rem;
+    height: 3rem;
+    margin-right: auto;
+  }
+  .navigation-header button,
   .rail-controls button {
     width: 2.5rem;
     height: 2.5rem;
@@ -334,9 +378,13 @@
     gap: 0.35rem;
     margin-top: 1rem;
     overflow-y: auto;
+    transition:
+      opacity 180ms ease,
+      visibility 180ms allow-discrete;
   }
   .map-pinned-links {
     flex: none;
+    margin-top: 0.75rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--line);
   }
@@ -347,9 +395,12 @@
   .desktop-collapsed nav > .search-field,
   .desktop-collapsed nav > .visually-hidden,
   .desktop-collapsed .map-pinned-links,
-  .desktop-collapsed .map-links,
-  .desktop-collapsed .desktop-controls {
+  .desktop-collapsed .navigation-header {
     display: none;
+  }
+  .desktop-collapsed .map-links {
+    opacity: 0;
+    visibility: hidden;
   }
   .desktop-collapsed .rail-controls {
     display: grid;
@@ -418,9 +469,7 @@
   }
   .close {
     display: none;
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    flex: none;
     width: 2.5rem;
     height: 2.5rem;
     color: var(--text);
@@ -441,36 +490,70 @@
     white-space: nowrap;
     border: 0;
   }
+  @keyframes navigation-drawer-in {
+    from {
+      opacity: 0.75;
+      transform: translateX(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes navigation-drawer-out {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0.75;
+      transform: translateX(-100%);
+    }
+  }
   @media (max-width: 1023px) {
     dialog {
       position: fixed;
       z-index: 3;
       inset: 0;
-      width: min(24rem, calc(100vw - 2rem));
       height: 100dvh;
+      width: min(24rem, calc(100vw - 4rem));
       padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
       opacity: 0;
       transform: translateX(-100%);
       transition:
-        opacity 180ms ease,
-        transform 180ms ease,
-        display 180ms allow-discrete,
-        overlay 180ms allow-discrete;
+        display 400ms allow-discrete,
+        overlay 400ms allow-discrete;
     }
     dialog.open {
       display: flex;
       opacity: 1;
       transform: translateX(0);
+      animation: navigation-drawer-in 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
-    .desktop-controls,
+    dialog.closing {
+      opacity: 0;
+      transform: translateX(-100%);
+      animation: navigation-drawer-out 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
     .rail-controls {
       display: none;
     }
+    .desktop-collapse {
+      display: none;
+    }
+    .navigation-header {
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .drawer-globe {
+      display: block;
+    }
     .close {
       display: block;
-      top: 0.75rem;
-      right: auto;
-      left: 0.75rem;
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+    .navigation-header .close {
       width: 2.75rem;
       height: 2.75rem;
     }
@@ -480,8 +563,12 @@
   }
   @media (prefers-reduced-motion: reduce) {
     dialog,
-    dialog::backdrop {
+    dialog::backdrop,
+    .map-links {
       transition: none;
+    }
+    dialog {
+      animation: none;
     }
   }
 </style>

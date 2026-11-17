@@ -29,6 +29,7 @@
     <button
       bind:this={browserTrigger}
       class="drawer-toggle"
+      class:hidden={drawerOpen}
       type="button"
       aria-controls="country-browser-panel"
       aria-expanded={drawerOpen}
@@ -185,6 +186,10 @@
     min-width: 2.75rem;
     min-height: 2.75rem;
     white-space: nowrap;
+  }
+  .drawer-toggle.hidden {
+    visibility: hidden;
+    pointer-events: none;
   }
   @media (min-width: 1024px) {
     .drawer-toggle {

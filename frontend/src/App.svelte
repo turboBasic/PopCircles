@@ -24,6 +24,9 @@
   );
   let mobileDrawerOpen = $state(false);
   let desktopNavigationCollapsed = $state(false);
+  let desktopNavigationScrollTop = 0;
+  /** @type {number | undefined} */
+  let desktopNavigationScrollTimeout;
   /** @type {HTMLDialogElement | null} */
   let mobileDialog = $state(null);
   let themeLight = $state(false);
@@ -33,6 +36,7 @@
   /** @type {MediaQueryList | null} */
   let mobileNavigation = $state(null);
   let mobileMode = $state(false);
+  let initialNavigationSync = true;
   /** @type {HTMLButtonElement | null} */
   let browserTrigger = $state(null);
   /** @type {HTMLDivElement | null} */
@@ -60,12 +64,21 @@
 
   function syncNavigation() {
     if (!mobileDialog || !mobileNavigation) return;
+    const initialSync = initialNavigationSync;
+    initialNavigationSync = false;
     if (mobileMode) {
-      if (mobileDialog.open) mobileDialog.close();
-      if (mobileDrawerOpen) mobileDialog.showModal();
+      if (mobileDialog.open && !mobileDialog.matches(':modal')) mobileDialog.close();
+      if (mobileDrawerOpen && !mobileDialog.open) mobileDialog.showModal();
     } else if (!mobileDialog.open || mobileDialog.matches(':modal')) {
       if (mobileDialog.open) mobileDialog.close();
       mobileDialog.show();
+      const focusedElement = document.activeElement;
+      if (
+        initialSync &&
+        focusedElement instanceof HTMLElement &&
+        mobileDialog.contains(focusedElement)
+      )
+        focusedElement.blur();
     }
   }
 
@@ -77,7 +90,17 @@
   }
 
   function toggleDesktopNavigation() {
+    window.clearTimeout(desktopNavigationScrollTimeout);
+    if (!desktopNavigationCollapsed) {
+      desktopNavigationScrollTop = document.querySelector('.map-links')?.scrollTop ?? 0;
+    }
     desktopNavigationCollapsed = !desktopNavigationCollapsed;
+    if (!desktopNavigationCollapsed) {
+      desktopNavigationScrollTimeout = window.setTimeout(
+        () => document.querySelector('.map-links')?.scrollTo(0, desktopNavigationScrollTop),
+        200,
+      );
+    }
   }
 
   function expandDesktopNavigationAndFocusSearch() {
@@ -168,6 +191,7 @@
     return () => {
       active = false;
       window.clearTimeout(copyTimeout);
+      window.clearTimeout(desktopNavigationScrollTimeout);
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
       navigationQuery.removeEventListener('change', handleNavigationChange);
@@ -319,9 +343,10 @@
     display: grid;
     min-width: 0;
     min-height: 0;
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    grid-template-columns: minmax(60px, 20rem) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: stretch;
+    transition: grid-template-columns 180ms ease;
   }
   .copy-toast {
     position: fixed;
@@ -338,7 +363,7 @@
     box-shadow: 0 0.5rem 2rem #0005;
   }
   .explorer.nav-collapsed {
-    grid-template-columns: 60px minmax(0, 1fr);
+    grid-template-columns: minmax(60px, 60px) minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
     .app-shell {
@@ -351,6 +376,11 @@
     }
     .explorer.nav-collapsed {
       grid-template-columns: 1fr;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .explorer {
+      transition: none;
     }
   }
 </style>
