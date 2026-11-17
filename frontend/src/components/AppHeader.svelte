@@ -2,7 +2,7 @@
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, browserTrigger: HTMLButtonElement | null, onTheme: () => void, onToggleDrawer: () => void}} */
+  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, browserTrigger: HTMLButtonElement | null, headerElement: HTMLElement | null, onTheme: () => void, onToggleDrawer: () => void}} */
   let {
     scrollPosition,
     headerCollapseProgress,
@@ -10,12 +10,14 @@
     themeLight,
     drawerOpen,
     browserTrigger = $bindable(),
+    headerElement = $bindable(),
     onTheme,
     onToggleDrawer,
   } = $props();
 </script>
 
 <header
+  bind:this={headerElement}
   class="app-header"
   class:collapsed={headerCollapseProgress === 1}
   style={`--header-padding: ${0.75 - 0.5 * headerCollapseProgress}rem; --art-opacity: ${0.16 * (1 - headerCollapseProgress)}; --intro-height: ${12 * (1 - headerCollapseProgress)}rem; --intro-margin: ${1.25 * (1 - headerCollapseProgress)}rem 0; --intro-opacity: ${1 - headerCollapseProgress}; --logo-size: ${1 - 0.12 * headerCollapseProgress}rem; --logo-spacing: ${0.16 - 0.03 * headerCollapseProgress}em`}

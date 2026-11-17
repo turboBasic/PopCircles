@@ -5,6 +5,7 @@
   import CountryNavigation from './components/CountryNavigation.svelte';
   import GalleryWorkspace from './components/GalleryWorkspace.svelte';
   import { entryFromHash, countryUrl } from './gallery.js';
+  import { useViewportChrome } from './viewport-chrome.svelte.js';
 
   /** @typedef {import('./gallery.js').GalleryData} GalleryData */
   /** @typedef {import('./gallery.js').GalleryEntry} GalleryEntry */
@@ -36,21 +37,15 @@
   let browserTrigger = $state(null);
   /** @type {HTMLDivElement | null} */
   let resultsPanel = $state(null);
-  let scrollPosition = $state(0);
-  let headerCollapseProgress = $state(0);
-  let headerSpace = $state(0);
-  let navigationHeaderSpace = $state(0);
-  let footerSpace = $state(0);
-
-  function measureChrome() {
-    const header = document.querySelector('.app-header');
-    const footer = document.querySelector('.site-footer');
-    if (header) {
-      navigationHeaderSpace = header.getBoundingClientRect().height;
-      if (scrollPosition === 0) headerSpace = navigationHeaderSpace;
-    }
-    if (footer) footerSpace = footer.getBoundingClientRect().height;
-  }
+  /** @type {HTMLElement | null} */
+  let headerElement = $state(null);
+  /** @type {HTMLElement | null} */
+  let footerElement = $state(null);
+  const viewportChrome = useViewportChrome(
+    () => resultsPanel,
+    () => headerElement,
+    () => footerElement,
+  );
 
   function resetView() {
     resultsPanel?.scrollTo(0, 0);
@@ -118,12 +113,6 @@
     }
   }
 
-  function handleScroll() {
-    scrollPosition = resultsPanel?.scrollTop ?? 0;
-    headerCollapseProgress = Math.min(scrollPosition / 160, 1);
-    if (scrollPosition === 0) requestAnimationFrame(measureChrome);
-  }
-
   /** @param {MouseEvent} event @param {string} anchor */
   async function copyCountryUrl(event, anchor) {
     event.preventDefault();
@@ -148,19 +137,12 @@
     mobileNavigation = navigationQuery;
     mobileMode = navigationQuery.matches;
     const handleHistory = () => restoreEntry();
-    const chromeObserver = new ResizeObserver(measureChrome);
-    const header = document.querySelector('.app-header');
-    const footer = document.querySelector('.site-footer');
-    if (header) chromeObserver.observe(header);
-    if (footer) chromeObserver.observe(footer);
     mobileDrawerOpen = false;
     const handleNavigationChange = () => {
       mobileDrawerOpen = false;
       mobileMode = navigationQuery.matches;
       syncNavigation();
     };
-    handleScroll();
-    measureChrome();
     navigationQuery.addEventListener('change', handleNavigationChange);
     requestAnimationFrame(syncNavigation);
     window.addEventListener('hashchange', handleHistory);
@@ -189,7 +171,6 @@
       window.removeEventListener('hashchange', handleHistory);
       window.removeEventListener('popstate', handleHistory);
       navigationQuery.removeEventListener('change', handleNavigationChange);
-      chromeObserver.disconnect();
     };
   });
 </script>
@@ -203,14 +184,15 @@
 
 <div
   class="app-shell"
-  style={`--header-space: ${headerSpace}px; --navigation-header-space: ${navigationHeaderSpace}px; --footer-space: ${footerSpace}px`}
+  style={`--header-space: ${viewportChrome.headerSpace}px; --navigation-header-space: ${viewportChrome.navigationHeaderSpace}px; --footer-space: ${viewportChrome.footerSpace}px`}
 >
   <AppHeader
-    {scrollPosition}
-    {headerCollapseProgress}
+    scrollPosition={viewportChrome.scrollPosition}
+    headerCollapseProgress={viewportChrome.headerCollapseProgress}
     {data}
     {themeLight}
     drawerOpen={mobileDrawerOpen}
+    bind:headerElement
     bind:browserTrigger
     onTheme={toggleTheme}
     onToggleDrawer={toggleMobileNavigation}
@@ -250,13 +232,13 @@
           {selectedEntry}
           bind:resultsPanel
           onSelect={selectEntry}
-          onScroll={handleScroll}
+          onScroll={viewportChrome.handleScroll}
           onCopy={copyCountryUrl}
         />
       </div>
     {/if}
   </main>
-  <footer class="site-footer">
+  <footer bind:this={footerElement} class="site-footer">
     <a href="https://github.com/turboBasic">A project by Andrii Melnyk</a>
   </footer>
 </div>
@@ -274,46 +256,6 @@
 {/if}
 
 <style>
-  :global(:root) {
-    height: 100%;
-    overflow: hidden;
-    color-scheme: dark;
-    overflow-anchor: none;
-    --bg: #0b1020;
-    --surface: #121a2b;
-    --surface-2: #19243a;
-    --text: #eef3ff;
-    --muted: #a4b0c5;
-    --accent: #80e0c0;
-    --line: #29364d;
-    --glow: #203456;
-    --chrome-bg: rgb(11 16 32 / 69%);
-  }
-  :global(:root[data-theme='light']) {
-    color-scheme: light;
-    --bg: #f5f7fb;
-    --surface: #fff;
-    --surface-2: #e9eef5;
-    --text: #172033;
-    --muted: #4b596e;
-    --accent: #145c4e;
-    --line: #cbd5e1;
-    --glow: #e5edf7;
-    --chrome-bg: rgb(245 247 251 / 69%);
-  }
-  :global(*) {
-    box-sizing: border-box;
-  }
-  :global(body) {
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
-    color: var(--text);
-    background: radial-gradient(ellipse at 50% -20%, var(--glow) 0, var(--bg) 55%);
-    font:
-      16px/1.55 system-ui,
-      sans-serif;
-  }
   .app-shell {
     position: relative;
     display: grid;
