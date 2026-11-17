@@ -81,6 +81,49 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
 });
 
+test('[navigation-and-history] logo returns to the start and clears the country selection without reloading', async ({
+  page,
+}) => {
+  let galleryDataRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.endsWith('/gallery-data.json')) galleryDataRequests += 1;
+  });
+
+  await page
+    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('link', { name: 'Country 42' })
+    .click();
+  const results = page.getByRole('region', { name: 'Map results' });
+  await expect(page).toHaveURL(/#country-42$/);
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
+
+  await page.getByRole('link', { name: 'PopCircles home' }).click();
+
+  await expect(page).toHaveURL('/');
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
+  await expect(
+    page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
+  ).toHaveCount(0);
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  expect(galleryDataRequests).toBe(0);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/#country-42$/);
+  await expect(
+    page.getByRole('navigation', { name: 'Map navigation' }).getByRole('link', {
+      name: 'Country 42',
+    }),
+  ).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#country-42')).toBeInViewport();
+  await page.goForward();
+  await expect(page).toHaveURL('/');
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
+  await expect(
+    page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
+  ).toHaveCount(0);
+  expect(galleryDataRequests).toBe(0);
+});
+
 test('scrolls the selected country into view in the navigation list', async ({ page }) => {
   await page.goto('/#country-80');
   const navigation = page.getByRole('navigation', { name: 'Map navigation' });

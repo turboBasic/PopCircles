@@ -75,7 +75,10 @@
   function scrollToEntry(entry, behavior) {
     const result = entry && document.getElementById(entry.anchor);
     if (!result) {
-      resultsPanel?.scrollTo(0, 0);
+      resultsPanel?.scrollTo({
+        top: 0,
+        behavior: prefersReducedMotion.current ? 'auto' : behavior,
+      });
       return;
     }
     result.scrollIntoView({
@@ -103,6 +106,15 @@
       entryAwaitingDrawerClose = entry;
       drawerOpen = false;
     } else revealEntry(entry);
+  }
+
+  function navigateHome() {
+    const url = countryUrl(window.location.href, null);
+    if (url !== window.location.href) window.history.pushState(null, '', url);
+    hash = window.location.hash;
+    copyStatus = '';
+    window.clearTimeout(copyTimeout);
+    requestAnimationFrame(() => scrollToEntry(null, 'smooth'));
   }
 
   function handleDrawerClosed() {
@@ -189,6 +201,7 @@
     {themeLight}
     {drawerOpen}
     bind:headerElement
+    onHome={navigateHome}
     onTheme={toggleTheme}
     onOpenDrawer={() => (drawerOpen = true)}
   />

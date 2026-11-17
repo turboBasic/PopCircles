@@ -1,14 +1,22 @@
 <script>
   import globeSprite from '../../assets/earth-globe.svg?url';
 
-  /** @type {{scrollPosition: number}} */
-  let { scrollPosition } = $props();
+  /** @type {{scrollPosition: number, onHome: () => void}} */
+  let { scrollPosition, onHome } = $props();
   const globeFrameCount = 72;
   let globeFrame = $derived(Math.floor((scrollPosition / 240) * globeFrameCount) % globeFrameCount);
   let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
+
+  /** @param {MouseEvent} event */
+  function handleHomeClick(event) {
+    if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+      return;
+    event.preventDefault();
+    onHome();
+  }
 </script>
 
-<a class="home-link" href="./" aria-label="PopCircles home">
+<a class="home-link" href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
   <span class="brand-text" aria-hidden="true">
     <span class="letter-slot">P</span>
     <span class="letter-slot globe-slot"

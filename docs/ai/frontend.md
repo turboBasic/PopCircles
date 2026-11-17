@@ -15,6 +15,8 @@
 - The World result and every country result remain rendered in one continuous list.
 - Selecting a country updates the URL fragment and scrolls the results region to that country's card.
   Selecting World scrolls to the World result.
+- Activating the PopCircles logo clears the fragment and country selection, returns to the start of
+  the results, and keeps the loaded page in place.
 - Direct fragments and browser Back and Forward restore the selected card.
 
 ### Responsive navigation
