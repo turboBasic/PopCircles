@@ -6,12 +6,14 @@
   --bg: #0b1020;
   --surface: #121a2b;
   --surface-2: #19243a;
+  --surface-quiet: #101827;
   --text: #eef3ff;
   --muted: #a4b0c5;
   --accent: #80e0c0;
-  --line: #29364d;
+  --line: #65758e;
   --glow: #203456;
-  --chrome-bg: rgb(11 16 32 / 69%);
+  --chrome-bg: rgb(11 16 32 / 92%);
+  --shadow: #0005;
 }
 
 :root[data-theme='light'] {
@@ -19,12 +21,14 @@
   --bg: #f5f7fb;
   --surface: #fff;
   --surface-2: #e9eef5;
+  --surface-quiet: #f5f7fb;
   --text: #172033;
   --muted: #4b596e;
   --accent: #145c4e;
-  --line: #cbd5e1;
+  --line: #65758e;
   --glow: #e5edf7;
-  --chrome-bg: rgb(245 247 251 / 69%);
+  --chrome-bg: rgb(245 247 251 / 92%);
+  --shadow: #0005;
 }
 
 * {

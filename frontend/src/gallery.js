@@ -72,11 +72,9 @@ export function entryFromHash(entries, hash) {
   return entries.find((entry) => entry.anchor === anchor) ?? null;
 }
 
-/** @param {number | null | undefined} share @param {string | undefined} territoryName */
-export function territoryCaption(share, territoryName) {
-  return share === undefined || share === null
-    ? null
-    : `Circle covers ${Math.floor(share * 100 + 0.5)}% of ${territoryName}`;
+/** @param {number | null | undefined} share */
+export function territorySharePercent(share) {
+  return share === undefined || share === null ? null : Math.floor(share * 100 + 0.5);
 }
 
 /** @param {string} currentUrl @param {string | null} anchor */

@@ -75,7 +75,10 @@
   function scrollToEntry(entry, behavior) {
     const result = entry && document.getElementById(entry.anchor);
     if (!result) {
-      resultsPanel?.scrollTo(0, 0);
+      resultsPanel?.scrollTo({
+        top: 0,
+        behavior: prefersReducedMotion.current ? 'auto' : behavior,
+      });
       return;
     }
     result.scrollIntoView({
@@ -103,6 +106,15 @@
       entryAwaitingDrawerClose = entry;
       drawerOpen = false;
     } else revealEntry(entry);
+  }
+
+  function navigateHome() {
+    const url = countryUrl(window.location.href, null);
+    if (url !== window.location.href) window.history.pushState(null, '', url);
+    hash = window.location.hash;
+    copyStatus = '';
+    window.clearTimeout(copyTimeout);
+    requestAnimationFrame(() => scrollToEntry(null, 'smooth'));
   }
 
   function handleDrawerClosed() {
@@ -189,6 +201,7 @@
     {themeLight}
     {drawerOpen}
     bind:headerElement
+    onHome={navigateHome}
     onTheme={toggleTheme}
     onOpenDrawer={() => (drawerOpen = true)}
   />
@@ -325,14 +338,14 @@
     background: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: 0.75rem;
-    box-shadow: 0 0.5rem 2rem #0005;
+    box-shadow: 0 0.5rem 2rem var(--shadow);
   }
   .explorer.nav-collapsed {
     grid-template-columns: minmax(60px, 60px) minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
     .app-shell {
-      width: calc(100% - 2rem);
+      width: calc(100% - 1rem);
     }
     .explorer {
       grid-template-columns: 1fr;

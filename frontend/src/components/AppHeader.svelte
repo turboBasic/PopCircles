@@ -2,7 +2,7 @@
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, headerElement: HTMLElement | null, onTheme: () => void, onOpenDrawer: () => void}} */
+  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, headerElement: HTMLElement | null, onHome: () => void, onTheme: () => void, onOpenDrawer: () => void}} */
   let {
     scrollPosition,
     headerCollapseProgress,
@@ -10,6 +10,7 @@
     themeLight,
     drawerOpen,
     headerElement = $bindable(),
+    onHome,
     onTheme,
     onOpenDrawer,
   } = $props();
@@ -34,7 +35,7 @@
       aria-label="Open maps navigation"
       onclick={onOpenDrawer}>☰</button
     >
-    <PopCirclesLogo {scrollPosition} />
+    <PopCirclesLogo {scrollPosition} {onHome} />
     {#if data}
       <div class="map-actions" role="group" aria-label="Gallery controls">
         <a
