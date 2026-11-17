@@ -10,6 +10,8 @@
   /** @typedef {import('./gallery.js').GalleryData} GalleryData */
   /** @typedef {import('./gallery.js').GalleryEntry} GalleryEntry */
 
+  const desktopNavigationStorageKey = 'popcircles-desktop-navigation-collapsed';
+
   let data = $state(/** @type {GalleryData | null} */ (null));
   let error = $state('');
   /** @type {GalleryEntry | null} */
@@ -51,15 +53,39 @@
     () => footerElement,
   );
 
-  function resetView() {
-    resultsPanel?.scrollTo(0, 0);
+  /** @param {GalleryEntry | null} entry @param {'auto' | 'smooth'} [behavior='auto'] */
+  function scrollToEntry(entry, behavior = 'auto') {
+    if (!resultsPanel) return;
+    const result = entry && document.getElementById(entry.anchor);
+    if (!result) {
+      resultsPanel.scrollTo(0, 0);
+      return;
+    }
+    resultsPanel.scrollTo({
+      top:
+        resultsPanel.scrollTop +
+        result.getBoundingClientRect().top -
+        resultsPanel.getBoundingClientRect().top -
+        16,
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : behavior,
+    });
   }
 
-  /** @param {GalleryEntry[]} availableEntries */
-  function restoreEntry(availableEntries = entries) {
+  /** @param {GalleryEntry[]} availableEntries @param {'auto' | 'smooth'} [behavior='auto'] */
+  function restoreEntry(availableEntries = entries, behavior = 'auto') {
     const entry = entryFromHash(availableEntries, window.location.hash);
     selectedEntry = entry;
-    requestAnimationFrame(resetView);
+    requestAnimationFrame(() => scrollToEntry(entry, behavior));
+  }
+
+  /** @param {boolean} collapsed */
+  function setDesktopNavigationCollapsed(collapsed) {
+    desktopNavigationCollapsed = collapsed;
+    try {
+      localStorage.setItem(desktopNavigationStorageKey, String(collapsed));
+    } catch {
+      // Browser privacy settings can disable storage.
+    }
   }
 
   function syncNavigation() {
@@ -94,7 +120,7 @@
     if (!desktopNavigationCollapsed) {
       desktopNavigationScrollTop = document.querySelector('.map-links')?.scrollTop ?? 0;
     }
-    desktopNavigationCollapsed = !desktopNavigationCollapsed;
+    setDesktopNavigationCollapsed(!desktopNavigationCollapsed);
     if (!desktopNavigationCollapsed) {
       desktopNavigationScrollTimeout = window.setTimeout(
         () => document.querySelector('.map-links')?.scrollTo(0, desktopNavigationScrollTop),
@@ -104,7 +130,7 @@
   }
 
   function expandDesktopNavigationAndFocusSearch() {
-    desktopNavigationCollapsed = false;
+    setDesktopNavigationCollapsed(false);
     requestAnimationFrame(() => document.getElementById('country-search')?.focus());
   }
 
@@ -114,8 +140,8 @@
     copyStatus = '';
     window.clearTimeout(copyTimeout);
     requestAnimationFrame(() => {
-      resetView();
-      document.getElementById(`map-heading-${entry.anchor}`)?.focus();
+      scrollToEntry(entry, 'smooth');
+      document.getElementById(`map-heading-${entry.anchor}`)?.focus({ preventScroll: true });
     });
   }
 
@@ -155,11 +181,16 @@
     } catch {
       themeLight = false;
     }
+    try {
+      desktopNavigationCollapsed = localStorage.getItem(desktopNavigationStorageKey) === 'true';
+    } catch {
+      desktopNavigationCollapsed = false;
+    }
     document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
     const navigationQuery = window.matchMedia('(max-width: 1023px)');
     mobileNavigation = navigationQuery;
     mobileMode = navigationQuery.matches;
-    const handleHistory = () => restoreEntry();
+    const handleHistory = () => restoreEntry(entries, 'smooth');
     mobileDrawerOpen = false;
     const handleNavigationChange = () => {
       mobileDrawerOpen = false;
@@ -245,7 +276,7 @@
           onSelect={selectEntry}
           onCloseDrawer={() => {
             if (mobileMode) mobileDrawerOpen = false;
-            else desktopNavigationCollapsed = true;
+            else setDesktopNavigationCollapsed(true);
           }}
           onToggleDesktopNavigation={toggleDesktopNavigation}
           onExpandAndFocusSearch={expandDesktopNavigationAndFocusSearch}

@@ -8,7 +8,6 @@ import {
   groupCountries,
   countCountryMatches,
   territoryCaption,
-  visibleEntries,
 } from '../src/gallery.js';
 
 const countries = [
@@ -54,13 +53,6 @@ test('resolves World and country entries from URL fragments, with the base URL u
   );
   assert.equal(entryFromHash(entries, '#unknown'), null);
   assert.equal(entryFromHash(entries, ''), null);
-});
-
-test('shows all entries by default or only a selected fragment entry', () => {
-  assert.deepEqual(visibleEntries(entries, null), entries);
-  assert.deepEqual(visibleEntries(entries, 'world-result'), [entries[0]]);
-  assert.deepEqual(visibleEntries(entries, 'country-result-AA'), [countries[0]]);
-  assert.deepEqual(visibleEntries(entries, countries[2].anchor), [countries[2]]);
 });
 
 test('copies the selected country fragment without keeping an old fragment', () => {
