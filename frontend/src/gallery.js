@@ -77,11 +77,6 @@ export function entryFromHash(entries, hash) {
   return entries.find((entry) => entry.anchor === anchor) ?? null;
 }
 
-/** @param {GalleryEntry[]} entries @param {string | null} selectedAnchor */
-export function visibleEntries(entries, selectedAnchor) {
-  return entries.filter((entry) => selectedAnchor === null || entry.anchor === selectedAnchor);
-}
-
 /** @param {number | null | undefined} share @param {string | undefined} territoryName */
 export function territoryCaption(share, territoryName) {
   return share === undefined || share === null

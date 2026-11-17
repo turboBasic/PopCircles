@@ -1,12 +1,10 @@
 <script>
-  import { visibleEntries } from '../gallery.js';
   import MapFigure from './MapFigure.svelte';
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
   /** @type {{entries: GalleryEntry[], selectedEntry: GalleryEntry | null, resultsPanel: HTMLDivElement | null, onSelect: (entry: GalleryEntry) => void, onScroll: () => void, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
   let { entries, selectedEntry, resultsPanel = $bindable(), onSelect, onScroll, onCopy } = $props();
-  let visibleMapEntries = $derived(visibleEntries(entries, selectedEntry?.anchor ?? null));
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus the results scroll region) -->
@@ -20,7 +18,7 @@
 >
   <section class="map-results" aria-label="Maps">
     <div id="map-results-list">
-      {#each visibleMapEntries as entry (entry.anchor)}
+      {#each entries as entry (entry.anchor)}
         <section class="country" id={entry.anchor}>
           <h2 id={`map-heading-${entry.anchor}`} tabindex="-1">
             <a href={`#${entry.anchor}`} onclick={() => onSelect(entry)}>{entry.name}</a>

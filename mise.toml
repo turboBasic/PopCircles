@@ -87,8 +87,17 @@ description = "Generate the 50% country sweep and render result documents to a g
 depends = ["deps"]
 run = "uv run render-gallery"
 
+[tasks."gallery:frontend"]
+description = "Build the frontend and update the existing local gallery"
+run = [
+  "npm --prefix frontend run build",
+  "cp frontend/dist/index.html build/gallery/index.html",
+  "cp -R frontend/dist/assets/. build/gallery/assets/",
+]
+
 [tasks."gallery:dev"]
 description = "Serve the generated gallery locally"
+depends = ["gallery:frontend"]
 run = "python -m http.server --bind 127.0.0.1 --directory build/gallery 8000"
 
 [tasks."gallery:publish"]

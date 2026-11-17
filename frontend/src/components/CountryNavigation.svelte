@@ -1,6 +1,6 @@
 <script>
   import globeSprite from '../../assets/earth-globe.svg?url';
-  import { countCountryMatches, filterCountries, groupCountries } from '../gallery.js';
+  import { countCountryMatches, countryUrl, filterCountries, groupCountries } from '../gallery.js';
 
   /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
 
@@ -56,8 +56,13 @@
     mobileDialog?.close();
   }
 
-  /** @param {GalleryEntry} entry */
-  function selectEntry(entry) {
+  /** @param {GalleryEntry} entry @param {MouseEvent} event */
+  function selectEntry(entry, event) {
+    if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+      return;
+    event.preventDefault();
+    const url = countryUrl(window.location.href, entry.anchor);
+    if (url !== window.location.href) window.history.pushState(null, '', url);
     if (mobileMode) {
       query = '';
       pendingSelection = entry;
@@ -65,12 +70,6 @@
       return;
     }
     onSelect(entry);
-  }
-
-  function closeAfterGallerySelection() {
-    if (!mobileMode) return;
-    query = '';
-    closeDrawer(false);
   }
 
   /** @param {MouseEvent} event */
@@ -200,16 +199,10 @@
     </p>
     <div class="map-pinned-links">
       <a
-        class:active={selectedEntry === null}
-        aria-current={selectedEntry === null ? 'page' : undefined}
-        href={`${window.location.pathname}${window.location.search}`}
-        onclick={closeAfterGallerySelection}>All countries</a
-      >
-      <a
         class:active={selectedEntry?.anchor === worldEntry.anchor}
         aria-current={selectedEntry?.anchor === worldEntry.anchor ? 'page' : undefined}
         href={`#${worldEntry.anchor}`}
-        onclick={() => selectEntry(worldEntry)}>{worldEntry.name}</a
+        onclick={(event) => selectEntry(worldEntry, event)}>{worldEntry.name}</a
       >
     </div>
     <div
@@ -229,7 +222,7 @@
                   class:active={selectedEntry?.anchor === entry.anchor}
                   aria-current={selectedEntry?.anchor === entry.anchor ? 'page' : undefined}
                   href={`#${entry.anchor}`}
-                  onclick={() => selectEntry(entry)}>{entry.name}</a
+                  onclick={(event) => selectEntry(entry, event)}>{entry.name}</a
                 >
               </li>
             {/each}

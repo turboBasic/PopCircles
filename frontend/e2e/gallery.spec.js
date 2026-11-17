@@ -42,17 +42,15 @@ test.beforeEach(async ({ page }) => {
 
 test('searches country navigation and selects a country', async ({ page }) => {
   const navigation = page.getByRole('navigation', { name: 'Map navigation' });
-  await expect(navigation.getByRole('link', { name: 'All countries' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
   await expect(navigation.getByRole('link', { name: 'World' })).toHaveAttribute(
     'href',
     '#world-result',
   );
   await expect(navigation.getByText('Matching: 80')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
-  await expect(navigation.getByRole('link')).toHaveCount(3);
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(navigation.getByRole('link')).toHaveCount(2);
   await expect(navigation.locator('.search-label .status')).toHaveText('Matching: 1');
   await expect(navigation.getByRole('heading', { name: 'C', exact: true })).toHaveCount(0);
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('no result');
@@ -60,28 +58,57 @@ test('searches country navigation and selects a country', async ({ page }) => {
   await navigation.getByRole('button', { name: 'Clear search' }).click();
   await expect(navigation.getByRole('searchbox', { name: 'Search countries' })).toHaveValue('');
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
+  const results = page.getByRole('region', { name: 'Map results' });
+  await results.evaluate((region) => {
+    const scrollTo = region.scrollTo.bind(region);
+    window.galleryScrollBehaviors = [];
+    region.scrollTo = (options) => {
+      window.galleryScrollBehaviors.push(options.behavior);
+      scrollTo(options);
+    };
+  });
   await page
     .getByRole('navigation', { name: 'Map navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
 
   await expect(page).toHaveURL(/#country-42$/);
+  await expect
+    .poll(() => page.evaluate(() => window.galleryScrollBehaviors.includes('smooth')))
+    .toBe(true);
   await expect(page.locator('#country-42')).toBeVisible();
-  await expect(page.locator('#country-41')).toHaveCount(0);
+  await expect(page.locator('#country-41')).toBeVisible();
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
   const mapLink = page.getByRole('link', { name: 'Country 42 map' });
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
   await expect(page).toHaveURL(/#country-42$/);
-  await navigation.getByRole('link', { name: 'All countries' }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(navigation.getByRole('link', { name: 'All countries' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await expect(navigation.getByRole('link', { name: 'Country 42' })).not.toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await navigation.getByRole('link', { name: 'World' }).click();
+  await expect(page).toHaveURL(/#world-result$/);
+  await expect(page.locator('#world-result')).toBeInViewport();
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+});
+
+test('drawer selection scrolls the results smoothly instead of jumping', async ({ page }) => {
+  const results = page.getByRole('region', { name: 'Map results' });
+  await results.evaluate((region) => {
+    window.galleryScrollSamples = [];
+    let frames = 0;
+    function sample() {
+      window.galleryScrollSamples.push(region.scrollTop);
+      if (frames++ < 120) requestAnimationFrame(sample);
+    }
+    requestAnimationFrame(sample);
+  });
+
+  await page
+    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('link', { name: 'Country 80', exact: true })
+    .click();
+  await expect(page).toHaveURL(/#country-80$/);
+  await expect
+    .poll(() => page.evaluate(() => new Set(window.galleryScrollSamples.map(Math.round)).size))
+    .toBeGreaterThan(2);
 });
 
 test('scrolls the selected country into view in the navigation list', async ({ page }) => {
@@ -120,7 +147,7 @@ test('desktop navigation collapses to a rail without overlapping results', async
     const workspaceExpanded = await page.getByRole('region', { name: 'Map results' }).boundingBox();
     expect(rail.width).toBeGreaterThanOrEqual(56);
     expect(rail.width).toBeLessThanOrEqual(64);
-    await expect(drawer.getByRole('link', { name: 'All countries' })).toBeHidden();
+    await expect(drawer.getByRole('link', { name: 'World' })).toBeHidden();
     await expect(drawer.getByRole('searchbox', { name: 'Search countries' })).toBeHidden();
     expect(workspaceExpanded.width).toBeGreaterThan(workspaceBefore.width);
     expect(workspaceExpanded.x).toBeGreaterThan(rail.x + rail.width);
@@ -138,7 +165,7 @@ test('desktop navigation collapses to a rail without overlapping results', async
       .boundingBox();
     expect(workspaceAfterExpand.width).toBeLessThan(workspaceExpanded.width);
     const list = drawer.locator('.map-links');
-    await list.evaluate((element) => (element.scrollTop = element.scrollHeight));
+    await list.evaluate((element) => (element.scrollTop = 500));
     const listScrollTop = await list.evaluate((element) => element.scrollTop);
     await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
     await page.getByRole('button', { name: 'Expand maps navigation' }).click();
@@ -162,6 +189,22 @@ test('desktop navigation collapses to a rail without overlapping results', async
     );
     if (width === 1024) await page.goto('/');
   }
+});
+
+test('desktop navigation defaults expanded and remembers its state', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const drawer = page.getByRole('dialog', { name: 'Country navigation' });
+  await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
+  await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
+  await page.reload();
+  await expect(drawer).toHaveClass(/desktop-collapsed/);
+
+  await page.getByRole('button', { name: 'Expand maps navigation' }).click();
+  await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
+  await page.reload();
+  await expect(drawer).not.toHaveClass(/desktop-collapsed/);
 });
 
 test('navigation-only transitions do not request map assets', async ({ page }) => {
@@ -231,7 +274,7 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   );
 });
 
-test('direct links, Back and Forward restore country selection and reset results', async ({
+test('direct links, Back and Forward scroll to the selected result and keep every card rendered', async ({
   page,
 }) => {
   await page.goto('/#country-42');
@@ -242,22 +285,26 @@ test('direct links, Back and Forward restore country selection and reset results
     'page',
   );
   const results = page.getByRole('region', { name: 'Map results' });
-  await results.evaluate((region) => (region.scrollTop = 200));
+  await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
+  await expect(page.locator('#country-42')).toBeInViewport();
   await navigation.getByRole('link', { name: 'Country 01' }).click();
   await expect(page).toHaveURL(/#country-1$/);
-  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
+  await expect(page.locator('#country-1')).toBeInViewport();
+  await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
   await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
     'aria-current',
     'page',
   );
   await page.goBack();
   await expect(page).toHaveURL(/#country-42$/);
+  await expect(page.locator('#country-42')).toBeInViewport();
   await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
     'aria-current',
     'page',
   );
   await page.goForward();
   await expect(page).toHaveURL(/#country-1$/);
+  await expect(page.locator('#country-1')).toBeInViewport();
   await expect(navigation.getByRole('link', { name: 'Country 01' })).toHaveAttribute(
     'aria-current',
     'page',

@@ -22,7 +22,7 @@ generation into the frontend.
 - The main workspace owns primary vertical scrolling.
 - Country navigation may scroll independently.
 - Use native scrolling and browser controls.
-- Support Focused and Expand All map modes.
+- Keep the World result and every country result rendered in one continuously visible list.
 - Preserve map aspect ratios and avoid layout shifts.
 - Use responsive layouts based on available content width.
 - Preserve light and dark theme support.
@@ -31,14 +31,13 @@ generation into the frontend.
 
 - At desktop and mobile viewport sizes, the page shell fits the viewport and the document has no
   vertical scrollbar; map results and country navigation scroll within their own regions.
-- Selecting a country updates the URL fragment, displays that country's maps, and returns the results
-  region to its start. Browser back and forward restore the selected country.
+- Selecting a country updates the URL fragment and scrolls the results region to that country's
+  card. Direct fragments and browser back and forward restore the selected card; selecting World
+  scrolls to the World result.
 - On narrow screens, country navigation opens as a modal dialog, closes with Escape, and returns focus
   to its trigger. On wide screens, navigation can be collapsed and its state survives a reload.
-- Focused mode shows the selected country's maps; Expand All shows every country's maps. Both modes
-  preserve map aspect ratios without layout shifts as images load.
 - The theme control switches all page surfaces and text between readable light and dark palettes.
-- All navigation, mode, theme, and dialog actions work by keyboard, with visible focus and an
+- All navigation, theme, and dialog actions work by keyboard, with visible focus and an
   accessible name or role for each control.
 
 ## Development Principles
