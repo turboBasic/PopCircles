@@ -1,5 +1,11 @@
 # Gallery frontend
 
+See the frontend subject document for [intended behaviour](../docs/ai/frontend.md#behaviour),
+[verification](../docs/ai/frontend.md#finding-verification), and
+[contribution guidance](../docs/ai/frontend.md#contributing).
+
+## Development
+
 Run `mise run test:frontend` to build the static Svelte app into `frontend/dist/`.
 
 After `mise run deps` installs dependencies and `mise run gallery` generates the data and maps, run

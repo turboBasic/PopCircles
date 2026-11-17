@@ -40,7 +40,9 @@ test.beforeEach(async ({ page }) => {
   ).toBeVisible();
 });
 
-test('searches country navigation and selects a country', async ({ page }) => {
+test('[navigation-and-history] searches country navigation and selects a country', async ({
+  page,
+}) => {
   const navigation = page.getByRole('navigation', { name: 'Map navigation' });
   await expect(page.locator('#map-results-list > .country')).toHaveCount(81);
   await expect(navigation.getByRole('link', { name: 'World' })).toHaveAttribute(
@@ -125,7 +127,9 @@ test('scrolls the selected country into view in the navigation list', async ({ p
     .toBeGreaterThan(0);
 });
 
-test('desktop navigation collapses to a rail without overlapping results', async ({ page }) => {
+test('[responsive-navigation] desktop navigation collapses to a rail without overlapping results', async ({
+  page,
+}) => {
   for (const width of [1024, 1440]) {
     await page.setViewportSize({ width, height: 768 });
     const drawer = page.getByRole('dialog', { name: 'Country navigation' });
@@ -191,7 +195,9 @@ test('desktop navigation collapses to a rail without overlapping results', async
   }
 });
 
-test('desktop navigation defaults expanded and remembers its state', async ({ page }) => {
+test('[responsive-navigation] desktop navigation defaults expanded and remembers its state', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const drawer = page.getByRole('dialog', { name: 'Country navigation' });
   await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
@@ -229,7 +235,9 @@ test('navigation-only transitions do not request map assets', async ({ page }) =
   expect(await mapRequests()).toEqual(initialRequests);
 });
 
-test('mobile navigation remains modal and closes on resize', async ({ page }) => {
+test('[responsive-navigation] mobile navigation remains modal and closes on resize', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(
@@ -274,7 +282,7 @@ test('mobile navigation remains modal and closes on resize', async ({ page }) =>
   );
 });
 
-test('direct links, Back and Forward scroll to the selected result and keep every card rendered', async ({
+test('[navigation-and-history] direct links, Back and Forward scroll to the selected result and keep every card rendered', async ({
   page,
 }) => {
   await page.goto('/#country-42');
@@ -312,7 +320,9 @@ test('direct links, Back and Forward scroll to the selected result and keep ever
   await expect(drawer).toBeVisible();
 });
 
-test('drawer presentation fits each viewport, theme, and motion preference', async ({ page }) => {
+test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer presentation fits each viewport, theme, and motion preference', async ({
+  page,
+}) => {
   const viewports = [
     { width: 1440, height: 900 },
     { width: 1024, height: 768 },
@@ -398,7 +408,9 @@ test('drawer presentation fits each viewport, theme, and motion preference', asy
   }
 });
 
-test('results scroll inside the viewport without scrolling the document', async ({ page }) => {
+test('[viewport-and-scrolling] results scroll inside the viewport without scrolling the document', async ({
+  page,
+}) => {
   const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
     results.scrollTop = results.scrollHeight;
     return {
@@ -489,7 +501,9 @@ test('header collapse respects reduced motion', async ({ page }) => {
   );
 });
 
-test('country navigation is keyboard operable and returns focus after Escape', async ({ page }) => {
+test('[responsive-navigation] [keyboard-and-accessibility] country navigation is keyboard operable and returns focus after Escape', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(
@@ -524,7 +538,7 @@ test('country navigation is keyboard operable and returns focus after Escape', a
   await expect(page.getByRole('button', { name: 'Expand maps navigation' })).toBeVisible();
 });
 
-test('mobile selection and viewport changes preserve query and independent state', async ({
+test('[responsive-navigation] mobile selection and viewport changes preserve query and independent state', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -578,7 +592,7 @@ test('mobile selection and viewport changes preserve query and independent state
   await expect(trigger).toBeFocused();
 });
 
-test('short narrow viewports keep navigation controls visible and scroll regions separate', async ({
+test('[viewport-and-scrolling] short narrow viewports keep navigation controls visible and scroll regions separate', async ({
   page,
 }) => {
   const longCountry = {
@@ -669,7 +683,9 @@ test('short narrow viewports keep navigation controls visible and scroll regions
   }
 });
 
-test('navigation fits viewports equivalent to 200% and 400% zoom', async ({ page }) => {
+test('[viewport-and-scrolling] navigation fits viewports equivalent to 200% and 400% zoom', async ({
+  page,
+}) => {
   for (const zoom of [2, 4]) {
     const viewport = { width: Math.floor(1440 / zoom), height: Math.floor(900 / zoom) };
     await page.setViewportSize(viewport);
@@ -720,7 +736,9 @@ test('World map figures stay stacked on desktop and mobile', async ({ page }) =>
   }
 });
 
-test('interactive controls have accessible names', async ({ page }) => {
+test('[keyboard-and-accessibility] interactive controls have accessible names', async ({
+  page,
+}) => {
   const [buttons, namedButtons, links, namedLinks] = await Promise.all([
     page.locator('button:visible').count(),
     page.getByRole('button', { name: /.+/ }).count(),
@@ -835,7 +853,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
   }
 });
 
-test('responsive layout, map ratio, and theme styles keep their expected values', async ({
+test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, map ratio, and theme styles keep their expected values', async ({
   page,
 }) => {
   const visualProperties = () =>

@@ -83,6 +83,8 @@ The [gallery][gallery] shows maps generated from result files in `results/`, inc
 framed 50% country circle for each available country result. Publish it with `mise run gallery:publish`.
 Each caption shows the circle's population share, radius and centre. See [the gallery publishing
 instructions][usage] for setup.
+The [frontend reference](docs/ai/frontend.md#behaviour) defines browser interactions and links them to
+verification.
 
 ## Data
 
