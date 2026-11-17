@@ -1,8 +1,9 @@
 <script>
   import { onMount } from 'svelte';
-  import { countryUrl, MAP_ASPECT_RATIO, territoryCaption } from '../gallery.js';
+  import { countryUrl, MAP_ASPECT_RATIO, territorySharePercent } from '../gallery.js';
 
   /** @typedef {import('../gallery.js').GalleryFigure} GalleryFigure */
+  /** @typedef {import('../gallery.js').FigureCaption} FigureCaption */
 
   /** @type {{figure: GalleryFigure, entryAnchor: string, countryAnchor?: string | null, loading?: 'lazy' | 'eager', onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
   let { figure, entryAnchor, countryAnchor = null, loading = 'lazy', onCopy } = $props();
@@ -10,6 +11,29 @@
   let image = $state(null);
   let loaded = $state(false);
   let failed = $state(false);
+
+  /** @param {FigureCaption} caption */
+  function formatFigureCaption(caption) {
+    const centreLat = caption.centre_lat.toFixed(4);
+    const centreLon = caption.centre_lon.toFixed(4);
+    return {
+      radius: `${caption.radius_km.toLocaleString()} km`,
+      population: caption.population.toLocaleString('en-US', { maximumFractionDigits: 0 }),
+      share: `${(caption.share * 100).toFixed(1)}%`,
+      territoryShare: territorySharePercent(caption.territory_share),
+      territoryName: caption.territory_name,
+      centre: `${centreLat}, ${centreLon}`,
+      centreUrl: `https://www.openstreetmap.org/?mlat=${centreLat}&mlon=${centreLon}#map=12/${centreLat}/${centreLon}`,
+      settlement: caption.settlement
+        ? {
+            name: caption.settlement.name,
+            country: caption.settlement.country,
+            distance: Math.round(caption.settlement.distance_km).toLocaleString(),
+          }
+        : null,
+    };
+  }
+  let captionView = $derived(figure.caption ? formatFigureCaption(figure.caption) : null);
 
   onMount(() => {
     if (image?.complete) {
@@ -36,30 +60,23 @@
     </div>
   </a>
   <figcaption>
-    {#if figure.caption}
-      {@const territory = territoryCaption(
-        figure.caption.territory_share,
-        figure.caption.territory_name,
-      )}
+    {#if captionView}
       <div class="figure-caption">
         <p>
-          {figure.caption.radius_km.toLocaleString()} km radius ·
-          {(figure.caption.share * 100).toFixed(1)}% of the population ·
-          {#if territory}
-            {territory} ·
+          radius: <strong>{captionView.radius}</strong> · population:
+          <strong>{captionView.population}</strong>
+          / <strong>{captionView.share}</strong> ·
+          {#if captionView.territoryShare !== null}
+            Circle covers <strong>{captionView.territoryShare}%</strong> of {captionView.territoryName}
+            ·
           {/if}
-          {figure.caption.population.toLocaleString('en-US', { maximumFractionDigits: 0 })} people · centre
-          <a
-            href={`https://www.openstreetmap.org/?mlat=${figure.caption.centre_lat.toFixed(4)}&mlon=${figure.caption.centre_lon.toFixed(4)}#map=12/${figure.caption.centre_lat.toFixed(4)}/${figure.caption.centre_lon.toFixed(4)}`}
-            target="_blank"
-            rel="noopener"
-          >
-            {figure.caption.centre_lat.toFixed(4)}, {figure.caption.centre_lon.toFixed(4)}
+          centre:
+          <a href={captionView.centreUrl} target="_blank" rel="noopener">
+            {captionView.centre}
           </a>
-          {#if figure.caption.settlement}
-            · nearest city: {figure.caption.settlement.name},
-            {figure.caption.settlement.country}
-            ({Math.round(figure.caption.settlement.distance_km).toLocaleString()} km away)
+          {#if captionView.settlement}
+            · nearest city: {captionView.settlement.name}, {captionView.settlement.country}
+            ({captionView.settlement.distance} km away)
           {/if}
         </p>
       </div>

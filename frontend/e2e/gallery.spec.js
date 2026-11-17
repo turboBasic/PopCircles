@@ -769,6 +769,41 @@ test('[viewport-and-scrolling] navigation fits viewports equivalent to 200% and 
 
 // --- Map presentation ---
 
+test('[map-presentation] emphasizes the map caption values and labels their units', async ({
+  page,
+}) => {
+  await page.unroute('**/gallery-data.json');
+  await page.route('**/gallery-data.json', (route) =>
+    route.fulfill({
+      json: {
+        world: [
+          {
+            ...world[0],
+            caption: {
+              radius_km: 212,
+              share: 0.501,
+              population: 18154224,
+              centre_lat: 35.0083,
+              centre_lon: 69.1583,
+              settlement: { name: 'Charikar', country: 'Afghanistan', distance_km: 1 },
+              territory_share: 0.21,
+              territory_name: 'Afghanistan',
+            },
+          },
+        ],
+        countries,
+      },
+    }),
+  );
+  await page.reload();
+
+  const caption = page.locator('.figure-caption p');
+  await expect(caption).toHaveText(
+    'radius: 212 km · population: 18,154,224 / 50.1% · Circle covers 21% of Afghanistan · centre: 35.0083, 69.1583 · nearest city: Charikar, Afghanistan (1 km away)',
+  );
+  await expect(caption.locator('strong')).toHaveText(['212 km', '18,154,224', '50.1%', '21%']);
+});
+
 test('World map figures stay stacked on desktop and mobile', async ({ page }) => {
   await page.route('**/gallery-data.json', (route) =>
     route.fulfill({

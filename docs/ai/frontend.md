@@ -4,17 +4,16 @@
 
 ### Viewport and scrolling
 
-- The application shell fits the viewport (`100dvh`) on desktop and mobile, without a vertical document
-  scrollbar during normal use.
+- The application fits the viewport on desktop and mobile without a vertical document scrollbar
+  during normal use.
 - The main results workspace owns primary vertical scrolling; country navigation can scroll
   independently.
 - Layout responds to available content width. Scrolling and browser controls use native behaviour.
 
 ### Navigation and history
 
-- The World result and every country result remain rendered in one continuous list.
-- Selecting a country updates the URL fragment and scrolls the results region to that country's card.
-  Selecting World scrolls to the World result.
+- Selecting a country updates the URL fragment and scrolls to its result without removing other
+  results. Selecting World scrolls to the World result.
 - Activating the PopCircles logo clears the fragment and country selection, returns to the start of
   the results, and keeps the loaded page in place.
 - Direct fragments and browser Back and Forward restore the selected card.
@@ -28,8 +27,6 @@
 ### Map presentation
 
 - Maps preserve their aspect ratios without layout shifts as images load.
-- Result-data links and boundary attribution share a quiet panel flush with the figure's sides and
-  bottom, with text one size step smaller than the caption.
 
 Verification gap: existing assertions do not measure surrounding content before and after delayed
 image loading.
@@ -90,13 +87,8 @@ checks and their environments.
 
 ### Semantic HTML
 
-Prefer semantic HTML throughout the application. Use appropriate HTML5 elements wherever their
-semantics match the content or purpose, including `main`, `header`, `footer`, `nav`, `aside`,
-`article`, `section`, `figure`, `figcaption`, `h1`–`h6`, `p`, `ul`, `ol`, `li`, `button`, `a`,
-`form`, `label`, `fieldset`, `legend`, `details`, `summary`, `time`, and `dialog`. Use generic `div`
-and `span` only when no meaningful semantic element applies. Follow established HTML and accessibility
-best practices and preserve correct document structure. Consider enforcing semantic markup through
-automated tests or linting.
+Prefer semantic HTML over generic containers. Preserve a logical heading hierarchy and use links,
+buttons, forms, and dialogs according to their native purpose.
 
 ## Data contract
 

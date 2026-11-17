@@ -6,7 +6,7 @@ import {
   filterCountries,
   sortCountries,
   groupCountries,
-  territoryCaption,
+  territorySharePercent,
 } from '../src/gallery.js';
 
 const countries = [
@@ -65,12 +65,9 @@ test('copies the selected country fragment without keeping an old fragment', () 
   );
 });
 
-test('formats circle coverage with an integer percent and omits missing legacy values', () => {
-  assert.equal(
-    territoryCaption(0.375, 'Earth’s land area'),
-    'Circle covers 38% of Earth’s land area',
-  );
-  assert.equal(territoryCaption(0.625, 'Germany'), 'Circle covers 63% of Germany');
-  assert.equal(territoryCaption(undefined), null);
-  assert.equal(territoryCaption(null), null);
+test('rounds territory coverage to an integer percent and omits missing legacy values', () => {
+  assert.equal(territorySharePercent(0.375), 38);
+  assert.equal(territorySharePercent(0.625), 63);
+  assert.equal(territorySharePercent(undefined), null);
+  assert.equal(territorySharePercent(null), null);
 });
