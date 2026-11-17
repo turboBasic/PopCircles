@@ -85,8 +85,18 @@ checks and their environments.
 
 - Svelte presents generated Gallery data and maps within the
   [presentation boundary](../decisions/0019-svelte-presents-the-static-gallery.md).
-- Keep UI components modular, semantic, and reusable.
+- Keep UI components modular and reusable.
 - Separate presentation logic from data processing and map generation.
+
+### Semantic HTML
+
+Prefer semantic HTML throughout the application. Use appropriate HTML5 elements wherever their
+semantics match the content or purpose, including `main`, `header`, `footer`, `nav`, `aside`,
+`article`, `section`, `figure`, `figcaption`, `h1`–`h6`, `p`, `ul`, `ol`, `li`, `button`, `a`,
+`form`, `label`, `fieldset`, `legend`, `details`, `summary`, `time`, and `dialog`. Use generic `div`
+and `span` only when no meaningful semantic element applies. Follow established HTML and accessibility
+best practices and preserve correct document structure. Consider enforcing semantic markup through
+automated tests or linting.
 
 ## Data contract
 
@@ -100,7 +110,7 @@ Do not add a second runtime schema or move map generation into the frontend.
 
 ## Contributing
 
-Validate UI changes in the rendered application. Use semantic HTML and existing Svelte conventions.
+Validate UI changes in the rendered application. Follow existing Svelte conventions.
 [Platform guidance](platform.md#tooling-hierarchy) owns tooling and validation entry points.
 
 ### Finding verification
@@ -128,3 +138,6 @@ Keep anchor-bearing headings stable. If an anchor changes, update links and test
 retire obsolete requirements and references together, leaving history in Git rather than a second
 register. New repeatable interaction rules need focused assertions; manual checks and missing
 automation remain explicit beside the requirement.
+
+When a design change intentionally changes rendered screens, update and review the affected Playwright
+screenshot snapshots as part of the change.
