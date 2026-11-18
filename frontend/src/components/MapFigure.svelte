@@ -1,4 +1,5 @@
 <script>
+  import { Copy, ExternalLink, FileText } from '@lucide/svelte';
   import { onMount } from 'svelte';
   import { countryUrl, MAP_ASPECT_RATIO, territorySharePercent } from '../gallery.js';
 
@@ -71,8 +72,9 @@
             ·
           {/if}
           centre:
-          <a href={captionView.centreUrl} target="_blank" rel="noopener">
+          <a class="caption-link" href={captionView.centreUrl} target="_blank" rel="noopener">
             {captionView.centre}
+            <ExternalLink size={16} strokeWidth={2} aria-hidden="true" />
           </a>
           {#if captionView.settlement}
             · nearest city: {captionView.settlement.name}, {captionView.settlement.country}
@@ -83,11 +85,16 @@
     {/if}
     <footer class="figure-footer">
       <span class="figure-actions">
-        <a href={figure.document}>View data</a>
+        <a class="caption-link" href={figure.document}>
+          <FileText size={16} strokeWidth={2} aria-hidden="true" />
+          View data
+        </a>
         {#if countryAnchor}
           · <a
+            class="caption-link"
             href={countryUrl(window.location.href, countryAnchor)}
-            onclick={(event) => onCopy(event, countryAnchor)}>Copy URL</a
+            onclick={(event) => onCopy(event, countryAnchor)}
+            ><Copy size={16} strokeWidth={2} aria-hidden="true" /> Copy URL</a
           >
         {/if}
       </span>
@@ -164,5 +171,13 @@
     color: inherit;
     text-decoration-color: var(--line);
     text-underline-offset: 3px;
+  }
+  .caption-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  figcaption a:hover {
+    color: var(--accent);
   }
 </style>

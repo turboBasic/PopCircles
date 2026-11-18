@@ -1,4 +1,5 @@
 <script>
+  import { Menu, Moon, Sun } from '@lucide/svelte';
   /** @typedef {import('../gallery.js').GalleryData} GalleryData */
   import PopCirclesLogo from './PopCirclesLogo.svelte';
 
@@ -33,7 +34,7 @@
       aria-controls="country-browser-panel"
       aria-expanded={drawerOpen}
       aria-label="Open maps navigation"
-      onclick={onOpenDrawer}>☰</button
+      onclick={onOpenDrawer}><Menu size={20} strokeWidth={2} aria-hidden="true" /></button
     >
     <PopCirclesLogo {scrollPosition} {onHome} />
     {#if data}
@@ -59,21 +60,9 @@
           onclick={onTheme}
         >
           {#if themeLight}
-            <svg viewBox="0 0 24 24" aria-hidden="true"
-              ><path
-                fill="currentColor"
-                d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.7 8.7 0 1 0 11.6 11.6Z"
-              /></svg
-            >
+            <Moon size={20} strokeWidth={2} aria-hidden="true" />
           {:else}
-            <svg viewBox="0 0 24 24" aria-hidden="true"
-              ><circle cx="12" cy="12" r="4" fill="currentColor" /><path
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-width="2"
-                d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
-              /></svg
-            >
+            <Sun size={20} strokeWidth={2} aria-hidden="true" />
           {/if}
         </button>
       </div>
@@ -182,8 +171,11 @@
     height: 1.25rem;
   }
   .drawer-toggle {
+    display: grid;
     min-width: 2.75rem;
     min-height: 2.75rem;
+    place-items: center;
+    padding: 0;
     white-space: nowrap;
   }
   .drawer-toggle.hidden {

@@ -852,6 +852,45 @@ test('[keyboard-and-accessibility] interactive controls have accessible names', 
   await expect(page.getByRole('searchbox', { name: 'Search countries' })).toBeVisible();
 });
 
+test('[keyboard-and-accessibility] decorative control icons preserve sizes and accessible names', async ({
+  page,
+}) => {
+  const iconSize = (control) =>
+    control.locator('svg').evaluate((icon) => icon.getBoundingClientRect().width);
+
+  const theme = page.getByRole('button', { name: 'Switch to light theme' });
+  await expect(theme.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(theme)).toBe(20);
+
+  const collapse = page.getByRole('button', { name: 'Collapse maps navigation' });
+  await expect(collapse.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(collapse)).toBe(20);
+
+  const viewData = page.getByRole('link', { name: 'View data' }).first();
+  await expect(viewData.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(viewData)).toBe(16);
+
+  const copyUrl = page.getByRole('link', { name: 'Copy URL' });
+  await expect(copyUrl.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(copyUrl)).toBe(16);
+
+  await collapse.click();
+  const search = page.getByRole('button', { name: 'Search countries' });
+  await expect(search.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(search)).toBe(20);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const open = page.getByRole('button', { name: 'Open maps navigation' });
+  await expect(open.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(open)).toBe(20);
+  await open.click();
+
+  const close = page.getByRole('button', { name: 'Close map navigation' });
+  await expect(close.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+  expect(await iconSize(close)).toBe(20);
+});
+
 // --- Themes ---
 
 test('theme choice persists after reload', async ({ page }) => {
