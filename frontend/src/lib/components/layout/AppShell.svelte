@@ -3,6 +3,7 @@
   import { prefersReducedMotion } from 'svelte/motion';
   import { fade } from 'svelte/transition';
   import AppHeader from '#lib/components/layout/AppHeader.svelte';
+  import AppFooter from '#lib/components/layout/AppFooter.svelte';
   import CountryNavigation from '#lib/components/navigation/CountryNavigation.svelte';
   import GalleryWorkspace from '#lib/components/gallery/GalleryWorkspace.svelte';
   import { entryFromHash, countryUrl } from '#lib/utils/gallery';
@@ -174,7 +175,7 @@
   });
 </script>
 
-<svelte:window onpopstate={handleHistory} />
+<svelte:window onpopstate={handleHistory} onhashchange={handleHistory} />
 
 <svelte:head>
   <title>PopCircles</title>
@@ -233,9 +234,7 @@
       </div>
     {/if}
   </main>
-  <footer bind:this={footerElement} class="site-footer">
-    <a href="https://github.com/turboBasic">A project by Andrii Melnyk</a>
-  </footer>
+  <AppFooter bind:footerElement />
 </div>
 
 {#if copyStatus}
@@ -273,42 +272,6 @@
   }
   .workspace-message p {
     margin-block: 1rem;
-  }
-  .site-footer {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 4;
-    padding: 0.5rem 0;
-    color: var(--muted);
-    background: transparent;
-    font-size: 0.72rem;
-  }
-  .site-footer::before {
-    position: absolute;
-    z-index: 0;
-    inset: auto 0 0;
-    height: 200%;
-    background: var(--chrome-bg);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0 50%, #000 50% 100%);
-    mask-image: linear-gradient(to bottom, transparent 0 50%, #000 50% 100%);
-    pointer-events: none;
-    content: '';
-  }
-  .site-footer a {
-    position: relative;
-    z-index: 1;
-    color: var(--text);
-    text-decoration: none;
-  }
-  .site-footer a:hover,
-  .site-footer a:focus-visible {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
   }
   .explorer {
     display: grid;

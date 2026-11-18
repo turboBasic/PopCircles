@@ -308,6 +308,28 @@ test('[navigation-and-history] direct links, Back and Forward scroll to the sele
   await expect(drawer).toBeVisible();
 });
 
+test('[navigation-and-history] result fragment links update selection and browser history', async ({
+  page,
+}) => {
+  await page.goto('/#country-42');
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const selectCountry = async (name) =>
+    expect(navigation.getByRole('link', { name })).toHaveAttribute('aria-current', 'page');
+
+  await selectCountry('Country 42');
+  await page.locator('#country-1 h2 a').click();
+  await expect(page).toHaveURL(/#country-1$/);
+  await expect(page.locator('#country-1')).toBeInViewport();
+  await selectCountry('Country 01');
+
+  await page.goBack();
+  await expect(page).toHaveURL(/#country-42$/);
+  await selectCountry('Country 42');
+  await page.goForward();
+  await expect(page).toHaveURL(/#country-1$/);
+  await selectCountry('Country 01');
+});
+
 test('drawer selection scrolls the results smoothly instead of jumping', async ({ page }) => {
   const results = page.getByRole('region', { name: 'Map results' });
   await results.evaluate((region) => {
