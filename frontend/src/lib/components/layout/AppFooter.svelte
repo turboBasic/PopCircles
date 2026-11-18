@@ -18,6 +18,7 @@
     left: 0;
     z-index: 4;
     padding: 0.5rem 0;
+    text-align: right;
     color: var(--muted);
     background: transparent;
     font-size: 0.72rem;
