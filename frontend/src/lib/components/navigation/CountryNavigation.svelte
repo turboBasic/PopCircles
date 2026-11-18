@@ -2,10 +2,10 @@
   import { ChevronLeft, ChevronRight, Search, X } from '@lucide/svelte';
   import { tick } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
-  import globeSprite from '../../assets/earth-globe.svg?url';
-  import { filterCountries, groupCountries } from '../gallery.js';
+  import globeSprite from '#lib/assets/earth-globe.svg?url';
+  import { filterCountries, groupCountries } from '#lib/utils/gallery.js';
 
-  /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
+  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
 
   /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onDrawerClosed: () => void, onDesktopCollapsedChange: (collapsed: boolean) => void}} */
   let {

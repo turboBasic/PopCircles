@@ -1,10 +1,10 @@
 <script>
   import { Copy, ExternalLink, FileText } from '@lucide/svelte';
   import { onMount } from 'svelte';
-  import { countryUrl, MAP_ASPECT_RATIO, territorySharePercent } from '../gallery.js';
+  import { MAP_ASPECT_RATIO, territorySharePercent } from '#lib/utils/gallery.js';
 
-  /** @typedef {import('../gallery.js').GalleryFigure} GalleryFigure */
-  /** @typedef {import('../gallery.js').FigureCaption} FigureCaption */
+  /** @typedef {import('#lib/types/gallery.js').GalleryFigure} GalleryFigure */
+  /** @typedef {import('#lib/types/gallery.js').FigureCaption} FigureCaption */
 
   /** @type {{figure: GalleryFigure, entryAnchor: string, countryAnchor?: string | null, loading?: 'lazy' | 'eager', onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
   let { figure, entryAnchor, countryAnchor = null, loading = 'lazy', onCopy } = $props();
@@ -92,7 +92,7 @@
         {#if countryAnchor}
           · <a
             class="caption-link"
-            href={countryUrl(window.location.href, countryAnchor)}
+            href={`#${countryAnchor}`}
             onclick={(event) => onCopy(event, countryAnchor)}
             ><Copy size={16} strokeWidth={2} aria-hidden="true" /> Copy URL</a
           >

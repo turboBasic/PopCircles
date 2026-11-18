@@ -1,7 +1,7 @@
 <script>
   import { Menu, Moon, Sun } from '@lucide/svelte';
-  /** @typedef {import('../gallery.js').GalleryData} GalleryData */
-  import PopCirclesLogo from './PopCirclesLogo.svelte';
+  /** @typedef {import('#lib/types/gallery.js').GalleryData} GalleryData */
+  import PopCirclesLogo from '#lib/components/layout/PopCirclesLogo.svelte';
 
   /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, headerElement: HTMLElement | null, onHome: () => void, onTheme: () => void, onOpenDrawer: () => void}} */
   let {

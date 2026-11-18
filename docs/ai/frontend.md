@@ -98,7 +98,7 @@ buttons, forms, and dialogs according to their native purpose.
 Python writes `gallery-data.json`; the Svelte app reads it at runtime. The `PageData`, `PageCountry`,
 `PageFigure`, and caption `TypedDict`s in
 [the Gallery producer](../../python/src/population_circles/gallery.py) own the wire shape.
-[Frontend types](../../frontend/src/gallery.js) mirror those types for static checking. Keep required
+[Frontend types](../../frontend/src/lib/types/gallery.js) mirror those types for static checking. Keep required
 fields, optional omitted fields, and nullable fields aligned in both places. Add generated-data
 assertions to the [Python Gallery tests](../../python/tests/test_gallery.py) when changing the contract.
 Do not add a second runtime schema or move map generation into the frontend.

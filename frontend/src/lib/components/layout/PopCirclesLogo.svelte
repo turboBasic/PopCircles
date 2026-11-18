@@ -1,5 +1,5 @@
 <script>
-  import globeSprite from '../../assets/earth-globe.svg?url';
+  import globeSprite from '#lib/assets/earth-globe.svg?url';
 
   /** @type {{scrollPosition: number, onHome: () => void}} */
   let { scrollPosition, onHome } = $props();
