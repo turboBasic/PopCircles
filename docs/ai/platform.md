@@ -312,34 +312,22 @@ and compare it with `mode=markdown`.
 
 ## CI
 
-- Release authorization trusts `turboBasic`'s current GitHub SSH signing identity
-  ([ADR 0013](../decisions/0013-release-authorization-trusts-a-github-account.md)).
-- **Pin every action to a full SHA** and add its version in a trailing comment. Never use `@main`. A
-  reusable workflow from `turboBasic/github-actions` may use a version tag because Renovate tracks its
-  reference (`.github/renovate.json`). Pin all other actions, first- or third-party, to a SHA.
-- **Use a `turboBasic/github-actions` workflow when one fits.** Do not fork one for this repository.
-  `ci.yml` calls `project-ci`, which runs this repository's `lint`, `typecheck`, and `test` tasks for
-  the component, regardless of language.
-- **Add `depends = ["deps"]` to each called task that needs installed dependencies.** A called workflow
-  does not install them for the caller. Add the dependency to leaf tasks, not the `lint`, `typecheck`, or
-  `test` aggregators, because `depends` runs in parallel.
-- **Name each calling job after the component it checks.** The job id starts the required context, so
-  `ci.yml`'s `popcircles` produces `popcircles / project-ci`. If you rename the job, update the ruleset
-  in the same change.
-- **Name workflows after their files and add a marker:** `🧩` for workflows used only through calls,
-  `🌜` for workflows with their own triggers. The marker explains why a call-only workflow has an empty
-  sidebar entry.
-- **Use lowercase kebab-case for job ids and names.** Omit `name:` when it would repeat the job id.
-  GitHub appends matrix values to the id automatically.
-- **Give each workflow one scenario.** Put steps shared by two scenarios in a local `workflow_call`
-  workflow that both call; do not condition the workflow on the event.
-- **Run CI through mise tasks** so CI and `mise run ci` stay in sync.
-- **Lint, typecheck and test only.**
-- **Take secrets from CI environment secrets or OIDC.**
-- **Follow [`code.md`](code.md) "Comments and docs" for workflow comments**, with these extra limits:
-  do not cite ADRs, issues, or follow-ups; do not describe the file's history; and write sentences that
-  readers can understand on first read. `docs/decisions/` holds the reasoning. Citations in YAML would
-  duplicate links that can go stale.
+- **Quality gates:** Mise tasks own routine checks; hosted CI and `mise run ci` use the same `lint`,
+  `typecheck`, and `test` tasks. Routine CI is limited to those checks. Leaf tasks declare required
+  dependencies; aggregators compose tasks.
+- **Workflow boundaries:** Reuse a shared workflow when its contract fits rather than forking it. Keep
+  each workflow focused on one scenario, and put genuinely shared mechanics in callable workflows.
+- **Workflow names:** Name workflows after their files. Mark call-only workflows `🧩` and workflows
+  with their own triggers `🌜` so their role is clear in Actions navigation.
+- **Required checks:** A job's check name is an interface to branch protection. Name jobs for the
+  component they check and update the ruleset when a required context changes.
+- **Supply chain and credentials:** Pin actions to full commit SHAs, including first-party actions;
+  retain the Renovate-tracked reusable-workflow exception. Source secrets from CI environment secrets
+  or OIDC.
+- **Release trust:** Release authorization trusts the GitHub signing identity recorded in
+  [ADR 0013](../decisions/0013-release-authorization-trusts-a-github-account.md).
+- **Workflow comments:** Follow [`code.md`](code.md) “Comments and docs.” Explain local constraints in
+  comments; keep durable rationale in decision records rather than YAML history or citations.
 
 ## Structure
 

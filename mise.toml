@@ -28,21 +28,24 @@ _.python.venv = { path = ".venv", create = true }
 
 [tasks.setup]
 description = "Install dependencies and git hooks"
-depends = ["deps"]
+depends = ["deps", "deps:frontend"]
 run = [
   "prek install",
   # Not a second `depends`: it has to follow `prek install`.
   "mise run git:ff-only",
 ]
 
-# The leaves depend on this, never `lint`/`typecheck`/`test`: `depends` runs in parallel and would race.
+# Leaves depend on the needed dependency task, never `lint`/`typecheck`/`test`: `depends` runs in parallel.
 [tasks.deps]
-description = "Fetch the Rust, Python and frontend dependencies"
+description = "Fetch the Rust and Python dependencies"
 run = [
   "cargo fetch",
   "uv sync --locked",
-  "npm --prefix frontend ci",
 ]
+
+[tasks."deps:frontend"]
+description = "Fetch the frontend dependencies"
+run = "npm --prefix frontend ci"
 
 # A guardrail, not a gate — `git merge --no-ff` still overrides it — that makes an accidental merge
 # fail earlier, at `git pull` on a diverged branch, while nothing pushed needs rewriting. Repo-local,
@@ -89,6 +92,7 @@ run = "uv run render-gallery"
 
 [tasks."gallery:frontend"]
 description = "Build the frontend and update the existing local gallery"
+depends = ["deps:frontend"]
 run = [
   "npm --prefix frontend run build",
   "cp frontend/dist/index.html build/gallery/index.html",
@@ -115,6 +119,7 @@ run = "uv run publish-gallery cleanup"
 
 [tasks.fmt]
 description = "Format Rust, Python, TOML and frontend"
+depends = ["deps:frontend"]
 run = [
   "cargo fmt --all",
   "uv run ruff format .",
@@ -168,7 +173,7 @@ run = "prek run --all-files cargo-fmt taplo-fmt ruff-format"
 
 [tasks."lint:frontend"]
 description = "Lint and check the Svelte frontend"
-depends = ["deps"]
+depends = ["deps:frontend"]
 run = "prek run --all-files eslint-frontend prettier-frontend svelte-check"
 
 # See `lint:data` for why. Matters more here: one hook stands in for `unsafe_code = "forbid"`, so a
@@ -235,7 +240,7 @@ run = "uv run popcircles-bench --smoke"
 
 [tasks."test:frontend"]
 description = "Run frontend unit, component and production-preview E2E tests"
-depends = ["deps"]
+depends = ["deps:frontend"]
 run = [
   "npm --prefix frontend test",
   "npm --prefix frontend run test:e2e",
@@ -248,7 +253,7 @@ run = "cargo test --all-features"
 
 [tasks."test:python"]
 description = "Run the Python test suite"
-depends = ["deps"]
+depends = ["deps", "deps:frontend"]
 run = "uv run pytest"
 
 # Never in `test`: a CI checkout has no raster, and a length assertion against it would fail for
