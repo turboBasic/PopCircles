@@ -1,4 +1,5 @@
 <script>
+  import { ChevronLeft, ChevronRight, Search, X } from '@lucide/svelte';
   import { tick } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import globeSprite from '../../assets/earth-globe.svg?url';
@@ -135,7 +136,8 @@
       aria-label="Collapse maps navigation"
       aria-controls="country-browser-panel"
       aria-expanded={!desktopNavigationCollapsed}
-      onclick={() => onDesktopCollapsedChange(true)}>‹</button
+      onclick={() => onDesktopCollapsedChange(true)}
+      ><ChevronLeft size={20} strokeWidth={2} aria-hidden="true" /></button
     >
     <button
       class="close"
@@ -143,7 +145,7 @@
       aria-controls="country-browser-panel"
       aria-expanded={drawerOpen}
       aria-label="Close map navigation"
-      onclick={onCloseDrawer}>×</button
+      onclick={onCloseDrawer}><X size={20} strokeWidth={2} aria-hidden="true" /></button
     >
   </header>
   <div class="rail-controls">
@@ -152,9 +154,12 @@
       aria-label="Expand maps navigation"
       aria-controls="country-browser-panel"
       aria-expanded={!desktopNavigationCollapsed}
-      onclick={() => onDesktopCollapsedChange(false)}>›</button
+      onclick={() => onDesktopCollapsedChange(false)}
+      ><ChevronRight size={20} strokeWidth={2} aria-hidden="true" /></button
     >
-    <button type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>⌕</button>
+    <button type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>
+      <Search size={20} strokeWidth={2} aria-hidden="true" />
+    </button>
   </div>
   <nav aria-label="Map navigation">
     <search aria-label="Filter map navigation">
@@ -179,7 +184,7 @@
             onclick={() => {
               query = '';
               searchInput?.focus();
-            }}>×</button
+            }}><X size={16} strokeWidth={2} aria-hidden="true" /></button
           >
         {/if}
       </div>
@@ -355,16 +360,27 @@
   }
   .navigation-header button,
   .rail-controls button {
+    display: grid;
     width: 2.5rem;
     height: 2.5rem;
+    place-items: center;
     padding: 0;
     color: var(--text);
     background: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: 0.5rem;
     font: inherit;
-    font-size: 1.25rem;
     cursor: pointer;
+  }
+  .navigation-header button:hover,
+  .rail-controls button:hover {
+    border-color: var(--accent);
+  }
+  .navigation-header .close {
+    display: none;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
   }
   .rail-controls {
     display: none;
@@ -477,18 +493,6 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
-  .close {
-    display: none;
-    flex: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    color: var(--text);
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 0.5rem;
-    font: inherit;
-    cursor: pointer;
-  }
   .visually-hidden {
     position: absolute;
     width: 1px;
@@ -551,6 +555,9 @@
     .desktop-collapse {
       display: none;
     }
+    .navigation-header .desktop-collapse {
+      display: none;
+    }
     .navigation-header {
       justify-content: space-between;
       margin-bottom: 0.75rem;
@@ -558,12 +565,8 @@
     .drawer-globe {
       display: block;
     }
-    .close {
-      display: block;
-      width: 2.75rem;
-      height: 2.75rem;
-    }
     .navigation-header .close {
+      display: grid;
       width: 2.75rem;
       height: 2.75rem;
     }
