@@ -2,6 +2,9 @@
   "name": "popcircles-gallery",
   "private": true,
   "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite",

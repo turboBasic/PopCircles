@@ -1,7 +1,7 @@
 <script>
-  import MapEntry from './MapEntry.svelte';
+  import MapEntry from '#lib/components/gallery/MapEntry.svelte';
 
-  /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
+  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
 
   /** @type {{entries: GalleryEntry[], selectedEntry: GalleryEntry | null, resultsPanel: HTMLDivElement | null, onScroll: () => void, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
   let { entries, selectedEntry, resultsPanel = $bindable(), onScroll, onCopy } = $props();

@@ -1,7 +1,7 @@
 <script>
-  import MapFigure from './MapFigure.svelte';
+  import MapFigure from '#lib/components/gallery/MapFigure.svelte';
 
-  /** @typedef {import('../gallery.js').GalleryEntry} GalleryEntry */
+  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
 
   /** @type {{entry: GalleryEntry, isSelected: boolean, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
   let { entry, isSelected, onCopy } = $props();

@@ -7,7 +7,7 @@ import {
   sortCountries,
   groupCountries,
   territorySharePercent,
-} from '../src/gallery.js';
+} from '#lib/utils/gallery.js';
 
 const countries = [
   { name: 'Alpha', anchor: 'country-result-AA' },
