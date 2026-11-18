@@ -17,6 +17,28 @@ const countries = Array.from({ length: 80 }, (_, index) => ({
   missing: false,
 }));
 const world = [{ map: 'world.svg', document: 'world.json', country_id: null, alt: 'World map' }];
+const alphabetCountries = [
+  ...Array.from({ length: 40 }, (_, index) => {
+    const number = String(index + 1).padStart(2, '0');
+    return {
+      name: `Alpine ${number}`,
+      anchor: `country-alpine-${number}`,
+      figures: [],
+      missing: false,
+    };
+  }),
+  { name: 'Brazil', anchor: 'country-brazil', figures: [], missing: false },
+  { name: 'Canada', anchor: 'country-canada', figures: [], missing: false },
+];
+
+async function useAlphabetFixture(page) {
+  await page.unroute('**/gallery-data.json');
+  await page.route('**/gallery-data.json', (route) =>
+    route.fulfill({ json: { world, countries: alphabetCountries } }),
+  );
+  await page.goto('/?fixture=alphabet#country-alpine-01');
+  await expect(page.locator('#country-alpine-01')).toBeVisible();
+}
 
 function colorChannels(color) {
   if (color.startsWith('#')) {
@@ -175,6 +197,77 @@ test('scrolls the selected country into view in the navigation list', async ({ p
   await expect
     .poll(() => navigation.locator('.map-links-scroll').evaluate((list) => list.scrollTop))
     .toBeGreaterThan(0);
+});
+
+test('[navigation-and-history] [keyboard-and-accessibility] A-Z jumps scroll only the drawer and preserve selection and URL', async ({
+  page,
+}) => {
+  await useAlphabetFixture(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+
+  const dialog = page.getByRole('dialog', { name: 'Country navigation' });
+  const navigation = dialog.getByRole('navigation', { name: 'Map navigation' });
+  const results = page.getByRole('region', { name: 'Map results' });
+  const countryList = navigation.locator('.map-links-scroll');
+  const letterIndex = navigation.getByRole('group', { name: 'Jump to countries by letter' });
+  const startUrl = page.url();
+  const resultsScrollTop = await results.evaluate((region) => region.scrollTop);
+  const selectedCountry = navigation.getByRole('link', { name: 'Alpine 01', exact: true });
+
+  await expect(selectedCountry).toHaveAttribute('aria-current', 'page');
+  await expect(
+    letterIndex.getByRole('button', { name: 'Jump to countries starting with B' }),
+  ).toBeEnabled();
+  const brazilButton = letterIndex.getByRole('button', {
+    name: 'Jump to countries starting with B',
+  });
+  await brazilButton.focus();
+  await expect(brazilButton).toHaveCSS('outline-style', 'solid');
+  await page.keyboard.press('Enter');
+
+  await expect(navigation.locator('#country-group-B')).toBeInViewport();
+  await expect.poll(() => countryList.evaluate((list) => list.scrollTop)).toBeGreaterThan(0);
+  expect(page.url()).toBe(startUrl);
+  expect(await results.evaluate((region) => region.scrollTop)).toBe(resultsScrollTop);
+  await expect(selectedCountry).toHaveAttribute('aria-current', 'page');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Open maps navigation' }).click();
+  await expect(dialog).toBeVisible();
+  await expect.poll(() => dialog.evaluate((element) => element.matches(':modal'))).toBe(true);
+  const mobileResultsScrollTop = await results.evaluate((region) => region.scrollTop);
+  await countryList.evaluate((list) => (list.scrollTop = 0));
+  await brazilButton.click();
+
+  await expect(dialog).toBeVisible();
+  await expect(navigation.locator('#country-group-B')).toBeInViewport();
+  expect(page.url()).toBe(startUrl);
+  expect(await results.evaluate((region) => region.scrollTop)).toBe(mobileResultsScrollTop);
+  await expect(selectedCountry).toHaveAttribute('aria-current', 'page');
+});
+
+test('[navigation-and-history] A-Z availability follows the displayed country groups and search filter', async ({
+  page,
+}) => {
+  await useAlphabetFixture(page);
+  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const letterIndex = navigation.getByRole('group', { name: 'Jump to countries by letter' });
+  const letter = (value) =>
+    letterIndex.getByRole('button', {
+      name: `Jump to countries starting with ${value}`,
+    });
+
+  await expect(letter('A')).toBeEnabled();
+  await expect(letter('B')).toBeEnabled();
+  await expect(letter('C')).toBeEnabled();
+  await expect(letter('D')).toBeDisabled();
+  await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('Brazil');
+  await expect(letter('A')).toBeDisabled();
+  await expect(letter('B')).toBeEnabled();
+  await expect(letter('C')).toBeDisabled();
+  await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('no match');
+  await expect(letterIndex.locator('button:enabled')).toHaveCount(0);
 });
 
 test('[navigation-and-history] direct links, Back and Forward scroll to the selected result and keep every card rendered', async ({
