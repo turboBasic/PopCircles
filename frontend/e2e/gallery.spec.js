@@ -994,6 +994,32 @@ test('theme choice persists after reload', async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem('popcircles-theme'))).toBe('light');
 });
 
+test('[themes] GitHub link shares the theme control hover treatment', async ({ page }) => {
+  const githubLink = page.getByRole('link', { name: 'PopCircles on GitHub' });
+  const themeButton = page.getByRole('button', { name: 'Switch to light theme' });
+  const icon = githubLink.locator('.github-icon');
+  const borderColor = (control) =>
+    control.evaluate((element) => getComputedStyle(element).borderTopColor);
+  const initialBorderColor = await borderColor(githubLink);
+
+  await expect(icon).toHaveAttribute('aria-hidden', 'true');
+  await expect(icon).toHaveCSS('width', '20px');
+  const maskImage = await icon.evaluate((element) => getComputedStyle(element).maskImage);
+  const assetUrl = maskImage.match(/^url\(["']?(.+?)["']?\)$/)?.[1];
+  expect(assetUrl).toBeTruthy();
+  const response = await page.request.get(new URL(assetUrl, page.url()).toString());
+  expect(response.ok()).toBe(true);
+  expect(response.headers()['content-type']).toContain('image/svg+xml');
+
+  await githubLink.hover();
+  const githubHoverBorderColor = await borderColor(githubLink);
+  await themeButton.hover();
+  const themeHoverBorderColor = await borderColor(themeButton);
+
+  expect(githubHoverBorderColor).not.toBe(initialBorderColor);
+  expect(githubHoverBorderColor).toBe(themeHoverBorderColor);
+});
+
 // --- Branding ---
 
 test('favicon loads from a frontend asset', async ({ page }) => {
