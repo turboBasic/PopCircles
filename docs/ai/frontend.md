@@ -98,7 +98,7 @@ buttons, forms, and dialogs according to their native purpose.
 Python writes `gallery-data.json`; the Svelte app reads it at runtime. The `PageData`, `PageCountry`,
 `PageFigure`, and caption `TypedDict`s in
 [the Gallery producer](../../python/src/population_circles/gallery.py) own the wire shape.
-[Frontend types](../../frontend/src/lib/types/gallery.js) mirror those types for static checking. Keep required
+[Frontend types](../../frontend/src/lib/types/gallery.ts) mirror those types for static checking. Keep required
 fields, optional omitted fields, and nullable fields aligned in both places. Add generated-data
 assertions to the [Python Gallery tests](../../python/tests/test_gallery.py) when changing the contract.
 Do not add a second runtime schema or move map generation into the frontend.
@@ -121,8 +121,8 @@ The token in a test failure points back to the section here. A test can referenc
 section; a token locates related assertions, not proof that every requirement in the section is
 covered. Additional implementation-level regression tests need no requirement token.
 
-See the [unit tests](../../frontend/src/lib/utils/gallery.unit.test.js),
-[component tests](../../frontend/src/lib/components/navigation/CountryNavigation.component.test.js),
+See the [unit tests](../../frontend/src/lib/utils/gallery.unit.test.ts),
+[component tests](../../frontend/src/lib/components/navigation/CountryNavigation.component.test.ts),
 [browser tests and visual snapshots](../../frontend/e2e/gallery.spec.js),
 [Vitest configuration](../../frontend/vitest.config.js), and
 [Playwright configuration](../../frontend/playwright.config.js).

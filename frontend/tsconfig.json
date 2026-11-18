@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
+    "allowImportingTsExtensions": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "noEmit": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
     "types": ["vite/client"],
     "paths": {
-      "#lib/*": ["src/lib/*"]
+      "#lib/*": ["./src/lib/*"]
     }
   },
   "include": ["src/**/*"]

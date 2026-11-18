@@ -1,20 +1,23 @@
-<script>
+<script lang="ts">
   import { Copy, ExternalLink, FileText } from '@lucide/svelte';
   import { onMount } from 'svelte';
-  import { MAP_ASPECT_RATIO, territorySharePercent } from '#lib/utils/gallery.js';
+  import { MAP_ASPECT_RATIO, territorySharePercent } from '#lib/utils/gallery';
+  import type { FigureCaption, GalleryFigure } from '#lib/types/gallery';
 
-  /** @typedef {import('#lib/types/gallery.js').GalleryFigure} GalleryFigure */
-  /** @typedef {import('#lib/types/gallery.js').FigureCaption} FigureCaption */
+  type Props = {
+    figure: GalleryFigure;
+    entryAnchor: string;
+    countryAnchor?: string | null;
+    loading?: 'lazy' | 'eager';
+    onCopy: (event: MouseEvent, anchor: string) => Promise<void>;
+  };
 
-  /** @type {{figure: GalleryFigure, entryAnchor: string, countryAnchor?: string | null, loading?: 'lazy' | 'eager', onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
-  let { figure, entryAnchor, countryAnchor = null, loading = 'lazy', onCopy } = $props();
-  /** @type {HTMLImageElement | null} */
-  let image = $state(null);
+  let { figure, entryAnchor, countryAnchor = null, loading = 'lazy', onCopy }: Props = $props();
+  let image = $state<HTMLImageElement | null>(null);
   let loaded = $state(false);
   let failed = $state(false);
 
-  /** @param {FigureCaption} caption */
-  function formatFigureCaption(caption) {
+  function formatFigureCaption(caption: FigureCaption) {
     const centreLat = caption.centre_lat.toFixed(4);
     const centreLon = caption.centre_lon.toFixed(4);
     return {

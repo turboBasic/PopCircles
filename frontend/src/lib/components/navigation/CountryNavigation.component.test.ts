@@ -2,12 +2,18 @@ import { render } from 'vitest-browser-svelte';
 import { expect, test, vi } from 'vitest';
 import CountryNavigation from './CountryNavigation.svelte';
 
-/** @type {import('#lib/types/gallery.js').GalleryEntry[]} */
-const countries = [
+import type { GalleryEntry } from '#lib/types/gallery';
+
+const countries: GalleryEntry[] = [
   { name: 'Alpine', anchor: 'country-alpine', figures: [], missing: false },
   { name: 'Brazil', anchor: 'country-brazil', figures: [], missing: false },
 ];
-const worldEntry = { name: 'World', anchor: 'world-result', figures: [], missing: false };
+const worldEntry: GalleryEntry = {
+  name: 'World',
+  anchor: 'world-result',
+  figures: [],
+  missing: false,
+};
 
 test('[navigation-and-history] search filters countries and updates available letter jumps', async () => {
   const screen = await render(CountryNavigation, {

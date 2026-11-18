@@ -5,7 +5,11 @@ import { onMount } from 'svelte';
  * @param {() => HTMLElement | null} getHeader
  * @param {() => HTMLElement | null} getFooter
  */
-export function useViewportChrome(getResultsPanel, getHeader, getFooter) {
+export function useViewportChrome(
+  getResultsPanel: () => HTMLDivElement | null,
+  getHeader: () => HTMLElement | null,
+  getFooter: () => HTMLElement | null,
+) {
   let scrollPosition = $state(0);
   let headerCollapseProgress = $state(0);
   let headerSpace = $state(0);

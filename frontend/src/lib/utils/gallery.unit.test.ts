@@ -6,10 +6,10 @@ import {
   sortCountries,
   groupCountries,
   territorySharePercent,
-} from '#lib/utils/gallery.js';
+} from '#lib/utils/gallery';
+import type { GalleryEntry } from '#lib/types/gallery';
 
-/** @param {{name: string, anchor: string, missing?: boolean}[]} values */
-function makeCountries(values) {
+function makeCountries(values: (Pick<GalleryEntry, 'name' | 'anchor'> & { missing?: boolean })[]) {
   return values.map(({ name, anchor, missing = false }) => ({
     name,
     anchor,

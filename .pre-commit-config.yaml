@@ -130,14 +130,14 @@ repos:
         name: eslint (frontend)
         entry: mise exec -- sh -c 'cd frontend && eslint .'
         language: system
-        files: ^frontend/.*\.(js|svelte)$
+        files: ^frontend/.*\.(js|ts|svelte)$
         pass_filenames: false
 
       - id: prettier-frontend
         name: prettier (frontend)
         entry: mise exec -- sh -c 'cd frontend && prettier --check src e2e *.js *.json index.html'
         language: system
-        files: ^frontend/.*\.(js|svelte|html|json|css)$
+        files: ^frontend/.*\.(js|ts|svelte|html|json|css)$
         pass_filenames: false
 
       - id: svelte-check

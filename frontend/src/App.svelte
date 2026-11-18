@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import favicon from '#lib/assets/favicon.svg';
   import AppShell from '#lib/components/layout/AppShell.svelte';
 </script>

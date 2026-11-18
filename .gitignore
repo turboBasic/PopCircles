@@ -10,6 +10,7 @@
 /frontend/node_modules/
 /frontend/dist/
 /frontend/test-results/
+*.tsbuildinfo
 /.vite/
 
 # Rust
