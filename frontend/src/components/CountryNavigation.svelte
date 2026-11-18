@@ -23,6 +23,7 @@
   let query = $state('');
   let matches = $derived(filterCountries(countries, query));
   let groups = $derived(groupCountries(matches));
+  const countryLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   let globeFrame = $state(0);
   let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
   let drawerClosing = $state(false);
@@ -30,6 +31,8 @@
   let dialog = $state(null);
   /** @type {HTMLInputElement | null} */
   let searchInput = $state(null);
+  /** @type {HTMLDivElement | null} */
+  let countryGroupsScroll = $state(null);
 
   $effect(() => {
     const anchor = selectedEntry?.anchor;
@@ -72,6 +75,18 @@
     event.preventDefault();
     if (mobileMode) query = '';
     onSelect(entry);
+  }
+
+  /** @param {string} letter */
+  function jumpToGroup(letter) {
+    const section = document.getElementById(`country-group-${letter}`);
+    if (!section || !countryGroupsScroll) return;
+    const scrollBounds = countryGroupsScroll.getBoundingClientRect();
+    const sectionBounds = section.getBoundingClientRect();
+    countryGroupsScroll.scrollTo({
+      top: countryGroupsScroll.scrollTop + sectionBounds.top - scrollBounds.top,
+      behavior: prefersReducedMotion.current ? 'auto' : 'smooth',
+    });
   }
 
   /** @param {KeyboardEvent} event */
@@ -204,9 +219,20 @@
             >
           </li>
         </ul>
+        <div class="country-letter-index" role="group" aria-label="Jump to countries by letter">
+          {#each countryLetters as letter (letter)}
+            <button
+              type="button"
+              aria-label={`Jump to countries starting with ${letter}`}
+              disabled={!groups[letter]}
+              onclick={() => jumpToGroup(letter)}>{letter}</button
+            >
+          {/each}
+        </div>
       </header>
       <div
         class="map-links-scroll"
+        bind:this={countryGroupsScroll}
         onscroll={(event) => {
           globeFrame = Math.floor((event.currentTarget.scrollTop / 240) * 72) % 72;
         }}
@@ -398,6 +424,8 @@
   }
   .map-links-header {
     flex: none;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
   }
   .map-links-scroll {
     flex: 1;
@@ -411,10 +439,39 @@
   .map-pinned-links {
     flex: none;
     margin: 0;
-    padding-bottom: 0.75rem;
     padding-left: 0;
-    border-bottom: 1px solid var(--line);
     list-style: none;
+  }
+  .country-letter-index {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    margin-top: 0.5rem;
+  }
+  .country-letter-index button {
+    padding: 0;
+    color: var(--accent);
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.75;
+    cursor: pointer;
+  }
+  .country-letter-index button:not(:last-of-type)::after {
+    margin-inline: 0.15rem;
+    color: var(--muted);
+    content: '・';
+  }
+  .country-letter-index button:disabled {
+    color: var(--muted);
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .country-letter-index button:not(:disabled):hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
   .desktop-collapsed {
     padding-inline: 0.4rem;

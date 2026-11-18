@@ -14,6 +14,9 @@
 
 - Selecting a country updates the URL fragment and scrolls to its result without removing other
   results. Selecting World scrolls to the World result.
+- The A–Z index jumps within the country list to a letter represented by the current search results;
+  unavailable letters are disabled. Jumps preserve the selected result, URL, and workspace scroll,
+  and respect reduced-motion preferences.
 - Activating the PopCircles logo clears the fragment and country selection, returns to the start of
   the results, and keeps the loaded page in place.
 - Direct fragments and browser Back and Forward restore the selected card.
