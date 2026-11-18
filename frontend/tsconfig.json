@@ -9,7 +9,7 @@
     "target": "esnext",
     "types": ["vite/client"],
     "paths": {
-      "#lib/*": ["src/lib/*"]
+      "#lib/*": ["./src/lib/*"]
     }
   },
   "include": ["src/**/*"]
