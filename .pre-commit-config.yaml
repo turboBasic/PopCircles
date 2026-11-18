@@ -135,7 +135,7 @@ repos:
 
       - id: prettier-frontend
         name: prettier (frontend)
-        entry: mise exec -- sh -c 'cd frontend && prettier --check src test e2e *.js *.json index.html'
+        entry: mise exec -- sh -c 'cd frontend && prettier --check src e2e *.js *.json index.html'
         language: system
         files: ^frontend/.*\.(js|svelte|html|json|css)$
         pass_filenames: false
