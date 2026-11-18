@@ -114,16 +114,18 @@ Tests that verify a Behaviour section use its anchor in their title, such as
 `[navigation-and-history]`. Search from the repository root:
 
 ```sh
-rg -F '[navigation-and-history]' frontend/test frontend/e2e
+rg -F '[navigation-and-history]' frontend/src frontend/e2e
 ```
 
 The token in a test failure points back to the section here. A test can reference more than one
 section; a token locates related assertions, not proof that every requirement in the section is
 covered. Additional implementation-level regression tests need no requirement token.
 
-See the [unit tests](../../frontend/test/gallery.test.js),
-[browser tests](../../frontend/e2e/gallery.spec.js), and
-[browser configuration](../../frontend/playwright.config.js).
+See the [unit tests](../../frontend/src/lib/utils/gallery.unit.test.js),
+[component tests](../../frontend/src/lib/components/navigation/CountryNavigation.component.test.js),
+[browser tests and visual snapshots](../../frontend/e2e/gallery.spec.js),
+[Vitest configuration](../../frontend/vitest.config.js), and
+[Playwright configuration](../../frontend/playwright.config.js).
 
 ### Changing behaviour
 

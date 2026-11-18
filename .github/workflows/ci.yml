@@ -29,3 +29,28 @@ jobs:
       run-build: false
       # Match .cargo/config.toml so the reusable workflow caches the target directory Cargo uses.
       cargo-target-cache-path: build/target
+
+  playwright-failure-traces:
+    if: failure()
+    needs: [popcircles]
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+
+      - name: Replay frontend tests
+        run: mise run test:frontend
+
+      - name: Upload Playwright failure traces
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-failure-traces
+          path: frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
