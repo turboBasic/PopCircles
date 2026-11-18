@@ -174,7 +174,7 @@
   });
 </script>
 
-<svelte:window onpopstate={handleHistory} />
+<svelte:window onpopstate={handleHistory} onhashchange={handleHistory} />
 
 <svelte:head>
   <title>PopCircles</title>
