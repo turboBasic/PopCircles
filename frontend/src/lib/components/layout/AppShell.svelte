@@ -1,21 +1,18 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { fade } from 'svelte/transition';
   import AppHeader from '#lib/components/layout/AppHeader.svelte';
   import CountryNavigation from '#lib/components/navigation/CountryNavigation.svelte';
   import GalleryWorkspace from '#lib/components/gallery/GalleryWorkspace.svelte';
-  import { entryFromHash, countryUrl } from '#lib/utils/gallery.js';
-  import { useViewportChrome } from '#lib/components/layout/viewport-chrome.svelte.js';
-
-  /** @typedef {import('#lib/types/gallery.js').GalleryData} GalleryData */
-  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
+  import { entryFromHash, countryUrl } from '#lib/utils/gallery';
+  import { useViewportChrome } from '#lib/components/layout/viewport-chrome.svelte.ts';
+  import type { GalleryData, GalleryEntry } from '#lib/types/gallery';
 
   const desktopNavigationStorageKey = 'popcircles-desktop-navigation-collapsed';
   const themeStorageKey = 'popcircles-theme';
 
-  /** @param {string} key */
-  function readStorage(key) {
+  function readStorage(key: string) {
     try {
       return localStorage.getItem(key);
     } catch {
@@ -24,8 +21,7 @@
     }
   }
 
-  /** @param {string} key @param {string} value */
-  function writeStorage(key, value) {
+  function writeStorage(key: string, value: string) {
     try {
       localStorage.setItem(key, value);
     } catch {
@@ -33,7 +29,7 @@
     }
   }
 
-  let data = $state(/** @type {GalleryData | null} */ (null));
+  let data = $state<GalleryData | null>(null);
   let error = $state('');
   let hash = $state('');
   let mobileMode = $state(false);
@@ -47,19 +43,14 @@
   );
   let selectedEntry = $derived(entryFromHash(entries, hash));
   let drawerOpen = $state(false);
-  /** @type {GalleryEntry | null} */
-  let entryAwaitingDrawerClose = null;
+  let entryAwaitingDrawerClose: GalleryEntry | null = null;
   let desktopNavigationCollapsed = $state(false);
   let themeLight = $state(false);
   let copyStatus = $state('');
-  /** @type {number | undefined} */
-  let copyTimeout;
-  /** @type {HTMLDivElement | null} */
-  let resultsPanel = $state(null);
-  /** @type {HTMLElement | null} */
-  let headerElement = $state(null);
-  /** @type {HTMLElement | null} */
-  let footerElement = $state(null);
+  let copyTimeout: number | undefined;
+  let resultsPanel = $state<HTMLDivElement | null>(null);
+  let headerElement = $state<HTMLElement | null>(null);
+  let footerElement = $state<HTMLElement | null>(null);
   const viewportChrome = useViewportChrome(
     () => resultsPanel,
     () => headerElement,
@@ -70,8 +61,7 @@
     document.documentElement.dataset.theme = themeLight ? 'light' : 'dark';
   });
 
-  /** @param {GalleryEntry | null} entry @param {'auto' | 'smooth'} behavior */
-  function scrollToEntry(entry, behavior) {
+  function scrollToEntry(entry: GalleryEntry | null, behavior: 'auto' | 'smooth') {
     const result = entry && document.getElementById(entry.anchor);
     if (!result) {
       resultsPanel?.scrollTo({
@@ -86,16 +76,14 @@
     });
   }
 
-  /** @param {GalleryEntry} entry */
-  function revealEntry(entry) {
+  function revealEntry(entry: GalleryEntry) {
     requestAnimationFrame(() => {
       scrollToEntry(entry, 'smooth');
       document.getElementById(`map-heading-${entry.anchor}`)?.focus({ preventScroll: true });
     });
   }
 
-  /** @param {GalleryEntry} entry */
-  function selectEntry(entry) {
+  function selectEntry(entry: GalleryEntry) {
     const url = countryUrl(window.location.href, entry.anchor);
     if (url !== window.location.href) window.history.pushState(null, '', url);
     hash = window.location.hash;
@@ -127,8 +115,7 @@
     requestAnimationFrame(() => scrollToEntry(selectedEntry, 'smooth'));
   }
 
-  /** @param {boolean} collapsed */
-  function setDesktopNavigationCollapsed(collapsed) {
+  function setDesktopNavigationCollapsed(collapsed: boolean) {
     desktopNavigationCollapsed = collapsed;
     writeStorage(desktopNavigationStorageKey, String(collapsed));
   }
@@ -138,15 +125,13 @@
     writeStorage(themeStorageKey, themeLight ? 'light' : 'dark');
   }
 
-  /** @param {string} message */
-  function showCopyStatus(message) {
+  function showCopyStatus(message: string) {
     copyStatus = message;
     window.clearTimeout(copyTimeout);
     copyTimeout = window.setTimeout(() => (copyStatus = ''), 2400);
   }
 
-  /** @param {MouseEvent} event @param {string} anchor */
-  async function copyCountryUrl(event, anchor) {
+  async function copyCountryUrl(event: MouseEvent, anchor: string) {
     event.preventDefault();
     const url = countryUrl(window.location.href, anchor);
     try {
@@ -178,7 +163,7 @@
         requestAnimationFrame(() => scrollToEntry(selectedEntry, 'auto'));
       })
       .catch((cause) => {
-        if (active) error = cause.message;
+        if (active) error = cause instanceof Error ? cause.message : String(cause);
       });
 
     return () => {

@@ -1,13 +1,24 @@
-<script>
+<script lang="ts">
   import { ChevronLeft, ChevronRight, Search, X } from '@lucide/svelte';
   import { tick } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import globeSprite from '#lib/assets/earth-globe.svg?url';
-  import { filterCountries, groupCountries } from '#lib/utils/gallery.js';
+  import { filterCountries, groupCountries } from '#lib/utils/gallery';
+  import type { GalleryEntry } from '#lib/types/gallery';
 
-  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
+  type Props = {
+    worldEntry: GalleryEntry;
+    countries: GalleryEntry[];
+    selectedEntry: GalleryEntry | null;
+    mobileMode: boolean;
+    drawerOpen: boolean;
+    desktopNavigationCollapsed: boolean;
+    onSelect: (entry: GalleryEntry) => void;
+    onCloseDrawer: () => void;
+    onDrawerClosed: () => void;
+    onDesktopCollapsedChange: (collapsed: boolean) => void;
+  };
 
-  /** @type {{worldEntry: GalleryEntry, countries: GalleryEntry[], selectedEntry: GalleryEntry | null, mobileMode: boolean, drawerOpen: boolean, desktopNavigationCollapsed: boolean, onSelect: (entry: GalleryEntry) => void, onCloseDrawer: () => void, onDrawerClosed: () => void, onDesktopCollapsedChange: (collapsed: boolean) => void}} */
   let {
     worldEntry,
     countries,
@@ -19,7 +30,7 @@
     onCloseDrawer,
     onDrawerClosed,
     onDesktopCollapsedChange,
-  } = $props();
+  }: Props = $props();
   let query = $state('');
   let matches = $derived(filterCountries(countries, query));
   let groups = $derived(groupCountries(matches));
@@ -27,12 +38,9 @@
   let globeFrame = $state(0);
   let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
   let drawerClosing = $state(false);
-  /** @type {HTMLDialogElement | null} */
-  let dialog = $state(null);
-  /** @type {HTMLInputElement | null} */
-  let searchInput = $state(null);
-  /** @type {HTMLDivElement | null} */
-  let countryGroupsScroll = $state(null);
+  let dialog = $state<HTMLDialogElement | null>(null);
+  let searchInput = $state<HTMLInputElement | null>(null);
+  let countryGroupsScroll = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
     const anchor = selectedEntry?.anchor;
@@ -57,8 +65,7 @@
     }
   });
 
-  /** @param {AnimationEvent} event */
-  function finishDrawerClose(event) {
+  function finishDrawerClose(event: AnimationEvent) {
     if (event.target === dialog && event.animationName.endsWith('navigation-drawer-out'))
       dialog?.close();
   }
@@ -68,8 +75,7 @@
     onDrawerClosed();
   }
 
-  /** @param {GalleryEntry} entry @param {MouseEvent} event */
-  function selectEntry(entry, event) {
+  function selectEntry(entry: GalleryEntry, event: MouseEvent) {
     if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
       return;
     event.preventDefault();
@@ -77,8 +83,7 @@
     onSelect(entry);
   }
 
-  /** @param {string} letter */
-  function jumpToGroup(letter) {
+  function jumpToGroup(letter: string) {
     const section = document.getElementById(`country-group-${letter}`);
     if (!section || !countryGroupsScroll) return;
     const scrollBounds = countryGroupsScroll.getBoundingClientRect();
@@ -89,8 +94,7 @@
     });
   }
 
-  /** @param {KeyboardEvent} event */
-  function handleKeydown(event) {
+  function handleKeydown(event: KeyboardEvent) {
     // A native modal releases Tab focus to the browser chrome at its edges.
     if (event.key === 'Tab' && dialog?.matches(':modal')) {
       const focusable = [...dialog.querySelectorAll('button, input, a[href]')].filter(
@@ -112,8 +116,7 @@
     onDesktopCollapsedChange(true);
   }
 
-  /** @param {Event} event */
-  function handleCancel(event) {
+  function handleCancel(event: Event) {
     event.preventDefault();
     onCloseDrawer();
   }
@@ -241,7 +244,7 @@
           <section class:filtered={query.trim()} aria-labelledby={`country-group-${letter}`}>
             <h3 id={`country-group-${letter}`} class:visually-hidden={query.trim()}>{letter}</h3>
             <ul>
-              {#each entries as entry (entry.anchor)}
+              {#each entries ?? [] as entry (entry.anchor)}
                 <li>
                   <a
                     id={`country-link-${entry.anchor}`}

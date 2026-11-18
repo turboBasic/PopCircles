@@ -1,10 +1,14 @@
-<script>
+<script lang="ts">
   import MapFigure from '#lib/components/gallery/MapFigure.svelte';
+  import type { GalleryEntry } from '#lib/types/gallery';
 
-  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
+  type Props = {
+    entry: GalleryEntry;
+    isSelected: boolean;
+    onCopy: (event: MouseEvent, anchor: string) => Promise<void>;
+  };
 
-  /** @type {{entry: GalleryEntry, isSelected: boolean, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
-  let { entry, isSelected, onCopy } = $props();
+  let { entry, isSelected, onCopy }: Props = $props();
 </script>
 
 <section class="country" id={entry.anchor}>

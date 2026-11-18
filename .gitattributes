@@ -6,6 +6,7 @@
 *.html text
 *.svg text
 *.js text
+*.ts text
 *.css text
 *.svelte text
 *.toml text

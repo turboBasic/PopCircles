@@ -1,10 +1,16 @@
-<script>
+<script lang="ts">
   import MapEntry from '#lib/components/gallery/MapEntry.svelte';
+  import type { GalleryEntry } from '#lib/types/gallery';
 
-  /** @typedef {import('#lib/types/gallery.js').GalleryEntry} GalleryEntry */
+  type Props = {
+    entries: GalleryEntry[];
+    selectedEntry: GalleryEntry | null;
+    resultsPanel: HTMLDivElement | null;
+    onScroll: () => void;
+    onCopy: (event: MouseEvent, anchor: string) => Promise<void>;
+  };
 
-  /** @type {{entries: GalleryEntry[], selectedEntry: GalleryEntry | null, resultsPanel: HTMLDivElement | null, onScroll: () => void, onCopy: (event: MouseEvent, anchor: string) => Promise<void>}} */
-  let { entries, selectedEntry, resultsPanel = $bindable(), onScroll, onCopy } = $props();
+  let { entries, selectedEntry, resultsPanel = $bindable(), onScroll, onCopy }: Props = $props();
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus the results scroll region) -->

@@ -11,13 +11,13 @@ export default mergeConfig(
           test: {
             name: 'unit',
             environment: 'node',
-            include: ['src/**/*.unit.test.js'],
+            include: ['src/**/*.unit.test.ts'],
           },
         },
         {
           test: {
             name: 'component',
-            include: ['src/**/*.component.test.js'],
+            include: ['src/**/*.component.test.ts'],
             browser: {
               enabled: true,
               provider: playwright(),

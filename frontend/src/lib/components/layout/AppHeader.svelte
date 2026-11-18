@@ -1,10 +1,21 @@
-<script>
+<script lang="ts">
   import { Menu, Moon, Sun } from '@lucide/svelte';
-  /** @typedef {import('#lib/types/gallery.js').GalleryData} GalleryData */
+  import type { GalleryData } from '#lib/types/gallery';
   import githubIcon from '#lib/assets/github-icon.svg?no-inline';
   import PopCirclesLogo from '#lib/components/layout/PopCirclesLogo.svelte';
 
-  /** @type {{scrollPosition: number, headerCollapseProgress: number, data: GalleryData | null, themeLight: boolean, drawerOpen: boolean, headerElement: HTMLElement | null, onHome: () => void, onTheme: () => void, onOpenDrawer: () => void}} */
+  type Props = {
+    scrollPosition: number;
+    headerCollapseProgress: number;
+    data: GalleryData | null;
+    themeLight: boolean;
+    drawerOpen: boolean;
+    headerElement: HTMLElement | null;
+    onHome: () => void;
+    onTheme: () => void;
+    onOpenDrawer: () => void;
+  };
+
   let {
     scrollPosition,
     headerCollapseProgress,
@@ -15,7 +26,7 @@
     onHome,
     onTheme,
     onOpenDrawer,
-  } = $props();
+  }: Props = $props();
 </script>
 
 <header

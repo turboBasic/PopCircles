@@ -1,14 +1,12 @@
-<script>
+<script lang="ts">
   import globeSprite from '#lib/assets/earth-globe.svg?url';
 
-  /** @type {{scrollPosition: number, onHome: () => void}} */
-  let { scrollPosition, onHome } = $props();
+  let { scrollPosition, onHome }: { scrollPosition: number; onHome: () => void } = $props();
   const globeFrameCount = 72;
   let globeFrame = $derived(Math.floor((scrollPosition / 240) * globeFrameCount) % globeFrameCount);
   let globeSymbol = $derived(`frame-${String(globeFrame + 1).padStart(2, '0')}`);
 
-  /** @param {MouseEvent} event */
-  function handleHomeClick(event) {
+  function handleHomeClick(event: MouseEvent) {
     if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
       return;
     event.preventDefault();
