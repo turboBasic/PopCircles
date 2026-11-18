@@ -996,6 +996,16 @@ test('theme choice persists after reload', async ({ page }) => {
 
 // --- Branding ---
 
+test('favicon loads from a frontend asset', async ({ page }) => {
+  const favicon = page.locator('head link[rel="icon"]');
+  await expect(favicon).toHaveCount(1);
+  await expect(favicon).toHaveAttribute('type', 'image/svg+xml');
+  const href = await favicon.getAttribute('href');
+  const response = await page.request.get(new URL(href, page.url()).toString());
+  expect(response.ok()).toBe(true);
+  expect(response.headers()['content-type']).toContain('image/svg+xml');
+});
+
 test('animated logo keeps its brand text and selects valid sprite symbols', async ({ page }) => {
   const logo = page.getByRole('link', { name: 'PopCircles home' });
   const logoData = await logo.evaluate(async (link) => {
