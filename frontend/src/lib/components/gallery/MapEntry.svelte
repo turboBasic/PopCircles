@@ -11,7 +11,7 @@
   let { entry, isSelected, onCopy }: Props = $props();
 </script>
 
-<section class="country" id={entry.anchor}>
+<section class="country" class:country-result={entry.anchor !== 'world-result'} id={entry.anchor}>
   <header>
     <h2 id={`map-heading-${entry.anchor}`} tabindex="-1">
       <a href={`#${entry.anchor}`}>{entry.name}</a>
@@ -42,6 +42,12 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 0.8rem;
+  }
+  .country-result {
+    border: 0;
+  }
+  :global(.country-result + .country-result) {
+    border-top: 1px dotted var(--line);
   }
   .empty {
     color: var(--muted);

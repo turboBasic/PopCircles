@@ -1128,6 +1128,22 @@ test('World map figures stay stacked on desktop and mobile', async ({ page }) =>
   }
 });
 
+test('[map-presentation] dotted separators appear only between Country sections', async ({
+  page,
+}) => {
+  const world = page.locator('#world-result');
+  const firstCountry = page.locator('#country-1');
+  const secondCountry = page.locator('#country-2');
+
+  await expect(world).toHaveCSS('border-top-style', 'solid');
+  await expect(firstCountry).toHaveCSS('border-style', 'none');
+  await expect(secondCountry).toHaveCSS('border-top-style', 'dotted');
+  await expect(secondCountry).toHaveCSS('border-top-width', '1px');
+  await expect(secondCountry).toHaveCSS('border-right-style', 'none');
+  await expect(secondCountry).toHaveCSS('border-bottom-style', 'none');
+  await expect(secondCountry).toHaveCSS('border-left-style', 'none');
+});
+
 // --- Keyboard and accessibility ---
 
 test('[keyboard-and-accessibility] interactive controls have accessible names', async ({
