@@ -154,8 +154,21 @@ test('[keyboard-and-accessibility] Gallery receives initial focus for keyboard s
 }) => {
   const gallery = page.locator('#gallery');
   await expect(gallery).toBeFocused();
-  await page.keyboard.press('PageDown');
-  await expect.poll(() => gallery.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
+  await expect(gallery).toHaveCSS('outline-style', 'none');
+  await expect(gallery).toHaveAttribute('data-auto-focused', '');
+  await page.keyboard.press('ArrowDown');
+  const scrolledDown = await gallery.evaluate((region) => region.scrollTop);
+  expect(scrolledDown).toBeGreaterThan(0);
+  await page.keyboard.press('ArrowUp');
+  await expect
+    .poll(() => gallery.evaluate((region) => region.scrollTop))
+    .toBeLessThan(scrolledDown);
+  const bounds = await gallery.boundingBox();
+  await page.mouse.click(bounds.x + 8, bounds.y + 8);
+  await expect(gallery).toHaveAttribute('data-auto-focused', '');
+  await expect(gallery).toHaveCSS('outline-style', 'none');
+  await page.getByRole('button', { name: /Switch to (light|dark) theme/ }).focus();
+  await expect(gallery).not.toHaveAttribute('data-auto-focused');
 });
 
 test('[keyboard-and-accessibility] direct result fragments do not move focus to Gallery', async ({

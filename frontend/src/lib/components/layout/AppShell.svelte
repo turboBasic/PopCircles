@@ -164,8 +164,10 @@
         data = value;
         requestAnimationFrame(() => {
           scrollToEntry(selectedEntry, 'auto');
-          if (!hasInitialFragment && document.activeElement === document.body)
+          if (!hasInitialFragment && document.activeElement === document.body) {
             resultsPanel?.focus({ preventScroll: true });
+            resultsPanel?.setAttribute('data-auto-focused', '');
+          }
         });
       })
       .catch((cause) => {

@@ -11,7 +11,17 @@
   };
 
   let { entries, selectedEntry, resultsPanel = $bindable(), onScroll, onCopy }: Props = $props();
+
+  function handleScrollKeys(event: KeyboardEvent) {
+    if (event.target !== resultsPanel) return;
+    const scrollDelta = event.key === 'ArrowDown' ? 40 : event.key === 'ArrowUp' ? -40 : 0;
+    if (scrollDelta === 0) return;
+    event.preventDefault();
+    resultsPanel?.scrollBy({ top: scrollDelta });
+  }
 </script>
+
+<svelte:window onkeydown={handleScrollKeys} />
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus the results scroll region) -->
 <div
@@ -22,6 +32,7 @@
   aria-label="Map results"
   tabindex="0"
   onscroll={onScroll}
+  onblur={(event) => event.currentTarget.removeAttribute('data-auto-focused')}
 >
   <section class="map-results" aria-label="Maps">
     {#each entries as entry (entry.anchor)}
@@ -42,6 +53,9 @@
     min-height: 0;
     overflow-y: auto;
     padding: var(--header-space, 0px) 0 calc(var(--footer-space, 0px) + 2rem);
+  }
+  :global(#gallery[data-auto-focused]:focus) {
+    outline: none;
   }
   @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
     (animation-range: 0px 160px) {
