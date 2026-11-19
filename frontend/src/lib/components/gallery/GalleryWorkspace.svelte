@@ -15,6 +15,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus the results scroll region) -->
 <div
+  id="gallery"
   bind:this={resultsPanel}
   class="results"
   role="region"

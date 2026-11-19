@@ -27,7 +27,7 @@
   }: Props = $props();
 </script>
 
-<header bind:this={headerElement} class="app-header">
+<header id="site-header" bind:this={headerElement} class="app-header">
   {#if data?.world[0]}
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}

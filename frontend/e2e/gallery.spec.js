@@ -98,6 +98,13 @@ test.beforeEach(async ({ page }) => {
 
 // --- Navigation and history ---
 
+test('[keyboard-and-accessibility] major page regions have unique semantic IDs', async ({
+  page,
+}) => {
+  for (const id of ['site-header', 'country-navigation', 'gallery', 'site-footer'])
+    await expect(page.locator(`#${id}`)).toHaveCount(1);
+});
+
 test('[navigation-and-history] searches country navigation and selects a country', async ({
   page,
 }) => {

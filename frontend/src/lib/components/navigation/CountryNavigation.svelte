@@ -179,7 +179,7 @@
       <Search size={20} strokeWidth={2} aria-hidden="true" />
     </button>
   </div>
-  <nav aria-label="Map navigation">
+  <nav id="country-navigation" aria-label="Map navigation">
     <search aria-label="Filter map navigation">
       <label class="search-label" for="country-search">
         Search countries <span class="status">Matching: {matches.length}</span>

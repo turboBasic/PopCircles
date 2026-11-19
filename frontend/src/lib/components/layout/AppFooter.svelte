@@ -6,7 +6,7 @@
   let { footerElement = $bindable() }: Props = $props();
 </script>
 
-<footer bind:this={footerElement} class="site-footer">
+<footer id="site-footer" bind:this={footerElement} class="site-footer">
   <a href="https://github.com/turboBasic">A project by Andrii Melnyk</a>
 </footer>
 
