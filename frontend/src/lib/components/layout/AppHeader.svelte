@@ -163,7 +163,7 @@
     }
     @keyframes collapse-header {
       to {
-        padding: 0.25rem;
+        padding: 0.25rem 0;
       }
     }
     @keyframes fade-header-art {

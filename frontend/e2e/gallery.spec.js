@@ -746,6 +746,31 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     );
   }
 
+  async function expectChromeAlignedToCards(headerCollapsed = false, mobile = false) {
+    const alignment = await page.evaluate(() => {
+      const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+      const country = bounds('#world-result');
+      const figure = bounds('#world-result figure');
+      const theme = bounds('.app-header .map-actions button');
+      const drawer = bounds('.app-header .drawer-toggle');
+      const footer = bounds('.site-footer a');
+      return {
+        countryLeft: country?.left,
+        countryRight: country?.right,
+        figureRight: figure?.right,
+        themeRight: theme?.right,
+        drawerLeft: drawer?.left,
+        footerRight: footer?.right,
+      };
+    });
+
+    expect(alignment.footerRight).toBeCloseTo(alignment.figureRight, 1);
+    if (headerCollapsed) {
+      expect(alignment.themeRight).toBeCloseTo(alignment.countryRight, 1);
+      if (mobile) expect(alignment.drawerLeft).toBeCloseTo(alignment.countryLeft, 1);
+    }
+  }
+
   async function timelineProgress() {
     return intro.evaluate(
       (element) => element.getAnimations()[0]?.effect?.getComputedTiming().progress ?? null,
@@ -772,11 +797,13 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(20, 1);
     expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
     const expandedButtonPositions = await buttonPositions();
+    await expectChromeAlignedToCards();
 
     if (!supportsScrollTimeline) {
       await scrollResultsTo(160);
       await expect.poll(introHeight).toBeCloseTo(expandedHeight, 1);
       expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
+      await expectChromeAlignedToCards();
       continue;
     }
 
@@ -795,7 +822,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     const halfCollapsedButtonPositions = await buttonPositions();
     for (const control of ['github', 'theme']) {
       expect(halfCollapsedButtonPositions[control]).toBeCloseTo(
-        expandedButtonPositions[control] + 4,
+        expandedButtonPositions[control] + 6,
         1,
       );
     }
@@ -806,7 +833,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
       );
     } else {
       expect(halfCollapsedButtonPositions['drawer-navigation']).toBeCloseTo(
-        expandedButtonPositions['drawer-navigation'] - 4,
+        expandedButtonPositions['drawer-navigation'] - 6,
         1,
       );
     }
@@ -817,12 +844,13 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(0, 1);
     expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0, 2);
     expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0, 2);
+    await expectChromeAlignedToCards(true, viewport.width <= 1023);
     expect(await styleNumber(logo, 'font-size')).toBeCloseTo(14.08, 1);
     expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(1.8304, 1);
     const collapsedButtonPositions = await buttonPositions();
     for (const control of ['github', 'theme']) {
       expect(collapsedButtonPositions[control]).toBeCloseTo(
-        expandedButtonPositions[control] + 8,
+        expandedButtonPositions[control] + 12,
         1,
       );
     }
@@ -833,7 +861,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
       );
     } else {
       expect(collapsedButtonPositions['drawer-navigation']).toBeCloseTo(
-        expandedButtonPositions['drawer-navigation'] - 8,
+        expandedButtonPositions['drawer-navigation'] - 12,
         1,
       );
     }
@@ -862,6 +890,10 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
     await scrollResultsTo(80);
     await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight / 2, 1);
+
+    await scrollResultsTo(160);
+    await expect.poll(introHeight).toBe(0);
+    await expectChromeAlignedToCards(true, viewport.width <= 1023);
 
     await scrollResultsTo(0);
     await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);

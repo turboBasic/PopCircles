@@ -250,6 +250,7 @@
 
 <style>
   .app-shell {
+    --country-inline-padding: 1.25rem;
     position: relative;
     display: grid;
     width: min(1600px, calc(100% - 2rem));
@@ -306,6 +307,7 @@
   }
   @media (max-width: 1023px) {
     .app-shell {
+      --country-inline-padding: 0.5rem;
       width: calc(100% - 1rem);
     }
     .explorer {

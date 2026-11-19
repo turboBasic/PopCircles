@@ -18,6 +18,7 @@
     left: 0;
     z-index: 4;
     padding: 0.5rem 0;
+    padding-right: calc(var(--country-inline-padding) + 1px);
     text-align: right;
     color: var(--muted);
     background: transparent;

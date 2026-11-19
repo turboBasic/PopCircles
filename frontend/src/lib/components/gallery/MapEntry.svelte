@@ -38,7 +38,7 @@
   .country {
     scroll-margin-top: 1rem;
     margin-bottom: 0.8rem;
-    padding: 1.25rem;
+    padding: 1.25rem var(--country-inline-padding);
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 0.8rem;
@@ -64,7 +64,7 @@
   }
   @media (max-width: 1023px) {
     .country {
-      padding: 0.5rem;
+      padding-block: 0.5rem;
     }
     .country h2 {
       margin-block-start: 0.4em;
