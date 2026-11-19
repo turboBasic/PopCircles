@@ -405,6 +405,21 @@
   .rail-controls button:hover {
     border-color: var(--accent);
   }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    @media (min-width: 1024px) {
+      .navigation-header .desktop-collapse {
+        animation: collapse-navigation-button auto linear both;
+        animation-timeline: --results-scroll;
+        animation-range: 0px 160px;
+      }
+      @keyframes collapse-navigation-button {
+        to {
+          transform: translateX(-0.5rem);
+        }
+      }
+    }
+  }
   .navigation-header .close {
     display: none;
     flex: none;

@@ -190,7 +190,6 @@
 >
   <AppHeader
     scrollPosition={viewportChrome.scrollPosition}
-    headerCollapseProgress={viewportChrome.headerCollapseProgress}
     {data}
     {themeLight}
     {drawerOpen}
@@ -258,6 +257,12 @@
     min-height: 0;
     margin: auto;
     grid-template-rows: minmax(0, 1fr);
+  }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    .app-shell {
+      timeline-scope: --results-scroll;
+    }
   }
   main {
     display: grid;

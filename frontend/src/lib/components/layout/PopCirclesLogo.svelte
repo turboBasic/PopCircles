@@ -48,11 +48,10 @@
     font:
       400 1rem/1 'Lilita One',
       sans-serif;
-    letter-spacing: 0.16em;
     text-decoration: none;
     text-transform: uppercase;
-    font-size: var(--logo-size);
-    letter-spacing: var(--logo-spacing);
+    font-size: 1rem;
+    letter-spacing: 0.16em;
   }
   .brand-text {
     display: flex;
@@ -87,5 +86,19 @@
     display: none;
     width: 24px;
     height: 24px;
+  }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    .home-link {
+      animation: collapse-logo auto linear both;
+      animation-timeline: --results-scroll;
+      animation-range: 0px 160px;
+    }
+    @keyframes collapse-logo {
+      to {
+        font-size: 0.88rem;
+        letter-spacing: 0.13em;
+      }
+    }
   }
 </style>

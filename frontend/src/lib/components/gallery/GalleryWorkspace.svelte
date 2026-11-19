@@ -42,6 +42,12 @@
     overflow-y: auto;
     padding: var(--header-space, 0px) 0 calc(var(--footer-space, 0px) + 2rem);
   }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    .results {
+      scroll-timeline: --results-scroll block;
+    }
+  }
   @media (max-width: 1023px) {
     .results {
       grid-column: 1;

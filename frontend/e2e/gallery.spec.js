@@ -700,34 +700,143 @@ test('[viewport-and-scrolling] results scroll inside the viewport without scroll
   expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
 });
 
-test('header follows results scroll progress and restores at the top', async ({ page }) => {
+test('[viewport-and-scrolling] header follows the Gallery scroll timeline', async ({ page }) => {
   const results = page.getByRole('region', { name: 'Map results' });
   const header = page.locator('.app-header');
   const logo = page.getByRole('link', { name: 'PopCircles home' });
   const intro = page.locator('.workspace-intro');
+  const headerArt = page.locator('.header-art');
 
   async function scrollResultsTo(top) {
     await results.evaluate((region, position) => {
       region.scrollTop = position;
-      region.dispatchEvent(new Event('scroll'));
     }, top);
   }
+
+  async function styleNumber(element, property) {
+    return element.evaluate(
+      (node, name) => Number.parseFloat(getComputedStyle(node).getPropertyValue(name)),
+      property,
+    );
+  }
+
+  async function introHeight() {
+    return intro.evaluate((element) => element.getBoundingClientRect().height);
+  }
+
+  async function naturalIntroHeight() {
+    return intro
+      .locator('.workspace-intro-content')
+      .evaluate((element) => element.getBoundingClientRect().height);
+  }
+
+  async function buttonPositions() {
+    return page.evaluate(() =>
+      Object.fromEntries(
+        [
+          ['desktop-navigation', '#country-browser-panel .desktop-collapse'],
+          ['drawer-navigation', '.app-header .drawer-toggle'],
+          ['github', '.app-header .map-actions a'],
+          ['theme', '.app-header .map-actions button'],
+        ].map(([name, selector]) => [
+          name,
+          document.querySelector(selector)?.getBoundingClientRect().x ?? null,
+        ]),
+      ),
+    );
+  }
+
+  async function timelineProgress() {
+    return intro.evaluate(
+      (element) => element.getAnimations()[0]?.effect?.getComputedTiming().progress ?? null,
+    );
+  }
+
+  const supportsScrollTimeline = await page.evaluate(
+    () =>
+      CSS.supports('scroll-timeline: --results-scroll block') &&
+      CSS.supports('timeline-scope: --results-scroll') &&
+      CSS.supports('animation-range: 0px 160px'),
+  );
 
   for (const viewport of [
     { width: 1280, height: 800 },
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
+    await scrollResultsTo(0);
+    const expandedHeight = await introHeight();
+    expect(expandedHeight).toBeGreaterThan(0);
+    expect(expandedHeight).toBeCloseTo(await naturalIntroHeight(), 1);
+    expect(await styleNumber(header, 'padding-top')).toBeCloseTo(12, 1);
+    expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(20, 1);
+    expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
+    const expandedButtonPositions = await buttonPositions();
+
+    if (!supportsScrollTimeline) {
+      await scrollResultsTo(160);
+      await expect.poll(introHeight).toBeCloseTo(expandedHeight, 1);
+      expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
+      continue;
+    }
+
+    await expect.poll(() => styleNumber(headerArt, 'opacity')).toBeCloseTo(0.16, 2);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(16, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.56, 1);
+
     await scrollResultsTo(80);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'false');
-    expect(
-      Number(await intro.evaluate((element) => getComputedStyle(element).opacity)),
-    ).toBeCloseTo(0.5);
+    await expect.poll(introHeight).toBeCloseTo(expandedHeight / 2, 1);
+    await expect.poll(() => styleNumber(header, 'padding-top')).toBeCloseTo(8, 1);
+    expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(10, 1);
+    expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0.5, 2);
+    expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0.08, 2);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(15.04, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.26, 1);
+    const halfCollapsedButtonPositions = await buttonPositions();
+    for (const control of ['github', 'theme']) {
+      expect(halfCollapsedButtonPositions[control]).toBeCloseTo(
+        expandedButtonPositions[control] + 4,
+        1,
+      );
+    }
+    if (viewport.width > 1023) {
+      expect(halfCollapsedButtonPositions['desktop-navigation']).toBeCloseTo(
+        expandedButtonPositions['desktop-navigation'] - 4,
+        1,
+      );
+    } else {
+      expect(halfCollapsedButtonPositions['drawer-navigation']).toBeCloseTo(
+        expandedButtonPositions['drawer-navigation'] - 4,
+        1,
+      );
+    }
+
     await scrollResultsTo(160);
-    await expect(header).toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'true');
-    await expect(intro).toHaveCSS('opacity', '0');
+    await expect.poll(introHeight).toBe(0);
+    await expect.poll(() => styleNumber(header, 'padding-top')).toBeCloseTo(4, 1);
+    expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(0, 1);
+    expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0, 2);
+    expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0, 2);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(14.08, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(1.8304, 1);
+    const collapsedButtonPositions = await buttonPositions();
+    for (const control of ['github', 'theme']) {
+      expect(collapsedButtonPositions[control]).toBeCloseTo(
+        expandedButtonPositions[control] + 8,
+        1,
+      );
+    }
+    if (viewport.width > 1023) {
+      expect(collapsedButtonPositions['desktop-navigation']).toBeCloseTo(
+        expandedButtonPositions['desktop-navigation'] - 8,
+        1,
+      );
+    } else {
+      expect(collapsedButtonPositions['drawer-navigation']).toBeCloseTo(
+        expandedButtonPositions['drawer-navigation'] - 8,
+        1,
+      );
+    }
     await expect(logo).toBeVisible();
     await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
@@ -741,11 +850,22 @@ test('header follows results scroll progress and restores at the top', async ({ 
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
 
     await scrollResultsTo(80);
-    await expect(header).not.toHaveClass(/collapsed/);
+    await expect.poll(introHeight).toBeCloseTo(expandedHeight / 2, 1);
+    await page.setViewportSize({
+      width: viewport.width <= 1023 ? 320 : 1024,
+      height: viewport.height,
+    });
     await scrollResultsTo(0);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'false');
-    await expect(intro).toHaveCSS('opacity', '1');
+    await expect.poll(timelineProgress).toBeCloseTo(0, 2);
+    const resizedExpandedHeight = await naturalIntroHeight();
+    expect(resizedExpandedHeight).not.toBeCloseTo(expandedHeight, 1);
+    await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
+    await scrollResultsTo(80);
+    await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight / 2, 1);
+
+    await scrollResultsTo(0);
+    await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
+    await expect.poll(() => styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
     const dimensions = await page.evaluate(() => ({
       documentHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
@@ -757,11 +877,13 @@ test('header follows results scroll progress and restores at the top', async ({ 
 test('header collapse respects reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const results = page.getByRole('region', { name: 'Map results' });
+  const intro = page.locator('.workspace-intro');
   await results.evaluate((region) => {
     region.scrollTop = 160;
-    region.dispatchEvent(new Event('scroll'));
   });
-  await expect(page.locator('.app-header')).toHaveClass(/collapsed/);
+  await expect
+    .poll(() => intro.evaluate((element) => element.getBoundingClientRect().height))
+    .toBe(0);
   await expect(page.locator('.app-header')).toHaveCSS('transition-duration', '0s');
   await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
     'transition-duration',

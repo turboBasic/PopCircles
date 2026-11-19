@@ -6,7 +6,6 @@ test('[themes] theme control reports its action and follows the updated value', 
   const onTheme = vi.fn();
   const screen = await render(AppHeader, {
     scrollPosition: 0,
-    headerCollapseProgress: 0,
     data: { world: [], countries: [] },
     themeLight: false,
     drawerOpen: false,
