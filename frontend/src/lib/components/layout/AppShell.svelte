@@ -150,6 +150,7 @@
     viewport.addEventListener('change', updateMobileMode);
     updateMobileMode();
     hash = window.location.hash;
+    const hasInitialFragment = Boolean(window.location.hash);
     desktopNavigationCollapsed = readStorage(desktopNavigationStorageKey) === 'true';
     themeLight = readStorage(themeStorageKey) === 'light';
 
@@ -161,7 +162,11 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        requestAnimationFrame(() => scrollToEntry(selectedEntry, 'auto'));
+        requestAnimationFrame(() => {
+          scrollToEntry(selectedEntry, 'auto');
+          if (!hasInitialFragment && document.activeElement === document.body)
+            resultsPanel?.focus({ preventScroll: true });
+        });
       })
       .catch((cause) => {
         if (active) error = cause instanceof Error ? cause.message : String(cause);

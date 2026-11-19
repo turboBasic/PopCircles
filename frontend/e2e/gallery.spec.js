@@ -149,6 +149,23 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(page.locator('.map-results > .country')).toHaveCount(81);
 });
 
+test('[keyboard-and-accessibility] Gallery receives initial focus for keyboard scrolling', async ({
+  page,
+}) => {
+  const gallery = page.locator('#gallery');
+  await expect(gallery).toBeFocused();
+  await page.keyboard.press('PageDown');
+  await expect.poll(() => gallery.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
+});
+
+test('[keyboard-and-accessibility] direct result fragments do not move focus to Gallery', async ({
+  page,
+}) => {
+  await page.goto('/#country-42');
+  await expect(page.locator('#country-42')).toBeInViewport();
+  await expect(page.locator('#gallery')).not.toBeFocused();
+});
+
 test('[navigation-and-history] logo returns to the start and clears the country selection without reloading', async ({
   page,
 }) => {
