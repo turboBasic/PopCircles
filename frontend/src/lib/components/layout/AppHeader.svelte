@@ -246,9 +246,4 @@
   .icon-control:hover {
     border-color: var(--accent);
   }
-  :global(a:focus-visible),
-  :global(button:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
 </style>

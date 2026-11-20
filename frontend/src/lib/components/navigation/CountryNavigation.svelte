@@ -562,12 +562,6 @@
   .status {
     font-size: 0.85rem;
   }
-  button:focus-visible,
-  input:focus-visible,
-  a:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
   .visually-hidden {
     position: absolute;
     width: 1px;
