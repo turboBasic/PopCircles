@@ -98,11 +98,36 @@ test.beforeEach(async ({ page }) => {
 
 // --- Navigation and history ---
 
+test('[keyboard-and-accessibility] major page components have unique IDs', async ({ page }) => {
+  for (const id of [
+    'site-header',
+    'site-header__intro',
+    'site-header__intro-content',
+    'site-actions',
+    'header-art',
+    'top-bar',
+    'app-shell',
+    'logo',
+    'country-navigation-panel',
+    'country-navigation',
+    'country-links',
+    'gallery-layout',
+    'gallery',
+    'country-cards',
+    'site-footer',
+  ])
+    await expect(page.locator(`#${id}`)).toHaveCount(1);
+  await expect(
+    page.locator('#logo').getByRole('link', { name: 'PopCircles home' }),
+  ).toHaveAttribute('href', './');
+});
+
 test('[navigation-and-history] searches country navigation and selects a country', async ({
   page,
 }) => {
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
+  await expect(page.getByRole('region', { name: 'Country links' })).toBeVisible();
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   await expect(navigation.getByRole('link', { name: 'World' })).toHaveAttribute(
     'href',
     '#world-result',
@@ -113,7 +138,7 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(navigation.getByRole('search', { name: 'Filter map navigation' })).toBeVisible();
   await expect(navigation.getByText('Matching: 80')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   await expect(navigation.getByRole('link')).toHaveCount(2);
   await expect(navigation.locator('.search-label .status')).toHaveText('Matching: 1');
   const countryGroup = navigation.getByRole('heading', { name: 'C', exact: true });
@@ -124,14 +149,14 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(navigation.getByRole('searchbox', { name: 'Search countries' })).toHaveValue('');
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await page
-    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('navigation', { name: 'Country navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
 
   await expect(page).toHaveURL(/#country-42$/);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toBeVisible();
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   const mapLink = page.getByRole('link', { name: 'Country 42 map' });
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
@@ -139,7 +164,48 @@ test('[navigation-and-history] searches country navigation and selects a country
   await navigation.getByRole('link', { name: 'World' }).click();
   await expect(page).toHaveURL(/#world-result$/);
   await expect(page.locator('#world-result')).toBeInViewport();
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
+});
+
+test('[keyboard-and-accessibility] Gallery receives focus and arrow keys on initial load', async ({
+  page,
+}) => {
+  const gallery = page.locator('#gallery');
+  await expect(gallery).toBeFocused();
+  await expect(gallery).toHaveCSS('outline-style', 'none');
+  await expect(gallery).toHaveAttribute('data-auto-focused', '');
+
+  // Headless Playwright delivers these keys but does not apply native scrolling; headed Chrome is checked manually.
+  await page.evaluate(() => {
+    window.__galleryKeyEvents = [];
+    window.addEventListener('keydown', (event) => {
+      window.__galleryKeyEvents.push({
+        key: event.key,
+        targetId: event.target instanceof Element ? event.target.id : '',
+        defaultPrevented: event.defaultPrevented,
+      });
+    });
+  });
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowUp');
+  expect(await page.evaluate(() => window.__galleryKeyEvents)).toEqual([
+    { key: 'ArrowDown', targetId: 'gallery', defaultPrevented: false },
+    { key: 'ArrowUp', targetId: 'gallery', defaultPrevented: false },
+  ]);
+  const bounds = await gallery.boundingBox();
+  await page.mouse.click(bounds.x + 8, bounds.y + 8);
+  await expect(gallery).toHaveAttribute('data-auto-focused', '');
+  await expect(gallery).toHaveCSS('outline-style', 'none');
+  await page.getByRole('button', { name: /Switch to (light|dark) theme/ }).focus();
+  await expect(gallery).not.toHaveAttribute('data-auto-focused');
+});
+
+test('[keyboard-and-accessibility] direct result fragments do not move focus to Gallery', async ({
+  page,
+}) => {
+  await page.goto('/#country-42');
+  await expect(page.locator('#country-42')).toBeInViewport();
+  await expect(page.locator('#gallery')).not.toBeFocused();
 });
 
 test('[navigation-and-history] logo returns to the start and clears the country selection without reloading', async ({
@@ -151,10 +217,10 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   });
 
   await page
-    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('navigation', { name: 'Country navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   await expect(page).toHaveURL(/#country-42$/);
   await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
 
@@ -163,15 +229,15 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   await expect(page).toHaveURL('/');
   await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
   await expect(
-    page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
+    page.getByRole('navigation', { name: 'Country navigation' }).locator('[aria-current="page"]'),
   ).toHaveCount(0);
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   expect(galleryDataRequests).toBe(0);
 
   await page.goBack();
   await expect(page).toHaveURL(/#country-42$/);
   await expect(
-    page.getByRole('navigation', { name: 'Map navigation' }).getByRole('link', {
+    page.getByRole('navigation', { name: 'Country navigation' }).getByRole('link', {
       name: 'Country 42',
     }),
   ).toHaveAttribute('aria-current', 'page');
@@ -180,14 +246,14 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   await expect(page).toHaveURL('/');
   await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
   await expect(
-    page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
+    page.getByRole('navigation', { name: 'Country navigation' }).locator('[aria-current="page"]'),
   ).toHaveCount(0);
   expect(galleryDataRequests).toBe(0);
 });
 
 test('scrolls the selected country into view in the navigation list', async ({ page }) => {
   await page.goto('/#country-80');
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   const selectedLink = navigation.getByRole('link', { name: 'Country 80' });
   await expect(selectedLink).toHaveAttribute('aria-current', 'page');
   await expect(selectedLink).toBeInViewport();
@@ -207,8 +273,8 @@ test('[navigation-and-history] [keyboard-and-accessibility] A-Z jumps scroll onl
   await page.emulateMedia({ reducedMotion: 'reduce' });
 
   const dialog = page.getByRole('dialog', { name: 'Country navigation' });
-  const navigation = dialog.getByRole('navigation', { name: 'Map navigation' });
-  const results = page.getByRole('region', { name: 'Map results' });
+  const navigation = dialog.getByRole('navigation', { name: 'Country navigation' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   const countryList = navigation.locator('.map-links-scroll');
   const letterIndex = navigation.getByRole('group', { name: 'Jump to countries by letter' });
   const startUrl = page.url();
@@ -251,7 +317,7 @@ test('[navigation-and-history] A-Z availability follows the displayed country gr
   page,
 }) => {
   await useAlphabetFixture(page);
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   const letterIndex = navigation.getByRole('group', { name: 'Jump to countries by letter' });
   const letter = (value) =>
     letterIndex.getByRole('button', {
@@ -275,13 +341,13 @@ test('[navigation-and-history] direct links, Back and Forward scroll to the sele
 }) => {
   await page.goto('/#country-42');
   const drawer = page.getByRole('dialog', { name: 'Country navigation' });
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
     'aria-current',
     'page',
   );
-  const results = page.getByRole('region', { name: 'Map results' });
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   await expect(page.locator('#country-42')).toBeInViewport();
   await navigation.getByRole('link', { name: 'Country 01' }).click();
   await expect(page).toHaveURL(/#country-1$/);
@@ -312,7 +378,7 @@ test('[navigation-and-history] result fragment links update selection and browse
   page,
 }) => {
   await page.goto('/#country-42');
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   const selectCountry = async (name) =>
     expect(navigation.getByRole('link', { name })).toHaveAttribute('aria-current', 'page');
 
@@ -331,7 +397,7 @@ test('[navigation-and-history] result fragment links update selection and browse
 });
 
 test('drawer selection scrolls the results smoothly instead of jumping', async ({ page }) => {
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   await results.evaluate((region) => {
     window.galleryScrollSamples = [];
     let frames = 0;
@@ -343,7 +409,7 @@ test('drawer selection scrolls the results smoothly instead of jumping', async (
   });
 
   await page
-    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('navigation', { name: 'Country navigation' })
     .getByRole('link', { name: 'Country 80', exact: true })
     .click();
   await expect(page).toHaveURL(/#country-80$/);
@@ -383,8 +449,10 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
     await page.setViewportSize({ width, height: 768 });
     const drawer = page.getByRole('dialog', { name: 'Country navigation' });
     await expect(drawer).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Map navigation' })).toHaveCount(1);
-    const workspaceBefore = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+    await expect(page.getByRole('navigation', { name: 'Country navigation' })).toHaveCount(1);
+    const workspaceBefore = await page
+      .getByRole('region', { name: 'Country and World workspace' })
+      .boundingBox();
     const drawerBounds = await drawer.boundingBox();
     expect(drawerBounds.x).toBeGreaterThanOrEqual(0);
     expect(drawerBounds.width).toBeGreaterThanOrEqual(300);
@@ -397,7 +465,9 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
       .poll(() => drawer.evaluate((element) => element.getBoundingClientRect().width))
       .toBeLessThanOrEqual(64);
     const rail = await drawer.boundingBox();
-    const workspaceExpanded = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+    const workspaceExpanded = await page
+      .getByRole('region', { name: 'Country and World workspace' })
+      .boundingBox();
     expect(rail.width).toBeGreaterThanOrEqual(56);
     expect(rail.width).toBeLessThanOrEqual(64);
     await expect(drawer.getByRole('link', { name: 'World' })).toBeHidden();
@@ -409,12 +479,12 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
     await expect
       .poll(() =>
         page
-          .getByRole('region', { name: 'Map results' })
+          .getByRole('region', { name: 'Country and World workspace' })
           .evaluate((element) => element.getBoundingClientRect().width),
       )
       .toBeLessThan(workspaceExpanded.width);
     const workspaceAfterExpand = await page
-      .getByRole('region', { name: 'Map results' })
+      .getByRole('region', { name: 'Country and World workspace' })
       .boundingBox();
     expect(workspaceAfterExpand.width).toBeLessThan(workspaceExpanded.width);
     const list = drawer.locator('.map-links-scroll');
@@ -428,13 +498,13 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
     await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(listScrollTop);
     await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
     await drawer
-      .getByRole('navigation', { name: 'Map navigation' })
+      .getByRole('navigation', { name: 'Country navigation' })
       .getByRole('link', { name: 'Country 42', exact: true })
       .click();
     await expect(page).toHaveURL(/#country-42$/);
     await expect(
       drawer
-        .getByRole('navigation', { name: 'Map navigation' })
+        .getByRole('navigation', { name: 'Country navigation' })
         .getByRole('link', { name: 'Country 42', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('searchbox', { name: 'Search countries' })).toHaveValue(
@@ -474,23 +544,29 @@ test('[responsive-navigation] mobile navigation remains modal and closes on resi
   await page.getByRole('button', { name: 'Open maps navigation' }).click();
   await expect(drawer).toBeVisible();
   await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
-  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).not.toBeNull();
-  const mobileWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  expect(
+    await page.getByRole('region', { name: 'Country and World workspace' }).boundingBox(),
+  ).not.toBeNull();
+  const mobileWorkspace = await page
+    .getByRole('region', { name: 'Country and World workspace' })
+    .boundingBox();
   await drawer.getByRole('button', { name: 'Close map navigation' }).click();
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(
     'aria-expanded',
     'false',
   );
-  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
-    mobileWorkspace,
-  );
+  expect(
+    await page.getByRole('region', { name: 'Country and World workspace' }).boundingBox(),
+  ).toEqual(mobileWorkspace);
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(drawer).toBeVisible();
   await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(false);
   await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobileResults = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  const mobileResults = await page
+    .getByRole('region', { name: 'Country and World workspace' })
+    .boundingBox();
   expect(mobileResults.x).toBeLessThan(20);
   expect(mobileResults.width).toBeGreaterThan(350);
   await page.setViewportSize({ width: 1024, height: 768 });
@@ -514,7 +590,7 @@ test('[responsive-navigation] [keyboard-and-accessibility] country navigation is
     'false',
   );
   const trigger = page.getByRole('button', { name: 'Open maps navigation' });
-  await expect(trigger).toHaveAttribute('aria-controls', 'country-browser-panel');
+  await expect(trigger).toHaveAttribute('aria-controls', 'country-navigation-panel');
   const triggerBounds = await trigger.boundingBox();
   expect(triggerBounds.width).toBeGreaterThanOrEqual(44);
   expect(triggerBounds.height).toBeGreaterThanOrEqual(44);
@@ -587,7 +663,7 @@ test('[responsive-navigation] mobile selection and viewport changes preserve que
   await dialog.getByRole('link', { name: 'Country 42', exact: true }).click();
   await expect(page).toHaveURL(/#country-42$/);
   await expect(dialog).toBeHidden();
-  await expect(page.locator('#map-heading-country-42')).toBeFocused();
+  await expect(page.locator('#country-42 header h2')).toBeFocused();
   await trigger.click();
   await expect(search).toHaveValue('');
   await dialog.getByRole('button', { name: 'Close map navigation' }).click();
@@ -611,7 +687,7 @@ test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer prese
     await expect(
       page.getByRole('heading', { name: 'One circle, half the population.' }),
     ).toBeVisible();
-    const workspace = page.getByRole('region', { name: 'Map results' });
+    const workspace = page.getByRole('region', { name: 'Country and World workspace' });
     const workspaceBounds = await workspace.boundingBox();
     if (viewport.width > 1023) {
       const navBounds = await drawer.boundingBox();
@@ -687,47 +763,193 @@ test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer prese
 test('[viewport-and-scrolling] results scroll inside the viewport without scrolling the document', async ({
   page,
 }) => {
-  const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
-    results.scrollTop = results.scrollHeight;
-    return {
-      scrollTop: results.scrollTop,
-      bodyHeight: document.documentElement.scrollHeight,
-      viewportHeight: window.innerHeight,
-    };
-  });
+  const metrics = await page
+    .getByRole('region', { name: 'Country and World workspace' })
+    .evaluate((results) => {
+      results.scrollTop = results.scrollHeight;
+      return {
+        scrollTop: results.scrollTop,
+        bodyHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+      };
+    });
 
   expect(metrics.scrollTop).toBeGreaterThan(0);
   expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
 });
 
-test('header follows results scroll progress and restores at the top', async ({ page }) => {
-  const results = page.getByRole('region', { name: 'Map results' });
-  const header = page.locator('.app-header');
+test('[viewport-and-scrolling] header follows the Gallery scroll timeline', async ({ page }) => {
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
+  const header = page.locator('#site-header');
   const logo = page.getByRole('link', { name: 'PopCircles home' });
-  const intro = page.locator('.workspace-intro');
+  const intro = page.locator('#site-header__intro');
+  const headerArt = page.locator('#header-art');
 
   async function scrollResultsTo(top) {
     await results.evaluate((region, position) => {
       region.scrollTop = position;
-      region.dispatchEvent(new Event('scroll'));
     }, top);
   }
+
+  async function styleNumber(element, property) {
+    return element.evaluate(
+      (node, name) => Number.parseFloat(getComputedStyle(node).getPropertyValue(name)),
+      property,
+    );
+  }
+
+  async function introHeight() {
+    return intro.evaluate((element) => element.getBoundingClientRect().height);
+  }
+
+  async function naturalIntroHeight() {
+    return intro
+      .locator('#site-header__intro-content')
+      .evaluate((element) => element.getBoundingClientRect().height);
+  }
+
+  async function buttonPositions() {
+    return page.evaluate(() =>
+      Object.fromEntries(
+        [
+          ['desktop-navigation', '#country-navigation-panel .desktop-collapse'],
+          ['drawer-navigation', '#site-header .drawer-toggle'],
+          ['github', '#site-actions a'],
+          ['theme', '#site-actions button'],
+        ].map(([name, selector]) => [
+          name,
+          document.querySelector(selector)?.getBoundingClientRect().x ?? null,
+        ]),
+      ),
+    );
+  }
+
+  async function expectChromeAlignedToCards(headerCollapsed = false, mobile = false) {
+    const alignment = await page.evaluate(() => {
+      const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+      const country = bounds('#world-result');
+      const figure = bounds('#world-result figure');
+      const theme = bounds('#site-actions button');
+      const drawer = bounds('#site-header .drawer-toggle');
+      const footer = bounds('#site-footer a');
+      return {
+        countryLeft: country?.left,
+        countryRight: country?.right,
+        figureRight: figure?.right,
+        themeRight: theme?.right,
+        drawerLeft: drawer?.left,
+        footerRight: footer?.right,
+      };
+    });
+
+    expect(alignment.footerRight).toBeCloseTo(alignment.figureRight, 1);
+    if (headerCollapsed) {
+      expect(alignment.themeRight).toBeCloseTo(alignment.countryRight, 1);
+      if (mobile) expect(alignment.drawerLeft).toBeCloseTo(alignment.countryLeft, 1);
+    }
+  }
+
+  async function timelineProgress() {
+    return intro.evaluate(
+      (element) => element.getAnimations()[0]?.effect?.getComputedTiming().progress ?? null,
+    );
+  }
+
+  async function expectIntroPartiallyCollapsed(expandedHeight) {
+    await expect.poll(timelineProgress).toBeCloseTo(0.5, 2);
+    const height = await introHeight();
+    expect(height).toBeGreaterThan(0);
+    expect(height).toBeLessThan(expandedHeight);
+  }
+
+  const supportsScrollTimeline = await page.evaluate(
+    () =>
+      CSS.supports('scroll-timeline: --results-scroll block') &&
+      CSS.supports('timeline-scope: --results-scroll') &&
+      CSS.supports('animation-range: 0px 160px'),
+  );
 
   for (const viewport of [
     { width: 1280, height: 800 },
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
+    await scrollResultsTo(0);
+    const expandedHeight = await introHeight();
+    expect(expandedHeight).toBeGreaterThan(0);
+    expect(expandedHeight).toBeCloseTo(await naturalIntroHeight(), 1);
+    expect(await styleNumber(header, 'padding-top')).toBeCloseTo(12, 1);
+    expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(20, 1);
+    expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
+    const expandedButtonPositions = await buttonPositions();
+    await expectChromeAlignedToCards();
+
+    if (!supportsScrollTimeline) {
+      await scrollResultsTo(160);
+      await expect.poll(introHeight).toBeCloseTo(expandedHeight, 1);
+      expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
+      await expectChromeAlignedToCards();
+      continue;
+    }
+
+    await expect.poll(() => styleNumber(headerArt, 'opacity')).toBeCloseTo(0.16, 2);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(16, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.56, 1);
+
     await scrollResultsTo(80);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'false');
-    expect(
-      Number(await intro.evaluate((element) => getComputedStyle(element).opacity)),
-    ).toBeCloseTo(0.5);
+    await expectIntroPartiallyCollapsed(expandedHeight);
+    await expect.poll(() => styleNumber(header, 'padding-top')).toBeCloseTo(8, 1);
+    expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(10, 1);
+    expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0.5, 2);
+    expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0.08, 2);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(15.04, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.26, 1);
+    const halfCollapsedButtonPositions = await buttonPositions();
+    for (const control of ['github', 'theme']) {
+      expect(halfCollapsedButtonPositions[control]).toBeCloseTo(
+        expandedButtonPositions[control] + 6,
+        1,
+      );
+    }
+    if (viewport.width > 1023) {
+      expect(halfCollapsedButtonPositions['desktop-navigation']).toBeCloseTo(
+        expandedButtonPositions['desktop-navigation'] - 4,
+        1,
+      );
+    } else {
+      expect(halfCollapsedButtonPositions['drawer-navigation']).toBeCloseTo(
+        expandedButtonPositions['drawer-navigation'] - 6,
+        1,
+      );
+    }
+
     await scrollResultsTo(160);
-    await expect(header).toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'true');
-    await expect(intro).toHaveCSS('opacity', '0');
+    await expect.poll(introHeight).toBe(0);
+    await expect.poll(() => styleNumber(header, 'padding-top')).toBeCloseTo(4, 1);
+    expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(0, 1);
+    expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0, 2);
+    expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0, 2);
+    await expectChromeAlignedToCards(true, viewport.width <= 1023);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(14.08, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(1.8304, 1);
+    const collapsedButtonPositions = await buttonPositions();
+    for (const control of ['github', 'theme']) {
+      expect(collapsedButtonPositions[control]).toBeCloseTo(
+        expandedButtonPositions[control] + 12,
+        1,
+      );
+    }
+    if (viewport.width > 1023) {
+      expect(collapsedButtonPositions['desktop-navigation']).toBeCloseTo(
+        expandedButtonPositions['desktop-navigation'] - 8,
+        1,
+      );
+    } else {
+      expect(collapsedButtonPositions['drawer-navigation']).toBeCloseTo(
+        expandedButtonPositions['drawer-navigation'] - 12,
+        1,
+      );
+    }
     await expect(logo).toBeVisible();
     await expect(page.getByRole('link', { name: 'PopCircles on GitHub' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Switch to .* theme/ })).toBeVisible();
@@ -741,11 +963,25 @@ test('header follows results scroll progress and restores at the top', async ({ 
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
 
     await scrollResultsTo(80);
-    await expect(header).not.toHaveClass(/collapsed/);
+    await expectIntroPartiallyCollapsed(expandedHeight);
+    await page.setViewportSize({
+      width: viewport.width <= 1023 ? 320 : 1024,
+      height: viewport.height,
+    });
     await scrollResultsTo(0);
-    await expect(header).not.toHaveClass(/collapsed/);
-    await expect(intro).toHaveAttribute('aria-hidden', 'false');
-    await expect(intro).toHaveCSS('opacity', '1');
+    await expect.poll(timelineProgress).toBeCloseTo(0, 2);
+    const resizedExpandedHeight = await naturalIntroHeight();
+    await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
+    await scrollResultsTo(80);
+    await expectIntroPartiallyCollapsed(resizedExpandedHeight);
+
+    await scrollResultsTo(160);
+    await expect.poll(introHeight).toBe(0);
+    await expectChromeAlignedToCards(true, viewport.width <= 1023);
+
+    await scrollResultsTo(0);
+    await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
+    await expect.poll(() => styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
     const dimensions = await page.evaluate(() => ({
       documentHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
@@ -756,13 +992,15 @@ test('header follows results scroll progress and restores at the top', async ({ 
 
 test('header collapse respects reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
+  const intro = page.locator('#site-header__intro');
   await results.evaluate((region) => {
     region.scrollTop = 160;
-    region.dispatchEvent(new Event('scroll'));
   });
-  await expect(page.locator('.app-header')).toHaveClass(/collapsed/);
-  await expect(page.locator('.app-header')).toHaveCSS('transition-duration', '0s');
+  await expect
+    .poll(() => intro.evaluate((element) => element.getBoundingClientRect().height))
+    .toBe(0);
+  await expect(page.locator('#site-header')).toHaveCSS('transition-duration', '0s');
   await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
     'transition-duration',
     '0s',
@@ -787,7 +1025,7 @@ test('[viewport-and-scrolling] short narrow viewports keep navigation controls v
   ).toBeVisible();
 
   const dialog = page.getByRole('dialog', { name: 'Country navigation' });
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   const list = dialog.locator('.map-links-scroll');
   const longLink = dialog.getByRole('link', { name: longCountry.name });
 
@@ -917,7 +1155,7 @@ test('[map-presentation] emphasizes the map caption values and labels their unit
   );
   await page.reload();
 
-  const caption = page.locator('.figure-caption p');
+  const caption = page.locator('.map-caption p');
   await expect(caption).toHaveText(
     'radius: 212 km · population: 18,154,224 / 50.1% · Circle covers 21% of Afghanistan · centre: 35.0083, 69.1583 · nearest city: Charikar, Afghanistan (1 km away)',
   );
@@ -948,6 +1186,28 @@ test('World map figures stay stacked on desktop and mobile', async ({ page }) =>
     const second = await maps.nth(1).boundingBox();
     expect(second.y).toBeGreaterThan(first.y);
   }
+});
+
+test('[map-presentation] World and Country results share the same card presentation', async ({
+  page,
+}) => {
+  const cards = page.locator('#country-cards > .country-card');
+  const styles = await cards.evaluateAll((elements) =>
+    elements.slice(0, 3).map((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        borderColor: style.borderColor,
+        borderRadius: style.borderRadius,
+        borderStyle: style.borderStyle,
+        borderWidth: style.borderWidth,
+      };
+    }),
+  );
+
+  expect(styles[0].borderStyle).toBe('solid');
+  expect(styles[1]).toEqual(styles[0]);
+  expect(styles[2]).toEqual(styles[0]);
 });
 
 // --- Keyboard and accessibility ---
@@ -1089,7 +1349,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
   ]);
   await expect(logo.locator('svg[aria-hidden="true"]')).toHaveCount(2);
 
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   for (const [scrollTop, symbol] of [
     [4, 'frame-02'],
     [239, 'frame-72'],
@@ -1202,7 +1462,7 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
 test('[map-presentation] result links and boundary attribution use a quiet, smaller panel', async ({
   page,
 }) => {
-  const footer = page.locator('.figure-footer').first();
+  const footer = page.locator('.map-footer').first();
 
   for (const theme of ['dark', 'light']) {
     const styles = await footer.evaluate((element) => {
@@ -1266,7 +1526,7 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
       colorScheme: getComputedStyle(document.documentElement).colorScheme,
       documentHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
-      columns: getComputedStyle(document.querySelector('.explorer')).gridTemplateColumns,
+      columns: getComputedStyle(document.querySelector('#gallery-layout')).gridTemplateColumns,
       mapAspectRatio: Number.parseFloat(
         getComputedStyle(document.querySelector('.map-frame')).aspectRatio,
       ),
@@ -1276,7 +1536,9 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
   expect(visual.background).toBe('#0b1020');
   expect(visual.colorScheme).toBe('dark');
   expect(visual.documentHeight).toBeLessThanOrEqual(visual.viewportHeight);
-  expect(await page.getByRole('region', { name: 'Map results' }).isVisible()).toBe(true);
+  expect(await page.getByRole('region', { name: 'Country and World workspace' }).isVisible()).toBe(
+    true,
+  );
   expect(visual.columns.split(' ')).toHaveLength(2);
   expect(visual.mapAspectRatio).toBeCloseTo(11 / 6);
   await expect(page).toHaveScreenshot('gallery-desktop-dark.png');
@@ -1294,7 +1556,7 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
   expect(visual.colorScheme).toBe('dark');
   expect(visual.documentHeight).toBeLessThanOrEqual(visual.viewportHeight);
   expect(visual.columns.split(' ')).toHaveLength(1);
-  await expect(page.getByRole('navigation', { name: 'Map navigation' })).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'Country navigation' })).toBeHidden();
   expect(await page.getByRole('button', { name: 'Open maps navigation' }).isVisible()).toBe(true);
   await expect(page).toHaveScreenshot('gallery-mobile-dark.png');
 

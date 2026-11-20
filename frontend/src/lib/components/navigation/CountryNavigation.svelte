@@ -131,7 +131,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <dialog
-  id="country-browser-panel"
+  id="country-navigation-panel"
   bind:this={dialog}
   class:closing={drawerClosing}
   class:desktop-collapsed={desktopNavigationCollapsed && !mobileMode}
@@ -152,7 +152,7 @@
       class="desktop-collapse"
       type="button"
       aria-label="Collapse maps navigation"
-      aria-controls="country-browser-panel"
+      aria-controls="country-navigation-panel"
       aria-expanded={!desktopNavigationCollapsed}
       onclick={() => onDesktopCollapsedChange(true)}
       ><ChevronLeft size={20} strokeWidth={2} aria-hidden="true" /></button
@@ -160,7 +160,7 @@
     <button
       class="close"
       type="button"
-      aria-controls="country-browser-panel"
+      aria-controls="country-navigation-panel"
       aria-expanded={drawerOpen}
       aria-label="Close map navigation"
       onclick={onCloseDrawer}><X size={20} strokeWidth={2} aria-hidden="true" /></button
@@ -170,7 +170,7 @@
     <button
       type="button"
       aria-label="Expand maps navigation"
-      aria-controls="country-browser-panel"
+      aria-controls="country-navigation-panel"
       aria-expanded={!desktopNavigationCollapsed}
       onclick={() => onDesktopCollapsedChange(false)}
       ><ChevronRight size={20} strokeWidth={2} aria-hidden="true" /></button
@@ -179,7 +179,7 @@
       <Search size={20} strokeWidth={2} aria-hidden="true" />
     </button>
   </div>
-  <nav aria-label="Map navigation">
+  <nav id="country-navigation" aria-label="Country navigation">
     <search aria-label="Filter map navigation">
       <label class="search-label" for="country-search">
         Search countries <span class="status">Matching: {matches.length}</span>
@@ -210,7 +210,7 @@
         {query ? `Matching: ${matches.length}` : ''}
       </p>
     </search>
-    <section class="map-links" aria-label="Map choices">
+    <section id="country-links" aria-label="Country links">
       <header class="map-links-header">
         <ul class="map-pinned-links">
           <li>
@@ -405,6 +405,21 @@
   .rail-controls button:hover {
     border-color: var(--accent);
   }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    @media (min-width: 1024px) {
+      .navigation-header .desktop-collapse {
+        animation: collapse-navigation-button auto linear both;
+        animation-timeline: --results-scroll;
+        animation-range: 0px 160px;
+      }
+      @keyframes collapse-navigation-button {
+        to {
+          transform: translateX(-0.5rem);
+        }
+      }
+    }
+  }
   .navigation-header .close {
     display: none;
     flex: none;
@@ -414,7 +429,7 @@
   .rail-controls {
     display: none;
   }
-  .map-links {
+  #country-links {
     display: flex;
     flex: 1;
     min-height: 0;
@@ -425,7 +440,7 @@
       opacity 180ms ease,
       visibility 180ms allow-discrete;
   }
-  .map-links-header {
+  #country-links .map-links-header {
     flex: none;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--line);
@@ -484,7 +499,7 @@
   .desktop-collapsed .navigation-header {
     display: none;
   }
-  .desktop-collapsed .map-links {
+  .desktop-collapsed #country-links {
     opacity: 0;
     visibility: hidden;
   }
@@ -546,12 +561,6 @@
   }
   .status {
     font-size: 0.85rem;
-  }
-  button:focus-visible,
-  input:focus-visible,
-  a:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
   }
   .visually-hidden {
     position: absolute;
@@ -637,7 +646,7 @@
   @media (prefers-reduced-motion: reduce) {
     dialog,
     dialog::backdrop,
-    .map-links {
+    #country-links {
       transition: none;
     }
     dialog {

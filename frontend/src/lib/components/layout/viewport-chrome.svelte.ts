@@ -11,7 +11,6 @@ export function useViewportChrome(
   getFooter: () => HTMLElement | null,
 ) {
   let scrollPosition = $state(0);
-  let headerCollapseProgress = $state(0);
   let headerSpace = $state(0);
   let navigationHeaderSpace = $state(0);
   let footerSpace = $state(0);
@@ -28,7 +27,6 @@ export function useViewportChrome(
 
   function handleScroll() {
     scrollPosition = getResultsPanel()?.scrollTop ?? 0;
-    headerCollapseProgress = Math.min(scrollPosition / 160, 1);
     if (scrollPosition === 0) requestAnimationFrame(measureChrome);
   }
 
@@ -46,9 +44,6 @@ export function useViewportChrome(
   return {
     get scrollPosition() {
       return scrollPosition;
-    },
-    get headerCollapseProgress() {
-      return headerCollapseProgress;
     },
     get headerSpace() {
       return headerSpace;

@@ -28,7 +28,7 @@ test('[navigation-and-history] search filters countries and updates available le
     onDrawerClosed: vi.fn(),
     onDesktopCollapsedChange: vi.fn(),
   });
-  const navigation = screen.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = screen.getByRole('navigation', { name: 'Country navigation' });
   const search = navigation.getByRole('searchbox', { name: 'Search countries' });
   const alpineJump = navigation.getByRole('button', {
     name: 'Jump to countries starting with A',

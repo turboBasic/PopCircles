@@ -2,10 +2,10 @@
   import { onMount } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { fade } from 'svelte/transition';
-  import AppHeader from '#lib/components/layout/AppHeader.svelte';
-  import AppFooter from '#lib/components/layout/AppFooter.svelte';
+  import SiteHeader from '#lib/components/layout/SiteHeader.svelte';
+  import SiteFooter from '#lib/components/layout/SiteFooter.svelte';
   import CountryNavigation from '#lib/components/navigation/CountryNavigation.svelte';
-  import GalleryWorkspace from '#lib/components/gallery/GalleryWorkspace.svelte';
+  import Gallery from '#lib/components/gallery/Gallery.svelte';
   import { entryFromHash, countryUrl } from '#lib/utils/gallery';
   import { useViewportChrome } from '#lib/components/layout/viewport-chrome.svelte.ts';
   import type { GalleryData, GalleryEntry } from '#lib/types/gallery';
@@ -80,7 +80,10 @@
   function revealEntry(entry: GalleryEntry) {
     requestAnimationFrame(() => {
       scrollToEntry(entry, 'smooth');
-      document.getElementById(`map-heading-${entry.anchor}`)?.focus({ preventScroll: true });
+      document
+        .getElementById(entry.anchor)
+        ?.querySelector<HTMLElement>('header h2')
+        ?.focus({ preventScroll: true });
     });
   }
 
@@ -150,6 +153,7 @@
     viewport.addEventListener('change', updateMobileMode);
     updateMobileMode();
     hash = window.location.hash;
+    const hasInitialFragment = Boolean(window.location.hash);
     desktopNavigationCollapsed = readStorage(desktopNavigationStorageKey) === 'true';
     themeLight = readStorage(themeStorageKey) === 'light';
 
@@ -161,7 +165,13 @@
       .then((value) => {
         if (!active) return;
         data = value;
-        requestAnimationFrame(() => scrollToEntry(selectedEntry, 'auto'));
+        requestAnimationFrame(() => {
+          scrollToEntry(selectedEntry, 'auto');
+          if (!hasInitialFragment && document.activeElement === document.body) {
+            resultsPanel?.focus({ preventScroll: true });
+            resultsPanel?.setAttribute('data-auto-focused', '');
+          }
+        });
       })
       .catch((cause) => {
         if (active) error = cause instanceof Error ? cause.message : String(cause);
@@ -185,12 +195,11 @@
 </svelte:head>
 
 <div
-  class="app-shell"
+  id="app-shell"
   style={`--header-space: ${viewportChrome.headerSpace}px; --navigation-header-space: ${viewportChrome.navigationHeaderSpace}px; --footer-space: ${viewportChrome.footerSpace}px`}
 >
-  <AppHeader
+  <SiteHeader
     scrollPosition={viewportChrome.scrollPosition}
-    headerCollapseProgress={viewportChrome.headerCollapseProgress}
     {data}
     {themeLight}
     {drawerOpen}
@@ -210,7 +219,7 @@
         <p role="status">Loading gallery…</p>
       </div>
     {:else}
-      <div class="explorer" class:nav-collapsed={desktopNavigationCollapsed}>
+      <div id="gallery-layout" class:nav-collapsed={desktopNavigationCollapsed}>
         <CountryNavigation
           worldEntry={entries[0]}
           countries={data.countries}
@@ -224,7 +233,7 @@
           onDesktopCollapsedChange={setDesktopNavigationCollapsed}
         />
 
-        <GalleryWorkspace
+        <Gallery
           {entries}
           {selectedEntry}
           bind:resultsPanel
@@ -234,7 +243,7 @@
       </div>
     {/if}
   </main>
-  <AppFooter bind:footerElement />
+  <SiteFooter bind:footerElement />
 </div>
 
 {#if copyStatus}
@@ -250,7 +259,8 @@
 {/if}
 
 <style>
-  .app-shell {
+  #app-shell {
+    --country-inline-padding: 1.25rem;
     position: relative;
     display: grid;
     width: min(1600px, calc(100% - 2rem));
@@ -258,6 +268,12 @@
     min-height: 0;
     margin: auto;
     grid-template-rows: minmax(0, 1fr);
+  }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    #app-shell {
+      timeline-scope: --results-scroll;
+    }
   }
   main {
     display: grid;
@@ -273,7 +289,7 @@
   .workspace-message p {
     margin-block: 1rem;
   }
-  .explorer {
+  #gallery-layout {
     display: grid;
     min-width: 0;
     min-height: 0;
@@ -296,24 +312,25 @@
     border-radius: 0.75rem;
     box-shadow: 0 0.5rem 2rem var(--shadow);
   }
-  .explorer.nav-collapsed {
+  #gallery-layout.nav-collapsed {
     grid-template-columns: minmax(60px, 60px) minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
-    .app-shell {
+    #app-shell {
+      --country-inline-padding: 0.5rem;
       width: calc(100% - 1rem);
     }
-    .explorer {
+    #gallery-layout {
       grid-template-columns: 1fr;
       grid-template-rows: minmax(0, 1fr);
       gap: 0;
     }
-    .explorer.nav-collapsed {
+    #gallery-layout.nav-collapsed {
       grid-template-columns: 1fr;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .explorer {
+    #gallery-layout {
       transition: none;
     }
   }

@@ -14,33 +14,39 @@
   }
 </script>
 
-<a class="home-link" href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
-  <span class="brand-text" aria-hidden="true">
-    <span class="letter-slot">P</span>
-    <span class="letter-slot globe-slot"
-      ><span class="globe-fallback">o</span><svg
-        class="globe-letter"
-        viewBox="0 0 512 512"
-        style:scale="1.07"
-        aria-hidden="true"><use href={`${globeSprite}#${globeSymbol}`}></use></svg
-      ></span
+<div id="logo">
+  <a href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
+    <span class="brand-text" aria-hidden="true">
+      <span class="letter-slot">P</span>
+      <span class="letter-slot globe-slot"
+        ><span class="globe-fallback">o</span><svg
+          class="globe-letter"
+          viewBox="0 0 512 512"
+          style:scale="1.07"
+          aria-hidden="true"><use href={`${globeSprite}#${globeSymbol}`}></use></svg
+        ></span
+      >
+      <span class="letter-slot">p</span>
+      <span class="letter-slot">C</span>
+      <span class="letter-slot">i</span>
+      <span class="letter-slot">r</span>
+      <span class="letter-slot">c</span>
+      <span class="letter-slot">l</span>
+      <span class="letter-slot">e</span>
+      <span class="letter-slot">s</span>
+    </span>
+    <svg class="trailing-globe" viewBox="0 0 512 512" aria-hidden="true"
+      ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
     >
-    <span class="letter-slot">p</span>
-    <span class="letter-slot">C</span>
-    <span class="letter-slot">i</span>
-    <span class="letter-slot">r</span>
-    <span class="letter-slot">c</span>
-    <span class="letter-slot">l</span>
-    <span class="letter-slot">e</span>
-    <span class="letter-slot">s</span>
-  </span>
-  <svg class="trailing-globe" viewBox="0 0 512 512" aria-hidden="true"
-    ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
-  >
-</a>
+  </a>
+</div>
 
 <style>
-  .home-link {
+  #logo {
+    display: flex;
+    align-items: center;
+  }
+  #logo > a {
     display: flex;
     align-items: center;
     gap: 0.65rem;
@@ -48,11 +54,10 @@
     font:
       400 1rem/1 'Lilita One',
       sans-serif;
-    letter-spacing: 0.16em;
     text-decoration: none;
     text-transform: uppercase;
-    font-size: var(--logo-size);
-    letter-spacing: var(--logo-spacing);
+    font-size: 1rem;
+    letter-spacing: 0.16em;
   }
   .brand-text {
     display: flex;
@@ -87,5 +92,19 @@
     display: none;
     width: 24px;
     height: 24px;
+  }
+  @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
+    (animation-range: 0px 160px) {
+    #logo > a {
+      animation: collapse-logo auto linear both;
+      animation-timeline: --results-scroll;
+      animation-range: 0px 160px;
+    }
+    @keyframes collapse-logo {
+      to {
+        font-size: 0.88rem;
+        letter-spacing: 0.13em;
+      }
+    }
   }
 </style>
