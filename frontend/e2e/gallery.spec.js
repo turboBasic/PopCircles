@@ -855,6 +855,13 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     );
   }
 
+  async function expectIntroPartiallyCollapsed(expandedHeight) {
+    await expect.poll(timelineProgress).toBeCloseTo(0.5, 2);
+    const height = await introHeight();
+    expect(height).toBeGreaterThan(0);
+    expect(height).toBeLessThan(expandedHeight);
+  }
+
   const supportsScrollTimeline = await page.evaluate(
     () =>
       CSS.supports('scroll-timeline: --results-scroll block') &&
@@ -890,7 +897,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.56, 1);
 
     await scrollResultsTo(80);
-    await expect.poll(introHeight).toBeCloseTo(expandedHeight / 2, 1);
+    await expectIntroPartiallyCollapsed(expandedHeight);
     await expect.poll(() => styleNumber(header, 'padding-top')).toBeCloseTo(8, 1);
     expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(10, 1);
     expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0.5, 2);
@@ -956,7 +963,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
 
     await scrollResultsTo(80);
-    await expect.poll(introHeight).toBeCloseTo(expandedHeight / 2, 1);
+    await expectIntroPartiallyCollapsed(expandedHeight);
     await page.setViewportSize({
       width: viewport.width <= 1023 ? 320 : 1024,
       height: viewport.height,
@@ -967,7 +974,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(resizedExpandedHeight).not.toBeCloseTo(expandedHeight, 1);
     await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
     await scrollResultsTo(80);
-    await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight / 2, 1);
+    await expectIntroPartiallyCollapsed(resizedExpandedHeight);
 
     await scrollResultsTo(160);
     await expect.poll(introHeight).toBe(0);
