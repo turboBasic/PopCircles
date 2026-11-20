@@ -404,6 +404,7 @@ def test_publish_creates_the_single_draft_handoff_release(
 
     pg.publish()
 
+    assert ("gh", "auth", "status", "--hostname", "github.com") in github.commands
     creates = [command for command in github.commands if command[:3] == ("gh", "release", "create")]
     assert len(creates) == 1
     assert "--draft" in creates[0]
