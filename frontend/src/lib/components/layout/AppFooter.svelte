@@ -6,12 +6,12 @@
   let { footerElement = $bindable() }: Props = $props();
 </script>
 
-<footer id="site-footer" bind:this={footerElement} class="site-footer">
+<footer id="site-footer" bind:this={footerElement}>
   <a href="https://github.com/turboBasic">A project by Andrii Melnyk</a>
 </footer>
 
 <style>
-  .site-footer {
+  #site-footer {
     position: absolute;
     right: 0;
     bottom: 0;
@@ -24,7 +24,7 @@
     background: transparent;
     font-size: 0.72rem;
   }
-  .site-footer::before {
+  #site-footer::before {
     position: absolute;
     z-index: 0;
     inset: auto 0 0;
@@ -37,14 +37,14 @@
     pointer-events: none;
     content: '';
   }
-  .site-footer a {
+  #site-footer a {
     position: relative;
     z-index: 1;
     color: var(--text);
     text-decoration: none;
   }
-  .site-footer a:hover,
-  .site-footer a:focus-visible {
+  #site-footer a:hover,
+  #site-footer a:focus-visible {
     color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 0.2em;

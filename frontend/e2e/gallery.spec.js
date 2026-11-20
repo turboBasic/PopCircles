@@ -831,7 +831,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
       const figure = bounds('#world-result figure');
       const theme = bounds('#site-actions button');
       const drawer = bounds('#site-header .drawer-toggle');
-      const footer = bounds('.site-footer a');
+      const footer = bounds('#site-footer a');
       return {
         countryLeft: country?.left,
         countryRight: country?.right,
