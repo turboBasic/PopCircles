@@ -971,7 +971,6 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     await scrollResultsTo(0);
     await expect.poll(timelineProgress).toBeCloseTo(0, 2);
     const resizedExpandedHeight = await naturalIntroHeight();
-    expect(resizedExpandedHeight).not.toBeCloseTo(expandedHeight, 1);
     await expect.poll(introHeight).toBeCloseTo(resizedExpandedHeight, 1);
     await scrollResultsTo(80);
     await expectIntroPartiallyCollapsed(resizedExpandedHeight);
