@@ -98,13 +98,14 @@ test.beforeEach(async ({ page }) => {
 
 // --- Navigation and history ---
 
-test('[keyboard-and-accessibility] major page regions have unique semantic IDs', async ({
-  page,
-}) => {
+test('[keyboard-and-accessibility] major page components have unique IDs', async ({ page }) => {
   for (const id of [
     'site-header',
     'site-header__intro',
     'site-header__intro-content',
+    'header-art',
+    'top-bar',
+    'app-shell',
     'country-navigation-panel',
     'country-navigation',
     'country-links',
@@ -777,7 +778,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
   const header = page.locator('#site-header');
   const logo = page.getByRole('link', { name: 'PopCircles home' });
   const intro = page.locator('#site-header__intro');
-  const headerArt = page.locator('.header-art');
+  const headerArt = page.locator('#header-art');
 
   async function scrollResultsTo(top) {
     await results.evaluate((region, position) => {

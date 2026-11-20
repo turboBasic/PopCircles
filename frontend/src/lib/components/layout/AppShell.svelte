@@ -194,7 +194,7 @@
 </svelte:head>
 
 <div
-  class="app-shell"
+  id="app-shell"
   style={`--header-space: ${viewportChrome.headerSpace}px; --navigation-header-space: ${viewportChrome.navigationHeaderSpace}px; --footer-space: ${viewportChrome.footerSpace}px`}
 >
   <AppHeader
@@ -258,7 +258,7 @@
 {/if}
 
 <style>
-  .app-shell {
+  #app-shell {
     --country-inline-padding: 1.25rem;
     position: relative;
     display: grid;
@@ -270,7 +270,7 @@
   }
   @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
     (animation-range: 0px 160px) {
-    .app-shell {
+    #app-shell {
       timeline-scope: --results-scroll;
     }
   }
@@ -315,7 +315,7 @@
     grid-template-columns: minmax(60px, 60px) minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
-    .app-shell {
+    #app-shell {
       --country-inline-padding: 0.5rem;
       width: calc(100% - 1rem);
     }

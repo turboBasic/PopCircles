@@ -29,9 +29,9 @@
 
 <header id="site-header" bind:this={headerElement}>
   {#if data?.world[0]}
-    <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
+    <div id="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
-  <div class="top-bar">
+  <div id="top-bar">
     <button
       class="drawer-toggle"
       class:hidden={drawerOpen}
@@ -102,7 +102,7 @@
     pointer-events: none;
     content: '';
   }
-  .header-art {
+  #header-art {
     position: absolute;
     inset: 0 auto 0 50%;
     width: 100vw;
@@ -112,7 +112,7 @@
     pointer-events: none;
     opacity: 0.16;
   }
-  .header-art img {
+  #header-art img {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -122,7 +122,7 @@
     transform: translate(-50%, -50%);
     filter: grayscale(1) brightness(0.65);
   }
-  .top-bar {
+  #top-bar {
     position: relative;
     z-index: 2;
     display: flex;
@@ -151,7 +151,7 @@
       animation-timeline: --results-scroll;
       animation-range: 0px 160px;
     }
-    .header-art {
+    #header-art {
       animation: fade-header-art auto linear both;
       animation-timeline: --results-scroll;
       animation-range: 0px 160px;
