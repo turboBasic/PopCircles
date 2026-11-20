@@ -47,7 +47,7 @@
   });
 </script>
 
-<figure>
+<figure class="map-figure">
   <a class="map-link" href={`#${entryAnchor}`}>
     <div class="map-frame" style:aspect-ratio={MAP_ASPECT_RATIO}>
       {#if !loaded && !failed}<span class="image-status">Loading map…</span>{/if}
@@ -65,7 +65,7 @@
   </a>
   <figcaption>
     {#if captionView}
-      <div class="figure-caption">
+      <div class="map-caption">
         <p>
           radius: <strong>{captionView.radius}</strong> · population:
           <strong>{captionView.population}</strong>
@@ -86,7 +86,7 @@
         </p>
       </div>
     {/if}
-    <footer class="figure-footer">
+    <footer class="map-footer">
       <span class="figure-actions">
         <a class="caption-link" href={figure.document}>
           <FileText size={16} strokeWidth={2} aria-hidden="true" />
@@ -107,7 +107,7 @@
 </figure>
 
 <style>
-  figure {
+  .map-figure {
     min-width: 0;
     margin: 0;
     overflow: hidden;
@@ -124,7 +124,7 @@
   .map-link {
     display: block;
   }
-  figure img {
+  .map-figure img {
     position: absolute;
     inset: 0;
     display: block;
@@ -133,7 +133,7 @@
     object-fit: contain;
     opacity: 0;
   }
-  figure img.loaded {
+  .map-figure img.loaded {
     opacity: 1;
   }
   .image-status {
@@ -150,13 +150,13 @@
     color: var(--muted);
     font-size: 0.85rem;
   }
-  .figure-caption {
+  .map-caption {
     padding: 0.75rem 1rem;
   }
   figcaption p {
     margin: 0 0 0.5rem;
   }
-  .figure-footer {
+  .map-footer {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -170,7 +170,7 @@
     text-align: right;
   }
   figcaption a,
-  .figure-footer a {
+  .map-footer a {
     color: inherit;
     text-decoration-color: var(--line);
     text-underline-offset: 3px;

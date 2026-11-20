@@ -11,16 +11,16 @@
   let { entry, isSelected, onCopy }: Props = $props();
 </script>
 
-<section class="country" class:country-result={entry.anchor !== 'world-result'} id={entry.anchor}>
+<section class="country-card" id={entry.anchor}>
   <header>
-    <h2 id={`map-heading-${entry.anchor}`} tabindex="-1">
+    <h2 id={`country-card__heading-${entry.anchor}`} tabindex="-1">
       <a href={`#${entry.anchor}`}>{entry.name}</a>
     </h2>
   </header>
   {#if entry.missing}
     <p class="empty">No 50% result is available for this country.</p>
   {:else}
-    <div class="figure-grid">
+    <div class="map-grid">
       {#each entry.figures as figure (figure.map)}
         <MapFigure
           {figure}
@@ -35,7 +35,7 @@
 </section>
 
 <style>
-  .country {
+  .country-card {
     scroll-margin-top: 1rem;
     margin-bottom: 0.8rem;
     padding: 1.25rem var(--country-inline-padding);
@@ -43,36 +43,30 @@
     border: 1px solid var(--line);
     border-radius: 0.8rem;
   }
-  .country-result {
-    border: 0;
-  }
-  :global(.country-result + .country-result) {
-    border-top: 1px dotted var(--line);
-  }
   .empty {
     color: var(--muted);
   }
-  .country h2 a {
+  .country-card h2 a {
     color: inherit;
     text-decoration: none;
   }
-  .country h2 a:hover {
+  .country-card h2 a:hover {
     text-decoration: underline;
     text-underline-offset: 0.2em;
   }
-  .figure-grid {
+  .map-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     gap: 1rem;
   }
-  #world-result .figure-grid {
+  #world-result .map-grid {
     grid-template-columns: minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
-    .country {
+    .country-card {
       padding-block: 0.5rem;
     }
-    .country h2 {
+    .country-card h2 {
       margin-block-start: 0.4em;
     }
   }

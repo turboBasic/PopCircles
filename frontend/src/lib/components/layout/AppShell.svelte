@@ -80,7 +80,9 @@
   function revealEntry(entry: GalleryEntry) {
     requestAnimationFrame(() => {
       scrollToEntry(entry, 'smooth');
-      document.getElementById(`map-heading-${entry.anchor}`)?.focus({ preventScroll: true });
+      document
+        .getElementById(`country-card__heading-${entry.anchor}`)
+        ?.focus({ preventScroll: true });
     });
   }
 
@@ -216,7 +218,7 @@
         <p role="status">Loading gallery…</p>
       </div>
     {:else}
-      <div class="explorer" class:nav-collapsed={desktopNavigationCollapsed}>
+      <div id="gallery-layout" class:nav-collapsed={desktopNavigationCollapsed}>
         <CountryNavigation
           worldEntry={entries[0]}
           countries={data.countries}
@@ -286,7 +288,7 @@
   .workspace-message p {
     margin-block: 1rem;
   }
-  .explorer {
+  #gallery-layout {
     display: grid;
     min-width: 0;
     min-height: 0;
@@ -309,7 +311,7 @@
     border-radius: 0.75rem;
     box-shadow: 0 0.5rem 2rem var(--shadow);
   }
-  .explorer.nav-collapsed {
+  #gallery-layout.nav-collapsed {
     grid-template-columns: minmax(60px, 60px) minmax(0, 1fr);
   }
   @media (max-width: 1023px) {
@@ -317,17 +319,17 @@
       --country-inline-padding: 0.5rem;
       width: calc(100% - 1rem);
     }
-    .explorer {
+    #gallery-layout {
       grid-template-columns: 1fr;
       grid-template-rows: minmax(0, 1fr);
       gap: 0;
     }
-    .explorer.nav-collapsed {
+    #gallery-layout.nav-collapsed {
       grid-template-columns: 1fr;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .explorer {
+    #gallery-layout {
       transition: none;
     }
   }

@@ -27,7 +27,7 @@
   }: Props = $props();
 </script>
 
-<header id="site-header" bind:this={headerElement} class="app-header">
+<header id="site-header" bind:this={headerElement}>
   {#if data?.world[0]}
     <div class="header-art" aria-hidden="true"><img src="./header-background.png" alt="" /></div>
   {/if}
@@ -36,7 +36,7 @@
       class="drawer-toggle"
       class:hidden={drawerOpen}
       type="button"
-      aria-controls="country-browser-panel"
+      aria-controls="country-navigation-panel"
       aria-expanded={drawerOpen}
       aria-label="Open maps navigation"
       onclick={onOpenDrawer}><Menu size={20} strokeWidth={2} aria-hidden="true" /></button
@@ -69,8 +69,8 @@
     {/if}
   </div>
   {#if data}
-    <div class="workspace-intro">
-      <div class="workspace-intro-content">
+    <div id="site-header__intro" class="workspace-intro">
+      <div id="site-header__intro-content" class="workspace-intro-content">
         <h1>One circle, half the population.</h1>
         <p>Explore country and world population circles.</p>
       </div>
@@ -131,7 +131,7 @@
     gap: 0.75rem;
     pointer-events: auto;
   }
-  .workspace-intro {
+  #site-header__intro {
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     position: relative;
@@ -140,7 +140,7 @@
     overflow: hidden;
     opacity: 1;
   }
-  .workspace-intro-content {
+  #site-header__intro-content {
     min-block-size: 0;
     overflow: hidden;
   }
@@ -156,7 +156,7 @@
       animation-timeline: --results-scroll;
       animation-range: 0px 160px;
     }
-    .workspace-intro {
+    #site-header__intro {
       animation: collapse-intro auto linear both;
       animation-timeline: --results-scroll;
       animation-range: 0px 160px;
@@ -179,14 +179,14 @@
       }
     }
   }
-  .workspace-intro h1 {
+  #site-header__intro h1 {
     max-width: 850px;
     margin: 0 0 0.5rem;
     font-size: clamp(2rem, 5vw, 4rem);
     line-height: 1.08;
     letter-spacing: -0.045em;
   }
-  .workspace-intro p {
+  #site-header__intro p {
     margin: 0;
     color: var(--muted);
   }

@@ -101,15 +101,27 @@ test.beforeEach(async ({ page }) => {
 test('[keyboard-and-accessibility] major page regions have unique semantic IDs', async ({
   page,
 }) => {
-  for (const id of ['site-header', 'country-navigation', 'gallery', 'site-footer'])
+  for (const id of [
+    'site-header',
+    'site-header__intro',
+    'site-header__intro-content',
+    'country-navigation-panel',
+    'country-navigation',
+    'country-links',
+    'gallery-layout',
+    'gallery',
+    'country-cards',
+    'site-footer',
+  ])
     await expect(page.locator(`#${id}`)).toHaveCount(1);
 });
 
 test('[navigation-and-history] searches country navigation and selects a country', async ({
   page,
 }) => {
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
+  await expect(page.getByRole('region', { name: 'Country links' })).toBeVisible();
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   await expect(navigation.getByRole('link', { name: 'World' })).toHaveAttribute(
     'href',
     '#world-result',
@@ -120,7 +132,7 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(navigation.getByRole('search', { name: 'Filter map navigation' })).toBeVisible();
   await expect(navigation.getByText('Matching: 80')).toBeVisible();
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   await expect(navigation.getByRole('link')).toHaveCount(2);
   await expect(navigation.locator('.search-label .status')).toHaveText('Matching: 1');
   const countryGroup = navigation.getByRole('heading', { name: 'C', exact: true });
@@ -131,14 +143,14 @@ test('[navigation-and-history] searches country navigation and selects a country
   await expect(navigation.getByRole('searchbox', { name: 'Search countries' })).toHaveValue('');
   await navigation.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
   await page
-    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('navigation', { name: 'Country navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
 
   await expect(page).toHaveURL(/#country-42$/);
   await expect(page.locator('#country-42')).toBeVisible();
   await expect(page.locator('#country-41')).toBeVisible();
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   const mapLink = page.getByRole('link', { name: 'Country 42 map' });
   await expect(mapLink).toHaveAttribute('href', '#country-42');
   await mapLink.click();
@@ -146,7 +158,7 @@ test('[navigation-and-history] searches country navigation and selects a country
   await navigation.getByRole('link', { name: 'World' }).click();
   await expect(page).toHaveURL(/#world-result$/);
   await expect(page.locator('#world-result')).toBeInViewport();
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
 });
 
 test('[keyboard-and-accessibility] Gallery receives focus and arrow keys on initial load', async ({
@@ -199,10 +211,10 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   });
 
   await page
-    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('navigation', { name: 'Country navigation' })
     .getByRole('link', { name: 'Country 42' })
     .click();
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   await expect(page).toHaveURL(/#country-42$/);
   await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBeGreaterThan(0);
 
@@ -211,15 +223,15 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   await expect(page).toHaveURL('/');
   await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
   await expect(
-    page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
+    page.getByRole('navigation', { name: 'Country navigation' }).locator('[aria-current="page"]'),
   ).toHaveCount(0);
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   expect(galleryDataRequests).toBe(0);
 
   await page.goBack();
   await expect(page).toHaveURL(/#country-42$/);
   await expect(
-    page.getByRole('navigation', { name: 'Map navigation' }).getByRole('link', {
+    page.getByRole('navigation', { name: 'Country navigation' }).getByRole('link', {
       name: 'Country 42',
     }),
   ).toHaveAttribute('aria-current', 'page');
@@ -228,14 +240,14 @@ test('[navigation-and-history] logo returns to the start and clears the country 
   await expect(page).toHaveURL('/');
   await expect.poll(() => results.evaluate((region) => region.scrollTop)).toBe(0);
   await expect(
-    page.getByRole('navigation', { name: 'Map navigation' }).locator('[aria-current="page"]'),
+    page.getByRole('navigation', { name: 'Country navigation' }).locator('[aria-current="page"]'),
   ).toHaveCount(0);
   expect(galleryDataRequests).toBe(0);
 });
 
 test('scrolls the selected country into view in the navigation list', async ({ page }) => {
   await page.goto('/#country-80');
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   const selectedLink = navigation.getByRole('link', { name: 'Country 80' });
   await expect(selectedLink).toHaveAttribute('aria-current', 'page');
   await expect(selectedLink).toBeInViewport();
@@ -255,8 +267,8 @@ test('[navigation-and-history] [keyboard-and-accessibility] A-Z jumps scroll onl
   await page.emulateMedia({ reducedMotion: 'reduce' });
 
   const dialog = page.getByRole('dialog', { name: 'Country navigation' });
-  const navigation = dialog.getByRole('navigation', { name: 'Map navigation' });
-  const results = page.getByRole('region', { name: 'Map results' });
+  const navigation = dialog.getByRole('navigation', { name: 'Country navigation' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   const countryList = navigation.locator('.map-links-scroll');
   const letterIndex = navigation.getByRole('group', { name: 'Jump to countries by letter' });
   const startUrl = page.url();
@@ -299,7 +311,7 @@ test('[navigation-and-history] A-Z availability follows the displayed country gr
   page,
 }) => {
   await useAlphabetFixture(page);
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   const letterIndex = navigation.getByRole('group', { name: 'Jump to countries by letter' });
   const letter = (value) =>
     letterIndex.getByRole('button', {
@@ -323,13 +335,13 @@ test('[navigation-and-history] direct links, Back and Forward scroll to the sele
 }) => {
   await page.goto('/#country-42');
   const drawer = page.getByRole('dialog', { name: 'Country navigation' });
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   await expect(navigation.getByRole('link', { name: 'Country 42' })).toHaveAttribute(
     'aria-current',
     'page',
   );
-  const results = page.getByRole('region', { name: 'Map results' });
-  await expect(page.locator('.map-results > .country')).toHaveCount(81);
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
+  await expect(page.locator('#country-cards > .country-card')).toHaveCount(81);
   await expect(page.locator('#country-42')).toBeInViewport();
   await navigation.getByRole('link', { name: 'Country 01' }).click();
   await expect(page).toHaveURL(/#country-1$/);
@@ -360,7 +372,7 @@ test('[navigation-and-history] result fragment links update selection and browse
   page,
 }) => {
   await page.goto('/#country-42');
-  const navigation = page.getByRole('navigation', { name: 'Map navigation' });
+  const navigation = page.getByRole('navigation', { name: 'Country navigation' });
   const selectCountry = async (name) =>
     expect(navigation.getByRole('link', { name })).toHaveAttribute('aria-current', 'page');
 
@@ -379,7 +391,7 @@ test('[navigation-and-history] result fragment links update selection and browse
 });
 
 test('drawer selection scrolls the results smoothly instead of jumping', async ({ page }) => {
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   await results.evaluate((region) => {
     window.galleryScrollSamples = [];
     let frames = 0;
@@ -391,7 +403,7 @@ test('drawer selection scrolls the results smoothly instead of jumping', async (
   });
 
   await page
-    .getByRole('navigation', { name: 'Map navigation' })
+    .getByRole('navigation', { name: 'Country navigation' })
     .getByRole('link', { name: 'Country 80', exact: true })
     .click();
   await expect(page).toHaveURL(/#country-80$/);
@@ -431,8 +443,10 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
     await page.setViewportSize({ width, height: 768 });
     const drawer = page.getByRole('dialog', { name: 'Country navigation' });
     await expect(drawer).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Map navigation' })).toHaveCount(1);
-    const workspaceBefore = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+    await expect(page.getByRole('navigation', { name: 'Country navigation' })).toHaveCount(1);
+    const workspaceBefore = await page
+      .getByRole('region', { name: 'Country and World workspace' })
+      .boundingBox();
     const drawerBounds = await drawer.boundingBox();
     expect(drawerBounds.x).toBeGreaterThanOrEqual(0);
     expect(drawerBounds.width).toBeGreaterThanOrEqual(300);
@@ -445,7 +459,9 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
       .poll(() => drawer.evaluate((element) => element.getBoundingClientRect().width))
       .toBeLessThanOrEqual(64);
     const rail = await drawer.boundingBox();
-    const workspaceExpanded = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+    const workspaceExpanded = await page
+      .getByRole('region', { name: 'Country and World workspace' })
+      .boundingBox();
     expect(rail.width).toBeGreaterThanOrEqual(56);
     expect(rail.width).toBeLessThanOrEqual(64);
     await expect(drawer.getByRole('link', { name: 'World' })).toBeHidden();
@@ -457,12 +473,12 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
     await expect
       .poll(() =>
         page
-          .getByRole('region', { name: 'Map results' })
+          .getByRole('region', { name: 'Country and World workspace' })
           .evaluate((element) => element.getBoundingClientRect().width),
       )
       .toBeLessThan(workspaceExpanded.width);
     const workspaceAfterExpand = await page
-      .getByRole('region', { name: 'Map results' })
+      .getByRole('region', { name: 'Country and World workspace' })
       .boundingBox();
     expect(workspaceAfterExpand.width).toBeLessThan(workspaceExpanded.width);
     const list = drawer.locator('.map-links-scroll');
@@ -476,13 +492,13 @@ test('[responsive-navigation] desktop navigation collapses to a rail without ove
     await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(listScrollTop);
     await page.getByRole('searchbox', { name: 'Search countries' }).fill('country 42');
     await drawer
-      .getByRole('navigation', { name: 'Map navigation' })
+      .getByRole('navigation', { name: 'Country navigation' })
       .getByRole('link', { name: 'Country 42', exact: true })
       .click();
     await expect(page).toHaveURL(/#country-42$/);
     await expect(
       drawer
-        .getByRole('navigation', { name: 'Map navigation' })
+        .getByRole('navigation', { name: 'Country navigation' })
         .getByRole('link', { name: 'Country 42', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('searchbox', { name: 'Search countries' })).toHaveValue(
@@ -522,23 +538,29 @@ test('[responsive-navigation] mobile navigation remains modal and closes on resi
   await page.getByRole('button', { name: 'Open maps navigation' }).click();
   await expect(drawer).toBeVisible();
   await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(true);
-  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).not.toBeNull();
-  const mobileWorkspace = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  expect(
+    await page.getByRole('region', { name: 'Country and World workspace' }).boundingBox(),
+  ).not.toBeNull();
+  const mobileWorkspace = await page
+    .getByRole('region', { name: 'Country and World workspace' })
+    .boundingBox();
   await drawer.getByRole('button', { name: 'Close map navigation' }).click();
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('button', { name: 'Open maps navigation' })).toHaveAttribute(
     'aria-expanded',
     'false',
   );
-  expect(await page.getByRole('region', { name: 'Map results' }).boundingBox()).toEqual(
-    mobileWorkspace,
-  );
+  expect(
+    await page.getByRole('region', { name: 'Country and World workspace' }).boundingBox(),
+  ).toEqual(mobileWorkspace);
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(drawer).toBeVisible();
   await expect.poll(() => drawer.evaluate((element) => element.matches(':modal'))).toBe(false);
   await page.getByRole('button', { name: 'Collapse maps navigation' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobileResults = await page.getByRole('region', { name: 'Map results' }).boundingBox();
+  const mobileResults = await page
+    .getByRole('region', { name: 'Country and World workspace' })
+    .boundingBox();
   expect(mobileResults.x).toBeLessThan(20);
   expect(mobileResults.width).toBeGreaterThan(350);
   await page.setViewportSize({ width: 1024, height: 768 });
@@ -562,7 +584,7 @@ test('[responsive-navigation] [keyboard-and-accessibility] country navigation is
     'false',
   );
   const trigger = page.getByRole('button', { name: 'Open maps navigation' });
-  await expect(trigger).toHaveAttribute('aria-controls', 'country-browser-panel');
+  await expect(trigger).toHaveAttribute('aria-controls', 'country-navigation-panel');
   const triggerBounds = await trigger.boundingBox();
   expect(triggerBounds.width).toBeGreaterThanOrEqual(44);
   expect(triggerBounds.height).toBeGreaterThanOrEqual(44);
@@ -635,7 +657,7 @@ test('[responsive-navigation] mobile selection and viewport changes preserve que
   await dialog.getByRole('link', { name: 'Country 42', exact: true }).click();
   await expect(page).toHaveURL(/#country-42$/);
   await expect(dialog).toBeHidden();
-  await expect(page.locator('#map-heading-country-42')).toBeFocused();
+  await expect(page.locator('#country-card__heading-country-42')).toBeFocused();
   await trigger.click();
   await expect(search).toHaveValue('');
   await dialog.getByRole('button', { name: 'Close map navigation' }).click();
@@ -659,7 +681,7 @@ test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer prese
     await expect(
       page.getByRole('heading', { name: 'One circle, half the population.' }),
     ).toBeVisible();
-    const workspace = page.getByRole('region', { name: 'Map results' });
+    const workspace = page.getByRole('region', { name: 'Country and World workspace' });
     const workspaceBounds = await workspace.boundingBox();
     if (viewport.width > 1023) {
       const navBounds = await drawer.boundingBox();
@@ -735,24 +757,26 @@ test('[responsive-navigation] [themes] [keyboard-and-accessibility] drawer prese
 test('[viewport-and-scrolling] results scroll inside the viewport without scrolling the document', async ({
   page,
 }) => {
-  const metrics = await page.getByRole('region', { name: 'Map results' }).evaluate((results) => {
-    results.scrollTop = results.scrollHeight;
-    return {
-      scrollTop: results.scrollTop,
-      bodyHeight: document.documentElement.scrollHeight,
-      viewportHeight: window.innerHeight,
-    };
-  });
+  const metrics = await page
+    .getByRole('region', { name: 'Country and World workspace' })
+    .evaluate((results) => {
+      results.scrollTop = results.scrollHeight;
+      return {
+        scrollTop: results.scrollTop,
+        bodyHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+      };
+    });
 
   expect(metrics.scrollTop).toBeGreaterThan(0);
   expect(metrics.bodyHeight).toBeLessThanOrEqual(metrics.viewportHeight);
 });
 
 test('[viewport-and-scrolling] header follows the Gallery scroll timeline', async ({ page }) => {
-  const results = page.getByRole('region', { name: 'Map results' });
-  const header = page.locator('.app-header');
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
+  const header = page.locator('#site-header');
   const logo = page.getByRole('link', { name: 'PopCircles home' });
-  const intro = page.locator('.workspace-intro');
+  const intro = page.locator('#site-header__intro');
   const headerArt = page.locator('.header-art');
 
   async function scrollResultsTo(top) {
@@ -774,7 +798,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
 
   async function naturalIntroHeight() {
     return intro
-      .locator('.workspace-intro-content')
+      .locator('#site-header__intro-content')
       .evaluate((element) => element.getBoundingClientRect().height);
   }
 
@@ -782,10 +806,10 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     return page.evaluate(() =>
       Object.fromEntries(
         [
-          ['desktop-navigation', '#country-browser-panel .desktop-collapse'],
-          ['drawer-navigation', '.app-header .drawer-toggle'],
-          ['github', '.app-header .map-actions a'],
-          ['theme', '.app-header .map-actions button'],
+          ['desktop-navigation', '#country-navigation-panel .desktop-collapse'],
+          ['drawer-navigation', '#site-header .drawer-toggle'],
+          ['github', '#site-header .map-actions a'],
+          ['theme', '#site-header .map-actions button'],
         ].map(([name, selector]) => [
           name,
           document.querySelector(selector)?.getBoundingClientRect().x ?? null,
@@ -799,8 +823,8 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
       const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect();
       const country = bounds('#world-result');
       const figure = bounds('#world-result figure');
-      const theme = bounds('.app-header .map-actions button');
-      const drawer = bounds('.app-header .drawer-toggle');
+      const theme = bounds('#site-header .map-actions button');
+      const drawer = bounds('#site-header .drawer-toggle');
       const footer = bounds('.site-footer a');
       return {
         countryLeft: country?.left,
@@ -956,15 +980,15 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
 
 test('header collapse respects reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  const results = page.getByRole('region', { name: 'Map results' });
-  const intro = page.locator('.workspace-intro');
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
+  const intro = page.locator('#site-header__intro');
   await results.evaluate((region) => {
     region.scrollTop = 160;
   });
   await expect
     .poll(() => intro.evaluate((element) => element.getBoundingClientRect().height))
     .toBe(0);
-  await expect(page.locator('.app-header')).toHaveCSS('transition-duration', '0s');
+  await expect(page.locator('#site-header')).toHaveCSS('transition-duration', '0s');
   await expect(page.getByRole('link', { name: 'PopCircles home' })).toHaveCSS(
     'transition-duration',
     '0s',
@@ -989,7 +1013,7 @@ test('[viewport-and-scrolling] short narrow viewports keep navigation controls v
   ).toBeVisible();
 
   const dialog = page.getByRole('dialog', { name: 'Country navigation' });
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   const list = dialog.locator('.map-links-scroll');
   const longLink = dialog.getByRole('link', { name: longCountry.name });
 
@@ -1119,7 +1143,7 @@ test('[map-presentation] emphasizes the map caption values and labels their unit
   );
   await page.reload();
 
-  const caption = page.locator('.figure-caption p');
+  const caption = page.locator('.map-caption p');
   await expect(caption).toHaveText(
     'radius: 212 km · population: 18,154,224 / 50.1% · Circle covers 21% of Afghanistan · centre: 35.0083, 69.1583 · nearest city: Charikar, Afghanistan (1 km away)',
   );
@@ -1152,20 +1176,26 @@ test('World map figures stay stacked on desktop and mobile', async ({ page }) =>
   }
 });
 
-test('[map-presentation] dotted separators appear only between Country sections', async ({
+test('[map-presentation] World and Country results share the same card presentation', async ({
   page,
 }) => {
-  const world = page.locator('#world-result');
-  const firstCountry = page.locator('#country-1');
-  const secondCountry = page.locator('#country-2');
+  const cards = page.locator('#country-cards > .country-card');
+  const styles = await cards.evaluateAll((elements) =>
+    elements.slice(0, 3).map((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        borderColor: style.borderColor,
+        borderRadius: style.borderRadius,
+        borderStyle: style.borderStyle,
+        borderWidth: style.borderWidth,
+      };
+    }),
+  );
 
-  await expect(world).toHaveCSS('border-top-style', 'solid');
-  await expect(firstCountry).toHaveCSS('border-style', 'none');
-  await expect(secondCountry).toHaveCSS('border-top-style', 'dotted');
-  await expect(secondCountry).toHaveCSS('border-top-width', '1px');
-  await expect(secondCountry).toHaveCSS('border-right-style', 'none');
-  await expect(secondCountry).toHaveCSS('border-bottom-style', 'none');
-  await expect(secondCountry).toHaveCSS('border-left-style', 'none');
+  expect(styles[0].borderStyle).toBe('solid');
+  expect(styles[1]).toEqual(styles[0]);
+  expect(styles[2]).toEqual(styles[0]);
 });
 
 // --- Keyboard and accessibility ---
@@ -1307,7 +1337,7 @@ test('animated logo keeps its brand text and selects valid sprite symbols', asyn
   ]);
   await expect(logo.locator('svg[aria-hidden="true"]')).toHaveCount(2);
 
-  const results = page.getByRole('region', { name: 'Map results' });
+  const results = page.getByRole('region', { name: 'Country and World workspace' });
   for (const [scrollTop, symbol] of [
     [4, 'frame-02'],
     [239, 'frame-72'],
@@ -1420,7 +1450,7 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
 test('[map-presentation] result links and boundary attribution use a quiet, smaller panel', async ({
   page,
 }) => {
-  const footer = page.locator('.figure-footer').first();
+  const footer = page.locator('.map-footer').first();
 
   for (const theme of ['dark', 'light']) {
     const styles = await footer.evaluate((element) => {
@@ -1484,7 +1514,7 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
       colorScheme: getComputedStyle(document.documentElement).colorScheme,
       documentHeight: document.documentElement.scrollHeight,
       viewportHeight: window.innerHeight,
-      columns: getComputedStyle(document.querySelector('.explorer')).gridTemplateColumns,
+      columns: getComputedStyle(document.querySelector('#gallery-layout')).gridTemplateColumns,
       mapAspectRatio: Number.parseFloat(
         getComputedStyle(document.querySelector('.map-frame')).aspectRatio,
       ),
@@ -1494,7 +1524,9 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
   expect(visual.background).toBe('#0b1020');
   expect(visual.colorScheme).toBe('dark');
   expect(visual.documentHeight).toBeLessThanOrEqual(visual.viewportHeight);
-  expect(await page.getByRole('region', { name: 'Map results' }).isVisible()).toBe(true);
+  expect(await page.getByRole('region', { name: 'Country and World workspace' }).isVisible()).toBe(
+    true,
+  );
   expect(visual.columns.split(' ')).toHaveLength(2);
   expect(visual.mapAspectRatio).toBeCloseTo(11 / 6);
   await expect(page).toHaveScreenshot('gallery-desktop-dark.png');
@@ -1512,7 +1544,7 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
   expect(visual.colorScheme).toBe('dark');
   expect(visual.documentHeight).toBeLessThanOrEqual(visual.viewportHeight);
   expect(visual.columns.split(' ')).toHaveLength(1);
-  await expect(page.getByRole('navigation', { name: 'Map navigation' })).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'Country navigation' })).toBeHidden();
   expect(await page.getByRole('button', { name: 'Open maps navigation' }).isVisible()).toBe(true);
   await expect(page).toHaveScreenshot('gallery-mobile-dark.png');
 

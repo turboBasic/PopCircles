@@ -17,14 +17,13 @@
 <div
   id="gallery"
   bind:this={resultsPanel}
-  class="results"
   role="region"
-  aria-label="Map results"
+  aria-label="Country and World workspace"
   tabindex="0"
   onscroll={onScroll}
   onblur={(event) => event.currentTarget.removeAttribute('data-auto-focused')}
 >
-  <section class="map-results" aria-label="Maps">
+  <section id="country-cards" aria-label="Country and World results">
     {#each entries as entry (entry.anchor)}
       <MapEntry
         {entry}
@@ -36,7 +35,7 @@
 </div>
 
 <style>
-  .results {
+  #gallery {
     grid-column: 2;
     height: 100%;
     min-width: 0;
@@ -49,12 +48,12 @@
   }
   @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
     (animation-range: 0px 160px) {
-    .results {
+    #gallery {
       scroll-timeline: --results-scroll block;
     }
   }
   @media (max-width: 1023px) {
-    .results {
+    #gallery {
       grid-column: 1;
     }
   }
