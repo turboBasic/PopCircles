@@ -20,7 +20,7 @@
     padding: 0.5rem 0;
     padding-right: calc(var(--country-inline-padding) + 1px);
     text-align: right;
-    color: var(--muted);
+    color: var(--muted-foreground);
     background: transparent;
     font-size: 0.72rem;
   }

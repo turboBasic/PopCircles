@@ -67,7 +67,7 @@
     display: grid;
     place-items: center;
     padding: 1rem;
-    color: var(--muted);
+    color: var(--muted-foreground);
     text-align: center;
   }
 </style>

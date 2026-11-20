@@ -188,7 +188,7 @@
   }
   #site-header__intro p {
     margin: 0;
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
   #site-actions {
     display: flex;

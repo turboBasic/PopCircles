@@ -1423,20 +1423,41 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
           '--glow',
           '--text',
           '--muted',
+          '--muted-foreground',
           '--accent',
+          '--accent-foreground',
+          '--primary',
+          '--primary-foreground',
+          '--secondary',
+          '--secondary-foreground',
+          '--destructive',
+          '--destructive-foreground',
           '--line',
           '--chrome-bg',
         ].map((token) => [token, style.getPropertyValue(token).trim()]),
       );
     });
 
-    for (const foreground of ['--text', '--muted', '--accent']) {
+    for (const foreground of ['--text', '--muted-foreground', '--accent']) {
       for (const background of ['--bg', '--surface', '--surface-2', '--surface-quiet', '--glow']) {
         expect(
           contrastRatio(palette[foreground], palette[background]),
           `${theme}: ${foreground} on ${background}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+    }
+
+    for (const [foreground, background] of [
+      ['--accent-foreground', '--accent'],
+      ['--primary-foreground', '--primary'],
+      ['--secondary-foreground', '--secondary'],
+      ['--muted-foreground', '--muted'],
+      ['--destructive-foreground', '--destructive'],
+    ]) {
+      expect(
+        contrastRatio(palette[foreground], palette[background]),
+        `${theme}: ${foreground} on ${background}`,
+      ).toBeGreaterThanOrEqual(4.5);
     }
 
     for (const background of ['--bg', '--surface', '--surface-2', '--surface-quiet']) {
@@ -1448,7 +1469,7 @@ test('[themes] palette text and control colors meet contrast thresholds', async 
 
     const worstCaseBackdrop = theme === 'dark' ? '#fff' : '#000';
     const compositedChrome = compositeColor(palette['--chrome-bg'], worstCaseBackdrop);
-    for (const foreground of ['--text', '--muted', '--accent']) {
+    for (const foreground of ['--text', '--muted-foreground', '--accent']) {
       expect(
         contrastRatio(palette[foreground], compositedChrome),
         `${theme}: ${foreground} over composited chrome`,
@@ -1477,7 +1498,7 @@ test('[map-presentation] result links and boundary attribution use a quiet, smal
         background: style.backgroundColor,
         paletteBackground: palette.getPropertyValue('--surface-quiet').trim(),
         color: style.color,
-        muted: palette.getPropertyValue('--muted').trim(),
+        mutedForeground: palette.getPropertyValue('--muted-foreground').trim(),
         fontSize: style.fontSize,
         captionFontSize: caption.fontSize,
         fontWeight: style.fontWeight,
@@ -1498,7 +1519,7 @@ test('[map-presentation] result links and boundary attribution use a quiet, smal
     });
 
     expect(styles.background).toBe(`rgb(${colorChannels(styles.paletteBackground).join(', ')})`);
-    expect(styles.color).toBe(`rgb(${colorChannels(styles.muted).join(', ')})`);
+    expect(styles.color).toBe(`rgb(${colorChannels(styles.mutedForeground).join(', ')})`);
     expect(Number.parseFloat(styles.fontSize)).toBeLessThan(
       Number.parseFloat(styles.captionFontSize),
     );

@@ -44,7 +44,7 @@
     border-radius: 0.8rem;
   }
   .empty {
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
   .country-card h2 a {
     color: inherit;
