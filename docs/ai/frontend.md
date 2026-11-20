@@ -26,10 +26,12 @@
 - On narrow screens, country navigation opens as a modal dialog, closes with Escape, and returns focus
   to its trigger.
 - On wide screens, navigation can be collapsed, and its state survives a reload.
+- Icon-only desktop navigation controls explain their actions with tooltips on hover and keyboard focus; the buttons retain accessible names.
 
 ### Map presentation
 
 - Maps preserve their aspect ratios without layout shifts as images load.
+- The territory-coverage percentage explains that it measures land area, separately from population share.
 
 Verification gap: existing assertions do not measure surrounding content before and after delayed
 image loading.

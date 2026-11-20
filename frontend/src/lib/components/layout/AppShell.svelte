@@ -6,6 +6,7 @@
   import SiteFooter from '#lib/components/layout/SiteFooter.svelte';
   import CountryNavigation from '#lib/components/navigation/CountryNavigation.svelte';
   import Gallery from '#lib/components/gallery/Gallery.svelte';
+  import * as Tooltip from '#lib/components/ui/tooltip';
   import { entryFromHash, countryUrl } from '#lib/utils/gallery';
   import { useViewportChrome } from '#lib/components/layout/viewport-chrome.svelte.ts';
   import type { GalleryData, GalleryEntry } from '#lib/types/gallery';
@@ -233,13 +234,15 @@
           onDesktopCollapsedChange={setDesktopNavigationCollapsed}
         />
 
-        <Gallery
-          {entries}
-          {selectedEntry}
-          bind:resultsPanel
-          onScroll={viewportChrome.handleScroll}
-          onCopy={copyCountryUrl}
-        />
+        <Tooltip.Provider delayDuration={300}>
+          <Gallery
+            {entries}
+            {selectedEntry}
+            bind:resultsPanel
+            onScroll={viewportChrome.handleScroll}
+            onCopy={copyCountryUrl}
+          />
+        </Tooltip.Provider>
       </div>
     {/if}
   </main>

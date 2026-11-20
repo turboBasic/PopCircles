@@ -2,6 +2,7 @@
   import { ChevronLeft, ChevronRight, Search, X } from '@lucide/svelte';
   import { tick } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
+  import * as Tooltip from '#lib/components/ui/tooltip';
   import globeSprite from '#lib/assets/earth-globe.svg?url';
   import { filterCountries, groupCountries } from '#lib/utils/gallery';
   import type { GalleryEntry } from '#lib/types/gallery';
@@ -148,15 +149,22 @@
       <use href={`${globeSprite}#${globeSymbol}`}></use>
     </svg>
     <h2 id="navigation-title">Country navigation</h2>
-    <button
-      class="desktop-collapse"
-      type="button"
-      aria-label="Collapse maps navigation"
-      aria-controls="country-navigation-panel"
-      aria-expanded={!desktopNavigationCollapsed}
-      onclick={() => onDesktopCollapsedChange(true)}
-      ><ChevronLeft size={20} strokeWidth={2} aria-hidden="true" /></button
-    >
+    <Tooltip.Provider delayDuration={300}>
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          class="desktop-collapse"
+          type="button"
+          aria-label="Collapse maps navigation"
+          aria-controls="country-navigation-panel"
+          aria-expanded={!desktopNavigationCollapsed}
+          onclick={() => onDesktopCollapsedChange(true)}
+          ><ChevronLeft size={20} strokeWidth={2} aria-hidden="true" /></Tooltip.Trigger
+        >
+        <Tooltip.Content side="right" sideOffset={8}>
+          Collapse to the icon-only navigation rail.
+        </Tooltip.Content>
+      </Tooltip.Root>
+    </Tooltip.Provider>
     <button
       class="close"
       type="button"
@@ -166,19 +174,31 @@
       onclick={onCloseDrawer}><X size={20} strokeWidth={2} aria-hidden="true" /></button
     >
   </header>
-  <div class="rail-controls">
-    <button
-      type="button"
-      aria-label="Expand maps navigation"
-      aria-controls="country-navigation-panel"
-      aria-expanded={!desktopNavigationCollapsed}
-      onclick={() => onDesktopCollapsedChange(false)}
-      ><ChevronRight size={20} strokeWidth={2} aria-hidden="true" /></button
-    >
-    <button type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>
-      <Search size={20} strokeWidth={2} aria-hidden="true" />
-    </button>
-  </div>
+  <Tooltip.Provider delayDuration={300}>
+    <div class="rail-controls">
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          type="button"
+          aria-label="Expand maps navigation"
+          aria-controls="country-navigation-panel"
+          aria-expanded={!desktopNavigationCollapsed}
+          onclick={() => onDesktopCollapsedChange(false)}
+          ><ChevronRight size={20} strokeWidth={2} aria-hidden="true" /></Tooltip.Trigger
+        >
+        <Tooltip.Content side="right" sideOffset={8}>
+          Show country names and navigation controls.
+        </Tooltip.Content>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>
+          <Search size={20} strokeWidth={2} aria-hidden="true" />
+        </Tooltip.Trigger>
+        <Tooltip.Content side="right" sideOffset={8}>
+          Open the search field to filter the country list.
+        </Tooltip.Content>
+      </Tooltip.Root>
+    </div>
+  </Tooltip.Provider>
   <nav id="country-navigation" aria-label="Country navigation">
     <search aria-label="Filter map navigation">
       <label class="search-label" for="country-search">
@@ -387,8 +407,8 @@
     height: 3rem;
     margin-right: 0.5rem;
   }
-  .navigation-header button,
-  .rail-controls button {
+  .navigation-header :global(button),
+  .rail-controls :global(button) {
     display: grid;
     width: 2.5rem;
     height: 2.5rem;
@@ -401,14 +421,14 @@
     font: inherit;
     cursor: pointer;
   }
-  .navigation-header button:hover,
-  .rail-controls button:hover {
+  .navigation-header :global(button:hover),
+  .rail-controls :global(button:hover) {
     border-color: var(--accent);
   }
   @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
     (animation-range: 0px 160px) {
     @media (min-width: 1024px) {
-      .navigation-header .desktop-collapse {
+      .navigation-header :global(.desktop-collapse) {
         animation: collapse-navigation-button auto linear both;
         animation-timeline: --results-scroll;
         animation-range: 0px 160px;
@@ -621,10 +641,10 @@
     .rail-controls {
       display: none;
     }
-    .desktop-collapse {
+    :global(.desktop-collapse) {
       display: none;
     }
-    .navigation-header .desktop-collapse {
+    .navigation-header :global(.desktop-collapse) {
       display: none;
     }
     .navigation-header {
