@@ -14,32 +14,38 @@
   }
 </script>
 
-<a class="home-link" href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
-  <span class="brand-text" aria-hidden="true">
-    <span class="letter-slot">P</span>
-    <span class="letter-slot globe-slot"
-      ><span class="globe-fallback">o</span><svg
-        class="globe-letter"
-        viewBox="0 0 512 512"
-        style:scale="1.07"
-        aria-hidden="true"><use href={`${globeSprite}#${globeSymbol}`}></use></svg
-      ></span
+<div id="logo">
+  <a class="home-link" href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
+    <span class="brand-text" aria-hidden="true">
+      <span class="letter-slot">P</span>
+      <span class="letter-slot globe-slot"
+        ><span class="globe-fallback">o</span><svg
+          class="globe-letter"
+          viewBox="0 0 512 512"
+          style:scale="1.07"
+          aria-hidden="true"><use href={`${globeSprite}#${globeSymbol}`}></use></svg
+        ></span
+      >
+      <span class="letter-slot">p</span>
+      <span class="letter-slot">C</span>
+      <span class="letter-slot">i</span>
+      <span class="letter-slot">r</span>
+      <span class="letter-slot">c</span>
+      <span class="letter-slot">l</span>
+      <span class="letter-slot">e</span>
+      <span class="letter-slot">s</span>
+    </span>
+    <svg class="trailing-globe" viewBox="0 0 512 512" aria-hidden="true"
+      ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
     >
-    <span class="letter-slot">p</span>
-    <span class="letter-slot">C</span>
-    <span class="letter-slot">i</span>
-    <span class="letter-slot">r</span>
-    <span class="letter-slot">c</span>
-    <span class="letter-slot">l</span>
-    <span class="letter-slot">e</span>
-    <span class="letter-slot">s</span>
-  </span>
-  <svg class="trailing-globe" viewBox="0 0 512 512" aria-hidden="true"
-    ><use href={`${globeSprite}#${globeSymbol}`}></use></svg
-  >
-</a>
+  </a>
+</div>
 
 <style>
+  #logo {
+    display: flex;
+    align-items: center;
+  }
   .home-link {
     display: flex;
     align-items: center;

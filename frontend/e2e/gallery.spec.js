@@ -106,6 +106,7 @@ test('[keyboard-and-accessibility] major page components have unique IDs', async
     'header-art',
     'top-bar',
     'app-shell',
+    'logo',
     'country-navigation-panel',
     'country-navigation',
     'country-links',
@@ -115,6 +116,9 @@ test('[keyboard-and-accessibility] major page components have unique IDs', async
     'site-footer',
   ])
     await expect(page.locator(`#${id}`)).toHaveCount(1);
+  await expect(
+    page.locator('#logo').getByRole('link', { name: 'PopCircles home' }),
+  ).toHaveAttribute('href', './');
 });
 
 test('[navigation-and-history] searches country navigation and selects a country', async ({
