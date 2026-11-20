@@ -306,7 +306,7 @@ def run_after(baseline: int, asset_name: str) -> tuple[int, str]:
 def publish(*, refresh_country_sweep: bool = False) -> None:
     require_inputs()
     try:
-        checked("gh", "auth", "status")
+        checked("gh", "auth", "status", "--hostname", "github.com")
     except PublishGalleryError as error:
         message = (
             f"GitHub authentication is required; run `gh auth login` or provide GH_TOKEN: {error}"
