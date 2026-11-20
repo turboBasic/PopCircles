@@ -11,17 +11,7 @@
   };
 
   let { entries, selectedEntry, resultsPanel = $bindable(), onScroll, onCopy }: Props = $props();
-
-  function handleScrollKeys(event: KeyboardEvent) {
-    if (event.target !== resultsPanel) return;
-    const scrollDelta = event.key === 'ArrowDown' ? 40 : event.key === 'ArrowUp' ? -40 : 0;
-    if (scrollDelta === 0) return;
-    event.preventDefault();
-    resultsPanel?.scrollBy({ top: scrollDelta });
-  }
 </script>
-
-<svelte:window onkeydown={handleScrollKeys} />
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (keyboard users need to focus the results scroll region) -->
 <div
