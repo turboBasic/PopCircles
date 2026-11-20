@@ -103,6 +103,7 @@ test('[keyboard-and-accessibility] major page components have unique IDs', async
     'site-header',
     'site-header__intro',
     'site-header__intro-content',
+    'site-actions',
     'header-art',
     'top-bar',
     'app-shell',
@@ -813,8 +814,8 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
         [
           ['desktop-navigation', '#country-navigation-panel .desktop-collapse'],
           ['drawer-navigation', '#site-header .drawer-toggle'],
-          ['github', '#site-header .map-actions a'],
-          ['theme', '#site-header .map-actions button'],
+          ['github', '#site-actions a'],
+          ['theme', '#site-actions button'],
         ].map(([name, selector]) => [
           name,
           document.querySelector(selector)?.getBoundingClientRect().x ?? null,
@@ -828,7 +829,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
       const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect();
       const country = bounds('#world-result');
       const figure = bounds('#world-result figure');
-      const theme = bounds('#site-header .map-actions button');
+      const theme = bounds('#site-actions button');
       const drawer = bounds('#site-header .drawer-toggle');
       const footer = bounds('.site-footer a');
       return {

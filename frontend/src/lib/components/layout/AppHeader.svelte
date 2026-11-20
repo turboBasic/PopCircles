@@ -43,7 +43,7 @@
     >
     <PopCirclesLogo {scrollPosition} {onHome} />
     {#if data}
-      <div class="map-actions" role="group" aria-label="Gallery controls">
+      <div id="site-actions" role="group" aria-label="Gallery controls">
         <a
           class="icon-control"
           href="https://github.com/turboBasic/PopCircles"
@@ -190,7 +190,7 @@
     margin: 0;
     color: var(--muted);
   }
-  .map-actions {
+  #site-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
