@@ -81,7 +81,8 @@
     requestAnimationFrame(() => {
       scrollToEntry(entry, 'smooth');
       document
-        .getElementById(`country-card__heading-${entry.anchor}`)
+        .getElementById(entry.anchor)
+        ?.querySelector<HTMLElement>('header h2')
         ?.focus({ preventScroll: true });
     });
   }

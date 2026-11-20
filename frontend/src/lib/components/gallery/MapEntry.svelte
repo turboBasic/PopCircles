@@ -13,7 +13,7 @@
 
 <section class="country-card" id={entry.anchor}>
   <header>
-    <h2 id={`country-card__heading-${entry.anchor}`} tabindex="-1">
+    <h2 tabindex="-1">
       <a href={`#${entry.anchor}`}>{entry.name}</a>
     </h2>
   </header>

@@ -663,7 +663,7 @@ test('[responsive-navigation] mobile selection and viewport changes preserve que
   await dialog.getByRole('link', { name: 'Country 42', exact: true }).click();
   await expect(page).toHaveURL(/#country-42$/);
   await expect(dialog).toBeHidden();
-  await expect(page.locator('#country-card__heading-country-42')).toBeFocused();
+  await expect(page.locator('#country-42 header h2')).toBeFocused();
   await trigger.click();
   await expect(search).toHaveValue('');
   await dialog.getByRole('button', { name: 'Close map navigation' }).click();
