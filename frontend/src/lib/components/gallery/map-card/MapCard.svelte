@@ -32,7 +32,7 @@
   }
   figcaption {
     padding: 0;
-    color: var(--muted);
+    color: var(--muted-foreground);
     font-size: 0.85rem;
   }
 </style>

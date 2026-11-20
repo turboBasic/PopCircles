@@ -89,7 +89,7 @@
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.45rem 1rem;
-    color: var(--muted);
+    color: var(--muted-foreground);
     background: var(--surface-quiet);
     font-size: 0.75rem;
   }

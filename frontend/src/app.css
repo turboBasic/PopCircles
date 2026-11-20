@@ -1,3 +1,32 @@
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
 :root {
   height: 100%;
   overflow: hidden;
@@ -7,8 +36,26 @@
   --surface: #121a2b;
   --surface-2: #19243a;
   --surface-quiet: #101827;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: var(--bg);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-quiet);
+  --muted-foreground: #a4b0c5;
+  --accent-foreground: var(--bg);
+  --destructive: #f87171;
+  --destructive-foreground: var(--bg);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+  --radius: 0.625rem;
   --text: #eef3ff;
-  --muted: #a4b0c5;
   --accent: #80e0c0;
   --line: #65758e;
   --glow: #203456;
@@ -22,8 +69,25 @@
   --surface: #fff;
   --surface-2: #e9eef5;
   --surface-quiet: #f5f7fb;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: var(--bg);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-quiet);
+  --muted-foreground: #4b596e;
+  --accent-foreground: var(--bg);
+  --destructive: #b91c1c;
+  --destructive-foreground: #fff;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
   --text: #172033;
-  --muted: #4b596e;
   --accent: #145c4e;
   --line: #65758e;
   --glow: #e5edf7;

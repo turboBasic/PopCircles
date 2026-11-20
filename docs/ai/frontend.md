@@ -55,13 +55,19 @@ has its own data colors and is not part of the page palette.
 | `--surface` | Primary workspace surfaces |
 | `--surface-2` | Raised controls and supporting panels |
 | `--surface-quiet` | Quiet inset panels |
+| `--muted` | Quiet component surfaces |
+| `--muted-foreground` | Supporting text |
 | `--text` | Primary text on neutral surfaces |
-| `--muted` | Supporting text |
 | `--accent` | Brand emphasis and active or focused states |
 | `--line` | Borders and dividers |
 | `--glow` | Ambient page background |
 | `--chrome-bg` | Translucent viewport chrome |
 | `--shadow` | Raised-element shadow |
+| `--destructive` | Destructive control background |
+| `--destructive-foreground` | Text and icons on destructive controls |
+
+shadcn-svelte's surface, text, border, and focus tokens map to this palette in `app.css`; keep the
+light and dark values there.
 
 When adding a color role, define its intentional light and dark values in `app.css` and update this
 table. Do not derive a theme by inversion or choose colors by eye alone. Check rendered foreground and

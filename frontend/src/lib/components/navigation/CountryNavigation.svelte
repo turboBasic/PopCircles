@@ -350,7 +350,7 @@
     height: 2.25rem;
     place-items: center;
     padding: 0;
-    color: var(--muted);
+    color: var(--muted-foreground);
     background: transparent;
     border: 0;
     border-radius: 50%;
@@ -479,11 +479,11 @@
   }
   .country-letter-index button:not(:last-of-type)::after {
     margin-inline: 0.15rem;
-    color: var(--muted);
+    color: var(--muted-foreground);
     content: '・';
   }
   .country-letter-index button:disabled {
-    color: var(--muted);
+    color: var(--muted-foreground);
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -528,7 +528,7 @@
     position: relative;
     display: block;
     padding: 0.25rem 0;
-    color: var(--muted);
+    color: var(--muted-foreground);
     text-decoration: none;
     overflow-wrap: anywhere;
   }
@@ -557,7 +557,7 @@
   }
   .status,
   .empty {
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
   .status {
     font-size: 0.85rem;
