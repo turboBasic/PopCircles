@@ -531,6 +531,29 @@ test('[responsive-navigation] desktop navigation defaults expanded and remembers
   await expect(page.getByRole('button', { name: 'Collapse maps navigation' })).toBeVisible();
 });
 
+test('[responsive-navigation] [keyboard-and-accessibility] icon-only navigation controls explain their actions', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const collapse = page.getByRole('button', { name: 'Collapse maps navigation' });
+  await collapse.hover();
+  await expect(collapse).toHaveAttribute('data-state', /open/);
+  await expect(page.getByRole('tooltip')).toHaveText('Collapse to the icon-only navigation rail.');
+  await collapse.click();
+
+  const expand = page.getByRole('button', { name: 'Expand maps navigation' });
+  await page.getByRole('button', { name: 'Switch to light theme' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(expand).toBeFocused();
+  await expect(page.getByRole('tooltip')).toHaveText('Show country names and navigation controls.');
+
+  const search = page.getByRole('button', { name: 'Search countries' });
+  await search.hover();
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'Open the search field to filter the country list.',
+  );
+});
+
 test('[responsive-navigation] mobile navigation remains modal and closes on resize', async ({
   page,
 }) => {
@@ -1160,6 +1183,11 @@ test('[map-presentation] emphasizes the map caption values and labels their unit
     'radius: 212 km · population: 18,154,224 / 50.1% · Circle covers 21% of Afghanistan · centre: 35.0083, 69.1583 · nearest city: Charikar, Afghanistan (1 km away)',
   );
   await expect(caption.locator('strong')).toHaveText(['212 km', '18,154,224', '50.1%', '21%']);
+  const coverageHelp = page.getByRole('button', { name: 'About territory coverage' });
+  await coverageHelp.hover();
+  await expect(page.getByRole('tooltip')).toHaveText(
+    "The share of the territory's land area inside the circle, distinct from its population share.",
+  );
 });
 
 test('World map figures stay stacked on desktop and mobile', async ({ page }) => {

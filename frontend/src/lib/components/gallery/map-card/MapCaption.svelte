@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Copy, ExternalLink, FileText } from '@lucide/svelte';
+  import { Copy, ExternalLink, FileText, Info } from '@lucide/svelte';
+  import * as Tooltip from '#lib/components/ui/tooltip';
   import { territorySharePercent } from '#lib/utils/gallery';
   import type { FigureCaption } from '#lib/types/gallery';
 
@@ -44,6 +45,18 @@
       / <strong>{captionView.share}</strong> ·
       {#if captionView.territoryShare !== null}
         Circle covers <strong>{captionView.territoryShare}%</strong> of {captionView.territoryName}
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            class="territory-help"
+            type="button"
+            aria-label="About territory coverage"
+            ><Info size={14} aria-hidden="true" /></Tooltip.Trigger
+          >
+          <Tooltip.Content sideOffset={4}>
+            The share of the territory's land area inside the circle, distinct from its population
+            share.
+          </Tooltip.Content>
+        </Tooltip.Root>
         ·
       {/if}
       centre:
@@ -105,6 +118,21 @@
     gap: 0.25rem;
   }
   .map-caption-link:hover {
+    color: var(--accent);
+  }
+  .map-caption :global(.territory-help) {
+    display: inline-grid;
+    width: 1.15rem;
+    height: 1.15rem;
+    place-items: center;
+    padding: 0;
+    color: var(--muted-foreground);
+    background: transparent;
+    border: 0;
+    vertical-align: middle;
+    cursor: help;
+  }
+  .map-caption :global(.territory-help:hover) {
     color: var(--accent);
   }
 </style>
