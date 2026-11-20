@@ -15,7 +15,7 @@
 </script>
 
 <div id="logo">
-  <a class="home-link" href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
+  <a href="./" aria-label="PopCircles home" onclick={handleHomeClick}>
     <span class="brand-text" aria-hidden="true">
       <span class="letter-slot">P</span>
       <span class="letter-slot globe-slot"
@@ -46,7 +46,7 @@
     display: flex;
     align-items: center;
   }
-  .home-link {
+  #logo > a {
     display: flex;
     align-items: center;
     gap: 0.65rem;
@@ -95,7 +95,7 @@
   }
   @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
     (animation-range: 0px 160px) {
-    .home-link {
+    #logo > a {
       animation: collapse-logo auto linear both;
       animation-timeline: --results-scroll;
       animation-range: 0px 160px;
