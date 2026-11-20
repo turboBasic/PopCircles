@@ -1,10 +1,10 @@
 import { render } from 'vitest-browser-svelte';
 import { expect, test, vi } from 'vitest';
-import AppHeader from './AppHeader.svelte';
+import SiteHeader from './SiteHeader.svelte';
 
 test('[themes] theme control reports its action and follows the updated value', async () => {
   const onTheme = vi.fn();
-  const screen = await render(AppHeader, {
+  const screen = await render(SiteHeader, {
     scrollPosition: 0,
     data: { world: [], countries: [] },
     themeLight: false,

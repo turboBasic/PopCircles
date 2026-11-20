@@ -2,10 +2,10 @@
   import { onMount } from 'svelte';
   import { prefersReducedMotion } from 'svelte/motion';
   import { fade } from 'svelte/transition';
-  import AppHeader from '#lib/components/layout/AppHeader.svelte';
-  import AppFooter from '#lib/components/layout/AppFooter.svelte';
+  import SiteHeader from '#lib/components/layout/SiteHeader.svelte';
+  import SiteFooter from '#lib/components/layout/SiteFooter.svelte';
   import CountryNavigation from '#lib/components/navigation/CountryNavigation.svelte';
-  import GalleryWorkspace from '#lib/components/gallery/GalleryWorkspace.svelte';
+  import Gallery from '#lib/components/gallery/Gallery.svelte';
   import { entryFromHash, countryUrl } from '#lib/utils/gallery';
   import { useViewportChrome } from '#lib/components/layout/viewport-chrome.svelte.ts';
   import type { GalleryData, GalleryEntry } from '#lib/types/gallery';
@@ -198,7 +198,7 @@
   id="app-shell"
   style={`--header-space: ${viewportChrome.headerSpace}px; --navigation-header-space: ${viewportChrome.navigationHeaderSpace}px; --footer-space: ${viewportChrome.footerSpace}px`}
 >
-  <AppHeader
+  <SiteHeader
     scrollPosition={viewportChrome.scrollPosition}
     {data}
     {themeLight}
@@ -233,7 +233,7 @@
           onDesktopCollapsedChange={setDesktopNavigationCollapsed}
         />
 
-        <GalleryWorkspace
+        <Gallery
           {entries}
           {selectedEntry}
           bind:resultsPanel
@@ -243,7 +243,7 @@
       </div>
     {/if}
   </main>
-  <AppFooter bind:footerElement />
+  <SiteFooter bind:footerElement />
 </div>
 
 {#if copyStatus}

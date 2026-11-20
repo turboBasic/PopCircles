@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MapEntry from '#lib/components/gallery/MapEntry.svelte';
+  import CountryCard from '#lib/components/gallery/CountryCard.svelte';
   import type { GalleryEntry } from '#lib/types/gallery';
 
   type Props = {
@@ -25,7 +25,7 @@
 >
   <section id="country-cards" aria-label="Country and World results">
     {#each entries as entry (entry.anchor)}
-      <MapEntry
+      <CountryCard
         {entry}
         isSelected={entry.anchor === (selectedEntry?.anchor ?? 'world-result')}
         {onCopy}
