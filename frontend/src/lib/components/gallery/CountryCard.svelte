@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MapFigure from '#lib/components/gallery/MapFigure.svelte';
+  import MapCard from '#lib/components/gallery/map-card/MapCard.svelte';
   import type { GalleryEntry } from '#lib/types/gallery';
 
   type Props = {
@@ -22,7 +22,7 @@
   {:else}
     <div class="map-grid">
       {#each entry.figures as figure (figure.map)}
-        <MapFigure
+        <MapCard
           {figure}
           entryAnchor={entry.anchor}
           countryAnchor={entry.anchor === 'world-result' ? null : entry.anchor}
