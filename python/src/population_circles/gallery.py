@@ -135,6 +135,7 @@ class MapRenderContext:
     cache_directory: Path | None
     digest: str
     render_text: tuple[bool, bool] = (False, False)
+    data_root: Path = REPO_ROOT
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
@@ -368,7 +369,7 @@ def render_document(
             file=sys.stderr,
             flush=True,
         )
-        map_layers = load_map_layers(map_sources)
+        map_layers = load_map_layers(map_sources, root=context.data_root)
         figure = render(
             answer,
             PLATE_CARREE,

@@ -334,9 +334,16 @@ def test_success_uses_the_documents_credit_and_earth_model(
         attribution: str,
         coastline_attribution: str | None,
         boundary_attribution: str | None,
+        map_attributions: tuple[tuple[str, str], ...] = (),
     ) -> str:
         seen_credits.append(attribution)
-        return original_copyright(answer, attribution, coastline_attribution, boundary_attribution)
+        return original_copyright(
+            answer,
+            attribution,
+            coastline_attribution,
+            boundary_attribution,
+            map_attributions,
+        )
 
     monkeypatch.setattr(render_map, "render", render_spy)
     monkeypatch.setattr(render_map, "copyright_of", capture_copyright)

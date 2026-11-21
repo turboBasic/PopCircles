@@ -8,19 +8,30 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
+import rasterio
 from matplotlib.figure import Figure
 from PIL import Image
+from rasterio.transform import from_origin
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery as gallery_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
+import population_circles.terrain as terrain_module
 import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.circle_map import Invoke, WorkflowError
-from population_circles.dataset_registry import Registry, country_boundary_dataset_key, load
+from population_circles.dataset_registry import (
+    MapContextVector,
+    Registry,
+    SettlementVector,
+    TerrainRaster,
+    country_boundary_dataset_key,
+    load,
+)
 from population_circles.gallery import build, country_documents
 from population_circles.render_map import (
     COASTLINE_DATASET,
@@ -223,6 +234,58 @@ def registry_without_country_boundaries() -> Registry:
             }
         }
     )
+
+
+def registry_with_synthetic_map_inputs(root: Path) -> Registry:
+    registry = registry_without_country_boundaries()
+    datasets = dict(registry.datasets)
+    terrain_key = "etopo-2022-60s"
+    terrain = datasets[terrain_key]
+    assert isinstance(terrain, TerrainRaster)
+    terrain_path = root / terrain.path
+    terrain_path.parent.mkdir(parents=True, exist_ok=True)
+    values = np.full((80, 80), 500, dtype=np.float32)
+    with rasterio.open(
+        terrain_path,
+        "w",
+        driver="GTiff",
+        width=80,
+        height=80,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=from_origin(78, 27, 0.05, 0.05),
+        nodata=-9999.0,
+    ) as output:
+        output.write(values, 1)
+    datasets[terrain_key] = terrain.model_copy(
+        update={
+            "width": 80,
+            "height": 80,
+            "epsg": 4326,
+            "x_origin": 78.0,
+            "y_origin": 27.0,
+            "x_step": 0.05,
+            "y_step": -0.05,
+            "nodata": -9999.0,
+        }
+    )
+    for key in (
+        "natural-earth-10m-lakes-v5.0.0",
+        "natural-earth-10m-rivers-lake-centerlines-v5.0.0",
+        "natural-earth-10m-roads-v5.0.0",
+    ):
+        dataset = datasets[key]
+        assert isinstance(dataset, MapContextVector)
+        path = root / dataset.path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"type": "FeatureCollection", "features": []}))
+    places = datasets["populated-places-1to10m"]
+    assert isinstance(places, SettlementVector)
+    place_path = root / places.path
+    place_path.parent.mkdir(parents=True, exist_ok=True)
+    place_path.write_text(json.dumps({"type": "FeatureCollection", "features": []}))
+    return registry.model_copy(update={"datasets": datasets})
 
 
 def country_cli(
@@ -729,23 +792,30 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
         (tmp_path / "alpha.json", payload),
         (tmp_path / "beta.json", payload),
     ]
-    registry = registry_without_country_boundaries()
+    registry = registry_with_synthetic_map_inputs(tmp_path)
     coastline, attribution = registered_coastline(registry)
     serial_output = tmp_path / "serial"
     concurrent_output = tmp_path / "concurrent"
     serial_output.mkdir()
     concurrent_output.mkdir()
     serial_context = gallery_module.MapRenderContext(
-        registry, coastline, attribution, serial_output, None, "fixture"
+        registry, coastline, attribution, serial_output, None, "fixture", data_root=tmp_path
     )
     concurrent_context = gallery_module.MapRenderContext(
-        registry, coastline, attribution, concurrent_output, None, "fixture"
+        registry, coastline, attribution, concurrent_output, None, "fixture", data_root=tmp_path
     )
 
     def no_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {}
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(
+        gallery_module,
+        "registered_map_sources",
+        render_map_module.registered_map_sources,
+    )
+    monkeypatch.setattr(gallery_module, "load_map_layers", render_map_module.load_map_layers)
+    monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
 
     serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
 
@@ -993,7 +1063,10 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
             },
         ],
     }
-    assert VISIBLE_FOOTER in annotations
+    assert any(
+        annotation.startswith(VISIBLE_FOOTER) and "Terrain data:" in annotation
+        for annotation in annotations
+    )
     assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
     with Image.open(drawn[0].figure) as image:
         assert "Title" in image.info
