@@ -92,7 +92,6 @@ for country_id in ids:
 report = {
     "machine": f"{platform.machine()} {platform.platform()}",
     "python": sys.version.split()[0],
-    "model": "Mac14,9",
     "rasterio": importlib.metadata.version("rasterio"),
     "matplotlib": importlib.metadata.version("matplotlib"),
     "source_resolution": {
