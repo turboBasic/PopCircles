@@ -17,7 +17,15 @@ from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import Registry, load
 from population_circles.map_frame import ORTHOGRAPHIC
-from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
+from test_render_map import (
+    DATASET,
+    PNG_MAGIC,
+    document,
+    empty_boundaries,
+    fixture_map_layers,
+    fixture_registered_map_sources,
+    transparent_terrain,
+)
 
 CUSTOM_EARTH_RADIUS_KM = 7000.0
 
@@ -26,6 +34,9 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(render_map, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(render_map, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
 
 @pytest.fixture

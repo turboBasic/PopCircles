@@ -672,6 +672,7 @@ def draw_context(
             line
             for geometry in _projected_context(view, geometries, country_clip)
             for line in linestrings(geometry)
+            if not line.is_empty
         ]
         if lines:
             stroke(

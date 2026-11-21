@@ -942,6 +942,21 @@ def test_map_layers_render_in_order_below_circle_and_centre() -> None:
         plt.close(figure)
 
 
+def test_world_map_skips_empty_projected_context_lines() -> None:
+    sources = fixture_map_sources(None)
+    layers = MapLayers(
+        sources, lakes=(), rivers=(LineString(),), roads=(), places=(), root=REPO_ROOT
+    )
+
+    figure = render(
+        circle_of(document()),
+        PLATE_CARREE,
+        coastline=None,
+        map_layers=layers,
+    )
+    plt.close(figure)
+
+
 def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
