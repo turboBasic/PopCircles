@@ -132,6 +132,10 @@ def prepare_terrain(
     height = TARGET_HEIGHT
     destination_transform = from_bounds(xmin, ymin, xmax, ymax, width, height)
     elevation = np.full((height, width), DESTINATION_NODATA, dtype=np.float32)
+    path = dataset.file(root)
+    if not path.is_file():
+        message = f"terrain source is missing at {path}; run `mise run data:get`"
+        raise ValueError(message)
 
     with open_raster(_source_path(dataset, root)) as source:
         _check_source(dataset, source)
@@ -171,5 +175,5 @@ def prepare_terrain(
             resampling=Resampling.bilinear,
         )
 
-    valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA)
+    valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA) & (elevation > 0)
     return paint(elevation, valid, bounds), bounds

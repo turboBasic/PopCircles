@@ -6,13 +6,14 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, NoReturn
 
+import numpy as np
 import pytest
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
 from PIL import Image
-from shapely.geometry import MultiPolygon, box
+from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.presentation_config as presentation_config_module
@@ -21,7 +22,15 @@ import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import Answer, Circle, circle_of
 from population_circles.circle_geometry import Cap, cap
 from population_circles.country_outline import BoundaryIdentityError, load_outline
-from population_circles.dataset_registry import Registry, load, parse
+from population_circles.dataset_registry import (
+    REPO_ROOT,
+    MapContextVector,
+    Registry,
+    SettlementVector,
+    TerrainRaster,
+    load,
+    parse,
+)
 from population_circles.map_frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
@@ -41,11 +50,15 @@ from population_circles.render_map import (
     COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
+    MapLayers,
+    MapSources,
     MissingCountryOutlineError,
     UnregisteredDatasetError,
     citation,
+    load_map_layers,
     main,
     registered_coastline,
+    registered_map_sources,
     render,
     render_file,
     title_of,
@@ -94,6 +107,46 @@ def empty_boundaries(
     return {}
 
 
+def fixture_map_sources(country_id: str | None) -> MapSources:
+    terrain_key = "swisstopo-dhm25-200m" if country_id == "CH" else "etopo-2022-60s"
+    terrain = REGISTRY.datasets[terrain_key]
+    lakes = REGISTRY.datasets["natural-earth-10m-lakes-v5.0.0"]
+    rivers = REGISTRY.datasets["natural-earth-10m-rivers-lake-centerlines-v5.0.0"]
+    roads = REGISTRY.datasets["natural-earth-10m-roads-v5.0.0"]
+    places = REGISTRY.datasets["populated-places-1to10m"]
+    assert isinstance(terrain, TerrainRaster)
+    assert isinstance(lakes, MapContextVector)
+    assert isinstance(rivers, MapContextVector)
+    assert isinstance(roads, MapContextVector)
+    assert isinstance(places, SettlementVector)
+    return MapSources(terrain, lakes, rivers, roads, places)
+
+
+def fixture_registered_map_sources(_registry: Registry, country_id: str | None) -> MapSources:
+    return fixture_map_sources(country_id)
+
+
+def fixture_map_layers(sources: MapSources, root: Path = REPO_ROOT) -> MapLayers:
+    return MapLayers(
+        sources,
+        lakes=(box(79, 24, 80, 25),),
+        rivers=(LineString([(79, 24), (80, 25)]),),
+        roads=(LineString([(79, 25), (80, 24)]),),
+        places=(),
+        root=root,
+    )
+
+
+def transparent_terrain(
+    _dataset: TerrainRaster,
+    view: Frame,
+    *,
+    root: Path = REPO_ROOT,
+) -> tuple[np.ndarray, tuple[float, float, float, float]]:
+    assert root == REPO_ROOT
+    return np.zeros((2, 2, 4), dtype=np.uint8), view.horizon.bounds
+
+
 def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
     with Image.open(path) as image:
         return image.info
@@ -102,6 +155,13 @@ def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(
+        render_map_module,
+        "registered_map_sources",
+        fixture_registered_map_sources,
+    )
+    monkeypatch.setattr(render_map_module, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
 
 
 def document() -> dict[str, Any]:
@@ -777,6 +837,111 @@ def test_the_registered_coastline_uses_its_registry_path_and_credit(
     assert credit == citation(REGISTRY, COASTLINE_DATASET)
 
 
+def test_registered_map_sources_use_the_global_default_and_country_override() -> None:
+    world = registered_map_sources(REGISTRY, None)
+    france = registered_map_sources(REGISTRY, "FR")
+    switzerland = registered_map_sources(REGISTRY, "CH")
+
+    assert world.terrain.path == REGISTRY.datasets["etopo-2022-60s"].path
+    assert france.terrain.path == world.terrain.path
+    assert switzerland.terrain.path == REGISTRY.datasets["swisstopo-dhm25-200m"].path
+    assert [name for name, _ in world.attributions] == ["Terrain"]
+    assert switzerland.attributions == (("Terrain", "©swisstopo"),)
+
+
+def test_registered_map_source_missing_from_registry_is_refused() -> None:
+    with pytest.raises(UnregisteredDatasetError, match="etopo-2022-60s"):
+        registered_map_sources(Registry(datasets={}), None)
+
+
+def test_map_context_loader_filters_roads_without_fetched_inputs(tmp_path: Path) -> None:
+    sources = fixture_map_sources("FR")
+    for dataset in (sources.lakes, sources.rivers, sources.roads, sources.places):
+        path = dataset.file(tmp_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        features: list[dict[str, object]] = []
+        if dataset == sources.roads:
+            for authority, min_zoom in (("FRA", 4), ("XNR", 4), ("FRA", 5), ("FRA", None)):
+                features.append(
+                    {
+                        "type": "Feature",
+                        "properties": {"sov_a3": authority, "min_zoom": min_zoom},
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [[1, 2], [3, 4]],
+                        },
+                    },
+                )
+        if dataset == sources.places:
+            for name, population, feature_class in (
+                ("Town", 120_000, "City"),
+                ("Capital", 500_000, "Admin-0 capital"),
+                ("Village", 50_000, "City"),
+            ):
+                features.append(
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "NAME": name,
+                            "POP_MAX": population,
+                            "FEATURECLA": feature_class,
+                        },
+                        "geometry": {"type": "Point", "coordinates": [2, 48]},
+                    },
+                )
+        path.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
+
+    layers = load_map_layers(sources, tmp_path)
+
+    assert layers.roads == (LineString([(1, 2), (3, 4)]),)
+    assert layers.lakes == ()
+    assert layers.rivers == ()
+    assert [(name, capital) for _, name, _, capital in layers.places[:2]] == [
+        ("Capital", True),
+        ("Town", False),
+    ]
+
+
+def test_map_layers_render_in_order_below_circle_and_centre() -> None:
+    answer = circle_of(country_circle_document())
+    selected_country = box(5, 47, 15, 55)
+    sources = fixture_map_sources("DE")
+    layers = MapLayers(
+        sources,
+        lakes=(box(9, 50, 10, 51),),
+        rivers=(LineString([(8, 50), (9, 51)]),),
+        roads=(LineString([(10, 50), (11, 51)]),),
+        places=((Point(10, 51), "Example", 150_000, False),),
+        root=REPO_ROOT,
+    )
+
+    figure = render(
+        answer,
+        PLATE_CARREE,
+        coastline=None,
+        country_outline=selected_country,
+        map_layers=layers,
+    )
+    try:
+        axes = figure.axes[0]
+        assert [image.get_zorder() for image in axes.images] == [0, render_map_module.TERRAIN_LAYER]
+        assert any(patch.get_zorder() == render_map_module.WATER_LAYER for patch in axes.patches)
+        assert any(
+            collection.get_zorder() == render_map_module.ROAD_LAYER
+            for collection in axes.collections
+        )
+        assert any(
+            collection.get_zorder() == render_map_module.PLACE_LAYER
+            for collection in axes.collections
+        )
+        assert any(text.get_text() == "Example" for text in axes.texts)
+        assert any(patch.get_zorder() == render_map_module.CIRCLE_LAYER for patch in axes.patches)
+        assert any(line.get_zorder() == render_map_module.CENTRE_LAYER for line in axes.lines)
+        assert layers.root == REPO_ROOT
+    finally:
+        plt.close(figure)
+
+
 def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -846,11 +1011,10 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert sidecar["render_metadata"]["Copyright"] == metadata["Copyright"]
     assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["population"] == WORLD_POPULATION
     assert sidecar["render_metadata"]["XML:com.adobe.xmp"]["territoryShare"] == TERRITORY_SHARE
-    assert [" ".join(annotation.split()) for annotation in annotations] == [
-        metadata["Title"],
-        metadata["Description"],
-        VISIBLE_FOOTER,
-    ]
+    observed_annotations = [" ".join(annotation.split()) for annotation in annotations]
+    assert observed_annotations[:2] == [metadata["Title"], metadata["Description"]]
+    assert observed_annotations[2].startswith(VISIBLE_FOOTER)
+    assert citation(REGISTRY, "etopo-2022-60s") in observed_annotations[2]
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
@@ -1002,7 +1166,8 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     monkeypatch.setattr(render_map_module, "registered_coastline", refuse_coastline)
     monkeypatch.setattr(render_map_module, "map_text_rendering", lambda: (True, True))
     render_file(source, output, no_coastlines=True)
-    assert annotations[-1] == VISIBLE_FOOTER
+    assert annotations[-1].startswith(VISIBLE_FOOTER)
+    assert "Terrain data:" in annotations[-1]
     assert output.read_bytes().startswith(PNG_MAGIC)
     assert "Title" in png_info(output)
     assert "Description" in png_info(output)
@@ -1089,9 +1254,16 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
         attribution: str,
         coastline_attribution: str | None,
         boundary_attribution: str | None,
+        map_attributions: tuple[tuple[str, str], ...] = (),
     ) -> str:
         drawn.append(attribution)
-        return original_copyright(answer, attribution, coastline_attribution, boundary_attribution)
+        return original_copyright(
+            answer,
+            attribution,
+            coastline_attribution,
+            boundary_attribution,
+            map_attributions,
+        )
 
     monkeypatch.setattr("population_circles.render_map.copyright_of", capture_copyright)
 

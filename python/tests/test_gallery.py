@@ -26,7 +26,12 @@ from population_circles.render_map import (
     UnregisteredDatasetError,
     registered_coastline,
 )
-from test_render_map import country_circle_document
+from test_render_map import (
+    country_circle_document,
+    fixture_map_layers,
+    fixture_registered_map_sources,
+    transparent_terrain,
+)
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
@@ -79,6 +84,13 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(gallery_module, "render_worker_count", one_worker)
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(
+        gallery_module,
+        "registered_map_sources",
+        fixture_registered_map_sources,
+    )
+    monkeypatch.setattr(gallery_module, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
 
 
 def document(
@@ -400,7 +412,8 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         "Circle covers 0% of Earth\u2019s land area"
     )
     assert annotations[1] == metadata["Description"]
-    assert annotations[-1] == VISIBLE_FOOTER
+    assert annotations[-1].startswith(VISIBLE_FOOTER)
+    assert "Terrain data:" in annotations[-1]
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert "© Andrii Melnyk, 2026" in metadata["Copyright"]

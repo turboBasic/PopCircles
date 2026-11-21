@@ -92,6 +92,15 @@ def test_prepare_terrain_refuses_a_registry_crs_that_disagrees_with_the_raster(
         prepare_terrain(dataset, projected_frame(), root=tmp_path)
 
 
+def test_prepare_terrain_names_the_fetch_task_when_the_source_is_missing(tmp_path: Path) -> None:
+    dataset = write_dem(tmp_path / "test-dem.tif")
+    path = tmp_path / dataset.path
+    path.unlink()
+
+    with pytest.raises(ValueError, match=r"test-dem\.tif.*mise run data:get"):
+        prepare_terrain(dataset, projected_frame(), root=tmp_path)
+
+
 def test_elevation_palette_keeps_all_pinned_stops() -> None:
     colours, scale = palette()
     for elevation, rgb in ELEVATION_STOPS:

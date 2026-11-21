@@ -89,6 +89,17 @@ class Gallery(_Model):
         return value
 
 
+class MapSources(_Model):
+    terrain_default: Annotated[str, Field(min_length=1)]
+    terrain_overrides: dict[CountryId, Annotated[str, Field(min_length=1)]] = Field(
+        default_factory=dict,
+    )
+    lakes: Annotated[str, Field(min_length=1)]
+    rivers: Annotated[str, Field(min_length=1)]
+    roads: Annotated[str, Field(min_length=1)]
+    places: Annotated[str, Field(min_length=1)]
+
+
 class MapExtent(_Model):
     units: ExtentUnits
     x_min: float
@@ -128,6 +139,7 @@ class CountryMap(_Model):
 class PresentationConfig(_Model):
     map_text: MapText
     gallery: Gallery
+    map_sources: MapSources
     country_maps: dict[str, CountryMap | DefaultProjection]
 
     @model_validator(mode="after")

@@ -78,6 +78,16 @@ excluded_country_ids = [
   "XXY", # Essequibo
 ]
 
+[map_sources]
+terrain_default = "etopo-2022-60s"
+lakes = "natural-earth-10m-lakes-v5.0.0"
+rivers = "natural-earth-10m-rivers-lake-centerlines-v5.0.0"
+roads = "natural-earth-10m-roads-v5.0.0"
+places = "populated-places-1to10m"
+
+[map_sources.terrain_overrides]
+CH = "swisstopo-dhm25-200m"
+
 [country_maps]
 default_projection = "orthographic"
 

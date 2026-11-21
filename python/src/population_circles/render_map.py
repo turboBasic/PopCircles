@@ -4,6 +4,7 @@ import math
 import textwrap
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import cast
@@ -21,7 +22,7 @@ from matplotlib.path import Path as DrawPath
 from PIL import ExifTags, Image
 from PIL.TiffImagePlugin import IFDRational
 from shapely import get_coordinates
-from shapely.geometry import shape
+from shapely.geometry import MultiLineString, Point, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
@@ -32,7 +33,10 @@ from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
+    MapContextVector,
     Registry,
+    SettlementVector,
+    TerrainRaster,
     coastline_dataset_key,
     load,
 )
@@ -53,6 +57,7 @@ from population_circles.presentation_config import (
 from population_circles.presentation_config import (
     load as load_presentation_config,
 )
+from population_circles.terrain import prepare_terrain
 from population_circles.territory_coverage import enrich_document
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
@@ -64,13 +69,127 @@ COASTLINE_DATASET = coastline_dataset_key()
 
 class UnregisteredDatasetError(ValueError):
     def __init__(self, key: str) -> None:
-        super().__init__(f"the document names dataset {key!r}, which the registry does not carry")
+        super().__init__(f"dataset {key!r} is not registered")
         self.key = key
 
 
 class MissingCountryOutlineError(ValueError):
     def __init__(self) -> None:
         super().__init__("country result rendering requires its registered boundary outline")
+
+
+@dataclass(frozen=True)
+class MapSources:
+    terrain: TerrainRaster
+    lakes: MapContextVector
+    rivers: MapContextVector
+    roads: MapContextVector
+    places: SettlementVector
+
+    @property
+    def attributions(self) -> tuple[tuple[str, str], ...]:
+        return tuple(
+            (name, dataset.attribution)
+            for name, dataset in (
+                ("Terrain", self.terrain),
+                ("Lakes", self.lakes),
+                ("Rivers", self.rivers),
+                ("Roads", self.roads),
+            )
+            if dataset.attribution
+        )
+
+
+@dataclass(frozen=True)
+class MapLayers:
+    sources: MapSources
+    lakes: tuple[BaseGeometry, ...]
+    rivers: tuple[BaseGeometry, ...]
+    roads: tuple[BaseGeometry, ...]
+    places: tuple[tuple[Point, str, int, bool], ...]
+    root: Path
+
+
+def registered_map_sources(registry: Registry, country_id: str | None) -> MapSources:
+    settings = load_presentation_config().map_sources
+    terrain_key = (
+        settings.terrain_overrides.get(country_id, settings.terrain_default)
+        if country_id is not None
+        else settings.terrain_default
+    )
+
+    def source(
+        key: str, expected: type[TerrainRaster | MapContextVector | SettlementVector]
+    ) -> object:
+        dataset = registry.datasets.get(key)
+        if not isinstance(dataset, expected):
+            raise UnregisteredDatasetError(key)
+        return dataset
+
+    return MapSources(
+        terrain=cast(TerrainRaster, source(terrain_key, TerrainRaster)),
+        lakes=cast(MapContextVector, source(settings.lakes, MapContextVector)),
+        rivers=cast(MapContextVector, source(settings.rivers, MapContextVector)),
+        roads=cast(MapContextVector, source(settings.roads, MapContextVector)),
+        places=cast(SettlementVector, source(settings.places, SettlementVector)),
+    )
+
+
+@cache
+def _context_geometries(path: Path, *, major_roads: bool = False) -> tuple[BaseGeometry, ...]:
+    try:
+        features = json.loads(path.read_text(encoding="utf-8"))["features"]
+    except FileNotFoundError as error:
+        message = f"map context source is missing at {path}; run `mise run data:get`"
+        raise ValueError(message) from error
+    geometries: list[BaseGeometry] = []
+    for feature in features:
+        properties = feature["properties"]
+        if major_roads and (
+            properties.get("sov_a3") == "XNR"
+            or not isinstance(properties.get("min_zoom"), (int, float))
+            or properties["min_zoom"] > MAX_ROAD_MIN_ZOOM
+        ):
+            continue
+        geometries.append(shape(feature["geometry"]))
+    return tuple(geometries)
+
+
+def load_map_layers(sources: MapSources, root: Path = REPO_ROOT) -> MapLayers:
+    return MapLayers(
+        sources=sources,
+        lakes=_context_geometries(sources.lakes.file(root)),
+        rivers=_context_geometries(sources.rivers.file(root)),
+        roads=_context_geometries(sources.roads.file(root), major_roads=True),
+        places=_selected_places(sources.places.file(root)),
+        root=root,
+    )
+
+
+@cache
+def _selected_places(path: Path) -> tuple[tuple[Point, str, int, bool], ...]:
+    try:
+        features = json.loads(path.read_text(encoding="utf-8"))["features"]
+    except FileNotFoundError as error:
+        message = f"map place source is missing at {path}; run `mise run data:get`"
+        raise ValueError(message) from error
+    places: list[tuple[Point, str, int, bool]] = []
+    for feature in features:
+        properties = feature["properties"]
+        if properties.get("POP_MAX", 0) < MIN_PLACE_POPULATION:
+            continue
+        geometry = shape(feature["geometry"])
+        if isinstance(geometry, Point):
+            places.append(
+                (
+                    geometry,
+                    properties["NAME"],
+                    properties["POP_MAX"],
+                    properties["FEATURECLA"] == "Admin-0 capital",
+                ),
+            )
+    places.sort(key=lambda place: (not place[3], -place[2]))
+    return tuple(places)
 
 
 def citation(registry: Registry, key: str) -> str:
@@ -89,12 +208,22 @@ def citation(registry: Registry, key: str) -> str:
 COASTLINE_LAYER = 2
 COUNTRY_LAYER = 2.5
 GRATICULE_LAYER = 2.75
+WATER_LAYER = 2.6
+ROAD_LAYER = 2.65
+PLACE_LAYER = 2.85
+MIN_PLACE_POPULATION = 100_000
 CIRCLE_LAYER = 3
 OCEAN = "#DFFFFD"
 COUNTRY = "#65CBC1"
+LAKE = "#9BD8E5"
+RIVER = "#65B7CE"
+ROAD = "#B56F52"
 OUTLINE_WIDTH = 0.6
 CENTRE_LAYER = 4
 HORIZON_LAYER = 5
+TERRAIN_LAYER = 1
+COUNTRY_FILL_ALPHA = 0.14
+MAX_ROAD_MIN_ZOOM = 4
 MINUTES_PER_DEGREE = 60
 
 
@@ -194,11 +323,18 @@ def footer_text() -> str:
     )
 
 
+def visible_credits(map_attributions: Sequence[tuple[str, str]]) -> str:
+    base = footer_text()
+    additions = [f"{name} data: {attribution}" for name, attribution in map_attributions]
+    return " · ".join((base, *additions))
+
+
 def copyright_of(
     answer: Answer,
     attribution: str,
     coastline_attribution: str | None,
     boundary_attribution: str | None,
+    map_attributions: Sequence[tuple[str, str]] = (),
 ) -> str:
     parts = ["© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles"]
     if answer.country is not None:
@@ -213,11 +349,16 @@ def copyright_of(
         parts.append(f"Population data: {attribution}")
     if coastline_attribution:
         parts.append(f"Coastline data: {coastline_attribution}")
+    parts.extend(f"{name} data: {credit}" for name, credit in map_attributions)
     return "\n".join(textwrap.fill(part, width=118) for part in parts)
 
 
 def xmp_properties(
-    answer: Answer, title: str, description: str, copyright_text: str
+    answer: Answer,
+    title: str,
+    description: str,
+    copyright_text: str,
+    map_attributions: Sequence[tuple[str, str]] = (),
 ) -> dict[str, object]:
     circle = answer.circle
     properties: dict[str, object] = {
@@ -259,7 +400,7 @@ def xmp_properties(
     properties["dc:rights"] = "© Andrii Melnyk, 2026"
     properties["dc:title"] = title
     properties["dc:description"] = description
-    properties["photoshop:Credit"] = footer_text()
+    properties["photoshop:Credit"] = visible_credits(map_attributions)
     properties["fullAttribution"] = copyright_text
     return {name: value for name, value in properties.items() if value is not None}
 
@@ -484,11 +625,94 @@ def wrap_to_width(figure: Figure, text: str, size: float) -> str:
     return "\n".join(lines)
 
 
-def draw(
+def _projected_context(
+    view: Frame,
+    geometries: Sequence[BaseGeometry],
+    country_clip: BaseGeometry | None,
+) -> list[BaseGeometry]:
+    projected: list[BaseGeometry] = []
+    for geometry in geometries:
+        clipped = geometry
+        if country_clip is not None:
+            if not clipped.intersects(country_clip):
+                continue
+            clipped = clipped.intersection(country_clip)
+        item = project(view, clipped)
+        if all(math.isfinite(value) for point in get_coordinates(item) for value in point):
+            projected.append(item)
+    return projected
+
+
+def draw_context(
+    axes: Axes,
+    view: Frame,
+    layers: MapLayers,
+    country_clip: BaseGeometry | None,
+) -> None:
+    lake_paths = [
+        compound(polygon)
+        for geometry in _projected_context(view, layers.lakes, country_clip)
+        for polygon in polygons(geometry)
+    ]
+    if lake_paths:
+        axes.add_patch(
+            PathPatch(
+                DrawPath.make_compound_path(*lake_paths),
+                facecolor=LAKE,
+                edgecolor=RIVER,
+                linewidth=0.25,
+                zorder=WATER_LAYER,
+            ),
+        )
+    for geometries, colour, width, layer in (
+        (layers.rivers, RIVER, 0.45, WATER_LAYER),
+        (layers.roads, ROAD, 0.65, ROAD_LAYER),
+    ):
+        lines = [
+            line
+            for geometry in _projected_context(view, geometries, country_clip)
+            for line in linestrings(geometry)
+        ]
+        if lines:
+            stroke(
+                axes,
+                MultiLineString([list(line.coords) for line in lines]),
+                colour,
+                width,
+                layer,
+            )
+    if country_clip is not None:
+        places = [place for place in layers.places if country_clip.covers(place[0])][:10]
+        for geometry, name, _, capital in places:
+            point = cast(Point, project(view, geometry))
+            if not all(math.isfinite(value) for value in point.coords[0]):
+                continue
+            axes.scatter(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+                [point.x],
+                [point.y],
+                s=15 if capital else 8,
+                color="#59435f" if capital else "#545454",
+                zorder=PLACE_LAYER,
+            )
+            axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+                name,
+                (point.x, point.y),
+                xytext=(3, 3),
+                textcoords="offset points",
+                fontsize=7 if not capital else 8,
+                color="#454545",
+                weight="bold" if capital else "normal",
+                zorder=PLACE_LAYER,
+            )
+
+
+def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are distinct display inputs
     axes: Axes,
     view: Frame,
     coastline: BaseGeometry | None,
     other_countries: Sequence[BaseGeometry] = (),
+    map_layers: MapLayers | None = None,
+    country_clip: BaseGeometry | None = None,
 ) -> None:
     stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
     if coastline is not None:
@@ -504,13 +728,26 @@ def draw(
             PathPatch(
                 DrawPath.make_compound_path(*country_paths),
                 facecolor=facecolor,
+                alpha=COUNTRY_FILL_ALPHA,
                 edgecolor="0.4",
                 linewidth=OUTLINE_WIDTH,
                 zorder=COUNTRY_LAYER,
             ),
         )
     if view.country_outline is not None:
-        outline(axes, view.country_outline, COUNTRY_LAYER, facecolor=COUNTRY, linewidth=1)
+        for polygon in polygons(view.country_outline):
+            axes.add_patch(
+                PathPatch(
+                    compound(polygon),
+                    facecolor=COUNTRY,
+                    alpha=COUNTRY_FILL_ALPHA,
+                    edgecolor="0.4",
+                    linewidth=1,
+                    zorder=COUNTRY_LAYER,
+                ),
+            )
+    if map_layers is not None:
+        draw_context(axes, view, map_layers, country_clip)
     fill_circle(axes, view.circle)
     outline(axes, view.horizon)
 
@@ -529,16 +766,39 @@ def fill_ocean(axes: Axes, view: Frame) -> None:
     ocean.set_clip_path(PathPatch(horizon, transform=axes.transData))
 
 
+def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an independent map layer
+    axes: Axes,
+    view: Frame,
+    coastline: BaseGeometry | None,
+    other_countries: Sequence[BaseGeometry],
+    map_layers: MapLayers | None,
+    country_clip: BaseGeometry | None,
+) -> None:
+    fill_ocean(axes, view)
+    if map_layers is not None:
+        image, _ = prepare_terrain(map_layers.sources.terrain, view, root=map_layers.root)
+        draw_image = cast(Callable[..., AxesImage], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+        west, south, east, north = view.horizon.bounds
+        draw_image(
+            image,
+            extent=(west, east, south, north),
+            origin="upper",
+            interpolation="bilinear",
+            zorder=TERRAIN_LAYER,
+        )
+    draw(axes, view, coastline, other_countries, map_layers, country_clip)
+
+
 def render(  # noqa: PLR0913 — distinct geometry and display inputs stay explicit
     answer: Answer,
     projection: str,
     *,
-    # The basemap arrives drawn rather than named, so nothing under here reads a file and a caller
-    # drawing several figures unions the coastlines once. `None` is a figure without them.
+    # A caller drawing several figures unions the coastline once; `None` omits it.
     coastline: BaseGeometry | None,
     country_outline: BaseGeometry | None = None,
     other_countries: Sequence[BaseGeometry] = (),
     render_text: tuple[bool, bool] = (True, True),
+    map_layers: MapLayers | None = None,
 ) -> Figure:
     if answer.country is not None and country_outline is None:
         raise MissingCountryOutlineError
@@ -553,6 +813,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         if country_outline is not None
         else frame(projection, built)
     )
+    map_attributions = map_layers.sources.attributions if map_layers is not None else ()
     centre = view.to_frame.transform(circle.centre.lon, circle.centre.lat)
 
     figure = plt.figure(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
@@ -560,7 +821,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     )
     try:
         title = title_of(answer)
-        footer = footer_text()
+        footer = visible_credits(map_attributions)
         canvas = cast(FigureCanvasAgg, figure.canvas)
         header_bottom = 0.985
         if render_text[0]:
@@ -593,10 +854,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         west, south, east, north = view.horizon.bounds
         axes.set_xlim(west, east)
         axes.set_ylim(south, north)
-        if view.country_outline is not None or other_countries:
-            fill_ocean(axes, view)
-
-        draw(axes, view, coastline, other_countries)
+        draw_map_layers(axes, view, coastline, other_countries, map_layers, country_outline)
         axes.plot(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
             [centre[0]],
             [centre[1]],
@@ -605,8 +863,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
             markersize=9,
             zorder=CENTRE_LAYER,
         )
-
-        annotate(figure, 0.04, footer, 6.5, "bottom")
+        annotate(figure, 0.04, wrap_to_width(figure, footer, 6.5), 6.5, "bottom")
     except BaseException:
         plt.close(figure)
         raise
@@ -672,6 +929,10 @@ def render_file(
         document = enrich_document(document, boundaries)
     answer = circle_of(document)
     selected = boundaries.get(answer.country.id) if answer.country is not None else None
+    map_sources = registered_map_sources(
+        registry,
+        answer.country.id if answer.country is not None else None,
+    )
     country_boundary_attribution = None
     if answer.country is not None:
         boundary_credit = boundary_attribution or citation(
@@ -684,6 +945,7 @@ def render_file(
         coastline=coastline,
         country_outline=selected,
         render_text=render_text,
+        map_layers=load_map_layers(map_sources),
         **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
     title = title_of(answer)
@@ -692,9 +954,16 @@ def render_file(
         population_attribution,
         coastline_attribution,
         country_boundary_attribution,
+        map_sources.attributions,
     )
     description = description_of(answer)
-    properties = xmp_properties(answer, title, description, copyright_text)
+    properties = xmp_properties(
+        answer,
+        title,
+        description,
+        copyright_text,
+        map_sources.attributions,
+    )
     metadata_values = metadata_json_fields(answer, properties)
     sidecar_path = output_path.with_suffix(".json")
     try:

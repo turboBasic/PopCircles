@@ -38,10 +38,12 @@ from population_circles.render_map import (
     copyright_of,
     description_of,
     exif_gps_packet,
+    load_map_layers,
     metadata_json_fields,
     other_countries,
     png_metadata,
     registered_coastline,
+    registered_map_sources,
     render,
     title_of,
     xmp_properties,
@@ -294,6 +296,10 @@ def render_document(
         answer = circle_of(payload)
         boundaries = load_map_boundaries(answer, context.registry)
         selected = boundaries.get(answer.country.id) if answer.country is not None else None
+        map_sources = registered_map_sources(
+            context.registry,
+            answer.country.id if answer.country is not None else None,
+        )
         population_attribution = (
             answer.selection.population_source.attribution if answer.selection is not None else None
         ) or citation(context.registry, answer.provenance.dataset)
@@ -311,9 +317,16 @@ def render_document(
             population_attribution,
             context.coastline_attribution,
             outline_and_credit[1] if outline_and_credit is not None else None,
+            map_sources.attributions,
         )
         description = description_of(answer)
-        properties = xmp_properties(answer, title, description, copyright_text)
+        properties = xmp_properties(
+            answer,
+            title,
+            description,
+            copyright_text,
+            map_sources.attributions,
+        )
         payload["render_metadata"] = metadata_json_fields(answer, properties)
         target = context.output / f"{source.stem}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
@@ -355,6 +368,7 @@ def render_document(
             file=sys.stderr,
             flush=True,
         )
+        map_layers = load_map_layers(map_sources)
         figure = render(
             answer,
             PLATE_CARREE,
@@ -362,6 +376,7 @@ def render_document(
             country_outline=outline,
             other_countries=other_countries(boundaries, answer),
             render_text=context.render_text,
+            map_layers=map_layers,
         )
     except Exception as error:
         # The early-built page is removed by `build_gallery_output` if a map fails.

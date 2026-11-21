@@ -164,6 +164,7 @@ SEGS
 skia
 socketpair
 splitmix
+textcoords
 thiserror
 tmpg
 tobytes
@@ -175,6 +176,7 @@ wght
 xfact
 xlim
 xoff
+xytext
 yfact
 ylim
 zerocopy
