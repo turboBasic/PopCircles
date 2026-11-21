@@ -62,7 +62,7 @@ COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 EXPECTED_COUNTRY_CLI_CALLS = 2
 RENDER_WORKER_COUNT = gallery_module.render_worker_count
 AVAILABLE_CPUS = 6
-EXPECTED_WORKERS = AVAILABLE_CPUS - 1
+EXPECTED_WORKERS = min(2, AVAILABLE_CPUS - 1)
 SMALL_MAP_COUNT = 2
 
 
@@ -769,11 +769,12 @@ def test_map_cache_key_changes_when_terrain_inputs_or_presentation_change(
     )
 
 
-def test_render_worker_count_leaves_one_cpu_free(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_render_worker_count_is_capped_at_two(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(os, "process_cpu_count", lambda: AVAILABLE_CPUS)
 
     assert RENDER_WORKER_COUNT(20) == EXPECTED_WORKERS
     assert RENDER_WORKER_COUNT(SMALL_MAP_COUNT) == SMALL_MAP_COUNT
+    assert RENDER_WORKER_COUNT(1) == 1
 
 
 def test_serial_and_concurrent_gallery_maps_are_identical(

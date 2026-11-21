@@ -159,7 +159,7 @@ def render_document_in_worker(
 
 
 def render_worker_count(map_count: int) -> int:
-    return min(max(1, (os.process_cpu_count() or 1) - 1), map_count)
+    return min(2, max(1, (os.process_cpu_count() or 1) - 1), map_count)
 
 
 def render_documents(
