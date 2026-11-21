@@ -116,16 +116,6 @@ lat_0 = 55.0
 lat_1 = 50.0
 lat_2 = 70.0
 
-[country_maps.FR]
-projection = "plate-carree"
-
-[country_maps.FR.extent]
-units = "degrees"
-x_min = -6.0
-y_min = 41.0
-x_max = 10.0
-y_max = 52.0
-
 [country_maps.CL]
 projection = "plate-carree"
 
