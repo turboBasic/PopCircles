@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import matplotlib as mpl
+import matplotlib.patheffects as path_effects
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -23,8 +24,8 @@ from matplotlib.text import Text
 from matplotlib.transforms import Bbox
 from PIL import ExifTags, Image
 from PIL.TiffImagePlugin import IFDRational
-from shapely import get_coordinates, maximum_inscribed_circle
-from shapely.geometry import MultiLineString, Point, box, shape
+from shapely import get_coordinates, make_valid, maximum_inscribed_circle
+from shapely.geometry import LineString, MultiLineString, Point, box, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
@@ -393,6 +394,11 @@ TERRAIN_LAYER = 1
 COUNTRY_FILL_ALPHA = 0.14
 MAX_ROAD_MIN_ZOOM = 4
 MINUTES_PER_DEGREE = 60
+MIN_COUNTRY_LABEL_LAND_SHARE = 0.001
+COUNTRY_LABEL_WRAP_WIDTH = 12
+COUNTRY_LABEL_WRAP_MIN_LENGTH = 16
+COUNTRY_LABEL_OUTLINE_PX = 2
+MAP_OUTPUT_DPI = 200
 
 
 @cache
@@ -892,6 +898,16 @@ def draw_context(
         place_city_labels(axes, labels)
 
 
+def visible_country_geometry(view: Frame, geometry: BaseGeometry) -> BaseGeometry | None:
+    projected = project(view, geometry)
+    if not all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
+        return None
+    if not projected.is_valid:
+        projected = make_valid(projected)
+    visible = projected.intersection(view.horizon)
+    return None if visible.is_empty else visible
+
+
 def draw_country_labels(
     axes: Axes,
     view: Frame,
@@ -903,63 +919,91 @@ def draw_country_labels(
     axes_box = axes.bbox
     inverse = axes.transData.inverted()
     target = view.country_outline
-    target_point = (
-        axes.transData.transform((target.centroid.x, target.centroid.y))
-        if target is not None
-        else None
-    )
+    visible_land = [target] if target is not None else []
+    countries: list[tuple[BaseGeometry, str, Point]] = []
     for geometry, name in labels:
-        projected = project(view, geometry)
-        if not all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
+        visible = visible_country_geometry(view, geometry)
+        if visible is None:
             continue
-        visible = projected.intersection(view.horizon)
-        if visible.is_empty:
-            continue
-        inscribed = maximum_inscribed_circle(visible)
+        visible_land.append(visible)
+        inscribed = cast(LineString, maximum_inscribed_circle(cast(Any, visible)))
         anchor = (
             Point(*inscribed.coords[0])
             if not inscribed.is_empty
             else visible.representative_point()
         )
-        label = axes.annotate(
-            name,
+        countries.append((visible, name, anchor))
+    land_area = unary_union(visible_land).intersection(view.horizon).area
+    countries_with_share = [
+        (visible.area / land_area, visible, name, anchor)
+        for visible, name, anchor in countries
+        if land_area > 0 and visible.area / land_area >= MIN_COUNTRY_LABEL_LAND_SHARE
+    ]
+    countries_with_share.sort(key=lambda country: (-country[0], country[2]))
+    placed: list[Bbox] = []
+    for _, visible, name, anchor in countries_with_share:
+        label = axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+            textwrap.fill(name, width=COUNTRY_LABEL_WRAP_WIDTH)
+            if len(name) >= COUNTRY_LABEL_WRAP_MIN_LENGTH
+            else name,
             (anchor.x, anchor.y),
             xytext=(0, 0),
             textcoords="offset points",
-            visible=True,
+            visible=False,
             clip_on=True,
             fontsize=8,
             color="#454545",
+            path_effects=[
+                path_effects.withStroke(
+                    linewidth=72 * COUNTRY_LABEL_OUTLINE_PX / MAP_OUTPUT_DPI,
+                    foreground="white",
+                ),
+            ],
             zorder=PLACE_LAYER,
+            horizontalalignment="center",
+            verticalalignment="center",
         )
-        if target is None or target_point is None:
-            continue
-        anchor_px = axes.transData.transform((anchor.x, anchor.y))
-        away = (anchor_px[0] - target_point[0], anchor_px[1] - target_point[1])
-        length = math.hypot(*away)
-        if not length:
-            continue
-        direction = away[0] / length, away[1] / length
-        best: tuple[float, float, float, float] | None = None
-        original = (0.0, 0.0)
-        for distance in (0.0, 8.0, 16.0, 24.0):
-            offset = direction[0] * distance, direction[1] * distance
+        best: tuple[float, Bbox, tuple[float, float]] | None = None
+        offsets = [
+            (float(x), float(y))
+            for radius in (0, 4, 8, 12, 16, 20, 24, 28, 32)
+            for x in range(-radius, radius + 1, 4)
+            for y in range(-radius, radius + 1, 4)
+            if max(abs(x), abs(y)) == radius
+        ]
+        for offset in offsets:
             label.set_position(offset)
+            label.set_visible(True)
             bounds = label.get_window_extent(renderer)
-            if not axes_box.contains(*bounds.min) or not axes_box.contains(*bounds.max):
+            padded = bounds.padded(renderer.dpi / 72)
+            if not axes_box.contains(*padded.min) or not axes_box.contains(*padded.max):
                 continue
-            corners = inverse.transform(
-                ((bounds.x0, bounds.y0), (bounds.x1, bounds.y1)),
-            )
+            if any(padded.overlaps(other) for other in placed):
+                continue
+            corners = inverse.transform(((bounds.x0, bounds.y0), (bounds.x1, bounds.y1)))
             label_box = box(*corners[0], *corners[1])
-            overlap = label_box.intersection(target).area / label_box.area
-            candidate = overlap, distance, offset[0], offset[1]
-            if best is None or candidate[:2] < best[:2]:
+            target_overlap = (
+                label_box.intersection(target).area / label_box.area if target is not None else 0.0
+            )
+            country_overlap = label_box.intersection(visible).area / label_box.area
+            centre_inside_country = visible.covers(label_box.centroid)
+            displacement = math.hypot(*offset)
+            # Keep the label centred on its country when it fits, then limit overlap with China.
+            score = (
+                displacement
+                + target_overlap * 8
+                - country_overlap * 40
+                - (32 if centre_inside_country else 0)
+            )
+            candidate = (score, padded, offset)
+            if best is None or candidate[0] < best[0]:
                 best = candidate
-                original = offset
-            if overlap == 0:
-                break
-        label.set_position(original)
+        if best is None:
+            label.set_visible(False)
+        else:
+            _, bounds, offset = best
+            label.set_position(offset)
+            placed.append(bounds)
 
 
 def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are distinct display inputs
@@ -1038,13 +1082,27 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
         draw_image = cast(Callable[..., AxesImage], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
         west, south, east, north = view.horizon.bounds
 
-        def draw_terrain(dataset: TerrainRaster, *, grayscale: bool = False) -> AxesImage:
-            image, _ = prepare_terrain(
-                dataset,
-                view,
-                root=map_layers.root,
-                grayscale=grayscale,
-            )
+        def draw_terrain(
+            dataset: TerrainRaster,
+            *,
+            grayscale: bool = False,
+            include_below_sea_level: bool = False,
+        ) -> AxesImage:
+            if include_below_sea_level:
+                image, _ = prepare_terrain(
+                    dataset,
+                    view,
+                    root=map_layers.root,
+                    grayscale=grayscale,
+                    include_below_sea_level=True,
+                )
+            else:
+                image, _ = prepare_terrain(
+                    dataset,
+                    view,
+                    root=map_layers.root,
+                    grayscale=grayscale,
+                )
             return draw_image(
                 image,
                 extent=(west, east, south, north),
@@ -1057,7 +1115,10 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
             draw_terrain(map_layers.sources.terrain)
         else:
             draw_terrain(map_layers.sources.default_terrain, grayscale=True)
-            colored = draw_terrain(map_layers.sources.terrain)
+            colored = draw_terrain(
+                map_layers.sources.terrain,
+                include_below_sea_level=True,
+            )
             if view.country_outline is not None:
                 paths = [compound(polygon) for polygon in polygons(view.country_outline)]
                 if paths:
@@ -1262,7 +1323,7 @@ def render_file(
         # to the drawn content moves them off the positions they were given.
         figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
             output_path,
-            dpi=200,
+            dpi=MAP_OUTPUT_DPI,
             metadata=png_metadata(title, copyright_text, description, properties),
             pil_kwargs={
                 "exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)

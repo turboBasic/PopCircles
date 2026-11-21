@@ -159,6 +159,7 @@ mlat
 mlon
 ndarray
 nocapture
+patheffects
 pread
 proptest
 rint

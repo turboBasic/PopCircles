@@ -25,6 +25,7 @@ DESTINATION_NODATA = -99999.0
 HILLSHADE_AZIMUTH = 315
 HILLSHADE_ALTITUDE = 45
 HILLSHADE_ALPHA = 0.34
+NEGATIVE_ELEVATION_STOP: tuple[float, tuple[int, int, int]] = (-100, (238, 241, 208))
 
 ELEVATION_STOPS: tuple[tuple[float, tuple[int, int, int]], ...] = (
     (0, (229, 238, 196)),
@@ -46,14 +47,12 @@ ELEVATION_STOPS: tuple[tuple[float, tuple[int, int, int]], ...] = (
 
 
 def palette() -> tuple[LinearSegmentedColormap, Normalize]:
-    minimum, maximum = ELEVATION_STOPS[0][0], ELEVATION_STOPS[-1][0]
+    minimum, maximum = NEGATIVE_ELEVATION_STOP[0], ELEVATION_STOPS[-1][0]
     scale = Normalize(vmin=minimum, vmax=maximum, clip=True)
+    stops = (NEGATIVE_ELEVATION_STOP, *ELEVATION_STOPS)
     colours = LinearSegmentedColormap.from_list(
         "popcircles-terrain",
-        [
-            (scale(elevation), tuple(channel / 255 for channel in rgb))
-            for elevation, rgb in ELEVATION_STOPS
-        ],
+        [(scale(elevation), tuple(channel / 255 for channel in rgb)) for elevation, rgb in stops],
         N=256,
     )
     return colours, scale
@@ -87,6 +86,10 @@ def paint(
         rgba[valid, :3].astype(np.float32) * (1 - HILLSHADE_ALPHA)
         + shade[valid, None] * 255 * HILLSHADE_ALPHA
     ).astype(np.uint8)
+    if grayscale:
+        rgba[valid, :3] = np.rint(rgba[valid, :3].astype(np.float32) * 0.5 + 255 * 0.5).astype(
+            np.uint8
+        )
     return rgba
 
 
@@ -133,6 +136,7 @@ def prepare_terrain(
     *,
     root: Path = REPO_ROOT,
     grayscale: bool = False,
+    include_below_sea_level: bool = False,
 ) -> tuple[NDArray[np.uint8], tuple[float, float, float, float]]:
     bounds = frame.horizon.bounds
     xmin, ymin, xmax, ymax = bounds
@@ -158,30 +162,46 @@ def prepare_terrain(
             ymax,
             densify_pts=41,
         )
-        requested = window_from_bounds(*projected_bounds, transform=source.transform)
-        try:
-            window = (
-                requested.round_offsets()
-                .round_lengths()
-                .intersection(
-                    Window(0, 0, source.width, source.height),
-                )
-            )
-        except WindowError as error:
-            message = f"terrain source {dataset.path!r} does not overlap the map frame"
-            raise ValueError(message) from error
-        pixels = source.read(1, window=window)
-        reproject(
-            source=pixels,
-            destination=elevation,
-            src_transform=source.window_transform(window),
-            src_crs=source_crs,
-            src_nodata=source.nodata,
-            dst_transform=destination_transform,
-            dst_crs=destination_crs,
-            dst_nodata=DESTINATION_NODATA,
-            resampling=Resampling.bilinear,
+        west, south, east, north = projected_bounds
+        longitude_ranges = (
+            ((west, east),)
+            if west <= east
+            else ((west, source.bounds.right), (source.bounds.left, east))
         )
+        windows: list[Window] = []
+        for left, right in longitude_ranges:
+            try:
+                window = (
+                    window_from_bounds(left, south, right, north, transform=source.transform)
+                    .round_offsets()
+                    .round_lengths()
+                    .intersection(Window(0, 0, source.width, source.height))
+                )
+            except WindowError:
+                continue
+            if window.width > 0 and window.height > 0:
+                windows.append(window)
+        if not windows:
+            message = f"terrain source {dataset.path!r} does not overlap the map frame"
+            raise ValueError(message)
+        for window in windows:
+            pixels = source.read(1, window=window)
+            piece = np.full_like(elevation, DESTINATION_NODATA)
+            reproject(
+                source=pixels,
+                destination=piece,
+                src_transform=source.window_transform(window),
+                src_crs=source_crs,
+                src_nodata=source.nodata,
+                dst_transform=destination_transform,
+                dst_crs=destination_crs,
+                dst_nodata=DESTINATION_NODATA,
+                resampling=Resampling.bilinear,
+            )
+            valid_piece = np.isfinite(piece) & (piece != DESTINATION_NODATA)
+            elevation[valid_piece] = piece[valid_piece]
 
-    valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA) & (elevation > 0)
+    valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA)
+    if not include_below_sea_level:
+        valid &= elevation > 0
     return paint(elevation, valid, bounds, grayscale=grayscale), bounds
