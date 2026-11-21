@@ -107,6 +107,7 @@ class BoundaryVector(_Dataset):
     feature_count: int | None = Field(default=None, gt=0)
     revision: str | None = None
     source_id_field: str | None = None
+    display_name_field: str | None = Field(default=None, min_length=1)
     identity_policy: str | None = None
 
     @model_validator(mode="after")
@@ -117,6 +118,7 @@ class BoundaryVector(_Dataset):
             self.axis_order,
             self.feature_count,
             self.source_id_field,
+            self.display_name_field,
             self.identity_policy,
         )
         if any(value is not None for value in metadata) and any(

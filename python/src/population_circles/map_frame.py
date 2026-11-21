@@ -228,10 +228,21 @@ def country_frame(
     south = min(outline.bounds[1], circle.bounds[1])
     east = max(outline.bounds[2], circle.bounds[2])
     north = max(outline.bounds[3], circle.bounds[3])
+    visible = (
+        geographic(
+            cap(
+                centre,
+                hemisphere_km(built.earth_radius_km) * (1.0 - LIMB_SHAVE),
+                built.earth_radius_km,
+            ),
+        )
+        if projection == ORTHOGRAPHIC
+        else WORLD
+    )
     return Frame(
         crs=face,
         to_frame=to_face,
-        visible=WORLD,
+        visible=visible,
         circle=circle,
         horizon=(
             box(*extent)

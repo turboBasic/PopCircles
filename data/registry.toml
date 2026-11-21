@@ -111,6 +111,7 @@ feature_count = 263
 # The 2024 product has later corrections; the checksum pins this exact downloaded snapshot.
 revision = "Countries 2024 snapshot downloaded 2026-10-22"
 source_id_field = "CNTR_ID"
+display_name_field = "CNTR_NAME"
 identity_policy = "ADR 0015"
 
 [datasets.CNTR_BN_01M_2024_4326_COASTL]
@@ -144,6 +145,7 @@ axis_order = "longitude-latitude"
 feature_count = 263
 revision = "GADM 4.1"
 source_id_field = "GID_0"
+display_name_field = "NAME_0"
 identity_policy = "Retain the source's unique ADM0 GID_0 identifiers."
 
 [datasets.populated-places-1to10m]

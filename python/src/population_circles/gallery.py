@@ -41,6 +41,7 @@ from population_circles.render_map import (
     load_map_layers,
     metadata_json_fields,
     other_countries,
+    other_country_labels,
     png_metadata,
     registered_coastline,
     registered_map_sources,
@@ -380,6 +381,7 @@ def render_document(
             coastline=context.coastline,
             country_outline=outline,
             other_countries=other_countries(boundaries, answer),
+            country_labels=other_country_labels(boundaries, answer),
             render_text=context.render_text,
             map_layers=map_layers,
         )

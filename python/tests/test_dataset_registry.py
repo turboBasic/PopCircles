@@ -95,6 +95,7 @@ axis_order = "longitude-latitude"
 feature_count = 263
 revision = "2024"
 source_id_field = "CNTR_ID"
+display_name_field = "CNTR_NAME"
 identity_policy = "ADR 0015"
 """
 
@@ -287,6 +288,7 @@ def test_a_country_boundary_accepts_complete_metadata_and_fetch_delivery() -> No
     assert dataset.feature_count == COUNTRY_FEATURE_COUNT
     assert dataset.revision == "2024"
     assert dataset.source_id_field == "CNTR_ID"
+    assert dataset.display_name_field == "CNTR_NAME"
     assert dataset.identity_policy == "ADR 0015"
     assert dataset.fetch_url is not None
     assert dataset.path == "data/boundaries/countries-2024.geojson"
