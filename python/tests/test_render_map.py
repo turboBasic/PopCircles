@@ -4,7 +4,7 @@ import re
 import socket
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, cast
 
 import numpy as np
 import pytest
@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
+from matplotlib.text import Text
 from PIL import Image
 from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
@@ -57,6 +58,7 @@ from population_circles.render_map import (
     citation,
     load_map_layers,
     main,
+    place_city_labels,
     registered_coastline,
     registered_map_sources,
     render,
@@ -126,7 +128,12 @@ def fixture_registered_map_sources(_registry: Registry, country_id: str | None) 
     return fixture_map_sources(country_id)
 
 
-def fixture_map_layers(sources: MapSources, root: Path = REPO_ROOT) -> MapLayers:
+def fixture_map_layers(
+    sources: MapSources,
+    root: Path = REPO_ROOT,
+    country_outline: BaseGeometry | None = None,
+) -> MapLayers:
+    _ = country_outline
     return MapLayers(
         sources,
         lakes=(box(79, 24, 80, 25),),
@@ -861,14 +868,20 @@ def test_map_context_loader_filters_roads_without_fetched_inputs(tmp_path: Path)
         path.parent.mkdir(parents=True, exist_ok=True)
         features: list[dict[str, object]] = []
         if dataset == sources.roads:
-            for authority, min_zoom in (("FRA", 4), ("XNR", 4), ("FRA", 5), ("FRA", None)):
+            for authority, min_zoom, start in (
+                ("FRA", 4, [1, 2]),
+                ("XNR", 4, [1, 2]),
+                ("FRA", 5, [1, 2]),
+                ("FRA", None, [1, 2]),
+                ("FRA", 4, [100, 50]),
+            ):
                 features.append(
                     {
                         "type": "Feature",
                         "properties": {"sov_a3": authority, "min_zoom": min_zoom},
                         "geometry": {
                             "type": "LineString",
-                            "coordinates": [[1, 2], [3, 4]],
+                            "coordinates": [start, [start[0] + 2, start[1] + 2]],
                         },
                     },
                 )
@@ -891,7 +904,7 @@ def test_map_context_loader_filters_roads_without_fetched_inputs(tmp_path: Path)
                 )
         path.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
 
-    layers = load_map_layers(sources, tmp_path)
+    layers = load_map_layers(sources, tmp_path, box(0, 0, 5, 5))
 
     assert layers.roads == (LineString([(1, 2), (3, 4)]),)
     assert layers.lakes == ()
@@ -900,6 +913,37 @@ def test_map_context_loader_filters_roads_without_fetched_inputs(tmp_path: Path)
         ("Capital", True),
         ("Town", False),
     ]
+
+
+def test_city_labels_keep_priority_and_do_not_overlap() -> None:
+    figure, axes = plt.subplots(figsize=(4, 3))
+    axes.set_xlim(0, 10)
+    axes.set_ylim(0, 10)
+    labels: list[tuple[Text, float, float, bool]] = []
+    for name, x, y, capital in (
+        ("Capital", 5.0, 5.0, True),
+        ("Nearby", 5.01, 5.0, False),
+        ("Distant", 8.0, 8.0, False),
+    ):
+        label = cast(
+            Text,
+            axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+                name, (x, y), visible=False
+            ),
+        )
+        labels.append((label, x, y, capital))
+
+    try:
+        place_city_labels(axes, labels)
+        assert labels[0][0].get_visible()
+        assert not labels[1][0].get_visible()
+        assert labels[2][0].get_visible()
+        canvas = cast(FigureCanvasAgg, figure.canvas)
+        renderer = canvas.get_renderer()
+        bounds = [label.get_window_extent(renderer) for label, *_ in labels if label.get_visible()]
+        assert not bounds[0].overlaps(bounds[1])
+    finally:
+        plt.close(figure)
 
 
 def test_map_layers_render_in_order_below_circle_and_centre() -> None:

@@ -3,11 +3,11 @@ import json
 import math
 import textwrap
 import xml.etree.ElementTree as ET
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from functools import cache
+from functools import cache, lru_cache
 from pathlib import Path
-from typing import cast
+from typing import Any, Literal, cast
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -19,6 +19,8 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.image import AxesImage
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path as DrawPath
+from matplotlib.text import Text
+from matplotlib.transforms import Bbox
 from PIL import ExifTags, Image
 from PIL.TiffImagePlugin import IFDRational
 from shapely import get_coordinates
@@ -136,14 +138,57 @@ def registered_map_sources(registry: Registry, country_id: str | None) -> MapSou
 
 
 @cache
-def _context_geometries(path: Path, *, major_roads: bool = False) -> tuple[BaseGeometry, ...]:
+def _geojson_text(path: Path) -> str:
     try:
-        features = json.loads(path.read_text(encoding="utf-8"))["features"]
+        return path.read_text(encoding="utf-8")
     except FileNotFoundError as error:
         message = f"map context source is missing at {path}; run `mise run data:get`"
         raise ValueError(message) from error
+
+
+def _geojson_features(path: Path) -> Iterator[Mapping[str, Any]]:
+    text = _geojson_text(path)
+    start = text.index("[", text.index('"features"')) + 1
+    decoder = json.JSONDecoder()
+    while True:
+        while text[start].isspace() or text[start] == ",":
+            start += 1
+        if text[start] == "]":
+            return
+        feature, start = decoder.raw_decode(text, start)
+        yield cast(Mapping[str, Any], feature)
+
+
+def _coordinates_bounds(coordinates: object) -> tuple[float, float, float, float] | None:
+    bounds = [math.inf, math.inf, -math.inf, -math.inf]
+    stack = [coordinates]
+    while stack:
+        value = stack.pop()
+        if not isinstance(value, list):
+            continue
+        coordinates = cast(list[Any], value)
+        if coordinates and isinstance(coordinates[0], (int, float)):
+            longitude, latitude, *_ = coordinates
+            bounds[0] = min(bounds[0], longitude)
+            bounds[1] = min(bounds[1], latitude)
+            bounds[2] = max(bounds[2], longitude)
+            bounds[3] = max(bounds[3], latitude)
+        else:
+            stack.extend(coordinates)
+    if math.isinf(bounds[0]):
+        return None
+    return bounds[0], bounds[1], bounds[2], bounds[3]
+
+
+@lru_cache(maxsize=1)
+def _context_geometries(
+    path: Path,
+    *,
+    major_roads: bool = False,
+    bounds: tuple[float, float, float, float] | None = None,
+) -> tuple[BaseGeometry, ...]:
     geometries: list[BaseGeometry] = []
-    for feature in features:
+    for feature in _geojson_features(path):
         properties = feature["properties"]
         if major_roads and (
             properties.get("sov_a3") == "XNR"
@@ -151,19 +196,135 @@ def _context_geometries(path: Path, *, major_roads: bool = False) -> tuple[BaseG
             or properties["min_zoom"] > MAX_ROAD_MIN_ZOOM
         ):
             continue
-        geometries.append(shape(feature["geometry"]))
+        raw_geometry = feature["geometry"]
+        if bounds is not None:
+            feature_bounds = _coordinates_bounds(raw_geometry["coordinates"])
+            if feature_bounds is None or (
+                feature_bounds[2] < bounds[0]
+                or feature_bounds[0] > bounds[2]
+                or feature_bounds[3] < bounds[1]
+                or feature_bounds[1] > bounds[3]
+            ):
+                continue
+        geometry = shape(raw_geometry)
+        geometries.append(geometry)
     return tuple(geometries)
 
 
-def load_map_layers(sources: MapSources, root: Path = REPO_ROOT) -> MapLayers:
+def load_map_layers(
+    sources: MapSources,
+    root: Path = REPO_ROOT,
+    country_outline: BaseGeometry | None = None,
+) -> MapLayers:
+    bounds = tuple(country_outline.bounds) if country_outline is not None else None
     return MapLayers(
         sources=sources,
-        lakes=_context_geometries(sources.lakes.file(root)),
-        rivers=_context_geometries(sources.rivers.file(root)),
-        roads=_context_geometries(sources.roads.file(root), major_roads=True),
+        lakes=_context_geometries(sources.lakes.file(root), bounds=bounds),
+        rivers=_context_geometries(sources.rivers.file(root), bounds=bounds),
+        roads=_context_geometries(sources.roads.file(root), major_roads=True, bounds=bounds),
         places=_selected_places(sources.places.file(root)),
         root=root,
     )
+
+
+def place_city_labels(
+    axes: Axes,
+    labels: list[tuple[Text, float, float, bool]],
+) -> int:
+    canvas = cast(FigureCanvasAgg, axes.figure.canvas)
+    canvas.draw()
+    renderer = canvas.get_renderer()
+    label_ids = {id(label) for label, _, _, _ in labels}
+    protected = [
+        label.get_window_extent(renderer)
+        for label in axes.texts
+        if id(label) not in label_ids and label.get_zorder() <= PLACE_LAYER
+    ]
+    marker_padding = 2 * renderer.dpi / 72
+    marker_boxes: list[Bbox] = []
+    retained_anchors: list[tuple[float, float]] = []
+    retained_indices: set[int] = set()
+    label_spacing = 12 * renderer.dpi / 72
+    for _, x, y, _ in labels:
+        marker_x, marker_y = axes.transData.transform((x, y))
+        marker_boxes.append(
+            Bbox.from_bounds(
+                marker_x - marker_padding,
+                marker_y - marker_padding,
+                marker_padding * 2,
+                marker_padding * 2,
+            ),
+        )
+    for label_index, (_, x, y, capital) in enumerate(labels):
+        coordinates = axes.transData.transform((x, y))
+        anchor = float(coordinates[0]), float(coordinates[1])
+        if not capital and any(
+            math.hypot(anchor[0] - placed_x, anchor[1] - placed_y) < label_spacing
+            for placed_x, placed_y in retained_anchors
+        ):
+            continue
+        retained_anchors.append(anchor)
+        retained_indices.add(label_index)
+    axes_box = axes.bbox
+    directions = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
+    candidates: list[
+        tuple[
+            int,
+            int,
+            Literal["left", "center", "right"],
+            Literal["bottom", "center", "top"],
+        ]
+    ] = [
+        (
+            round(distance * dx),
+            round(distance * dy),
+            "left" if dx > 0 else "right" if dx < 0 else "center",
+            "bottom" if dy > 0 else "top" if dy < 0 else "center",
+        )
+        for distance in (4, 6, 8)
+        for dx, dy in directions
+    ]
+    candidates.sort(key=lambda candidate: candidate[0] ** 2 + candidate[1] ** 2)
+    placed: list[Bbox] = []
+    for label_index, (label, x, y, _) in enumerate(labels):
+        if label_index not in retained_indices:
+            continue
+        for dx, dy, horizontal, vertical in candidates:
+            label.set_position((dx, dy))
+            label.set_horizontalalignment(horizontal)
+            label.set_verticalalignment(vertical)
+            label.set_visible(True)
+            bounds = label.get_window_extent(renderer).padded(renderer.dpi / 72)
+            collides = any(bounds.overlaps(other) for other in (*protected, *placed)) or any(
+                bounds.overlaps(marker)
+                for index, marker in enumerate(marker_boxes)
+                if index != label_index
+            )
+            if not (
+                axes_box.contains(*bounds.min) and axes_box.contains(*bounds.max) and not collides
+            ):
+                label.set_visible(False)
+                continue
+            placed.append(bounds)
+            if dx**2 + dy**2 > 6**2:
+                axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+                    "",
+                    xy=(x, y),
+                    xytext=(dx, dy),
+                    textcoords="offset points",
+                    arrowprops={
+                        "arrowstyle": "-",
+                        "color": "#68645f",
+                        "linewidth": 0.45,
+                        "shrinkA": 1.5,
+                        "shrinkB": 2.5,
+                    },
+                    zorder=PLACE_LAYER - 0.1,
+                )
+            break
+        else:
+            label.set_visible(False)
+    return sum(label.get_visible() for label, _, _, _ in labels)
 
 
 @cache
@@ -684,6 +845,7 @@ def draw_context(
             )
     if country_clip is not None:
         places = [place for place in layers.places if country_clip.covers(place[0])][:10]
+        labels: list[tuple[Text, float, float, bool]] = []
         for geometry, name, _, capital in places:
             point = cast(Point, project(view, geometry))
             if not all(math.isfinite(value) for value in point.coords[0]):
@@ -695,16 +857,19 @@ def draw_context(
                 color="#59435f" if capital else "#545454",
                 zorder=PLACE_LAYER,
             )
-            axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
+            label = axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
                 name,
                 (point.x, point.y),
-                xytext=(3, 3),
+                xytext=(0, 0),
                 textcoords="offset points",
                 fontsize=7 if not capital else 8,
                 color="#454545",
                 weight="bold" if capital else "normal",
                 zorder=PLACE_LAYER,
+                visible=False,
             )
+            labels.append((label, point.x, point.y, capital))
+        place_city_labels(axes, labels)
 
 
 def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are distinct display inputs
@@ -946,7 +1111,7 @@ def render_file(
         coastline=coastline,
         country_outline=selected,
         render_text=render_text,
-        map_layers=load_map_layers(map_sources),
+        map_layers=load_map_layers(map_sources, country_outline=selected),
         **({"other_countries": other_countries(boundaries, answer)} if boundaries else {}),
     )
     title = title_of(answer)

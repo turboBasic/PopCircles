@@ -35,8 +35,10 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
     assert config.default_projection == "orthographic"
     us = config.country_maps["US"]
     chile = config.country_maps["CL"]
+    france = config.country_maps["FR"]
     assert not isinstance(us, str)
     assert not isinstance(chile, str)
+    assert not isinstance(france, str)
     assert us.projection == "orthographic"
     assert us.projection_parameters == {"lon_0": -96.0, "lat_0": 44.0}
     assert us.extent is not None
@@ -57,6 +59,15 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
         chile.extent.x_max,
         chile.extent.y_max,
     ) == (-75.724713888, -56.528847748, -66.418757789, -17.498400217)
+    assert france.projection == "plate-carree"
+    assert france.extent is not None
+    assert france.extent.units == "degrees"
+    assert (
+        france.extent.x_min,
+        france.extent.y_min,
+        france.extent.x_max,
+        france.extent.y_max,
+    ) == (-6.0, 41.0, 10.0, 52.0)
 
 
 @pytest.mark.parametrize(

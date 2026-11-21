@@ -112,6 +112,8 @@ allclose
 altdeg
 anstream
 anstyle
+arrowprops
+arrowstyle
 autouse
 azdeg
 bpaf

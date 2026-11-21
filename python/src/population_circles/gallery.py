@@ -369,7 +369,11 @@ def render_document(
             file=sys.stderr,
             flush=True,
         )
-        map_layers = load_map_layers(map_sources, root=context.data_root)
+        map_layers = load_map_layers(
+            map_sources,
+            root=context.data_root,
+            country_outline=outline,
+        )
         figure = render(
             answer,
             PLATE_CARREE,
