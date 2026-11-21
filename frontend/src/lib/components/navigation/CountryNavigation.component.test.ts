@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-svelte';
 import { expect, test, vi } from 'vitest';
 import CountryNavigation from './CountryNavigation.svelte';
+import { Provider as TooltipProvider } from '#lib/components/ui/tooltip';
 
 import type { GalleryEntry } from '#lib/types/gallery';
 
@@ -16,18 +17,22 @@ const worldEntry: GalleryEntry = {
 };
 
 test('[navigation-and-history] search filters countries and updates available letter jumps', async () => {
-  const screen = await render(CountryNavigation, {
-    worldEntry,
-    countries,
-    selectedEntry: null,
-    mobileMode: false,
-    drawerOpen: false,
-    desktopNavigationCollapsed: false,
-    onSelect: vi.fn(),
-    onCloseDrawer: vi.fn(),
-    onDrawerClosed: vi.fn(),
-    onDesktopCollapsedChange: vi.fn(),
-  });
+  const screen = await render(
+    CountryNavigation,
+    {
+      worldEntry,
+      countries,
+      selectedEntry: null,
+      mobileMode: false,
+      drawerOpen: false,
+      desktopNavigationCollapsed: false,
+      onSelect: vi.fn(),
+      onCloseDrawer: vi.fn(),
+      onDrawerClosed: vi.fn(),
+      onDesktopCollapsedChange: vi.fn(),
+    },
+    { wrapper: TooltipProvider, wrapperProps: { delayDuration: 300 } },
+  );
   const navigation = screen.getByRole('navigation', { name: 'Country navigation' });
   const search = navigation.getByRole('searchbox', { name: 'Search countries' });
   const alpineJump = navigation.getByRole('button', {
@@ -51,18 +56,22 @@ test('[navigation-and-history] search filters countries and updates available le
 
 test('[responsive-navigation] mobile drawer country links select without closing the dialog', async () => {
   const onSelect = vi.fn();
-  const screen = await render(CountryNavigation, {
-    worldEntry,
-    countries,
-    selectedEntry: null,
-    mobileMode: true,
-    drawerOpen: true,
-    desktopNavigationCollapsed: false,
-    onSelect,
-    onCloseDrawer: vi.fn(),
-    onDrawerClosed: vi.fn(),
-    onDesktopCollapsedChange: vi.fn(),
-  });
+  const screen = await render(
+    CountryNavigation,
+    {
+      worldEntry,
+      countries,
+      selectedEntry: null,
+      mobileMode: true,
+      drawerOpen: true,
+      desktopNavigationCollapsed: false,
+      onSelect,
+      onCloseDrawer: vi.fn(),
+      onDrawerClosed: vi.fn(),
+      onDesktopCollapsedChange: vi.fn(),
+    },
+    { wrapper: TooltipProvider, wrapperProps: { delayDuration: 300 } },
+  );
   const dialog = screen.getByRole('dialog', { name: 'Country navigation' });
 
   await expect.element(dialog).toBeVisible();
