@@ -149,22 +149,20 @@
       <use href={`${globeSprite}#${globeSymbol}`}></use>
     </svg>
     <h2 id="navigation-title">Country navigation</h2>
-    <Tooltip.Provider delayDuration={300}>
-      <Tooltip.Root>
-        <Tooltip.Trigger
-          class="desktop-collapse"
-          type="button"
-          aria-label="Collapse maps navigation"
-          aria-controls="country-navigation-panel"
-          aria-expanded={!desktopNavigationCollapsed}
-          onclick={() => onDesktopCollapsedChange(true)}
-          ><ChevronLeft size={20} strokeWidth={2} aria-hidden="true" /></Tooltip.Trigger
-        >
-        <Tooltip.Content side="right" sideOffset={8}>
-          Collapse to the icon-only navigation rail.
-        </Tooltip.Content>
-      </Tooltip.Root>
-    </Tooltip.Provider>
+    <Tooltip.Root>
+      <Tooltip.Trigger
+        class="desktop-collapse"
+        type="button"
+        aria-label="Collapse maps navigation"
+        aria-controls="country-navigation-panel"
+        aria-expanded={!desktopNavigationCollapsed}
+        onclick={() => onDesktopCollapsedChange(true)}
+        ><ChevronLeft size={20} strokeWidth={2} aria-hidden="true" /></Tooltip.Trigger
+      >
+      <Tooltip.Content side="right" sideOffset={8}>
+        Collapse to the icon-only navigation rail.
+      </Tooltip.Content>
+    </Tooltip.Root>
     <button
       class="close"
       type="button"
@@ -174,31 +172,29 @@
       onclick={onCloseDrawer}><X size={20} strokeWidth={2} aria-hidden="true" /></button
     >
   </header>
-  <Tooltip.Provider delayDuration={300}>
-    <div class="rail-controls">
-      <Tooltip.Root>
-        <Tooltip.Trigger
-          type="button"
-          aria-label="Expand maps navigation"
-          aria-controls="country-navigation-panel"
-          aria-expanded={!desktopNavigationCollapsed}
-          onclick={() => onDesktopCollapsedChange(false)}
-          ><ChevronRight size={20} strokeWidth={2} aria-hidden="true" /></Tooltip.Trigger
-        >
-        <Tooltip.Content side="right" sideOffset={8}>
-          Show country names and navigation controls.
-        </Tooltip.Content>
-      </Tooltip.Root>
-      <Tooltip.Root>
-        <Tooltip.Trigger type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>
-          <Search size={20} strokeWidth={2} aria-hidden="true" />
-        </Tooltip.Trigger>
-        <Tooltip.Content side="right" sideOffset={8}>
-          Open the search field to filter the country list.
-        </Tooltip.Content>
-      </Tooltip.Root>
-    </div>
-  </Tooltip.Provider>
+  <div class="rail-controls">
+    <Tooltip.Root>
+      <Tooltip.Trigger
+        type="button"
+        aria-label="Expand maps navigation"
+        aria-controls="country-navigation-panel"
+        aria-expanded={!desktopNavigationCollapsed}
+        onclick={() => onDesktopCollapsedChange(false)}
+        ><ChevronRight size={20} strokeWidth={2} aria-hidden="true" /></Tooltip.Trigger
+      >
+      <Tooltip.Content side="right" sideOffset={8}>
+        Show country names and navigation controls.
+      </Tooltip.Content>
+    </Tooltip.Root>
+    <Tooltip.Root>
+      <Tooltip.Trigger type="button" aria-label="Search countries" onclick={expandAndFocusSearch}>
+        <Search size={20} strokeWidth={2} aria-hidden="true" />
+      </Tooltip.Trigger>
+      <Tooltip.Content side="right" sideOffset={8}>
+        Open the search field to filter the country list.
+      </Tooltip.Content>
+    </Tooltip.Root>
+  </div>
   <nav id="country-navigation" aria-label="Country navigation">
     <search aria-label="Filter map navigation">
       <label class="search-label" for="country-search">

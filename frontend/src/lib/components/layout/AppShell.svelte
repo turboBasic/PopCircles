@@ -195,46 +195,46 @@
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<div
-  id="app-shell"
-  style={`--header-space: ${viewportChrome.headerSpace}px; --navigation-header-space: ${viewportChrome.navigationHeaderSpace}px; --footer-space: ${viewportChrome.footerSpace}px`}
->
-  <SiteHeader
-    scrollPosition={viewportChrome.scrollPosition}
-    {data}
-    {themeLight}
-    {drawerOpen}
-    bind:headerElement
-    onHome={navigateHome}
-    onTheme={toggleTheme}
-    onOpenDrawer={() => (drawerOpen = true)}
-  />
+<Tooltip.Provider delayDuration={300}>
+  <div
+    id="app-shell"
+    style={`--header-space: ${viewportChrome.headerSpace}px; --navigation-header-space: ${viewportChrome.navigationHeaderSpace}px; --footer-space: ${viewportChrome.footerSpace}px`}
+  >
+    <SiteHeader
+      scrollPosition={viewportChrome.scrollPosition}
+      {data}
+      {themeLight}
+      {drawerOpen}
+      bind:headerElement
+      onHome={navigateHome}
+      onTheme={toggleTheme}
+      onOpenDrawer={() => (drawerOpen = true)}
+    />
 
-  <main>
-    {#if error}
-      <div class="workspace-message">
-        <p role="alert">Could not load gallery data: {error}</p>
-      </div>
-    {:else if !data}
-      <div class="workspace-message">
-        <p role="status">Loading gallery…</p>
-      </div>
-    {:else}
-      <div id="gallery-layout" class:nav-collapsed={desktopNavigationCollapsed}>
-        <CountryNavigation
-          worldEntry={entries[0]}
-          countries={data.countries}
-          {selectedEntry}
-          {mobileMode}
-          {drawerOpen}
-          {desktopNavigationCollapsed}
-          onSelect={selectEntry}
-          onCloseDrawer={() => (drawerOpen = false)}
-          onDrawerClosed={handleDrawerClosed}
-          onDesktopCollapsedChange={setDesktopNavigationCollapsed}
-        />
+    <main>
+      {#if error}
+        <div class="workspace-message">
+          <p role="alert">Could not load gallery data: {error}</p>
+        </div>
+      {:else if !data}
+        <div class="workspace-message">
+          <p role="status">Loading gallery…</p>
+        </div>
+      {:else}
+        <div id="gallery-layout" class:nav-collapsed={desktopNavigationCollapsed}>
+          <CountryNavigation
+            worldEntry={entries[0]}
+            countries={data.countries}
+            {selectedEntry}
+            {mobileMode}
+            {drawerOpen}
+            {desktopNavigationCollapsed}
+            onSelect={selectEntry}
+            onCloseDrawer={() => (drawerOpen = false)}
+            onDrawerClosed={handleDrawerClosed}
+            onDesktopCollapsedChange={setDesktopNavigationCollapsed}
+          />
 
-        <Tooltip.Provider delayDuration={300}>
           <Gallery
             {entries}
             {selectedEntry}
@@ -242,12 +242,12 @@
             onScroll={viewportChrome.handleScroll}
             onCopy={copyCountryUrl}
           />
-        </Tooltip.Provider>
-      </div>
-    {/if}
-  </main>
-  <SiteFooter bind:footerElement />
-</div>
+        </div>
+      {/if}
+    </main>
+    <SiteFooter bind:footerElement />
+  </div>
+</Tooltip.Provider>
 
 {#if copyStatus}
   <p
