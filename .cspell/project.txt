@@ -108,9 +108,12 @@ tiffinfo
 webp
 
 # --- Library and API identifiers ---
+allclose
+altdeg
 anstream
 anstyle
 autouse
+azdeg
 bpaf
 bytemuck
 capsys
@@ -122,6 +125,7 @@ delenv
 dimgrey
 edgecolor
 evenodd
+exag
 facecolor
 figcaption
 figsize
@@ -132,6 +136,7 @@ getbbox
 getpid
 getpixel
 gridlines
+hillshade
 horizontalalignment
 indicatif
 initargs
@@ -154,6 +159,7 @@ ndarray
 nocapture
 pread
 proptest
+rint
 SEGS
 skia
 socketpair
@@ -162,6 +168,8 @@ thiserror
 tmpg
 tobytes
 verticalalignment
+vmax
+vmin
 weezl
 wght
 xfact
