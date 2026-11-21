@@ -23,8 +23,8 @@ from matplotlib.text import Text
 from matplotlib.transforms import Bbox
 from PIL import ExifTags, Image
 from PIL.TiffImagePlugin import IFDRational
-from shapely import get_coordinates
-from shapely.geometry import MultiLineString, Point, shape
+from shapely import get_coordinates, maximum_inscribed_circle
+from shapely.geometry import MultiLineString, Point, box, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
@@ -897,6 +897,17 @@ def draw_country_labels(
     view: Frame,
     labels: Sequence[tuple[BaseGeometry, str]],
 ) -> None:
+    canvas = cast(FigureCanvasAgg, axes.figure.canvas)
+    canvas.draw()
+    renderer = canvas.get_renderer()
+    axes_box = axes.bbox
+    inverse = axes.transData.inverted()
+    target = view.country_outline
+    target_point = (
+        axes.transData.transform((target.centroid.x, target.centroid.y))
+        if target is not None
+        else None
+    )
     for geometry, name in labels:
         projected = project(view, geometry)
         if not all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
@@ -904,17 +915,51 @@ def draw_country_labels(
         visible = projected.intersection(view.horizon)
         if visible.is_empty:
             continue
-        anchor = visible.representative_point()
-        axes.text(
-            anchor.x,
-            anchor.y,
+        inscribed = maximum_inscribed_circle(visible)
+        anchor = (
+            Point(*inscribed.coords[0])
+            if not inscribed.is_empty
+            else visible.representative_point()
+        )
+        label = axes.annotate(
             name,
-            horizontalalignment="center",
-            verticalalignment="center",
+            (anchor.x, anchor.y),
+            xytext=(0, 0),
+            textcoords="offset points",
+            visible=True,
+            clip_on=True,
             fontsize=8,
             color="#454545",
             zorder=PLACE_LAYER,
         )
+        if target is None or target_point is None:
+            continue
+        anchor_px = axes.transData.transform((anchor.x, anchor.y))
+        away = (anchor_px[0] - target_point[0], anchor_px[1] - target_point[1])
+        length = math.hypot(*away)
+        if not length:
+            continue
+        direction = away[0] / length, away[1] / length
+        best: tuple[float, float, float, float] | None = None
+        original = (0.0, 0.0)
+        for distance in (0.0, 8.0, 16.0, 24.0):
+            offset = direction[0] * distance, direction[1] * distance
+            label.set_position(offset)
+            bounds = label.get_window_extent(renderer)
+            if not axes_box.contains(*bounds.min) or not axes_box.contains(*bounds.max):
+                continue
+            corners = inverse.transform(
+                ((bounds.x0, bounds.y0), (bounds.x1, bounds.y1)),
+            )
+            label_box = box(*corners[0], *corners[1])
+            overlap = label_box.intersection(target).area / label_box.area
+            candidate = overlap, distance, offset[0], offset[1]
+            if best is None or candidate[:2] < best[:2]:
+                best = candidate
+                original = offset
+            if overlap == 0:
+                break
+        label.set_position(original)
 
 
 def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are distinct display inputs
