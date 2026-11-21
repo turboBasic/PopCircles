@@ -160,3 +160,99 @@ licence = "public domain"
 licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
 # Natural Earth asks for no attribution.
 attribution = ""
+
+[datasets.etopo-2022-60s]
+kind = "terrain-raster"
+path = "data/terrain/etopo-2022-60s.tif"
+bytes = 465969062
+sha256 = "9d27d4b8ea8e76977e2988bca667d7c8fa68b927355feffcddd6b4875a7fd08e"
+fetch_url = "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif"
+source_url = "https://www.ncei.noaa.gov/products/etopo-global-relief-model"
+
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+attribution = "NOAA National Centers for Environmental Information. 2022: ETOPO 2022 Global Relief Model. https://doi.org/10.25921/fd45-gt74."
+
+format = "GeoTIFF"
+width = 21600
+height = 10800
+epsg = 9518
+x_origin = -180.0
+y_origin = 90.0
+x_step = 0.016666666666666666
+y_step = -0.016666666666666666
+nodata = -99999.0
+
+[datasets.swisstopo-dhm25-200m]
+kind = "terrain-raster"
+path = "data/terrain/swisstopo-dhm25-200m.zip"
+bytes = 45069784
+sha256 = "9d283f198f829202e09859954d54553001f7ff1a79e3614ad47ac9cd98641887"
+fetch_url = "https://data.geo.admin.ch/ch.swisstopo.digitales-hoehenmodell_25/data.zip"
+source_url = "https://www.swisstopo.admin.ch/en/height-model-dhm25-200m"
+
+licence = "swisstopo free geodata terms (OGD), version 1.3 (2021)"
+licence_url = "https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices"
+attribution = "©swisstopo"
+
+format = "ESRI ASCII Grid"
+archive_member = "DHM200.asc"
+width = 1926
+height = 1201
+epsg = 21781
+x_origin = 479900.0
+y_origin = 302100.0
+x_step = 200.0
+y_step = -200.0
+nodata = -9999.0
+
+[datasets."natural-earth-10m-lakes-v5.0.0"]
+kind = "map-context-vector"
+path = "data/context/natural-earth-10m-lakes-v5.0.0.geojson"
+bytes = 5043554
+sha256 = "2d036f53dedec578001c5c30c2959ee7d4eebc1306900fa4367c49929ec8f2d9"
+fetch_url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.0.0/geojson/ne_10m_lakes.geojson"
+source_url = "https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-lakes/"
+
+licence = "public domain"
+licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
+attribution = ""
+
+format = "GeoJSON"
+crs = "OGC:CRS84"
+feature_count = 1355
+revision = "Natural Earth 5.0.0"
+
+[datasets."natural-earth-10m-rivers-lake-centerlines-v5.0.0"]
+kind = "map-context-vector"
+path = "data/context/natural-earth-10m-rivers-lake-centerlines-v5.0.0.geojson"
+bytes = 7307743
+sha256 = "bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a"
+fetch_url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.0.0/geojson/ne_10m_rivers_lake_centerlines.geojson"
+source_url = "https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-rivers-lake-centerlines/"
+
+licence = "public domain"
+licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
+attribution = ""
+
+format = "GeoJSON"
+crs = "OGC:CRS84"
+feature_count = 1455
+revision = "Natural Earth 5.0.0"
+
+[datasets."natural-earth-10m-roads-v5.0.0"]
+kind = "map-context-vector"
+path = "data/context/natural-earth-10m-roads-v5.0.0.geojson"
+bytes = 50474096
+sha256 = "66a0c7b438e92fd124822cc5921cfa11042f48c294ade5e0f03f2c6640fd0248"
+fetch_url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.0.0/geojson/ne_10m_roads.geojson"
+source_url = "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/roads/"
+
+licence = "public domain"
+licence_url = "https://www.naturalearthdata.com/about/terms-of-use/"
+attribution = ""
+
+format = "GeoJSON"
+crs = "OGC:CRS84"
+feature_count = 56600
+revision = "Natural Earth 5.0.0"

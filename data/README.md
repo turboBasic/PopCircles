@@ -7,8 +7,10 @@ tables and maps, are generated when needed and are not stored here.
 ```text
 data/
   population/   population rasters
+  terrain/      elevation rasters used only to present maps
   boundaries/   coastlines and country borders
   settlements/  populated places
+  context/      water and transport vectors used on maps
 ```
 
 Each type of data has its own folder, a row in [`registry.toml`][registry], and an entry below.
@@ -37,6 +39,90 @@ below is one; maps can use it without downloading anything. The registry says wh
 included or must be fetched.
 Obtaining an independent copy from the publisher, to check a republished asset against its source, is
 [`CONTRIBUTING.md`][contributing-data].
+
+## etopo-2022-60s
+
+| Property | Value |
+| --- | --- |
+| Grid | 21 600 × 10 800 (60 arc-second) |
+| Extent | whole globe, origin (−180°, 90°) |
+| CRS | EPSG:9518 (WGS 84) |
+| Pixel type | Float32, single band |
+| Nodata | −99 999 |
+| Size | 465 969 062 bytes |
+| SHA-256 | `9d27d4b8ea8e76977e2988bca667d7c8fa68b927355feffcddd6b4875a7fd08e` |
+
+The [NOAA NCEI ETOPO 2022 60 arc-second GeoTIFF][etopo-file] supplies map terrain outside
+Switzerland. The checksum and size identify the exact publisher file. ETOPO is CC0-1.0 and is free
+for private, academic and commercial use. NCEI asks users to cite the source; maps carry the
+attribution from the registry. The grid is intentionally coarse compared with the Swiss national
+grid, but it provides consistent global coverage for the other seven reference maps. See the
+[product page][etopo] for documentation and citation details.
+
+The terrain renderer uses this registered raster only for map presentation. It does not read
+population data or affect published results.
+
+## swisstopo-dhm25-200m
+
+| Property | Value |
+| --- | --- |
+| Grid | 1 926 × 1 201 (200 m) |
+| Extent | LV03 coordinates 479 900–865 100 m E, 61 900–302 100 m N |
+| CRS | EPSG:21781 (LV03 / LN02) |
+| Pixel type | Float32, single band, ESRI ASCII Grid in the source ZIP |
+| Nodata | −9 999 |
+| ZIP size | 45 069 784 bytes |
+| ZIP SHA-256 | `9d283f198f829202e09859954d54553001f7ff1a79e3614ad47ac9cd98641887` |
+
+This is the [official DHM25 / 200m national product][swisstopo-dhm25] from the Federal Office of
+Topography swisstopo, not the Wabern or Matterhorn sample files (whose use in products is
+prohibited). The pinned official archive contains `DHM200.asc`; that member is the 18 153 345-byte
+grid used by the renderer. The archive metadata identifies EPSG:21781; the grid header supplies its
+dimensions, 200 m cells and −9 999 nodata value. swisstopo permits free redistribution, modification
+and commercial use under its [OGD terms][swisstopo-terms], with a source credit required. Figures
+carry `©swisstopo`.
+
+## natural-earth-10m-lakes-v5.0.0
+
+| Property | Value |
+| --- | --- |
+| Features | 1 355 |
+| CRS | OGC:CRS84 (longitude, latitude) |
+| Size | 5 043 554 bytes |
+| SHA-256 | `2d036f53dedec578001c5c30c2959ee7d4eebc1306900fa4367c49929ec8f2d9` |
+
+[Natural Earth lakes and reservoirs][ne-lakes], version 5.0.0, are used as contextual map water
+and clipped to the selected country. Natural Earth data is public domain; no attribution is
+required.
+
+## natural-earth-10m-rivers-lake-centerlines-v5.0.0
+
+| Property | Value |
+| --- | --- |
+| Features | 1 455 |
+| CRS | OGC:CRS84 (longitude, latitude) |
+| Size | 7 307 743 bytes |
+| SHA-256 | `bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a` |
+
+[Natural Earth rivers and lake centerlines][ne-rivers], version 5.0.0, are used as contextual water.
+The published base file includes its Europe supplemental ranks 9–12, which Natural Earth documents
+as public domain with optional European Commission attribution. The separate Europe and North
+America supplement downloads are not registered here. No attribution is required.
+
+## natural-earth-10m-roads-v5.0.0
+
+| Property | Value |
+| --- | --- |
+| Features | 56 600 |
+| CRS | OGC:CRS84 (longitude, latitude) |
+| Size | 50 474 096 bytes |
+| SHA-256 | `66a0c7b438e92fd124822cc5921cfa11042f48c294ade5e0f03f2c6640fd0248` |
+
+[Natural Earth roads][ne-roads], version 5.0.0, provide country-clipped major-road features for the
+eight approved countries; no North American country is in that set. The published file contains
+North American features from XNR Productions, but those features are outside the eight map extents
+and are not retained in any figure. Natural Earth documents its base data as public domain and
+requires no attribution. The separate North America supplement download is not registered.
 
 ## population-count-2020-30arcsec
 
@@ -294,5 +380,12 @@ asset; the publisher URL is the source archive used to reproduce it.
 [ne]: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
 [ne-tag]: https://github.com/nvkelso/natural-earth-vector/releases/tag/v5.1.2
 [ne-terms]: https://www.naturalearthdata.com/about/terms-of-use/
+[etopo]: https://www.ncei.noaa.gov/products/etopo-global-relief-model
+[etopo-file]: https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif
+[swisstopo-dhm25]: https://www.swisstopo.admin.ch/en/height-model-dhm25-200m
+[swisstopo-terms]: https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices
+[ne-lakes]: https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-lakes/
+[ne-rivers]: https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-rivers-lake-centerlines/
+[ne-roads]: https://www.naturalearthdata.com/downloads/10m-cultural-vectors/roads/
 [populated-places-asset]: https://github.com/turboBasic/PopCircles/releases/download/data-v2/populated-places-1to10m.geojson
 [registry]: registry.toml

@@ -82,6 +82,7 @@ Valeriepieris
 AEQD
 Albers
 Carree
+centerlines
 ENGL
 EPSG
 featurecla
@@ -198,6 +199,7 @@ Chamdo
 CIESIN
 Dibrugarh
 Earthdata
+ETOPO
 EuroGeographics
 GADM
 GHSL
@@ -208,8 +210,11 @@ Karokh
 Lenger
 Mirzapur
 NASA
+NCEI
 Palisades
 SEDAC
+swisstopo
+Wabern
 WCAG
 WPP
 Xichang

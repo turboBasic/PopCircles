@@ -9,8 +9,10 @@ from population_circles.dataset_registry import (
     REGISTRY,
     REPO_ROOT,
     BoundaryVector,
+    MapContextVector,
     PopulationRaster,
     SettlementVector,
+    TerrainRaster,
     load,
     parse,
 )
@@ -38,6 +40,43 @@ source_url = "https://example.invalid/source"
 licence = "Public domain"
 licence_url = "https://example.invalid/licence"
 attribution = ""
+"""
+TERRAIN_ROW = """
+[datasets.example-terrain]
+kind = "terrain-raster"
+path = "data/terrain/example-terrain.tif"
+bytes = 5
+sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+fetch_url = "https://example.invalid/example-terrain.tif"
+source_url = "https://example.invalid/source"
+licence = "Test licence"
+licence_url = "https://example.invalid/licence"
+attribution = ""
+format = "GeoTIFF"
+width = 10
+height = 20
+epsg = 4326
+x_origin = -180.0
+y_origin = 90.0
+x_step = 0.016666666666666666
+y_step = -0.016666666666666666
+nodata = -99999.0
+"""
+MAP_CONTEXT_ROW = """
+[datasets.example-lakes]
+kind = "map-context-vector"
+path = "data/context/example-lakes.geojson"
+bytes = 5
+sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+fetch_url = "https://example.invalid/example-lakes.geojson"
+source_url = "https://example.invalid/source"
+licence = "Test licence"
+licence_url = "https://example.invalid/licence"
+attribution = ""
+format = "GeoJSON"
+crs = "OGC:CRS84"
+feature_count = 2
+revision = "Test 1.0"
 """
 COUNTRY_BOUNDARY_ROW = """
 [datasets.countries-2024]
@@ -173,6 +212,48 @@ def test_a_synthetic_settlement_vector_needs_no_grid_fields() -> None:
 
     assert isinstance(dataset, SettlementVector)
     assert dataset.path == "data/settlements/example-places.geojson"
+
+
+def test_a_synthetic_terrain_row_requires_complete_grid_metadata() -> None:
+    dataset = parse(TERRAIN_ROW).datasets["example-terrain"]
+
+    assert isinstance(dataset, TerrainRaster)
+    assert (dataset.width, dataset.height, dataset.epsg) == (10, 20, 4326)
+    with pytest.raises(ValidationError, match="x_step"):
+        parse(TERRAIN_ROW.replace("x_step = 0.016666666666666666\n", ""))
+    with pytest.raises(ValidationError, match="grid steps must be nonzero"):
+        parse(TERRAIN_ROW.replace("x_step = 0.016666666666666666", "x_step = 0"))
+
+
+def test_an_ascii_grid_terrain_archive_must_name_its_member() -> None:
+    text = TERRAIN_ROW.replace('format = "GeoTIFF"', 'format = "ESRI ASCII Grid"')
+
+    with pytest.raises(ValidationError, match="must name its archive member"):
+        parse(text)
+
+
+def test_a_synthetic_map_context_vector_requires_source_metadata() -> None:
+    dataset = parse(MAP_CONTEXT_ROW).datasets["example-lakes"]
+
+    assert isinstance(dataset, MapContextVector)
+    assert (dataset.crs, dataset.feature_count, dataset.revision) == (
+        "OGC:CRS84",
+        2,
+        "Test 1.0",
+    )
+    with pytest.raises(ValidationError, match="feature_count"):
+        parse(MAP_CONTEXT_ROW.replace("feature_count = 2\n", ""))
+
+
+def test_every_selected_map_context_source_is_registered() -> None:
+    datasets = load().datasets
+    keys = (
+        "natural-earth-10m-lakes-v5.0.0",
+        "natural-earth-10m-rivers-lake-centerlines-v5.0.0",
+        "natural-earth-10m-roads-v5.0.0",
+    )
+
+    assert all(isinstance(datasets[key], MapContextVector) for key in keys)
 
 
 def test_a_settlement_vector_key_must_match_its_file_stem() -> None:
