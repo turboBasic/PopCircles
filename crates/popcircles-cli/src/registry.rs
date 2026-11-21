@@ -83,6 +83,8 @@ enum Row {
     PopulationRaster(PopulationRaster),
     BoundaryVector(BoundaryVector),
     SettlementVector(SettlementVector),
+    TerrainRaster(TerrainRaster),
+    MapContextVector(MapContextVector),
 }
 
 #[derive(Debug, Deserialize)]
@@ -124,12 +126,24 @@ struct SettlementVector {
     path: PathBuf,
 }
 
+#[derive(Debug, Deserialize)]
+struct TerrainRaster {
+    path: PathBuf,
+}
+
+#[derive(Debug, Deserialize)]
+struct MapContextVector {
+    path: PathBuf,
+}
+
 impl Row {
     fn path(&self) -> &Path {
         match self {
             Self::PopulationRaster(row) => &row.path,
             Self::BoundaryVector(row) => &row.path,
             Self::SettlementVector(row) => &row.path,
+            Self::TerrainRaster(row) => &row.path,
+            Self::MapContextVector(row) => &row.path,
         }
     }
 }
@@ -225,7 +239,13 @@ impl Registry {
     pub(crate) fn raster(&self, name: &str) -> Result<Dataset, RegistryError> {
         let row = match self.datasets.get(name) {
             Some(Row::PopulationRaster(row)) => row,
-            Some(Row::BoundaryVector(_) | Row::SettlementVector(_)) | None => {
+            Some(
+                Row::BoundaryVector(_)
+                | Row::SettlementVector(_)
+                | Row::TerrainRaster(_)
+                | Row::MapContextVector(_),
+            )
+            | None => {
                 return Err(RegistryError::Unknown {
                     name: name.to_owned(),
                     // Ordered, because a `BTreeMap` is: the message a typo gets is the same message twice
@@ -282,18 +302,22 @@ impl Registry {
     pub(crate) fn settlements(&self, name: &str) -> Result<PathBuf, RegistryError> {
         match self.datasets.get(name) {
             Some(Row::SettlementVector(row)) => Ok(row.path.clone()),
-            Some(Row::BoundaryVector(_) | Row::PopulationRaster(_)) | None => {
-                Err(RegistryError::UnknownSettlement {
-                    name: name.to_owned(),
-                    known: self
-                        .datasets
-                        .iter()
-                        .filter(|(_, row)| matches!(row, Row::SettlementVector(_)))
-                        .map(|(key, _)| key.as_str())
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                })
-            }
+            Some(
+                Row::BoundaryVector(_)
+                | Row::PopulationRaster(_)
+                | Row::TerrainRaster(_)
+                | Row::MapContextVector(_),
+            )
+            | None => Err(RegistryError::UnknownSettlement {
+                name: name.to_owned(),
+                known: self
+                    .datasets
+                    .iter()
+                    .filter(|(_, row)| matches!(row, Row::SettlementVector(_)))
+                    .map(|(key, _)| key.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            }),
         }
     }
 
@@ -301,7 +325,13 @@ impl Registry {
     pub(crate) fn boundary(&self, name: &str) -> Option<&BoundaryVector> {
         match self.datasets.get(name) {
             Some(Row::BoundaryVector(row)) => Some(row),
-            Some(Row::PopulationRaster(_) | Row::SettlementVector(_)) | None => None,
+            Some(
+                Row::PopulationRaster(_)
+                | Row::SettlementVector(_)
+                | Row::TerrainRaster(_)
+                | Row::MapContextVector(_),
+            )
+            | None => None,
         }
     }
 }
@@ -437,6 +467,37 @@ path = "data/settlements/example-places.geojson"
             registry.settlements("missing"),
             Err(RegistryError::UnknownSettlement { .. })
         ));
+    }
+
+    #[test]
+    fn presentation_datasets_are_accepted_but_not_cli_inputs() {
+        let text = r#"
+[datasets.example-dem]
+kind = "terrain-raster"
+path = "data/terrain/example-dem.tif"
+width = 2
+height = 2
+epsg = 4326
+x_origin = 0.0
+y_origin = 2.0
+x_step = 1.0
+y_step = -1.0
+nodata = -9999.0
+
+[datasets.example-roads]
+kind = "map-context-vector"
+path = "data/context/example-roads.geojson"
+format = "GeoJSON"
+crs = "OGC:CRS84"
+feature_count = 1
+revision = "fixture"
+"#;
+        let registry = Registry::parse(Path::new("fixture.toml"), text)
+            .expect("presentation-only registry kinds are accepted by the CLI reader");
+
+        assert!(registry.raster("example-dem").is_err());
+        assert!(registry.settlements("example-roads").is_err());
+        assert!(registry.boundary("example-dem").is_none());
     }
 
     #[test]
