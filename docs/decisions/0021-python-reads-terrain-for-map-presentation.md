@@ -10,7 +10,7 @@ tags: [adr, popcircles]
 
 ## Decision
 
-Python may use Rasterio to read registered terrain rasters for map presentation and Matplotlib to prepare their visual relief. This exception does not include population rasters or numeric work, caches, ledgers, or result documents, which remain Rust-owned. Rust CLI builds and runs without Rasterio or Matplotlib.
+Python may use Rasterio to read registered terrain rasters for map presentation and Matplotlib to prepare their visual relief. Rust retains population raster access and calculations, cache and ledger contents, and authors published result documents; those documents remain the Rust-to-Python contract. Rust CLI builds and runs without Rasterio or Matplotlib.
 
 ## Context
 
