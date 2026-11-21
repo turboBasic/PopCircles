@@ -1,0 +1,107 @@
+import hashlib
+import importlib.metadata
+import json
+import platform
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+from numpy.typing import NDArray
+from PIL import Image
+
+from population_circles import gallery, render_map
+from population_circles.dataset_registry import REPO_ROOT, TerrainRaster, load
+from population_circles.map_frame import Frame
+from population_circles.presentation_config import map_text_rendering
+from population_circles.render_map import registered_coastline
+from population_circles.terrain import prepare_terrain
+
+ids = ("FR", "NL", "CH", "CL", "JP", "BR", "NP", "CN")
+corpus = REPO_ROOT / "results"
+output = REPO_ROOT / "build/gh-355-phase3/maps"
+cache = REPO_ROOT / "build/gh-355-phase3/cache"
+output.mkdir(parents=True, exist_ok=True)
+cache.mkdir(parents=True, exist_ok=True)
+registry = load()
+coastline, coastline_credit = registered_coastline(registry)
+context = gallery.MapRenderContext(
+    registry,
+    coastline,
+    coastline_credit,
+    output,
+    cache,
+    gallery.render_context_digest(),
+    map_text_rendering(),
+)
+original_prepare = prepare_terrain
+terrain_seconds = [0.0]
+
+
+def timed_prepare(
+    dataset: TerrainRaster,
+    frame: Frame,
+    *,
+    root: Path = REPO_ROOT,
+) -> tuple[NDArray[np.uint8], tuple[float, float, float, float]]:
+    started = time.perf_counter()
+    result = original_prepare(dataset, frame, root=root)
+    terrain_seconds[0] += time.perf_counter() - started
+    return result
+
+
+prepare_terrain_attribute = "prepare_terrain"
+setattr(render_map, prepare_terrain_attribute, timed_prepare)
+cold = {}
+warm = {}
+before = {}
+for country_id in ids:
+    source = next(corpus.glob(f"country-*-{country_id}-half.json"))
+    before[country_id] = hashlib.sha256(source.read_bytes()).hexdigest()
+    payload = json.loads(source.read_text())
+    terrain_seconds[0] = 0.0
+    started = time.perf_counter()
+    drawn, reused = gallery.render_document(source, payload, context, 1, 1)
+    if reused:
+        raise AssertionError
+    elapsed = time.perf_counter() - started
+    with Image.open(drawn.figure) as image:
+        dimensions = image.size
+    cold[country_id] = {
+        "source": str(source.relative_to(REPO_ROOT)),
+        "figure": str(drawn.figure.relative_to(REPO_ROOT)),
+        "seconds_total": round(elapsed, 3),
+        "seconds_terrain_prepare": round(terrain_seconds[0], 3),
+        "seconds_render_and_write": round(max(0.0, elapsed - terrain_seconds[0]), 3),
+        "dimensions": dimensions,
+        "bytes": drawn.figure.stat().st_size,
+        "reused_cache": reused,
+    }
+for country_id in ids:
+    source = next(corpus.glob(f"country-*-{country_id}-half.json"))
+    payload = json.loads(source.read_text())
+    started = time.perf_counter()
+    drawn, reused = gallery.render_document(source, payload, context, 1, 1)
+    elapsed = time.perf_counter() - started
+    warm[country_id] = {"seconds_total": round(elapsed, 3), "reused_cache": reused}
+    if not reused:
+        raise AssertionError
+    if hashlib.sha256(source.read_bytes()).hexdigest() != before[country_id]:
+        raise AssertionError
+
+report = {
+    "machine": f"{platform.machine()} {platform.platform()}",
+    "python": sys.version.split()[0],
+    "model": "Mac14,9",
+    "rasterio": importlib.metadata.version("rasterio"),
+    "matplotlib": importlib.metadata.version("matplotlib"),
+    "source_resolution": {
+        "etopo-2022-60s": "60 arc-seconds",
+        "swisstopo-dhm25-200m": "200 m",
+    },
+    "cold": cold,
+    "warm": warm,
+    "source_documents_unchanged": True,
+}
+path = REPO_ROOT / "build/gh-355-phase3/measurements.json"
+path.write_text(json.dumps(report, indent=2) + "\n")
