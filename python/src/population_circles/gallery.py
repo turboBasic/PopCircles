@@ -186,7 +186,7 @@ def render_documents(
 def render_context_digest() -> str:
     digest = hashlib.sha256()
     digest.update(sys.version.encode())
-    for package in ("matplotlib", "pyproj", "shapely"):
+    for package in ("matplotlib", "pyproj", "rasterio", "shapely"):
         digest.update(importlib.metadata.version(package).encode())
     digest.update(
         json.dumps(

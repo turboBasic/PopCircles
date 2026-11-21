@@ -1,4 +1,5 @@
 import copy
+import importlib.metadata
 import json
 import os
 import shutil
@@ -643,6 +644,19 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "pyproject.toml" not in gallery_module.RENDER_INPUTS
     assert CORPUS.parent / "uv.lock" not in gallery_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "data" / "registry.toml" in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
+        gallery_module.RENDER_INPUTS
+    )
+
+
+def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    version = Mock(wraps=importlib.metadata.version)
+    monkeypatch.setattr(importlib.metadata, "version", version)
+
+    gallery_module.render_context_digest()
+
+    assert "rasterio" in [call.args[0] for call in version.call_args_list]
 
 
 def test_render_context_hashes_source_and_configuration_files(
@@ -656,6 +670,40 @@ def test_render_context_hashes_source_and_configuration_files(
     source.write_text("second", encoding="utf-8")
 
     assert gallery_module.render_context_digest() != first
+
+
+@pytest.mark.parametrize(
+    ("source_kind", "before", "after"),
+    [
+        ("terrain-checksum", "terrain sha256 = 111", "terrain sha256 = 222"),
+        ("context-checksum", "roads sha256 = 111", "roads sha256 = 222"),
+        ("palette", "ELEVATION_STOPS = low", "ELEVATION_STOPS = high"),
+        ("illumination", "HILLSHADE_ALPHA = 0.34", "HILLSHADE_ALPHA = 0.35"),
+        ("renderer", "circle below roads", "circle above roads"),
+    ],
+)
+def test_map_cache_key_changes_when_terrain_inputs_or_presentation_change(
+    source_kind: str,
+    before: str,
+    after: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / f"{source_kind}.txt"
+    source.write_text(before, encoding="utf-8")
+    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
+    coastline = box(-20, -10, 20, 10)
+    outline = box(-5, -5, 5, 5)
+    context = gallery_module.render_context_digest()
+    cached_key = gallery_module.map_cache_key(context, b"document", coastline, outline)
+    assert gallery_module.map_cache_key(context, b"document", coastline, outline) == cached_key
+
+    source.write_text(after, encoding="utf-8")
+    updated_context = gallery_module.render_context_digest()
+
+    assert (
+        gallery_module.map_cache_key(updated_context, b"document", coastline, outline) != cached_key
+    )
 
 
 def test_render_worker_count_leaves_one_cpu_free(monkeypatch: pytest.MonkeyPatch) -> None:
