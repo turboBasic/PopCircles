@@ -92,8 +92,7 @@ FOOTER_SIZE = 6.5
 FOOTER_BOTTOM = 0.04
 VISIBLE_FOOTER = (
     "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
-    "© EuroGeographics for the administrative boundaries · "
-    "See full attribution in image metadata"
+    "© EuroGeographics for the administrative boundaries"
 )
 # Handed to `render` in place of a citation, so the footer assertion is about what the caller passed
 # rather than about a value the test could also have read.
@@ -1086,12 +1085,14 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert observed_annotations[:2] == [metadata["Title"], metadata["Description"]]
     assert observed_annotations[2].startswith(VISIBLE_FOOTER)
     assert citation(REGISTRY, "etopo-2022-60s") in observed_annotations[2]
+    assert observed_annotations[2].endswith("See full attribution in image metadata")
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
     figure = render(circle_of(document()), PLATE_CARREE, coastline=None)
     drawn_text = " ".join(normalised(artist.get_text()) for artist in figure.texts)
     assert normalised(VISIBLE_FOOTER) in drawn_text
+    assert "See full attribution in image metadata" in drawn_text
     assert MARKER not in drawn_text
 
 

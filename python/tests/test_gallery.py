@@ -54,8 +54,7 @@ WORLD_TERRITORY_SHARE = 0.375
 COUNTRY_TERRITORY_SHARE = 0.625
 VISIBLE_FOOTER = (
     "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
-    "© EuroGeographics for the administrative boundaries · "
-    "See full attribution in image metadata"
+    "© EuroGeographics for the administrative boundaries"
 )
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
@@ -478,6 +477,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     assert annotations[1] == metadata["Description"]
     assert annotations[-1].startswith(VISIBLE_FOOTER)
     assert "Terrain data:" in annotations[-1]
+    assert annotations[-1].endswith("See full attribution in image metadata")
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert "© Andrii Melnyk, 2026" in metadata["Copyright"]

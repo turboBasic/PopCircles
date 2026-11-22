@@ -502,15 +502,13 @@ def title_of(answer: Answer) -> str:
 def footer_text() -> str:
     return (
         "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
-        "© EuroGeographics for the administrative boundaries · "
-        "See full attribution in image metadata"
+        "© EuroGeographics for the administrative boundaries"
     )
 
 
 def visible_credits(map_attributions: Sequence[tuple[str, str]]) -> str:
-    base = footer_text()
     additions = [f"{name} data: {attribution}" for name, attribution in map_attributions]
-    return " · ".join((base, *additions))
+    return " · ".join((footer_text(), *additions, "See full attribution in image metadata"))
 
 
 def copyright_of(
