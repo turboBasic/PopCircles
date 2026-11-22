@@ -700,6 +700,9 @@ def test_map_cache_key_changes_for_each_render_input_category() -> None:
     assert base != gallery_module.map_cache_key(
         "context", b"document", coastline, box(-1, -1, 1, 1)
     )
+    assert base != gallery_module.map_cache_key(
+        "context", b"document", coastline, outline, gallery_module.ORTHOGRAPHIC
+    )
 
 
 def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
@@ -886,7 +889,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
 
     committed = sorted(corpus.glob("*.json"))
     assert render.call_count == len(drawn)
-    assert len(drawn) + len(skipped) == len(committed)
+    assert len({one.document for one in drawn}) + len(skipped) == len(committed)
     assert drawn, "the committed corpus holds no document this gallery can draw"
     zero_population = {
         source.name
@@ -910,6 +913,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         assert (output / one.document.name).is_file()
     figure_names = {one.figure.name for one in drawn}
     assert "world-half-30arcsec.png" in figure_names
+    assert "world-half-30arcsec-orthographic.png" in figure_names
     assert "world-most-populous-1000km-5arcmin.png" in figure_names
     for one in skipped:
         assert one.kind not in CIRCLE_KINDS

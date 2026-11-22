@@ -29,7 +29,7 @@ from population_circles.dataset_registry import (
     Registry,
     load,
 )
-from population_circles.map_frame import PLATE_CARREE
+from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
 from population_circles.presentation_config import load as load_presentation_config
 from population_circles.presentation_config import map_text_rendering
 from population_circles.render_map import (
@@ -107,6 +107,16 @@ class Skipped:
     kind: str
 
 
+@dataclass(frozen=True)
+class RenderJob:
+    source: Path
+    payload: dict[str, Any]
+    index: int
+    total: int
+    projection: str = PLATE_CARREE
+    figure_suffix: str = ""
+
+
 class PageFigure(TypedDict):
     map: str
     document: str
@@ -149,14 +159,13 @@ def init_render_worker(context: MapRenderContext) -> None:
 
 
 def render_document_in_worker(
-    job: tuple[Path, dict[str, Any], int, int],
+    job: RenderJob,
 ) -> tuple[Drawn, bool]:
     context = _WORKER_CONTEXT.get()
     if context is None:
         message = "gallery render worker was not initialized"
         raise RuntimeError(message)
-    source, payload, index, total = job
-    return render_document(source, payload, context, index, total)
+    return render_document(job, context)
 
 
 def render_worker_count(map_count: int) -> int:
@@ -164,15 +173,12 @@ def render_worker_count(map_count: int) -> int:
 
 
 def render_documents(
-    jobs: list[tuple[Path, dict[str, Any], int, int]], context: MapRenderContext
+    jobs: list[RenderJob], context: MapRenderContext
 ) -> tuple[list[tuple[Drawn, bool]], int, float]:
     workers = render_worker_count(len(jobs))
     started = time.perf_counter()
     if workers == 1:
-        results = [
-            render_document(source, payload, context, index, total)
-            for source, payload, index, total in jobs
-        ]
+        results = [render_document(job, context) for job in jobs]
     elif workers > 1:
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=workers,
@@ -215,6 +221,7 @@ def map_cache_key(
     document: bytes,
     coastline: BaseGeometry,
     outline: BaseGeometry | None,
+    projection: str = PLATE_CARREE,
 ) -> str:
     digest = hashlib.sha256()
     for value in (
@@ -222,6 +229,7 @@ def map_cache_key(
         document,
         coastline.wkb,
         outline.wkb if outline is not None else b"",
+        projection.encode(),
     ):
         digest.update(len(value).to_bytes(8, "big"))
         digest.update(value)
@@ -287,13 +295,11 @@ def store_cached_map(cache: Path, key: str, target: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def render_document(
-    source: Path,
-    payload: dict[str, Any],
-    context: MapRenderContext,
-    index: int,
-    total: int,
-) -> tuple[Drawn, bool]:
+def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, bool]:
+    source = job.source
+    payload = job.payload
+    projection = job.projection
+    figure_suffix = job.figure_suffix
     try:
         answer = circle_of(payload)
         boundaries = load_map_boundaries(answer, context.registry)
@@ -330,7 +336,7 @@ def render_document(
             map_sources.attributions,
         )
         payload["render_metadata"] = metadata_json_fields(answer, properties)
-        target = context.output / f"{source.stem}.png"
+        target = context.output / f"{source.stem}{figure_suffix}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
         cache_key = (
             map_cache_key(
@@ -338,6 +344,7 @@ def render_document(
                 json.dumps(payload, sort_keys=True).encode(),
                 context.coastline,
                 outline,
+                projection,
             )
             if context.cache_directory is not None
             else None
@@ -347,11 +354,12 @@ def render_document(
             and cache_key is not None
             and reuse_cached_map(context.cache_directory, cache_key, target)
         ):
-            (context.output / source.name).write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-            )
+            if not figure_suffix:
+                (context.output / source.name).write_text(
+                    json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+                )
             print(
-                f"Gallery: [{index}/{total}] reused {target.name}",
+                f"Gallery: [{job.index}/{job.total}] reused {target.name}",
                 file=sys.stderr,
                 flush=True,
             )
@@ -366,7 +374,7 @@ def render_document(
                 True,
             )
         print(
-            f"Gallery: [{index}/{total}] rendering {source.name}",
+            f"Gallery: [{job.index}/{job.total}] rendering {target.name}",
             file=sys.stderr,
             flush=True,
         )
@@ -377,7 +385,7 @@ def render_document(
         )
         figure = render(
             answer,
-            PLATE_CARREE,
+            projection,
             coastline=context.coastline,
             country_outline=outline,
             other_countries=other_countries(boundaries, answer),
@@ -406,11 +414,12 @@ def render_document(
         store_cached_map(context.cache_directory, cache_key, target)
     # The document travels beside its figure, so the caption's link resolves on the published
     # site rather than pointing back into a tree the reader does not have.
-    (context.output / source.name).write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    if not figure_suffix:
+        (context.output / source.name).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
     print(
-        f"Gallery: [{index}/{total}] wrote {target.name}",
+        f"Gallery: [{job.index}/{job.total}] wrote {target.name}",
         file=sys.stderr,
         flush=True,
     )
@@ -535,6 +544,16 @@ def enrich_source(source: Path, payload: dict[str, Any], registry: Registry) -> 
     return enriched
 
 
+def render_jobs_for(
+    source: Path, payload: dict[str, Any], index: int, total: int
+) -> tuple[RenderJob, ...]:
+    job = RenderJob(source, payload, index, total)
+    answer = circle_of(payload)
+    if answer.country is None and answer.caption.share == HALF_SHARE:
+        return job, RenderJob(source, payload, index, total, ORTHOGRAPHIC, "-orthographic")
+    return (job,)
+
+
 def build_gallery_output(
     corpus: Path,
     sources: list[tuple[Path, dict[str, Any]]],
@@ -550,7 +569,7 @@ def build_gallery_output(
     excluded = excluded_country_ids()
     sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
     skipped.extend(excluded_sources)
-    render_jobs: list[tuple[Path, dict[str, Any], int, int]] = []
+    render_jobs: list[RenderJob] = []
     try:
         (output / "header-background.png").unlink(missing_ok=True)
         build_frontend(output)
@@ -590,7 +609,7 @@ def build_gallery_output(
                 (output / source.name).unlink(missing_ok=True)
                 (output / f"{source.stem}.png").unlink(missing_ok=True)
                 continue
-            render_jobs.append((source, payload, index, len(sources)))
+            render_jobs.extend(render_jobs_for(source, payload, index, len(sources)))
 
         drawn_results, workers, render_seconds = render_documents(render_jobs, context)
         for drawn_map, reused in drawn_results:

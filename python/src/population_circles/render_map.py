@@ -887,7 +887,7 @@ def draw_context(
         labels: list[tuple[Text, float, float, bool]] = []
         for geometry, name, _, capital in places:
             point = cast(Point, project(view, geometry))
-            if not all(math.isfinite(value) for value in point.coords[0]):
+            if point.is_empty or not all(math.isfinite(value) for value in point.coords[0]):
                 continue
             axes.scatter(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
                 [point.x],
