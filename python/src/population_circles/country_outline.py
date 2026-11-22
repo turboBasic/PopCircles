@@ -20,6 +20,14 @@ class BoundaryIdentityError(ValueError):
     pass
 
 
+class CountryBoundaries(dict[str, BaseGeometry]):
+    names: dict[str, str]
+
+    def __init__(self, geometries: dict[str, BaseGeometry], names: dict[str, str]) -> None:
+        super().__init__(geometries)
+        self.names = names
+
+
 def refuse(message: str, error: type[Exception] = ValueError) -> NoReturn:
     raise error(message)
 
@@ -65,7 +73,9 @@ def _registered_boundary(
     return country, dataset, dataset.source_id_field
 
 
-def _boundaries_from_file(path: Path, source_id_field: str) -> dict[str, BaseGeometry]:
+def _boundaries_from_file(
+    path: Path, source_id_field: str, display_name_field: str | None = None
+) -> CountryBoundaries:
     collection = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(collection, dict):
         refuse(f"country boundary file {path} has no feature collection")
@@ -74,10 +84,15 @@ def _boundaries_from_file(path: Path, source_id_field: str) -> dict[str, BaseGeo
     if not isinstance(features, list):
         refuse(f"country boundary file {path} has no feature list")
     boundaries: dict[str, BaseGeometry] = {}
+    names: dict[str, str] = {}
     for raw_feature in cast(list[object], features):
         if not isinstance(raw_feature, dict):
             refuse("country boundary file contains a malformed feature")
         feature = cast(dict[str, object], raw_feature)
+        properties = feature.get("properties")
+        if not isinstance(properties, dict):
+            refuse(f"country boundary feature has no {source_id_field} identifier")
+        properties = cast(dict[str, object], properties)
         identifier = _feature_id(feature, source_id_field)
         if identifier in boundaries:
             refuse(f"country boundary file has duplicate {source_id_field} {identifier!r}")
@@ -85,10 +100,15 @@ def _boundaries_from_file(path: Path, source_id_field: str) -> dict[str, BaseGeo
         if not isinstance(geometry, dict):
             refuse(f"country boundary feature {identifier!r} has no geometry")
         boundaries[identifier] = shape(cast(dict[str, Any], geometry))
-    return boundaries
+        if display_name_field is not None:
+            name = properties.get(display_name_field)
+            if not isinstance(name, str) or not name:
+                refuse(f"country boundary feature {identifier!r} has no {display_name_field} name")
+            names[identifier] = name
+    return CountryBoundaries(boundaries, names)
 
 
-def _registered_boundaries(dataset: BoundaryVector, root: Path) -> dict[str, BaseGeometry]:
+def _registered_boundaries(dataset: BoundaryVector, root: Path) -> CountryBoundaries:
     if dataset.source_id_field is None:
         refuse("country boundary dataset has no registered identifier field", BoundaryIdentityError)
     path = dataset.file(root)
@@ -109,15 +129,15 @@ def _registered_boundaries(dataset: BoundaryVector, root: Path) -> dict[str, Bas
             f"country boundary file {path} does not match the registry; run mise run data:get",
             BoundaryIdentityError,
         )
-    return _cached_boundaries(path, dataset.source_id_field, digest)
+    return _cached_boundaries(path, dataset.source_id_field, dataset.display_name_field, digest)
 
 
 # Gallery maps share one verified boundary snapshot; keep its parsed geometries for the process.
 @functools.cache
 def _cached_boundaries(
-    path: Path, source_id_field: str, _verified_digest: str
-) -> dict[str, BaseGeometry]:
-    return _boundaries_from_file(path, source_id_field)
+    path: Path, source_id_field: str, display_name_field: str | None, _verified_digest: str
+) -> CountryBoundaries:
+    return _boundaries_from_file(path, source_id_field, display_name_field)
 
 
 def load_country_boundaries(

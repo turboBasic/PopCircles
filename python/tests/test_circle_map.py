@@ -17,7 +17,15 @@ from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import Registry, load
 from population_circles.map_frame import ORTHOGRAPHIC
-from test_render_map import DATASET, PNG_MAGIC, document, empty_boundaries
+from test_render_map import (
+    DATASET,
+    PNG_MAGIC,
+    document,
+    empty_boundaries,
+    fixture_map_layers,
+    fixture_registered_map_sources,
+    transparent_terrain,
+)
 
 CUSTOM_EARTH_RADIUS_KM = 7000.0
 
@@ -26,6 +34,9 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(render_map, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(render_map, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
 
 @pytest.fixture
@@ -323,9 +334,16 @@ def test_success_uses_the_documents_credit_and_earth_model(
         attribution: str,
         coastline_attribution: str | None,
         boundary_attribution: str | None,
+        map_attributions: tuple[tuple[str, str], ...] = (),
     ) -> str:
         seen_credits.append(attribution)
-        return original_copyright(answer, attribution, coastline_attribution, boundary_attribution)
+        return original_copyright(
+            answer,
+            attribution,
+            coastline_attribution,
+            boundary_attribution,
+            map_attributions,
+        )
 
     monkeypatch.setattr(render_map, "render", render_spy)
     monkeypatch.setattr(render_map, "copyright_of", capture_copyright)

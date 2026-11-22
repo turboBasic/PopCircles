@@ -89,6 +89,21 @@ class Gallery(_Model):
         return value
 
 
+class MapSources(_Model):
+    terrain_default: Annotated[str, Field(min_length=1)]
+    terrain_overrides: dict[CountryId, Annotated[str, Field(min_length=1)]] = Field(
+        default_factory=dict,
+    )
+    terrain_overlays: dict[
+        CountryId,
+        Annotated[list[Annotated[str, Field(min_length=1)]], Field(min_length=1)],
+    ] = Field(default_factory=dict)
+    lakes: Annotated[str, Field(min_length=1)]
+    rivers: Annotated[str, Field(min_length=1)]
+    roads: Annotated[str, Field(min_length=1)]
+    places: Annotated[str, Field(min_length=1)]
+
+
 class MapExtent(_Model):
     units: ExtentUnits
     x_min: float
@@ -127,7 +142,9 @@ class CountryMap(_Model):
 
 class PresentationConfig(_Model):
     map_text: MapText
+    map_titles: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
     gallery: Gallery
+    map_sources: MapSources
     country_maps: dict[str, CountryMap | DefaultProjection]
 
     @model_validator(mode="after")
@@ -143,6 +160,14 @@ class PresentationConfig(_Model):
                 message = f"country_maps.{country_id} must be a country map table"
                 raise TypeError(message)
         return self
+
+    @field_validator("map_titles")
+    @classmethod
+    def valid_map_title_keys(cls, value: dict[str, str]) -> dict[str, str]:
+        if any(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", key) is None for key in value):
+            message = "map_titles keys must be lowercase map filename stems"
+            raise ValueError(message)
+        return value
 
     @property
     def default_projection(self) -> DefaultProjection:

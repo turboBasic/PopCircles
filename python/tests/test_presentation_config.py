@@ -9,6 +9,10 @@ from population_circles.presentation_config import (
 )
 
 EXPECTED_EXCLUDED_COUNTRY_COUNT = 48
+MAP_SOURCES = (
+    '\n[map_sources]\nterrain_default = "global"\nlakes = "lakes"\n'
+    'rivers = "rivers"\nroads = "roads"\nplaces = "places"\n'
+)
 
 
 def test_committed_presentation_config_preserves_existing_settings() -> None:
@@ -22,6 +26,15 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
     )
     assert config.map_text.render_title is True
     assert config.map_text.render_description is True
+    assert config.map_sources.terrain_default == "etopo-2022-60s"
+    assert config.map_sources.terrain_overrides == {
+        "AD": "copdem-glo-90-n42-e001",
+        "CH": "swisstopo-dhm25-200m",
+    }
+    assert config.map_sources.lakes == "natural-earth-10m-lakes-v5.0.0"
+    assert config.map_sources.rivers == "natural-earth-10m-rivers-lake-centerlines-v5.0.0"
+    assert config.map_sources.roads == "natural-earth-10m-roads-v5.0.0"
+    assert config.map_sources.places == "populated-places-1to10m"
     assert config.default_projection == "orthographic"
     us = config.country_maps["US"]
     chile = config.country_maps["CL"]
@@ -49,21 +62,49 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
     ) == (-75.724713888, -56.528847748, -66.418757789, -17.498400217)
 
 
+def test_committed_map_title_override_is_keyed_by_output_stem() -> None:
+    assert load().map_titles == {
+        "world-most-populous-1000km-5arcmin": "Most populous 1000km circle"
+    }
+
+
+def test_bhutan_terrain_overlay_uses_all_intersecting_glo90_tiles() -> None:
+    assert load().map_sources.terrain_overlays["BT"] == [
+        "copdem-glo-90-n26-e088",
+        "copdem-glo-90-n26-e089",
+        "copdem-glo-90-n26-e090",
+        "copdem-glo-90-n26-e091",
+        "copdem-glo-90-n26-e092",
+        "copdem-glo-90-n27-e088",
+        "copdem-glo-90-n27-e089",
+        "copdem-glo-90-n27-e090",
+        "copdem-glo-90-n27-e091",
+        "copdem-glo-90-n27-e092",
+        "copdem-glo-90-n28-e089",
+        "copdem-glo-90-n28-e090",
+        "copdem-glo-90-n28-e091",
+    ]
+
+
 @pytest.mark.parametrize(
     ("text", "field"),
     [
-        ("[map_text]\nrender_title = true\nrender_description = true\nunknown = 1\n", "unknown"),
+        (
+            "[map_text]\nrender_title = true\nrender_description = true\nunknown = 1\n"
+            + MAP_SOURCES,
+            "unknown",
+        ),
         (
             (
                 "[map_text]\nrender_title = true\nrender_description = true\n"
-                '[gallery]\nexcluded_country_ids = ["BAD1"]\n'
+                '[gallery]\nexcluded_country_ids = ["BAD1"]\n' + MAP_SOURCES
             ),
             "excluded_country_ids",
         ),
         (
             (
                 "[map_text]\nrender_title = 1\nrender_description = true\n"
-                "[gallery]\nexcluded_country_ids = []\n"
+                "[gallery]\nexcluded_country_ids = []\n" + MAP_SOURCES
             ),
             "render_title",
         ),
@@ -71,7 +112,7 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
             (
                 "[map_text]\nrender_title = true\nrender_description = true\n"
                 "[gallery]\nexcluded_country_ids = []\n"
-                '[country_maps]\ndefault_projection = "mercator"\n'
+                '[country_maps]\ndefault_projection = "mercator"\n' + MAP_SOURCES
             ),
             "default_projection",
         ),
@@ -80,7 +121,7 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
                 "[map_text]\nrender_title = true\nrender_description = true\n"
                 "[gallery]\nexcluded_country_ids = []\n"
                 '[country_maps]\ndefault_projection = "orthographic"\n'
-                'US = "orthographic"\n'
+                'US = "orthographic"\n' + MAP_SOURCES
             ),
             "country_maps.US",
         ),
@@ -93,6 +134,12 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
         (
             PRESENTATION_CONFIG.read_text(encoding="utf-8").replace("lat_0 = 44.0", "lat_1 = 44.0"),
             "projection_parameters",
+        ),
+        (
+            PRESENTATION_CONFIG.read_text(encoding="utf-8").replace(
+                "world-most-populous-1000km-5arcmin", "Invalid_key"
+            ),
+            "map_titles keys must be lowercase map filename stems",
         ),
     ],
 )

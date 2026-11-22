@@ -9,8 +9,10 @@ from population_circles.dataset_registry import (
     REGISTRY,
     REPO_ROOT,
     BoundaryVector,
+    MapContextVector,
     PopulationRaster,
     SettlementVector,
+    TerrainRaster,
     load,
     parse,
 )
@@ -39,6 +41,43 @@ licence = "Public domain"
 licence_url = "https://example.invalid/licence"
 attribution = ""
 """
+TERRAIN_ROW = """
+[datasets.example-terrain]
+kind = "terrain-raster"
+path = "data/terrain/example-terrain.tif"
+bytes = 5
+sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+fetch_url = "https://example.invalid/example-terrain.tif"
+source_url = "https://example.invalid/source"
+licence = "Test licence"
+licence_url = "https://example.invalid/licence"
+attribution = ""
+format = "GeoTIFF"
+width = 10
+height = 20
+epsg = 4326
+x_origin = -180.0
+y_origin = 90.0
+x_step = 0.016666666666666666
+y_step = -0.016666666666666666
+nodata = -99999.0
+"""
+MAP_CONTEXT_ROW = """
+[datasets.example-lakes]
+kind = "map-context-vector"
+path = "data/context/example-lakes.geojson"
+bytes = 5
+sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+fetch_url = "https://example.invalid/example-lakes.geojson"
+source_url = "https://example.invalid/source"
+licence = "Test licence"
+licence_url = "https://example.invalid/licence"
+attribution = ""
+format = "GeoJSON"
+crs = "OGC:CRS84"
+feature_count = 2
+revision = "Test 1.0"
+"""
 COUNTRY_BOUNDARY_ROW = """
 [datasets.countries-2024]
 kind = "boundary-vector"
@@ -56,6 +95,7 @@ axis_order = "longitude-latitude"
 feature_count = 263
 revision = "2024"
 source_id_field = "CNTR_ID"
+display_name_field = "CNTR_NAME"
 identity_policy = "ADR 0015"
 """
 
@@ -175,6 +215,48 @@ def test_a_synthetic_settlement_vector_needs_no_grid_fields() -> None:
     assert dataset.path == "data/settlements/example-places.geojson"
 
 
+def test_a_synthetic_terrain_row_requires_complete_grid_metadata() -> None:
+    dataset = parse(TERRAIN_ROW).datasets["example-terrain"]
+
+    assert isinstance(dataset, TerrainRaster)
+    assert (dataset.width, dataset.height, dataset.epsg) == (10, 20, 4326)
+    with pytest.raises(ValidationError, match="x_step"):
+        parse(TERRAIN_ROW.replace("x_step = 0.016666666666666666\n", ""))
+    with pytest.raises(ValidationError, match="grid steps must be nonzero"):
+        parse(TERRAIN_ROW.replace("x_step = 0.016666666666666666", "x_step = 0"))
+
+
+def test_an_ascii_grid_terrain_archive_must_name_its_member() -> None:
+    text = TERRAIN_ROW.replace('format = "GeoTIFF"', 'format = "ESRI ASCII Grid"')
+
+    with pytest.raises(ValidationError, match="must name its archive member"):
+        parse(text)
+
+
+def test_a_synthetic_map_context_vector_requires_source_metadata() -> None:
+    dataset = parse(MAP_CONTEXT_ROW).datasets["example-lakes"]
+
+    assert isinstance(dataset, MapContextVector)
+    assert (dataset.crs, dataset.feature_count, dataset.revision) == (
+        "OGC:CRS84",
+        2,
+        "Test 1.0",
+    )
+    with pytest.raises(ValidationError, match="feature_count"):
+        parse(MAP_CONTEXT_ROW.replace("feature_count = 2\n", ""))
+
+
+def test_every_selected_map_context_source_is_registered() -> None:
+    datasets = load().datasets
+    keys = (
+        "natural-earth-10m-lakes-v5.0.0",
+        "natural-earth-10m-rivers-lake-centerlines-v5.0.0",
+        "natural-earth-10m-roads-v5.0.0",
+    )
+
+    assert all(isinstance(datasets[key], MapContextVector) for key in keys)
+
+
 def test_a_settlement_vector_key_must_match_its_file_stem() -> None:
     with pytest.raises(ValidationError, match="whose stem is"):
         parse(SETTLEMENT_ROW.replace("example-places.geojson", "other-places.geojson"))
@@ -191,7 +273,7 @@ def test_a_raster_missing_a_grid_field_does_not_construct() -> None:
 def test_a_boundary_carrying_grid_fields_does_not_construct() -> None:
     # The other half, and what `extra="forbid"` is load-bearing for: a grid on a vector row is a
     # copy-paste, and ignoring it would let the file say something the reader silently drops.
-    text = REGISTRY.read_text(encoding="utf-8") + "\nepsg = 4326\n"
+    text = COUNTRY_BOUNDARY_ROW + "\nepsg = 4326\n"
     with pytest.raises(ValidationError, match="epsg"):
         parse(text)
 
@@ -206,6 +288,7 @@ def test_a_country_boundary_accepts_complete_metadata_and_fetch_delivery() -> No
     assert dataset.feature_count == COUNTRY_FEATURE_COUNT
     assert dataset.revision == "2024"
     assert dataset.source_id_field == "CNTR_ID"
+    assert dataset.display_name_field == "CNTR_NAME"
     assert dataset.identity_policy == "ADR 0015"
     assert dataset.fetch_url is not None
     assert dataset.path == "data/boundaries/countries-2024.geojson"

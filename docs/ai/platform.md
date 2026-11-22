@@ -66,7 +66,7 @@ start a fresh subagent and tell it to read the source persona and the workflow b
 
 Store input datasets in `data/`, one directory per kind. Publish large datasets for fetching. Commit a
 small dataset only when every clone and CI job needs it and fetching costs more than storing it.
-[`data/registry.toml`](../../data/registry.toml) records each dataset's grid, CRS, nodata value,
+[`data/registry.toml`](../../data/registry.toml) records each dataset's grid, CRS, optional nodata value,
 byte length, checksum, fetch URL, licence, and figure attribution. `mise run data:get`, the CLI, and the
 renderer use this registry; builds name the row they need. [`data/README.md`](../../data/README.md)
 describes the datasets for readers, records their provenance, and explains how to fetch them ([Getting

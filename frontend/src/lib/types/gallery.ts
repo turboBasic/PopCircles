@@ -20,6 +20,7 @@ export interface GalleryFigure {
   document: string;
   country_id: string | null;
   alt: string;
+  aspect_ratio: number;
   caption?: FigureCaption;
 }
 

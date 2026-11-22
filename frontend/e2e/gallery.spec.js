@@ -11,12 +11,21 @@ const countries = Array.from({ length: 80 }, (_, index) => ({
             document: 'country-42.json',
             country_id: 'CC',
             alt: 'Country 42 map',
+            aspect_ratio: 0.5,
           },
         ]
       : [],
   missing: false,
 }));
-const world = [{ map: 'world.svg', document: 'world.json', country_id: null, alt: 'World map' }];
+const world = [
+  {
+    map: 'world.svg',
+    document: 'world.json',
+    country_id: null,
+    alt: 'World map',
+    aspect_ratio: 11 / 6,
+  },
+];
 const alphabetCountries = [
   ...Array.from({ length: 40 }, (_, index) => {
     const number = String(index + 1).padStart(2, '0');
@@ -905,6 +914,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(20, 1);
     expect(await styleNumber(intro, 'opacity')).toBeCloseTo(1, 2);
     const expandedButtonPositions = await buttonPositions();
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(viewport.width > 1023 ? 32 : 20, 1);
     await expectChromeAlignedToCards();
 
     if (!supportsScrollTimeline) {
@@ -916,8 +926,11 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     }
 
     await expect.poll(() => styleNumber(headerArt, 'opacity')).toBeCloseTo(0.16, 2);
-    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(16, 1);
-    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.56, 1);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(viewport.width > 1023 ? 32 : 20, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(
+      viewport.width > 1023 ? 5.12 : 1.6,
+      1,
+    );
 
     await scrollResultsTo(80);
     await expectIntroPartiallyCollapsed(expandedHeight);
@@ -925,8 +938,7 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(await styleNumber(intro, 'margin-top')).toBeCloseTo(10, 1);
     expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0.5, 2);
     expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0.08, 2);
-    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(15.04, 1);
-    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(2.26, 1);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(viewport.width > 1023 ? 26 : 20, 1);
     const halfCollapsedButtonPositions = await buttonPositions();
     for (const control of ['github', 'theme']) {
       expect(halfCollapsedButtonPositions[control]).toBeCloseTo(
@@ -953,8 +965,11 @@ test('[viewport-and-scrolling] header follows the Gallery scroll timeline', asyn
     expect(await styleNumber(intro, 'opacity')).toBeCloseTo(0, 2);
     expect(await styleNumber(headerArt, 'opacity')).toBeCloseTo(0, 2);
     await expectChromeAlignedToCards(true, viewport.width <= 1023);
-    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(14.08, 1);
-    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(1.8304, 1);
+    expect(await styleNumber(logo, 'font-size')).toBeCloseTo(20, 1);
+    expect(await styleNumber(logo, 'letter-spacing')).toBeCloseTo(
+      viewport.width > 1023 ? 2.6 : 1.6,
+      1,
+    );
     const collapsedButtonPositions = await buttonPositions();
     for (const control of ['github', 'theme']) {
       expect(collapsedButtonPositions[control]).toBeCloseTo(
@@ -1590,6 +1605,20 @@ test('[viewport-and-scrolling] [map-presentation] [themes] responsive layout, ma
   );
   expect(visual.columns.split(' ')).toHaveLength(2);
   expect(visual.mapAspectRatio).toBeCloseTo(11 / 6);
+  await expect
+    .poll(() =>
+      page
+        .locator('#country-42 .map-frame')
+        .evaluate((frame) => Number.parseFloat(getComputedStyle(frame).aspectRatio)),
+    )
+    .toBe(0.5);
+  const portraitWidthRatio = await page
+    .locator('#country-42 .map-card')
+    .evaluate(
+      (card) =>
+        card.getBoundingClientRect().width / card.parentElement.getBoundingClientRect().width,
+    );
+  expect(portraitWidthRatio).toBeCloseTo(Math.sqrt(0.5 / (11 / 6)), 2);
   await expect(page).toHaveScreenshot('gallery-desktop-dark.png');
 
   await page.getByRole('button', { name: 'Switch to light theme' }).click();

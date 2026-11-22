@@ -71,6 +71,32 @@ class PopulationRaster(_Dataset):
         return self
 
 
+class TerrainRaster(_Dataset):
+    kind: Literal["terrain-raster"]
+
+    # `archive_member` is used for publisher archives such as swisstopo's one-file ASCII grid.
+    format: Literal["GeoTIFF", "ESRI ASCII Grid"]
+    archive_member: str | None = None
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+    epsg: int = Field(gt=0)
+    x_origin: float
+    y_origin: float
+    x_step: float = Field(allow_inf_nan=False)
+    y_step: float = Field(allow_inf_nan=False)
+    nodata: float | None = Field(default=None, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def _archive_format_has_member(self) -> Self:
+        if self.x_step == 0 or self.y_step == 0:
+            message = "terrain raster grid steps must be nonzero"
+            raise ValueError(message)
+        if (self.format == "ESRI ASCII Grid") != (self.archive_member is not None):
+            message = "an archived terrain raster must name its archive member"
+            raise ValueError(message)
+        return self
+
+
 class BoundaryVector(_Dataset):
     kind: Literal["boundary-vector"]
 
@@ -81,6 +107,7 @@ class BoundaryVector(_Dataset):
     feature_count: int | None = Field(default=None, gt=0)
     revision: str | None = None
     source_id_field: str | None = None
+    display_name_field: str | None = Field(default=None, min_length=1)
     identity_policy: str | None = None
 
     @model_validator(mode="after")
@@ -91,6 +118,7 @@ class BoundaryVector(_Dataset):
             self.axis_order,
             self.feature_count,
             self.source_id_field,
+            self.display_name_field,
             self.identity_policy,
         )
         if any(value is not None for value in metadata) and any(
@@ -105,10 +133,20 @@ class SettlementVector(_Dataset):
     kind: Literal["settlement-vector"]
 
 
+class MapContextVector(_Dataset):
+    kind: Literal["map-context-vector"]
+
+    format: Literal["GeoJSON"]
+    crs: Literal["OGC:CRS84"]
+    feature_count: int = Field(gt=0)
+    revision: str = Field(min_length=1)
+
+
 # Discriminated on `kind` so a raster without a grid does not construct, rather than every reader
 # re-checking that the eight grid fields are present.
 Dataset = Annotated[
-    PopulationRaster | BoundaryVector | SettlementVector, Field(discriminator="kind")
+    PopulationRaster | TerrainRaster | BoundaryVector | SettlementVector | MapContextVector,
+    Field(discriminator="kind"),
 ]
 
 

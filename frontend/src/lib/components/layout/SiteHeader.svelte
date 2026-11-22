@@ -131,6 +131,16 @@
     gap: 0.75rem;
     pointer-events: auto;
   }
+  @media (max-width: 1023px) {
+    #top-bar {
+      gap: 0.5rem;
+    }
+  }
+  @media (max-width: 359px) {
+    #top-bar {
+      gap: 0.25rem;
+    }
+  }
   #site-header__intro {
     display: grid;
     grid-template-rows: minmax(0, 1fr);

@@ -226,8 +226,10 @@ Rust owns population numeric work: geodesy, raster ingest, tables, kernels, sear
 utilities must reuse Rust's raster reader rather than introduce a second raster stack. Python renders
 figures, coordinates combined workflows by invoking the Rust CLI, and calculates geometric territory
 coverage from published circle answers and registered GISCO geometry under the narrow exception in
-[ADR 0020](../decisions/0020-python-calculates-territory-coverage.md). Python must not read raster
-pixels, cache headers, or ledger contents. Move any Python helper that needs raster pixels into Rust.
+[ADR 0020](../decisions/0020-python-calculates-territory-coverage.md). It may read registered terrain
+rasters only to present map relief ([ADR 0021](../decisions/0021-python-reads-terrain-for-map-presentation.md)).
+Python must not read population rasters, cache headers, or ledger contents. Rust builds and runs without
+the Python terrain stack.
 The static Gallery's browser presentation is Svelte and consumes generated Gallery data; it does not
 calculate population answers or render maps
 ([ADR 0019](../decisions/0019-svelte-presents-the-static-gallery.md)).

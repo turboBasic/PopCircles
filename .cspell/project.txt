@@ -82,6 +82,9 @@ Valeriepieris
 AEQD
 Albers
 Carree
+centerlines
+copdem
+DGED
 ENGL
 EPSG
 featurecla
@@ -107,9 +110,14 @@ tiffinfo
 webp
 
 # --- Library and API identifiers ---
+allclose
+altdeg
 anstream
 anstyle
+arrowprops
+arrowstyle
 autouse
+azdeg
 bpaf
 bytemuck
 capsys
@@ -121,6 +129,7 @@ delenv
 dimgrey
 edgecolor
 evenodd
+exag
 facecolor
 figcaption
 figsize
@@ -131,6 +140,7 @@ getbbox
 getpid
 getpixel
 gridlines
+hillshade
 horizontalalignment
 indicatif
 initargs
@@ -151,21 +161,27 @@ mlat
 mlon
 ndarray
 nocapture
+patheffects
 pread
 proptest
+rint
 SEGS
 skia
 socketpair
 splitmix
+textcoords
 thiserror
 tmpg
 tobytes
 verticalalignment
+vmax
+vmin
 weezl
 wght
 xfact
 xlim
 xoff
+xytext
 yfact
 ylim
 zerocopy
@@ -198,6 +214,7 @@ Chamdo
 CIESIN
 Dibrugarh
 Earthdata
+ETOPO
 EuroGeographics
 GADM
 GHSL
@@ -208,8 +225,11 @@ Karokh
 Lenger
 Mirzapur
 NASA
+NCEI
 Palisades
 SEDAC
+swisstopo
+Wabern
 WCAG
 WPP
 Xichang

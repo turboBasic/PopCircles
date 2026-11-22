@@ -1,4 +1,5 @@
 import copy
+import importlib.metadata
 import json
 import os
 import shutil
@@ -7,26 +8,43 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
+import rasterio
 from matplotlib.figure import Figure
 from PIL import Image
+from rasterio.transform import from_origin
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery as gallery_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
+import population_circles.terrain as terrain_module
 import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.circle_map import Invoke, WorkflowError
-from population_circles.dataset_registry import Registry, country_boundary_dataset_key, load
+from population_circles.dataset_registry import (
+    MapContextVector,
+    Registry,
+    SettlementVector,
+    TerrainRaster,
+    country_boundary_dataset_key,
+    load,
+)
 from population_circles.gallery import build, country_documents
+from population_circles.map_frame import ORTHOGRAPHIC
 from population_circles.render_map import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
     registered_coastline,
 )
-from test_render_map import country_circle_document
+from test_render_map import (
+    country_circle_document,
+    fixture_map_layers,
+    fixture_registered_map_sources,
+    transparent_terrain,
+)
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
 DATASET = "population-count-2020-30arcsec"
@@ -37,15 +55,14 @@ WORLD_TERRITORY_SHARE = 0.375
 COUNTRY_TERRITORY_SHARE = 0.625
 VISIBLE_FOOTER = (
     "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
-    "© EuroGeographics for the administrative boundaries · "
-    "See full attribution in image metadata"
+    "© EuroGeographics for the administrative boundaries"
 )
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
 EXPECTED_COUNTRY_CLI_CALLS = 2
 RENDER_WORKER_COUNT = gallery_module.render_worker_count
 AVAILABLE_CPUS = 6
-EXPECTED_WORKERS = AVAILABLE_CPUS - 1
+EXPECTED_WORKERS = min(2, AVAILABLE_CPUS - 1)
 SMALL_MAP_COUNT = 2
 
 
@@ -79,6 +96,13 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(gallery_module, "render_worker_count", one_worker)
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(
+        gallery_module,
+        "registered_map_sources",
+        fixture_registered_map_sources,
+    )
+    monkeypatch.setattr(gallery_module, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
 
 
 def document(
@@ -152,6 +176,11 @@ def assert_built_site(output: Path) -> None:
         )
 
 
+def image_aspect_ratio(path: Path) -> float:
+    with Image.open(path) as image:
+        return image.width / image.height
+
+
 def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None:
     document_payload = json.loads((output / result_name).read_text(encoding="utf-8"))
     with Image.open(output / result_name.replace(".json", ".png")) as image:
@@ -210,6 +239,58 @@ def registry_without_country_boundaries() -> Registry:
             }
         }
     )
+
+
+def registry_with_synthetic_map_inputs(root: Path) -> Registry:
+    registry = registry_without_country_boundaries()
+    datasets = dict(registry.datasets)
+    terrain_key = "etopo-2022-60s"
+    terrain = datasets[terrain_key]
+    assert isinstance(terrain, TerrainRaster)
+    terrain_path = root / terrain.path
+    terrain_path.parent.mkdir(parents=True, exist_ok=True)
+    values = np.full((80, 80), 500, dtype=np.float32)
+    with rasterio.open(
+        terrain_path,
+        "w",
+        driver="GTiff",
+        width=80,
+        height=80,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=from_origin(78, 27, 0.05, 0.05),
+        nodata=-9999.0,
+    ) as output:
+        output.write(values, 1)
+    datasets[terrain_key] = terrain.model_copy(
+        update={
+            "width": 80,
+            "height": 80,
+            "epsg": 4326,
+            "x_origin": 78.0,
+            "y_origin": 27.0,
+            "x_step": 0.05,
+            "y_step": -0.05,
+            "nodata": -9999.0,
+        }
+    )
+    for key in (
+        "natural-earth-10m-lakes-v5.0.0",
+        "natural-earth-10m-rivers-lake-centerlines-v5.0.0",
+        "natural-earth-10m-roads-v5.0.0",
+    ):
+        dataset = datasets[key]
+        assert isinstance(dataset, MapContextVector)
+        path = root / dataset.path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"type": "FeatureCollection", "features": []}))
+    places = datasets["populated-places-1to10m"]
+    assert isinstance(places, SettlementVector)
+    place_path = root / places.path
+    place_path.parent.mkdir(parents=True, exist_ok=True)
+    place_path.write_text(json.dumps({"type": "FeatureCollection", "features": []}))
+    return registry.model_copy(update={"datasets": datasets})
 
 
 def country_cli(
@@ -377,6 +458,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
             "document": "drawable.json",
             "country_id": None,
             "alt": "drawable",
+            "aspect_ratio": 11 / 6,
             "caption": {
                 "radius_km": WORLD_RADIUS_KM,
                 "share": WORLD_SHARE,
@@ -400,7 +482,9 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         "Circle covers 0% of Earth\u2019s land area"
     )
     assert annotations[1] == metadata["Description"]
-    assert annotations[-1] == VISIBLE_FOOTER
+    assert annotations[-1].startswith(VISIBLE_FOOTER)
+    assert "Terrain data:" in annotations[-1]
+    assert annotations[-1].endswith("See full attribution in image metadata")
     assert "Title" in metadata
     assert "Copyright" in metadata
     assert "© Andrii Melnyk, 2026" in metadata["Copyright"]
@@ -544,6 +628,7 @@ def test_gallery_data_uses_only_the_current_maps(
             "document": "current.json",
             "country_id": None,
             "alt": "current",
+            "aspect_ratio": 11 / 6,
             "caption": {
                 "radius_km": WORLD_RADIUS_KM,
                 "share": WORLD_SHARE,
@@ -559,11 +644,15 @@ def test_gallery_data_uses_only_the_current_maps(
     assert "old.png" not in json.dumps(data)
 
 
-def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
+def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path) -> None:
+    france = tmp_path / "france.png"
+    germany = tmp_path / "germany.png"
+    Image.new("RGB", (100, 200)).save(france)
+    Image.new("RGB", (200, 100)).save(germany)
     data = gallery_module.page_data(
         [
-            gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
-            gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
+            gallery_module.Drawn(Path("germany.json"), germany, "Germany", "DE"),
+            gallery_module.Drawn(Path("france.json"), france, "France", "FR"),
         ],
         ["Missing country"],
     )
@@ -577,6 +666,9 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
         "france.png",
         "germany.png",
     ]
+    assert [
+        figure["aspect_ratio"] for country in data["countries"] for figure in country["figures"]
+    ] == [0.5, 2.0]
 
 
 def test_figure_caption_includes_country_and_world_answers() -> None:
@@ -623,6 +715,9 @@ def test_map_cache_key_changes_for_each_render_input_category() -> None:
     assert base != gallery_module.map_cache_key(
         "context", b"document", coastline, box(-1, -1, 1, 1)
     )
+    assert base != gallery_module.map_cache_key(
+        "context", b"document", coastline, outline, ORTHOGRAPHIC
+    )
 
 
 def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
@@ -630,6 +725,19 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "pyproject.toml" not in gallery_module.RENDER_INPUTS
     assert CORPUS.parent / "uv.lock" not in gallery_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "data" / "registry.toml" in gallery_module.RENDER_INPUTS
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
+        gallery_module.RENDER_INPUTS
+    )
+
+
+def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    version = Mock(wraps=importlib.metadata.version)
+    monkeypatch.setattr(importlib.metadata, "version", version)
+
+    gallery_module.render_context_digest()
+
+    assert "rasterio" in [call.args[0] for call in version.call_args_list]
 
 
 def test_render_context_hashes_source_and_configuration_files(
@@ -645,11 +753,46 @@ def test_render_context_hashes_source_and_configuration_files(
     assert gallery_module.render_context_digest() != first
 
 
-def test_render_worker_count_leaves_one_cpu_free(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    ("source_kind", "before", "after"),
+    [
+        ("terrain-checksum", "terrain sha256 = 111", "terrain sha256 = 222"),
+        ("context-checksum", "roads sha256 = 111", "roads sha256 = 222"),
+        ("palette", "ELEVATION_STOPS = low", "ELEVATION_STOPS = high"),
+        ("illumination", "HILLSHADE_ALPHA = 0.34", "HILLSHADE_ALPHA = 0.35"),
+        ("renderer", "circle below roads", "circle above roads"),
+    ],
+)
+def test_map_cache_key_changes_when_terrain_inputs_or_presentation_change(
+    source_kind: str,
+    before: str,
+    after: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / f"{source_kind}.txt"
+    source.write_text(before, encoding="utf-8")
+    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
+    coastline = box(-20, -10, 20, 10)
+    outline = box(-5, -5, 5, 5)
+    context = gallery_module.render_context_digest()
+    cached_key = gallery_module.map_cache_key(context, b"document", coastline, outline)
+    assert gallery_module.map_cache_key(context, b"document", coastline, outline) == cached_key
+
+    source.write_text(after, encoding="utf-8")
+    updated_context = gallery_module.render_context_digest()
+
+    assert (
+        gallery_module.map_cache_key(updated_context, b"document", coastline, outline) != cached_key
+    )
+
+
+def test_render_worker_count_is_capped_at_two(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(os, "process_cpu_count", lambda: AVAILABLE_CPUS)
 
     assert RENDER_WORKER_COUNT(20) == EXPECTED_WORKERS
     assert RENDER_WORKER_COUNT(SMALL_MAP_COUNT) == SMALL_MAP_COUNT
+    assert RENDER_WORKER_COUNT(1) == 1
 
 
 def test_serial_and_concurrent_gallery_maps_are_identical(
@@ -668,23 +811,30 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
         (tmp_path / "alpha.json", payload),
         (tmp_path / "beta.json", payload),
     ]
-    registry = registry_without_country_boundaries()
+    registry = registry_with_synthetic_map_inputs(tmp_path)
     coastline, attribution = registered_coastline(registry)
     serial_output = tmp_path / "serial"
     concurrent_output = tmp_path / "concurrent"
     serial_output.mkdir()
     concurrent_output.mkdir()
     serial_context = gallery_module.MapRenderContext(
-        registry, coastline, attribution, serial_output, None, "fixture"
+        registry, coastline, attribution, serial_output, None, "fixture", data_root=tmp_path
     )
     concurrent_context = gallery_module.MapRenderContext(
-        registry, coastline, attribution, concurrent_output, None, "fixture"
+        registry, coastline, attribution, concurrent_output, None, "fixture", data_root=tmp_path
     )
 
     def no_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {}
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(
+        gallery_module,
+        "registered_map_sources",
+        render_map_module.registered_map_sources,
+    )
+    monkeypatch.setattr(gallery_module, "load_map_layers", render_map_module.load_map_layers)
+    monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
 
     serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
 
@@ -710,23 +860,45 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
-    registry = registry_without_country_boundaries()
-    monkeypatch.setattr(gallery_module, "load", lambda: registry)
+    registry = registry_with_synthetic_map_inputs(tmp_path)
+    coastline, attribution = registered_coastline(registry)
+    output = tmp_path / "gallery"
+    output.mkdir()
+    context = gallery_module.MapRenderContext(
+        registry,
+        coastline,
+        attribution,
+        output,
+        None,
+        "fixture",
+        data_root=tmp_path,
+    )
 
     def two_workers(count: int) -> int:
         return min(2, count)
 
+    def skip_frontend(_output: Path) -> None:
+        return
+
     monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "drawable.json", document("most-populous"))
     written(corpus, "unregistered.json", document("most-populous", "no-such-dataset"))
-    output = tmp_path / "gallery"
-
     with pytest.raises(UnregisteredDatasetError) as caught:
-        build(corpus, output, country_cli([], [])[0])
+        gallery_module.build_gallery_output(
+            corpus,
+            [
+                (source, json.loads(source.read_text(encoding="utf-8")))
+                for source in sorted(corpus.glob("*.json"))
+            ],
+            {},
+            [],
+            context,
+        )
 
     assert "unregistered.json" in " ".join(caught.value.__notes__)
     assert not (output / "index.html").exists()
@@ -754,7 +926,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
 
     committed = sorted(corpus.glob("*.json"))
     assert render.call_count == len(drawn)
-    assert len(drawn) + len(skipped) == len(committed)
+    assert len({one.document for one in drawn}) + len(skipped) == len(committed)
     assert drawn, "the committed corpus holds no document this gallery can draw"
     zero_population = {
         source.name
@@ -779,6 +951,15 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     figure_names = {one.figure.name for one in drawn}
     assert "world-half-30arcsec.png" in figure_names
     assert "world-most-populous-1000km-5arcmin.png" in figure_names
+    expected_orthographic_maps: set[str] = set()
+    for source in committed:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        if payload.get("document") not in {*CIRCLE_KINDS, "country-smallest"}:
+            continue
+        answer = circle_of(payload)
+        if answer.country is None and answer.caption.share == gallery_module.HALF_SHARE:
+            expected_orthographic_maps.add(f"{source.stem}-orthographic.png")
+    assert expected_orthographic_maps <= figure_names
     for one in skipped:
         assert one.kind not in CIRCLE_KINDS
 
@@ -833,7 +1014,6 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
-    monkeypatch.setattr(gallery_module, "map_text_rendering", lambda: (True, True))
 
     drawn, skipped = build(corpus, output, invoke)
 
@@ -878,6 +1058,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                 "document": "world.json",
                 "country_id": None,
                 "alt": "world",
+                "aspect_ratio": 11 / 6,
                 "caption": {
                     "radius_km": WORLD_RADIUS_KM,
                     "share": WORLD_SHARE,
@@ -900,6 +1081,9 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                         "document": result_names[0],
                         "country_id": "AA",
                         "alt": result_names[0].removesuffix(".json"),
+                        "aspect_ratio": image_aspect_ratio(
+                            output / result_names[0].replace(".json", ".png")
+                        ),
                         "caption": {
                             "radius_km": 100,
                             "share": 0.5,
@@ -932,7 +1116,10 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
             },
         ],
     }
-    assert VISIBLE_FOOTER in annotations
+    assert any(
+        annotation.startswith(VISIBLE_FOOTER) and "Terrain data:" in annotation
+        for annotation in annotations
+    )
     assert any("Alpha: 100 km circle" in annotation for annotation in annotations)
     with Image.open(drawn[0].figure) as image:
         assert "Title" in image.info
