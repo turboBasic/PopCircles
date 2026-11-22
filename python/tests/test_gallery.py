@@ -175,6 +175,11 @@ def assert_built_site(output: Path) -> None:
         )
 
 
+def image_aspect_ratio(path: Path) -> float:
+    with Image.open(path) as image:
+        return image.width / image.height
+
+
 def assert_country_metadata_mirrors_json(output: Path, result_name: str) -> None:
     document_payload = json.loads((output / result_name).read_text(encoding="utf-8"))
     with Image.open(output / result_name.replace(".json", ".png")) as image:
@@ -452,6 +457,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
             "document": "drawable.json",
             "country_id": None,
             "alt": "drawable",
+            "aspect_ratio": 11 / 6,
             "caption": {
                 "radius_km": WORLD_RADIUS_KM,
                 "share": WORLD_SHARE,
@@ -621,6 +627,7 @@ def test_gallery_data_uses_only_the_current_maps(
             "document": "current.json",
             "country_id": None,
             "alt": "current",
+            "aspect_ratio": 11 / 6,
             "caption": {
                 "radius_km": WORLD_RADIUS_KM,
                 "share": WORLD_SHARE,
@@ -636,11 +643,15 @@ def test_gallery_data_uses_only_the_current_maps(
     assert "old.png" not in json.dumps(data)
 
 
-def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
+def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path) -> None:
+    france = tmp_path / "france.png"
+    germany = tmp_path / "germany.png"
+    Image.new("RGB", (100, 200)).save(france)
+    Image.new("RGB", (200, 100)).save(germany)
     data = gallery_module.page_data(
         [
-            gallery_module.Drawn(Path("germany.json"), Path("germany.png"), "Germany", "DE"),
-            gallery_module.Drawn(Path("france.json"), Path("france.png"), "France", "FR"),
+            gallery_module.Drawn(Path("germany.json"), germany, "Germany", "DE"),
+            gallery_module.Drawn(Path("france.json"), france, "France", "FR"),
         ],
         ["Missing country"],
     )
@@ -654,6 +665,9 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names() -> None:
         "france.png",
         "germany.png",
     ]
+    assert [
+        figure["aspect_ratio"] for country in data["countries"] for figure in country["figures"]
+    ] == [0.5, 2.0]
 
 
 def test_figure_caption_includes_country_and_world_answers() -> None:
@@ -913,8 +927,16 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         assert (output / one.document.name).is_file()
     figure_names = {one.figure.name for one in drawn}
     assert "world-half-30arcsec.png" in figure_names
-    assert "world-half-30arcsec-orthographic.png" in figure_names
     assert "world-most-populous-1000km-5arcmin.png" in figure_names
+    expected_orthographic_maps: set[str] = set()
+    for source in committed:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        if payload.get("document") not in {*CIRCLE_KINDS, "country-smallest"}:
+            continue
+        answer = circle_of(payload)
+        if answer.country is None and answer.caption.share == gallery_module.HALF_SHARE:
+            expected_orthographic_maps.add(f"{source.stem}-orthographic.png")
+    assert expected_orthographic_maps <= figure_names
     for one in skipped:
         assert one.kind not in CIRCLE_KINDS
 
@@ -969,7 +991,6 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
-    monkeypatch.setattr(gallery_module, "map_text_rendering", lambda: (True, True))
 
     drawn, skipped = build(corpus, output, invoke)
 
@@ -1014,6 +1035,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                 "document": "world.json",
                 "country_id": None,
                 "alt": "world",
+                "aspect_ratio": 11 / 6,
                 "caption": {
                     "radius_km": WORLD_RADIUS_KM,
                     "share": WORLD_SHARE,
@@ -1036,6 +1058,9 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
                         "document": result_names[0],
                         "country_id": "AA",
                         "alt": result_names[0].removesuffix(".json"),
+                        "aspect_ratio": image_aspect_ratio(
+                            output / result_names[0].replace(".json", ".png")
+                        ),
                         "caption": {
                             "radius_km": 100,
                             "share": 0.5,

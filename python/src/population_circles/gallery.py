@@ -121,6 +121,7 @@ class PageFigure(TypedDict):
     document: str
     country_id: str | None
     alt: str
+    aspect_ratio: float
     caption: NotRequired[FigureCaption]
 
 
@@ -438,11 +439,14 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
 
 
 def page_figure(one: Drawn) -> PageFigure:
+    with Image.open(one.figure) as image:
+        aspect_ratio = image.width / image.height
     figure: PageFigure = {
         "map": one.figure.name,
         "document": one.document.name,
         "country_id": one.country_id,
         "alt": one.figure.stem,
+        "aspect_ratio": aspect_ratio,
     }
     if one.caption is not None:
         figure["caption"] = one.caption

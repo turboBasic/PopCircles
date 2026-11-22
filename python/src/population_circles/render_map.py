@@ -408,6 +408,9 @@ COUNTRY_LABEL_WRAP_WIDTH = 12
 COUNTRY_LABEL_WRAP_MIN_LENGTH = 16
 COUNTRY_LABEL_OUTLINE_PX = 2
 MAP_OUTPUT_DPI = 200
+MAP_OUTPUT_WIDTH = 11.0 * MAP_OUTPUT_DPI
+MAP_OUTPUT_HEIGHT = 6.0 * MAP_OUTPUT_DPI
+MAP_OUTPUT_AREA = MAP_OUTPUT_WIDTH * MAP_OUTPUT_HEIGHT
 
 
 @cache
@@ -800,6 +803,21 @@ def annotate(
     )
 
 
+def figure_size(
+    bounds: tuple[float, float, float, float], *, country_map: bool
+) -> tuple[float, float]:
+    if not country_map:
+        return 11.0, 6.0
+    west, south, east, north = bounds
+    aspect = (east - west) / (north - south)
+    width = math.sqrt(MAP_OUTPUT_AREA * aspect)
+    height = math.sqrt(MAP_OUTPUT_AREA / aspect)
+    if width > MAP_OUTPUT_WIDTH:
+        width = MAP_OUTPUT_WIDTH
+        height = width / aspect
+    return width / MAP_OUTPUT_DPI, height / MAP_OUTPUT_DPI
+
+
 def wrap_to_width(figure: Figure, text: str, size: float) -> str:
     canvas = cast(FigureCanvasAgg, figure.canvas)
     renderer = canvas.get_renderer()
@@ -1166,7 +1184,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     centre = view.to_frame.transform(circle.centre.lon, circle.centre.lat)
 
     figure = plt.figure(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-        figsize=(11.0, 6.0),
+        figsize=figure_size(view.horizon.bounds, country_map=answer.country is not None),
     )
     try:
         title = title_of(answer, title_label)

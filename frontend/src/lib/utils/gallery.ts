@@ -1,5 +1,3 @@
-export const MAP_ASPECT_RATIO = 11 / 6;
-
 import type { GalleryEntry } from '#lib/types/gallery';
 
 export function filterCountries(countries: GalleryEntry[], query: string) {

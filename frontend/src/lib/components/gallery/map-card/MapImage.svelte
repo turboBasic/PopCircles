@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { MAP_ASPECT_RATIO } from '#lib/utils/gallery';
 
   type Props = {
     src: string;
     alt: string;
+    aspectRatio?: number;
     entryAnchor: string;
     loading: 'lazy' | 'eager';
   };
 
-  let { src, alt, entryAnchor, loading }: Props = $props();
+  let { src, alt, aspectRatio = 11 / 6, entryAnchor, loading }: Props = $props();
   let image = $state<HTMLImageElement | null>(null);
   let loaded = $state(false);
   let failed = $state(false);
@@ -23,7 +23,7 @@
 </script>
 
 <a class="map-link" href={`#${entryAnchor}`}>
-  <div class="map-frame" style:aspect-ratio={MAP_ASPECT_RATIO}>
+  <div class="map-frame" style:aspect-ratio={aspectRatio}>
     {#if !loaded && !failed}<span class="map-image-status">Loading map…</span>{/if}
     {#if failed}<span class="map-image-status" role="alert">Map image could not be loaded.</span
       >{/if}
@@ -43,6 +43,7 @@
   .map-frame {
     position: relative;
     width: 100%;
+    margin-inline: auto;
     overflow: hidden;
     background: var(--surface-2);
   }

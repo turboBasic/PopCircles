@@ -698,12 +698,12 @@ def test_country_figure_shows_only_the_approved_visible_footer(
         canvas.draw()
         footer = figure.texts[-1].get_window_extent(canvas.get_renderer())
         axes = figure.axes[0].get_window_extent()
-        rendered_text = "\n".join(artist.get_text() for artist in figure.texts)
+        rendered_text = normalised("\n".join(artist.get_text() for artist in figure.texts))
         assert "A country with an exceptionally long published name:" in rendered_text
-        assert rendered_text.count(VISIBLE_FOOTER) == 1
+        assert rendered_text.count(normalised(VISIBLE_FOOTER)) == 1
         assert "Population credit:" not in rendered_text
-        assert normalised(population_credit) not in normalised(rendered_text)
-        assert normalised(boundary_credit) not in normalised(rendered_text)
+        assert normalised(population_credit) not in rendered_text
+        assert normalised(boundary_credit) not in rendered_text
         assert citation(REGISTRY, "coastline-1to110m") == ""
         assert footer_calls == [(FOOTER_BOTTOM, "bottom", FOOTER_SIZE)]
         assert figure.texts[-1].get_position() == (0.5, FOOTER_BOTTOM)
@@ -1150,6 +1150,20 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
     assert f"{CENTRE_LAT:.4f}, {CENTRE_LON:.4f}" in drawn_text
     assert "Center:" in drawn_text
     assert f"Answered from population dataset {DATASET} at decimation k=10" in drawn_text
+
+
+def test_country_map_image_dimensions_preserve_area_and_cap_wide_maps() -> None:
+    landscape = render_map_module.figure_size((0.0, 0.0, 11 / 6, 1.0), country_map=True)
+    portrait = render_map_module.figure_size((0.0, 0.0, 0.5, 1.0), country_map=True)
+    extra_wide = render_map_module.figure_size((0.0, 0.0, 3.0, 1.0), country_map=True)
+    world = render_map_module.figure_size((0.0, 0.0, 0.5, 1.0), country_map=False)
+
+    assert (landscape[0] * 200, landscape[1] * 200) == pytest.approx((2200, 1200))
+    assert portrait[0] / portrait[1] == pytest.approx(0.5)
+    assert portrait[0] * portrait[1] * 200**2 == pytest.approx(2_640_000)
+    assert extra_wide[0] * 200 == pytest.approx(2200)
+    assert extra_wide[1] / extra_wide[0] == pytest.approx(1 / 3)
+    assert world == (11.0, 6.0)
 
 
 def test_measured_and_nested_documents_use_the_one_line_title() -> None:
