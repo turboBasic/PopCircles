@@ -1094,7 +1094,7 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
         west, south, east, north = view.horizon.bounds
 
         def draw_terrain(
-            dataset: TerrainRaster,
+            dataset: TerrainRaster | Sequence[TerrainRaster],
             *,
             include_below_sea_level: bool = False,
         ) -> AxesImage:
@@ -1119,13 +1119,13 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
                 zorder=TERRAIN_LAYER,
             )
 
-        terrain_sources = (map_layers.sources.terrain, *map_layers.sources.terrain_overlays)
-        for dataset in terrain_sources:
-            if country_clip is None:
-                draw_terrain(dataset)
-                continue
-            colored = draw_terrain(dataset, include_below_sea_level=True)
-            if view.country_outline is not None:
+        draw_terrain(map_layers.sources.terrain)
+        if map_layers.sources.terrain_overlays:
+            colored = draw_terrain(
+                map_layers.sources.terrain_overlays,
+                include_below_sea_level=country_clip is not None,
+            )
+            if country_clip is not None and view.country_outline is not None:
                 paths = [compound(polygon) for polygon in polygons(view.country_outline)]
                 if paths:
                     clip = PathPatch(

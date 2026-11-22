@@ -76,6 +76,24 @@ def test_committed_map_title_override_is_keyed_by_output_stem() -> None:
     }
 
 
+def test_bhutan_terrain_overlay_uses_all_intersecting_glo90_tiles() -> None:
+    assert load().map_sources.terrain_overlays["BT"] == [
+        "copdem-glo-90-n26-e088",
+        "copdem-glo-90-n26-e089",
+        "copdem-glo-90-n26-e090",
+        "copdem-glo-90-n26-e091",
+        "copdem-glo-90-n26-e092",
+        "copdem-glo-90-n27-e088",
+        "copdem-glo-90-n27-e089",
+        "copdem-glo-90-n27-e090",
+        "copdem-glo-90-n27-e091",
+        "copdem-glo-90-n27-e092",
+        "copdem-glo-90-n28-e089",
+        "copdem-glo-90-n28-e090",
+        "copdem-glo-90-n28-e091",
+    ]
+
+
 @pytest.mark.parametrize(
     ("text", "field"),
     [

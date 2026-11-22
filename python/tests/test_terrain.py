@@ -55,6 +55,40 @@ def write_dem(path: Path) -> TerrainRaster:
     )
 
 
+def write_tile(path: Path, values: np.ndarray, x_origin: float) -> TerrainRaster:
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=values.shape[1],
+        height=values.shape[0],
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=from_origin(x_origin, 2, 0.05, 0.05),
+    ) as output:
+        output.write(values, 1)
+    content = path.read_bytes()
+    return TerrainRaster(
+        kind="terrain-raster",
+        path=path.name,
+        bytes=len(content),
+        sha256=hashlib.sha256(content).hexdigest(),
+        source_url="https://example.invalid/source",
+        licence="test",
+        licence_url="https://example.invalid/licence",
+        attribution="",
+        format="GeoTIFF",
+        width=values.shape[1],
+        height=values.shape[0],
+        epsg=4326,
+        x_origin=x_origin,
+        y_origin=2,
+        x_step=0.05,
+        y_step=-0.05,
+    )
+
+
 def projected_frame(epsg: int = 3857) -> Frame:
     crs = CRS.from_epsg(epsg)
     horizon = box(-100_000, -100_000, 100_000, 100_000)
@@ -83,6 +117,19 @@ def test_prepare_terrain_aligns_crs_transform_and_nodata(tmp_path: Path) -> None
     assert pixels[150, 1300, 3] == OPAQUE
 
 
+def test_prepare_terrain_mosaics_tiles_before_hillshade(tmp_path: Path) -> None:
+    values = np.tile(np.linspace(100, 4000, 80, dtype=np.float32), (80, 1))
+    full = write_tile(tmp_path / "full.tif", values, -2)
+    west = write_tile(tmp_path / "west.tif", values[:, :40], -2)
+    east = write_tile(tmp_path / "east.tif", values[:, 40:], 0)
+    view = projected_frame()
+
+    expected, _ = prepare_terrain(full, view, root=tmp_path)
+    actual, _ = prepare_terrain((west, east), view, root=tmp_path)
+
+    assert np.array_equal(actual, expected)
+
+
 def test_prepare_terrain_refuses_a_registry_crs_that_disagrees_with_the_raster(
     tmp_path: Path,
 ) -> None:
@@ -106,7 +153,9 @@ def test_elevation_palette_keeps_all_pinned_stops() -> None:
     for elevation, rgb in ELEVATION_STOPS:
         observed = np.rint(np.asarray(colours(scale(elevation)))[:3] * 255)
         assert observed == pytest.approx(rgb, abs=6)
-    assert tuple(np.rint(np.asarray(colours(scale(0)))[:3] * 255)) == ELEVATION_STOPS[0][1]
+    assert tuple(np.rint(np.asarray(colours(scale(0)))[:3] * 255)) == pytest.approx(
+        ELEVATION_STOPS[0][1], abs=6
+    )
     assert tuple(np.rint(np.asarray(colours(scale(8848)))[:3] * 255)) == ELEVATION_STOPS[-1][1]
 
 

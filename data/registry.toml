@@ -1348,6 +1348,253 @@ y_origin = 27.0004166666667
 x_step = 0.000833333333333333
 y_step = -0.000833333333333333
 
+[datasets.copdem-glo-90-n26-e088]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n26-e088.tif"
+bytes = 5344007
+sha256 = "54425329d717b5dd69d7b84c2c768e1a1d7712963334d6a9a99777988f0af15d"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N26_00_E088_00_DEM/Copernicus_DSM_COG_30_N26_00_E088_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 87.9995833333333
+y_origin = 27.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n26-e089]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n26-e089.tif"
+bytes = 5516222
+sha256 = "378ba8221ec9b26fa07ce73d1a84b27e6edd4a8ee66c2e8c89957fe42132b3f1"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N26_00_E089_00_DEM/Copernicus_DSM_COG_30_N26_00_E089_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 88.9995833333333
+y_origin = 27.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n26-e090]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n26-e090.tif"
+bytes = 5374294
+sha256 = "698fae6adfe5cb436f39972d6fda0ef4e301290df9526c522819219b07b4e21c"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N26_00_E090_00_DEM/Copernicus_DSM_COG_30_N26_00_E090_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 89.9995833333333
+y_origin = 27.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n26-e091]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n26-e091.tif"
+bytes = 5315884
+sha256 = "a08feb412bb3526749fe06928331176332538c72e82495adc456e1424fa62593"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N26_00_E091_00_DEM/Copernicus_DSM_COG_30_N26_00_E091_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 90.9995833333333
+y_origin = 27.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n26-e092]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n26-e092.tif"
+bytes = 5136212
+sha256 = "658f7794cedfb1b06d53fd8f8fcd475d5a187e5973fbf5b29b9ab28a446b140a"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N26_00_E092_00_DEM/Copernicus_DSM_COG_30_N26_00_E092_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 91.9995833333333
+y_origin = 27.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n27-e088]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n27-e088.tif"
+bytes = 5179650
+sha256 = "c277a2996a42b38aae483e82fe8c09307ffa8da90545472a30a41d3f34ba132b"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N27_00_E088_00_DEM/Copernicus_DSM_COG_30_N27_00_E088_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 87.9995833333333
+y_origin = 28.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n27-e089]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n27-e089.tif"
+bytes = 5062900
+sha256 = "41f89a667e23e504d4b4edfed3b5ffa038ca45c676214ae2e199caa2ed444c61"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N27_00_E089_00_DEM/Copernicus_DSM_COG_30_N27_00_E089_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 88.9995833333333
+y_origin = 28.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n27-e090]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n27-e090.tif"
+bytes = 5176337
+sha256 = "54740a8441dfd58c6ed644b125d52e9e3d27b52c5ac1497e542241158cf801ec"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N27_00_E090_00_DEM/Copernicus_DSM_COG_30_N27_00_E090_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 89.9995833333333
+y_origin = 28.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n27-e091]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n27-e091.tif"
+bytes = 5255368
+sha256 = "17b65b6d3022e89c2d437049c10efaaecabad47d634c7d600acf69fc4c1bcb18"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N27_00_E091_00_DEM/Copernicus_DSM_COG_30_N27_00_E091_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 90.9995833333333
+y_origin = 28.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n27-e092]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n27-e092.tif"
+bytes = 5296289
+sha256 = "5b62756dad40b7c258a9ae791b79b30b24c70430b142929fcdd054c9fddd2be4"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N27_00_E092_00_DEM/Copernicus_DSM_COG_30_N27_00_E092_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 91.9995833333333
+y_origin = 28.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n28-e089]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n28-e089.tif"
+bytes = 4594604
+sha256 = "2882aca31d3c4fb28321d7cc4098889edafd2eeca042b2b0de5081dfb2d84f04"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N28_00_E089_00_DEM/Copernicus_DSM_COG_30_N28_00_E089_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 88.9995833333333
+y_origin = 29.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n28-e090]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n28-e090.tif"
+bytes = 4393250
+sha256 = "8d7d85b58e8f29af55ff1e0dade9fa813742cb5f8af65cbb05edb8c1e092d644"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N28_00_E090_00_DEM/Copernicus_DSM_COG_30_N28_00_E090_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 89.9995833333333
+y_origin = 29.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
+[datasets.copdem-glo-90-n28-e091]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n28-e091.tif"
+bytes = 4649900
+sha256 = "3292f1dd4f7c9833bfd50fbb8c5c03a18ceb1e0f16b1cce5da6abc0deb84ae01"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N28_00_E091_00_DEM/Copernicus_DSM_COG_30_N28_00_E091_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 90.9995833333333
+y_origin = 29.0004166666667
+x_step = 0.000833333333333333
+y_step = -0.000833333333333333
+
 [datasets.copdem-glo-90-n34-e032]
 kind = "terrain-raster"
 path = "data/terrain/copdem-glo-90-n34-e032.tif"

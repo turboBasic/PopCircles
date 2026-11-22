@@ -682,7 +682,7 @@ def test_country_figure_shows_only_the_approved_visible_footer(
     def capture_annotate(
         figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
     ) -> None:
-        if text == VISIBLE_FOOTER:
+        if normalised(text).startswith(normalised(VISIBLE_FOOTER)):
             footer_calls.append((y, alignment, size))
         current_annotate(figure, y, text, size, alignment)
 
@@ -1229,7 +1229,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     def capture_annotate(
         figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
     ) -> None:
-        annotations.append(text)
+        annotations.append(" ".join(text.split()))
         current_annotate(figure, y, text, size, alignment)
 
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
@@ -1244,14 +1244,17 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
         raise AssertionError(message)
 
     monkeypatch.setattr(render_map_module, "registered_coastline", refuse_coastline)
-    monkeypatch.setattr(render_map_module, "map_text_rendering", lambda: (True, True))
     render_file(source, output, no_coastlines=True)
     assert annotations[-1].startswith(VISIBLE_FOOTER)
     assert "Terrain data:" in annotations[-1]
+    assert annotations[-1].endswith("See full attribution in image metadata")
     assert output.read_bytes().startswith(PNG_MAGIC)
-    assert "Title" in png_info(output)
-    assert "Description" in png_info(output)
-    assert "Copyright" in png_info(output)
+    metadata = png_info(output)
+    assert "Title" in metadata
+    assert "Description" in metadata
+    assert "Copyright" in metadata
+    assert "Selected population credit" in str(metadata["Copyright"])
+    assert "Selected boundary credit" in str(metadata["Copyright"])
 
 
 def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:

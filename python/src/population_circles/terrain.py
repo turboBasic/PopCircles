@@ -1,4 +1,6 @@
 import math
+from collections.abc import Sequence
+from contextlib import ExitStack
 from pathlib import Path
 from typing import cast
 
@@ -8,12 +10,10 @@ from numpy.typing import NDArray
 from rasterio import open as open_raster
 from rasterio.crs import CRS
 from rasterio.enums import Resampling
-from rasterio.errors import WindowError
 from rasterio.io import DatasetReader
+from rasterio.merge import merge
 from rasterio.transform import from_bounds
 from rasterio.warp import reproject, transform_bounds
-from rasterio.windows import Window
-from rasterio.windows import from_bounds as window_from_bounds
 
 from population_circles.dataset_registry import REPO_ROOT, TerrainRaster
 from population_circles.map_frame import Frame
@@ -120,76 +120,92 @@ def _check_source(dataset: TerrainRaster, source: DatasetReader) -> None:
 
 
 def prepare_terrain(
-    dataset: TerrainRaster,
+    dataset: TerrainRaster | Sequence[TerrainRaster],
     frame: Frame,
     *,
     root: Path = REPO_ROOT,
     include_below_sea_level: bool = False,
 ) -> tuple[NDArray[np.uint8], tuple[float, float, float, float]]:
+    datasets = (dataset,) if isinstance(dataset, TerrainRaster) else tuple(dataset)
+    if not datasets:
+        message = "at least one terrain source is required"
+        raise ValueError(message)
     bounds = frame.horizon.bounds
     xmin, ymin, xmax, ymax = bounds
     width = max(MIN_WIDTH, min(MAX_WIDTH, round(TARGET_HEIGHT * (xmax - xmin) / (ymax - ymin))))
     height = TARGET_HEIGHT
-    destination_transform = from_bounds(xmin, ymin, xmax, ymax, width, height)
-    elevation = np.full((height, width), DESTINATION_NODATA, dtype=np.float32)
-    path = dataset.file(root)
-    if not path.is_file():
-        message = f"terrain source is missing at {path}; run `mise run data:get`"
-        raise ValueError(message)
+    pixel_width = (xmax - xmin) / width
+    pixel_height = (ymax - ymin) / height
+    padded_bounds = (
+        xmin - pixel_width,
+        ymin - pixel_height,
+        xmax + pixel_width,
+        ymax + pixel_height,
+    )
+    destination_transform = from_bounds(*padded_bounds, width + 2, height + 2)
+    elevation = np.full((height + 2, width + 2), DESTINATION_NODATA, dtype=np.float32)
+    paths = [dataset.file(root) for dataset in datasets]
+    for path in paths:
+        if not path.is_file():
+            message = f"terrain source is missing at {path}; run `mise run data:get`"
+            raise ValueError(message)
 
-    with open_raster(_source_path(dataset, root)) as source:
-        _check_source(dataset, source)
-        source_crs = cast(CRS | None, source.crs) or CRS.from_epsg(dataset.epsg)
-        destination_crs = CRS.from_string(frame.crs.to_string())
+    with ExitStack() as stack:
+        sources = [stack.enter_context(open_raster(_source_path(item, root))) for item in datasets]
+        for item, source in zip(datasets, sources, strict=True):
+            _check_source(item, source)
+        source_crs = cast(CRS | None, sources[0].crs) or CRS.from_epsg(datasets[0].epsg)
         projected_bounds = transform_bounds(
-            destination_crs,
+            CRS.from_string(frame.crs.to_string()),
             source_crs,
-            xmin,
-            ymin,
-            xmax,
-            ymax,
+            *padded_bounds,
             densify_pts=41,
         )
         west, south, east, north = projected_bounds
+        source_west = min(source.bounds.left for source in sources)
+        source_east = max(source.bounds.right for source in sources)
         longitude_ranges = (
-            ((west, east),)
-            if west <= east
-            else ((west, source.bounds.right), (source.bounds.left, east))
+            ((west, east),) if west <= east else ((west, source_east), (source_west, east))
         )
-        windows: list[Window] = []
-        for left, right in longitude_ranges:
-            try:
-                window = (
-                    window_from_bounds(left, south, right, north, transform=source.transform)
-                    .round_offsets()
-                    .round_lengths()
-                    .intersection(Window(0, 0, source.width, source.height))
-                )
-            except WindowError:
-                continue
-            if window.width > 0 and window.height > 0:
-                windows.append(window)
-        if not windows:
-            message = f"terrain source {dataset.path!r} does not overlap the map frame"
+        ranges = [
+            (left, right)
+            for left, right in longitude_ranges
+            if left < right
+            and any(
+                left < source.bounds.right
+                and right > source.bounds.left
+                and south < source.bounds.top
+                and north > source.bounds.bottom
+                for source in sources
+            )
+        ]
+        if not ranges:
+            names = ", ".join(dataset.path for dataset in datasets)
+            message = f"terrain sources {names!r} do not overlap the map frame"
             raise ValueError(message)
-        for window in windows:
-            pixels = source.read(1, window=window)
-            piece = np.full_like(elevation, DESTINATION_NODATA)
+        destination_crs = CRS.from_string(frame.crs.to_string())
+        for left, right in ranges:
+            mosaic, mosaic_transform = merge(
+                sources,
+                bounds=(left, south, right, north),
+                nodata=DESTINATION_NODATA,
+                dtype="float32",
+                method="first",
+            )
             reproject(
-                source=pixels,
-                destination=piece,
-                src_transform=source.window_transform(window),
+                source=mosaic[0],
+                destination=elevation,
+                src_transform=mosaic_transform,
                 src_crs=source_crs,
-                src_nodata=source.nodata,
+                src_nodata=DESTINATION_NODATA,
                 dst_transform=destination_transform,
                 dst_crs=destination_crs,
                 dst_nodata=DESTINATION_NODATA,
                 resampling=Resampling.bilinear,
+                init_dest_nodata=False,
             )
-            valid_piece = np.isfinite(piece) & (piece != DESTINATION_NODATA)
-            elevation[valid_piece] = piece[valid_piece]
 
     valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA)
     if not include_below_sea_level:
         valid &= elevation > 0
-    return paint(elevation, valid, bounds), bounds
+    return paint(elevation, valid, padded_bounds)[1:-1, 1:-1], bounds
