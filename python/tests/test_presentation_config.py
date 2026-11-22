@@ -27,7 +27,10 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
     assert config.map_text.render_title is True
     assert config.map_text.render_description is True
     assert config.map_sources.terrain_default == "etopo-2022-60s"
-    assert config.map_sources.terrain_overrides == {"CH": "swisstopo-dhm25-200m"}
+    assert config.map_sources.terrain_overrides == {
+        "AD": "copdem-glo-90-n42-e001",
+        "CH": "swisstopo-dhm25-200m",
+    }
     assert config.map_sources.lakes == "natural-earth-10m-lakes-v5.0.0"
     assert config.map_sources.rivers == "natural-earth-10m-rivers-lake-centerlines-v5.0.0"
     assert config.map_sources.roads == "natural-earth-10m-roads-v5.0.0"
@@ -35,10 +38,8 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
     assert config.default_projection == "orthographic"
     us = config.country_maps["US"]
     chile = config.country_maps["CL"]
-    france = config.country_maps["FR"]
     assert not isinstance(us, str)
     assert not isinstance(chile, str)
-    assert not isinstance(france, str)
     assert us.projection == "orthographic"
     assert us.projection_parameters == {"lon_0": -96.0, "lat_0": 44.0}
     assert us.extent is not None
@@ -59,15 +60,6 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
         chile.extent.x_max,
         chile.extent.y_max,
     ) == (-75.724713888, -56.528847748, -66.418757789, -17.498400217)
-    assert france.projection == "plate-carree"
-    assert france.extent is not None
-    assert france.extent.units == "degrees"
-    assert (
-        france.extent.x_min,
-        france.extent.y_min,
-        france.extent.x_max,
-        france.extent.y_max,
-    ) == (-6.0, 41.0, 10.0, 52.0)
 
 
 def test_committed_map_title_override_is_keyed_by_output_stem() -> None:

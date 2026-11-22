@@ -273,7 +273,7 @@ def test_a_raster_missing_a_grid_field_does_not_construct() -> None:
 def test_a_boundary_carrying_grid_fields_does_not_construct() -> None:
     # The other half, and what `extra="forbid"` is load-bearing for: a grid on a vector row is a
     # copy-paste, and ignoring it would let the file say something the reader silently drops.
-    text = REGISTRY.read_text(encoding="utf-8") + "\nepsg = 4326\n"
+    text = COUNTRY_BOUNDARY_ROW + "\nepsg = 4326\n"
     with pytest.raises(ValidationError, match="epsg"):
         parse(text)
 

@@ -866,6 +866,25 @@ def test_registered_map_sources_use_the_global_default_and_country_override() ->
     assert switzerland.attributions == (("Terrain", "©swisstopo"),)
 
 
+def test_every_configured_country_terrain_tile_is_registered() -> None:
+    settings = load_presentation_config().map_sources
+    for country_id, keys in settings.terrain_overlays.items():
+        sources = registered_map_sources(REGISTRY, country_id)
+        assert tuple(Path(source.path).stem for source in sources.terrain_overlays) == tuple(keys)
+        for source in sources.terrain_overlays:
+            tile = re.fullmatch(
+                r"copdem-glo-90-([ns])(\d{2})-([ew])(\d{3})", Path(source.path).stem
+            )
+            if tile is None:
+                continue
+            y_hemisphere, latitude, x_hemisphere, longitude = tile.groups()
+            half_cell = source.x_step / 2
+            expected_x = int(longitude) * (1 if x_hemisphere == "e" else -1) - half_cell
+            expected_y = int(latitude) * (1 if y_hemisphere == "n" else -1) + 1 - source.y_step / 2
+            assert source.x_origin == pytest.approx(expected_x, abs=1e-9)
+            assert source.y_origin == pytest.approx(expected_y, abs=1e-9)
+
+
 def test_registered_map_source_missing_from_registry_is_refused() -> None:
     with pytest.raises(UnregisteredDatasetError, match="etopo-2022-60s"):
         registered_map_sources(Registry(datasets={}), None)
