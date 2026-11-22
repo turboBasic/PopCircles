@@ -338,7 +338,8 @@ def _selected_places(path: Path) -> tuple[tuple[Point, str, int, bool], ...]:
     places: list[tuple[Point, str, int, bool]] = []
     for feature in features:
         properties = feature["properties"]
-        if properties.get("POP_MAX", 0) < MIN_PLACE_POPULATION:
+        capital = properties["FEATURECLA"] == "Admin-0 capital"
+        if properties.get("POP_MAX", 0) < MIN_PLACE_POPULATION and not capital:
             continue
         geometry = shape(feature["geometry"])
         if isinstance(geometry, Point):
@@ -347,7 +348,7 @@ def _selected_places(path: Path) -> tuple[tuple[Point, str, int, bool], ...]:
                     geometry,
                     properties["NAME"],
                     properties["POP_MAX"],
-                    properties["FEATURECLA"] == "Admin-0 capital",
+                    capital,
                 ),
             )
     places.sort(key=lambda place: (not place[3], -place[2]))
