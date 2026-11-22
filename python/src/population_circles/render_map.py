@@ -389,6 +389,7 @@ WATER_LAYER = 2.6
 ROAD_LAYER = 2.65
 PLACE_LAYER = 2.85
 MIN_PLACE_POPULATION = 100_000
+MIN_WORLD_CITY_POPULATION = 5_000_000
 CIRCLE_LAYER = 3
 OCEAN = "#DFFFFD"
 COUNTRY = "#65CBC1"
@@ -862,7 +863,7 @@ def draw_context(
         )
     for geometries, colour, width, layer in (
         (layers.rivers, RIVER, 0.45, WATER_LAYER),
-        (layers.roads, ROAD, 0.65, ROAD_LAYER),
+        (layers.roads if country_clip is not None else (), ROAD, 0.65, ROAD_LAYER),
     ):
         lines = [
             line
@@ -880,6 +881,9 @@ def draw_context(
             )
     if country_clip is not None:
         places = [place for place in layers.places if country_clip.covers(place[0])][:10]
+    else:
+        places = [place for place in layers.places if place[2] >= MIN_WORLD_CITY_POPULATION]
+    if places:
         labels: list[tuple[Text, float, float, bool]] = []
         for geometry, name, _, capital in places:
             point = cast(Point, project(view, geometry))
