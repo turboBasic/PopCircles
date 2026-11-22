@@ -88,19 +88,24 @@ class MapSources:
     rivers: MapContextVector
     roads: MapContextVector
     places: SettlementVector
+    terrain_overlays: tuple[TerrainRaster, ...] = ()
 
     @property
     def attributions(self) -> tuple[tuple[str, str], ...]:
-        return tuple(
-            (name, dataset.attribution)
-            for name, dataset in (
-                ("Terrain", self.terrain),
-                ("Lakes", self.lakes),
-                ("Rivers", self.rivers),
-                ("Roads", self.roads),
-            )
-            if dataset.attribution
+        sources = (
+            ("Terrain", self.terrain),
+            *(("Terrain", dataset) for dataset in self.terrain_overlays),
+            ("Lakes", self.lakes),
+            ("Rivers", self.rivers),
+            ("Roads", self.roads),
         )
+        attributions: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for name, dataset in sources:
+            if dataset.attribution and dataset.attribution not in seen:
+                attributions.append((name, dataset.attribution))
+                seen.add(dataset.attribution)
+        return tuple(attributions)
 
 
 @dataclass(frozen=True)
@@ -129,12 +134,21 @@ def registered_map_sources(registry: Registry, country_id: str | None) -> MapSou
             raise UnregisteredDatasetError(key)
         return dataset
 
+    overlays = (
+        tuple(
+            cast(TerrainRaster, source(key, TerrainRaster))
+            for key in settings.terrain_overlays.get(country_id, [])
+        )
+        if country_id is not None
+        else ()
+    )
     return MapSources(
         terrain=cast(TerrainRaster, source(terrain_key, TerrainRaster)),
         lakes=cast(MapContextVector, source(settings.lakes, MapContextVector)),
         rivers=cast(MapContextVector, source(settings.rivers, MapContextVector)),
         roads=cast(MapContextVector, source(settings.roads, MapContextVector)),
         places=cast(SettlementVector, source(settings.places, SettlementVector)),
+        terrain_overlays=overlays,
     )
 
 
@@ -1103,13 +1117,12 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
                 zorder=TERRAIN_LAYER,
             )
 
-        if country_clip is None:
-            draw_terrain(map_layers.sources.terrain)
-        else:
-            colored = draw_terrain(
-                map_layers.sources.terrain,
-                include_below_sea_level=True,
-            )
+        terrain_sources = (map_layers.sources.terrain, *map_layers.sources.terrain_overlays)
+        for dataset in terrain_sources:
+            if country_clip is None:
+                draw_terrain(dataset)
+                continue
+            colored = draw_terrain(dataset, include_below_sea_level=True)
             if view.country_outline is not None:
                 paths = [compound(polygon) for polygon in polygons(view.country_outline)]
                 if paths:

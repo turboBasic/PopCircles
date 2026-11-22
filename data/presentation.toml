@@ -89,6 +89,85 @@ places = "populated-places-1to10m"
 AD = "copdem-glo-90-n42-e001"
 CH = "swisstopo-dhm25-200m"
 
+[map_sources.terrain_overlays]
+AG = ["copdem-glo-90-n16-w063", "copdem-glo-90-n16-w062", "copdem-glo-90-n17-w062"]
+BB = ["copdem-glo-90-n13-w060"]
+BH = ["copdem-glo-90-n25-e050", "copdem-glo-90-n26-e050"]
+BN = [
+  "copdem-glo-90-n04-e114",
+  "copdem-glo-90-n04-e115",
+  "copdem-glo-90-n05-e114",
+  "copdem-glo-90-n05-e115",
+]
+CW = ["copdem-glo-90-n12-w070", "copdem-glo-90-n12-w069"]
+CY = [
+  "copdem-glo-90-n34-e032",
+  "copdem-glo-90-n34-e033",
+  "copdem-glo-90-n34-e034",
+  "copdem-glo-90-n35-e032",
+  "copdem-glo-90-n35-e033",
+  "copdem-glo-90-n35-e034",
+]
+DM = ["copdem-glo-90-n15-w062"]
+FO = [
+  "copdem-glo-90-n61-w008",
+  "copdem-glo-90-n61-w007",
+  "copdem-glo-90-n62-w008",
+  "copdem-glo-90-n62-w007",
+]
+GD = ["copdem-glo-90-n11-w062", "copdem-glo-90-n12-w062"]
+GM = [
+  "copdem-glo-90-n13-w017",
+  "copdem-glo-90-n13-w016",
+  "copdem-glo-90-n13-w015",
+  "copdem-glo-90-n13-w014",
+]
+HK = ["copdem-glo-90-n22-e113", "copdem-glo-90-n22-e114"]
+IM = ["copdem-glo-90-n54-w005"]
+KM = ["copdem-glo-90-s13-e043", "copdem-glo-90-s13-e044", "copdem-glo-90-s12-e043"]
+KN = ["copdem-glo-90-n17-w063"]
+KY = ["copdem-glo-90-n19-w082", "copdem-glo-90-n19-w081", "copdem-glo-90-n19-w080"]
+LC = [
+  "copdem-glo-90-n13-w062",
+  "copdem-glo-90-n13-w061",
+  "copdem-glo-90-n14-w062",
+  "copdem-glo-90-n14-w061",
+]
+LI = ["copdem-glo-90-n47-e009"]
+LU = [
+  "copdem-glo-90-n49-e005",
+  "copdem-glo-90-n49-e006",
+  "copdem-glo-90-n50-e005",
+  "copdem-glo-90-n50-e006",
+]
+MT = ["copdem-glo-90-n35-e014", "copdem-glo-90-n36-e014"]
+PR = [
+  "copdem-glo-90-n17-w068",
+  "copdem-glo-90-n17-w067",
+  "copdem-glo-90-n17-w066",
+  "copdem-glo-90-n18-w068",
+  "copdem-glo-90-n18-w067",
+  "copdem-glo-90-n18-w066",
+]
+SG = ["copdem-glo-90-n01-e103", "copdem-glo-90-n01-e104"]
+SV = [
+  "copdem-glo-90-n13-w091",
+  "copdem-glo-90-n13-w090",
+  "copdem-glo-90-n13-w089",
+  "copdem-glo-90-n13-w088",
+  "copdem-glo-90-n14-w090",
+  "copdem-glo-90-n14-w089",
+]
+TT = [
+  "copdem-glo-90-n10-w063",
+  "copdem-glo-90-n10-w062",
+  "copdem-glo-90-n10-w061",
+  "copdem-glo-90-n11-w061",
+]
+VC = ["copdem-glo-90-n12-w062", "copdem-glo-90-n13-w062"]
+VG = ["copdem-glo-90-n18-w065"]
+VI = ["copdem-glo-90-n17-w065", "copdem-glo-90-n18-w066", "copdem-glo-90-n18-w065"]
+WS = ["copdem-glo-90-s15-w172", "copdem-glo-90-s14-w173", "copdem-glo-90-s14-w172"]
 [country_maps]
 default_projection = "orthographic"
 

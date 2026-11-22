@@ -94,6 +94,10 @@ class MapSources(_Model):
     terrain_overrides: dict[CountryId, Annotated[str, Field(min_length=1)]] = Field(
         default_factory=dict,
     )
+    terrain_overlays: dict[
+        CountryId,
+        Annotated[list[Annotated[str, Field(min_length=1)]], Field(min_length=1)],
+    ] = Field(default_factory=dict)
     lakes: Annotated[str, Field(min_length=1)]
     rivers: Annotated[str, Field(min_length=1)]
     roads: Annotated[str, Field(min_length=1)]
