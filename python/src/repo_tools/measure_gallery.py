@@ -52,16 +52,19 @@ def timed_prepare(
 
 prepare_terrain_attribute = "prepare_terrain"
 setattr(render_map, prepare_terrain_attribute, timed_prepare)
-cold = {}
-warm = {}
-before = {}
-for country_id in ids:
+cold: dict[str, dict[str, object]] = {}
+warm: dict[str, dict[str, object]] = {}
+before: dict[str, str] = {}
+total = len(ids)
+for index, country_id in enumerate(ids, start=1):
     source = next(corpus.glob(f"country-*-{country_id}-half.json"))
     before[country_id] = hashlib.sha256(source.read_bytes()).hexdigest()
     payload = json.loads(source.read_text())
     terrain_seconds[0] = 0.0
     started = time.perf_counter()
-    drawn, reused = gallery.render_document(source, payload, context, 1, 1)
+    drawn, reused = gallery.render_document(
+        gallery.RenderJob(source, payload, index, total), context
+    )
     if reused:
         raise AssertionError
     elapsed = time.perf_counter() - started
@@ -77,11 +80,13 @@ for country_id in ids:
         "bytes": drawn.figure.stat().st_size,
         "reused_cache": reused,
     }
-for country_id in ids:
+for index, country_id in enumerate(ids, start=1):
     source = next(corpus.glob(f"country-*-{country_id}-half.json"))
     payload = json.loads(source.read_text())
     started = time.perf_counter()
-    drawn, reused = gallery.render_document(source, payload, context, 1, 1)
+    drawn, reused = gallery.render_document(
+        gallery.RenderJob(source, payload, index, total), context
+    )
     elapsed = time.perf_counter() - started
     warm[country_id] = {"seconds_total": round(elapsed, 3), "reused_cache": reused}
     if not reused:

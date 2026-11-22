@@ -120,7 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     std::fs::write(root.join("data/tiny.tif"), raster()?)?;
     std::fs::write(
         root.join("data/boundaries/gisco-countries-2024-1m.geojson"),
-        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"XX","NAME_ENGL":"Fixture"},"geometry":{"type":"Polygon","coordinates":[[[0,0],[90,0],[90,90],[0,90],[0,0]]]}}]}"#,
+        r#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"CNTR_ID":"XX","CNTR_NAME":"Fixture","NAME_ENGL":"Fixture"},"geometry":{"type":"Polygon","coordinates":[[[0,0],[90,0],[90,90],[0,90],[0,0]]]}}]}"#,
     )?;
     std::fs::write(
         root.join("data/settlements/populated-places-1to10m.geojson"),
@@ -172,6 +172,7 @@ axis_order = "longitude-latitude"
 feature_count = 1
 revision = "fixture"
 source_id_field = "CNTR_ID"
+display_name_field = "CNTR_NAME"
 identity_policy = "fixture"
 "#,
     )?;

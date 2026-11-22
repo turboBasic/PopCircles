@@ -147,7 +147,7 @@ class MapRenderContext:
     digest: str
     render_text: tuple[bool, bool] = (False, False)
     data_root: Path = REPO_ROOT
-    map_titles: dict[str, str] = field(default_factory=dict)
+    map_titles: dict[str, str] = field(default_factory=dict[str, str])
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(

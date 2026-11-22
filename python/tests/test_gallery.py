@@ -33,6 +33,7 @@ from population_circles.dataset_registry import (
     load,
 )
 from population_circles.gallery import build, country_documents
+from population_circles.map_frame import ORTHOGRAPHIC
 from population_circles.render_map import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
@@ -715,7 +716,7 @@ def test_map_cache_key_changes_for_each_render_input_category() -> None:
         "context", b"document", coastline, box(-1, -1, 1, 1)
     )
     assert base != gallery_module.map_cache_key(
-        "context", b"document", coastline, outline, gallery_module.ORTHOGRAPHIC
+        "context", b"document", coastline, outline, ORTHOGRAPHIC
     )
 
 
