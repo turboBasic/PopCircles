@@ -957,11 +957,29 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         if payload.get("document") not in {*CIRCLE_KINDS, "country-smallest"}:
             continue
         answer = circle_of(payload)
-        if answer.country is None and answer.caption.share == gallery_module.HALF_SHARE:
+        share = (
+            payload["result"]["circle"]["target"]["share"]
+            if payload["document"] == "smallest"
+            else answer.caption.share
+        )
+        if answer.country is None and share == gallery_module.HALF_SHARE:
             expected_orthographic_maps.add(f"{source.stem}-orthographic.png")
     assert expected_orthographic_maps <= figure_names
     for one in skipped:
         assert one.kind not in CIRCLE_KINDS
+
+
+def test_world_half_target_adds_orthographic_gallery_map() -> None:
+    source = CORPUS / "world-half-30arcsec.json"
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    answer = circle_of(payload)
+
+    assert answer.caption.share != gallery_module.HALF_SHARE
+    assert payload["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
+    assert [job.figure_suffix for job in gallery_module.render_jobs_for(source, payload, 1, 1)] == [
+        "",
+        "-orthographic",
+    ]
 
 
 def test_one_batched_sweep_publishes_each_country_result_and_names_missing_countries(

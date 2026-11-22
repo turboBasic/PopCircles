@@ -555,7 +555,12 @@ def render_jobs_for(
 ) -> tuple[RenderJob, ...]:
     job = RenderJob(source, payload, index, total)
     answer = circle_of(payload)
-    if answer.country is None and answer.caption.share == HALF_SHARE:
+    share = (
+        payload["result"]["circle"]["target"]["share"]
+        if payload["document"] == "smallest"
+        else answer.caption.share
+    )
+    if answer.country is None and share == HALF_SHARE:
         return job, RenderJob(source, payload, index, total, ORTHOGRAPHIC, "-orthographic")
     return (job,)
 
