@@ -142,6 +142,7 @@ class CountryMap(_Model):
 
 class PresentationConfig(_Model):
     map_text: MapText
+    map_titles: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
     gallery: Gallery
     map_sources: MapSources
     country_maps: dict[str, CountryMap | DefaultProjection]
@@ -159,6 +160,14 @@ class PresentationConfig(_Model):
                 message = f"country_maps.{country_id} must be a country map table"
                 raise TypeError(message)
         return self
+
+    @field_validator("map_titles")
+    @classmethod
+    def valid_map_title_keys(cls, value: dict[str, str]) -> dict[str, str]:
+        if any(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", key) is None for key in value):
+            message = "map_titles keys must be lowercase map filename stems"
+            raise ValueError(message)
+        return value
 
     @property
     def default_projection(self) -> DefaultProjection:

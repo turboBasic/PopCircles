@@ -1175,6 +1175,14 @@ def test_measured_and_nested_documents_use_the_one_line_title() -> None:
     )
 
 
+def test_map_title_label_replaces_the_generic_subject_and_keeps_technical_details() -> None:
+    answer = circle_of(document())
+    assert title_of(answer, "Most populous 1000km circle") == (
+        "Most populous 1000km circle holding 16% of the population "
+        "(1,254,363,868 people); Center: 25.1250, 79.7080"
+    )
+
+
 def test_country_title_names_the_country_and_population_dataset() -> None:
     payload = country_circle_document()
     payload["result"]["circle"]["territory_share"] = TERRITORY_SHARE

@@ -2,6 +2,9 @@
 render_title = true
 render_description = true
 
+[map_titles]
+world-most-populous-1000km-5arcmin = "Most populous 1000km circle"
+
 [gallery]
 # GISCO feature IDs outside the UN Member States list (2026-08-17 snapshot).
 # Zero-total population territories are excluded independently of membership.

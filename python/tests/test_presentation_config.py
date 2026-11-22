@@ -70,6 +70,12 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
     ) == (-6.0, 41.0, 10.0, 52.0)
 
 
+def test_committed_map_title_override_is_keyed_by_output_stem() -> None:
+    assert load().map_titles == {
+        "world-most-populous-1000km-5arcmin": "Most populous 1000km circle"
+    }
+
+
 @pytest.mark.parametrize(
     ("text", "field"),
     [
@@ -118,6 +124,12 @@ def test_committed_presentation_config_preserves_existing_settings() -> None:
         (
             PRESENTATION_CONFIG.read_text(encoding="utf-8").replace("lat_0 = 44.0", "lat_1 = 44.0"),
             "projection_parameters",
+        ),
+        (
+            PRESENTATION_CONFIG.read_text(encoding="utf-8").replace(
+                "world-most-populous-1000km-5arcmin", "Invalid_key"
+            ),
+            "map_titles keys must be lowercase map filename stems",
         ),
     ],
 )

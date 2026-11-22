@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, NotRequired, TypedDict, cast
 from urllib.parse import quote
@@ -31,7 +31,6 @@ from population_circles.dataset_registry import (
 )
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
 from population_circles.presentation_config import load as load_presentation_config
-from population_circles.presentation_config import map_text_rendering
 from population_circles.render_map import (
     OCEAN,
     citation,
@@ -147,6 +146,7 @@ class MapRenderContext:
     digest: str
     render_text: tuple[bool, bool] = (False, False)
     data_root: Path = REPO_ROOT
+    map_titles: dict[str, str] = field(default_factory=dict)
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
@@ -319,7 +319,9 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
                 else None
             ) or citation(context.registry, answer.country.boundary_dataset)
             outline_and_credit = (selected, boundary_attribution)
-        title = title_of(answer)
+        target = context.output / f"{source.stem}{figure_suffix}.png"
+        title_label = context.map_titles.get(target.stem)
+        title = title_of(answer, title_label)
         copyright_text = copyright_of(
             answer,
             population_attribution,
@@ -336,7 +338,6 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
             map_sources.attributions,
         )
         payload["render_metadata"] = metadata_json_fields(answer, properties)
-        target = context.output / f"{source.stem}{figure_suffix}.png"
         outline = outline_and_credit[0] if outline_and_credit is not None else None
         cache_key = (
             map_cache_key(
@@ -392,6 +393,7 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
             country_labels=other_country_labels(boundaries, answer),
             render_text=context.render_text,
             map_layers=map_layers,
+            title_label=title_label,
         )
     except Exception as error:
         # The early-built page is removed by `build_gallery_output` if a map fails.
@@ -969,6 +971,7 @@ def build(
     except OSError:
         cache_directory = None
     context_digest = render_context_digest()
+    presentation = load_presentation_config()
     render_context = MapRenderContext(
         registry,
         coastline,
@@ -976,7 +979,8 @@ def build(
         output,
         cache_directory,
         context_digest,
-        map_text_rendering(),
+        (presentation.map_text.render_title, presentation.map_text.render_description),
+        map_titles=presentation.map_titles,
     )
     (output / "index.html").unlink(missing_ok=True)
     (output / "gallery-data.json").unlink(missing_ok=True)

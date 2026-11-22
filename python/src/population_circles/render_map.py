@@ -55,7 +55,6 @@ from population_circles.map_frame import (
 )
 from population_circles.presentation_config import (
     CountryMap,
-    map_text_rendering,
 )
 from population_circles.presentation_config import (
     load as load_presentation_config,
@@ -480,13 +479,14 @@ def stroke(axes: Axes, geometry: BaseGeometry, colour: str, width: float, layer:
     )
 
 
-def title_of(answer: Answer) -> str:
+def title_of(answer: Answer, label: str | None = None) -> str:
     circle = answer.circle
     country = f"{answer.country.name}: " if answer.country else ""
     centre = f"{circle.centre.lat:.4f}, {circle.centre.lon:.4f}"
     population_percent = math.floor(answer.caption.share * 100 + 0.5)
+    subject = label or f"{circle.radius_km:,.0f} km circle"
     title = (
-        f"{country}{circle.radius_km:,.0f} km circle holding "
+        f"{country}{subject} holding "
         f"{population_percent}% of the population "
         f"({answer.caption.population:,.0f} people); Center: {centre}"
     )
@@ -1147,6 +1147,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     country_labels: Sequence[tuple[BaseGeometry, str]] = (),
     render_text: tuple[bool, bool] = (True, True),
     map_layers: MapLayers | None = None,
+    title_label: str | None = None,
 ) -> Figure:
     if answer.country is not None and country_outline is None:
         raise MissingCountryOutlineError
@@ -1168,7 +1169,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         figsize=(11.0, 6.0),
     )
     try:
-        title = title_of(answer)
+        title = title_of(answer, title_label)
         footer = visible_credits(map_attributions)
         canvas = cast(FigureCanvasAgg, figure.canvas)
         header_bottom = 0.985
@@ -1279,7 +1280,9 @@ def render_file(
     coastline, coastline_attribution = (
         (None, None) if no_coastlines else registered_coastline(registry)
     )
-    render_text = map_text_rendering()
+    presentation = load_presentation_config()
+    render_text = (presentation.map_text.render_title, presentation.map_text.render_description)
+    title_label = presentation.map_titles.get(output_path.stem)
     boundaries = load_map_boundaries(answer, registry)
     if not coverage_enriched:
         document = enrich_document(document, boundaries)
@@ -1304,8 +1307,9 @@ def render_file(
         render_text=render_text,
         map_layers=load_map_layers(map_sources, country_outline=selected),
         country_labels=other_country_labels(boundaries, answer),
+        title_label=title_label,
     )
-    title = title_of(answer)
+    title = title_of(answer, title_label)
     copyright_text = copyright_of(
         answer,
         population_attribution,
