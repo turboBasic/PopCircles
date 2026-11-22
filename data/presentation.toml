@@ -86,6 +86,7 @@ roads = "natural-earth-10m-roads-v5.0.0"
 places = "populated-places-1to10m"
 
 [map_sources.terrain_overrides]
+AD = "copdem-glo-90-n42-e001"
 CH = "swisstopo-dhm25-200m"
 
 [country_maps]

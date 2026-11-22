@@ -84,7 +84,7 @@ class TerrainRaster(_Dataset):
     y_origin: float
     x_step: float = Field(allow_inf_nan=False)
     y_step: float = Field(allow_inf_nan=False)
-    nodata: float = Field(allow_inf_nan=False)
+    nodata: float | None = Field(default=None, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def _archive_format_has_member(self) -> Self:

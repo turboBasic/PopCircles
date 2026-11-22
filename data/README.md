@@ -62,6 +62,39 @@ grid, but it provides consistent global coverage for the other seven reference m
 The terrain renderer uses this registered raster only for map presentation. It does not read
 population data or affect published results.
 
+## etopo-2022-15s-n45e000
+
+| Property | Value |
+| --- | --- |
+| Grid | 3 600 × 3 600 (15 arc-second) |
+| Extent | 0–15°E, 30–45°N |
+| CRS | EPSG:9518 (WGS 84) |
+| Pixel type | Float32, single band |
+| Nodata | −99 999 |
+| Size | 25 195 718 bytes |
+| SHA-256 | `86f7ba59e904807fee7e035ada1ad8e761fd89d658574e91efa9e0e727f8d5d0` |
+
+The [NOAA NCEI ETOPO 2022 15 arc-second tile][etopo-15s-file] is an available regional terrain
+source. It is the same CC0-1.0 product as the global 60 arc-second raster. The Andorra map uses the
+Copernicus GLO-90 tile below instead.
+
+## copdem-glo-90-n42-e001
+
+| Property | Value |
+| --- | --- |
+| Grid | 1 200 × 1 200 (30 arc-second; about 90 m) |
+| Extent | 1–2°E, 42–43°N |
+| CRS | EPSG:4326 (WGS 84) |
+| Pixel type | Float32, single band, Cloud Optimized GeoTIFF |
+| Nodata | Not set in the source |
+| Size | 5 295 321 bytes |
+| SHA-256 | `f3d7ce54cdc6ac7f00297a54b2e3c28814a069360d1ae2ecd9d76358c76cdf43` |
+
+The [Copernicus DEM GLO-90 tile][copdem-glo-90-file] provides relief for Andorra's production map.
+The public tile is a Cloud Optimized GeoTIFF derived from COP-DEM GLO-90-DGED. Its required
+adapted-data attribution is recorded in the registry and printed on maps. GLO-90 is available under
+its full, free and open licence.
+
 ## swisstopo-dhm25-200m
 
 | Property | Value |
@@ -382,6 +415,8 @@ asset; the publisher URL is the source archive used to reproduce it.
 [ne-terms]: https://www.naturalearthdata.com/about/terms-of-use/
 [etopo]: https://www.ncei.noaa.gov/products/etopo-global-relief-model
 [etopo-file]: https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif
+[etopo-15s-file]: https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/15s/15s_surface_elev_gtif/ETOPO_2022_v1_15s_N45E000_surface.tif
+[copdem-glo-90-file]: https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N42_00_E001_00_DEM/Copernicus_DSM_COG_30_N42_00_E001_00_DEM.tif
 [swisstopo-dhm25]: https://www.swisstopo.admin.ch/en/height-model-dhm25-200m
 [swisstopo-terms]: https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices
 [ne-lakes]: https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-lakes/

@@ -185,6 +185,50 @@ x_step = 0.016666666666666666
 y_step = -0.016666666666666666
 nodata = -99999.0
 
+[datasets.etopo-2022-15s-n45e000]
+kind = "terrain-raster"
+path = "data/terrain/etopo-2022-15s-n45e000.tif"
+bytes = 25195718
+sha256 = "86f7ba59e904807fee7e035ada1ad8e761fd89d658574e91efa9e0e727f8d5d0"
+fetch_url = "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/15s/15s_surface_elev_gtif/ETOPO_2022_v1_15s_N45E000_surface.tif"
+source_url = "https://www.ncei.noaa.gov/products/etopo-global-relief-model"
+
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+attribution = "NOAA National Centers for Environmental Information. 2022: ETOPO 2022 15 Arc-Second Global Relief Model. https://doi.org/10.25921/fd45-gt74."
+
+format = "GeoTIFF"
+width = 3600
+height = 3600
+epsg = 9518
+x_origin = 0.0
+y_origin = 45.0
+x_step = 0.004166666666666667
+y_step = -0.004166666666666667
+nodata = -99999.0
+
+[datasets.copdem-glo-90-n42-e001]
+kind = "terrain-raster"
+path = "data/terrain/copdem-glo-90-n42-e001.tif"
+bytes = 5295321
+sha256 = "f3d7ce54cdc6ac7f00297a54b2e3c28814a069360d1ae2ecd9d76358c76cdf43"
+fetch_url = "https://copernicus-dem-90m.s3.amazonaws.com/Copernicus_DSM_COG_30_N42_00_E001_00_DEM/Copernicus_DSM_COG_30_N42_00_E001_00_DEM.tif"
+source_url = "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+
+licence = "COP-DEM-GLO-90-F Global 90m Full, Free & Open"
+licence_url = "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+attribution = "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+
+format = "GeoTIFF"
+width = 1200
+height = 1200
+epsg = 4326
+x_origin = 0.999583333333333
+y_origin = 43.000416666666666
+x_step = 0.000833333333333
+y_step = -0.000833333333333
+# The source COG has no nodata metadata.
+
 [datasets.swisstopo-dhm25-200m]
 kind = "terrain-raster"
 path = "data/terrain/swisstopo-dhm25-200m.zip"
