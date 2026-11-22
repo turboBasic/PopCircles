@@ -84,7 +84,6 @@ class MissingCountryOutlineError(ValueError):
 @dataclass(frozen=True)
 class MapSources:
     terrain: TerrainRaster
-    default_terrain: TerrainRaster
     lakes: MapContextVector
     rivers: MapContextVector
     roads: MapContextVector
@@ -92,15 +91,10 @@ class MapSources:
 
     @property
     def attributions(self) -> tuple[tuple[str, str], ...]:
-        terrain_sources = (
-            (("Terrain", self.terrain),)
-            if self.terrain.path == self.default_terrain.path
-            else (("Terrain", self.default_terrain), ("Country terrain", self.terrain))
-        )
         return tuple(
             (name, dataset.attribution)
             for name, dataset in (
-                *terrain_sources,
+                ("Terrain", self.terrain),
                 ("Lakes", self.lakes),
                 ("Rivers", self.rivers),
                 ("Roads", self.roads),
@@ -137,7 +131,6 @@ def registered_map_sources(registry: Registry, country_id: str | None) -> MapSou
 
     return MapSources(
         terrain=cast(TerrainRaster, source(terrain_key, TerrainRaster)),
-        default_terrain=cast(TerrainRaster, source(settings.terrain_default, TerrainRaster)),
         lakes=cast(MapContextVector, source(settings.lakes, MapContextVector)),
         rivers=cast(MapContextVector, source(settings.rivers, MapContextVector)),
         roads=cast(MapContextVector, source(settings.roads, MapContextVector)),
@@ -384,6 +377,7 @@ MIN_PLACE_POPULATION = 100_000
 CIRCLE_LAYER = 3
 OCEAN = "#DFFFFD"
 COUNTRY = "#65CBC1"
+CONTEXT_COUNTRY_FILL = "#F4F4F4"
 LAKE = "#9BD8E5"
 RIVER = "#65B7CE"
 ROAD = "#B56F52"
@@ -1027,7 +1021,7 @@ def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are dist
         axes.add_patch(
             PathPatch(
                 DrawPath.make_compound_path(*country_paths),
-                facecolor=COUNTRY if view.country_outline is None else "none",
+                facecolor=(COUNTRY if view.country_outline is None else CONTEXT_COUNTRY_FILL),
                 alpha=COUNTRY_FILL_ALPHA if view.country_outline is None else 1.0,
                 edgecolor="0.4",
                 linewidth=OUTLINE_WIDTH,
@@ -1085,7 +1079,6 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
         def draw_terrain(
             dataset: TerrainRaster,
             *,
-            grayscale: bool = False,
             include_below_sea_level: bool = False,
         ) -> AxesImage:
             if include_below_sea_level:
@@ -1093,7 +1086,6 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
                     dataset,
                     view,
                     root=map_layers.root,
-                    grayscale=grayscale,
                     include_below_sea_level=True,
                 )
             else:
@@ -1101,7 +1093,6 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
                     dataset,
                     view,
                     root=map_layers.root,
-                    grayscale=grayscale,
                 )
             return draw_image(
                 image,
@@ -1114,7 +1105,6 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
         if country_clip is None:
             draw_terrain(map_layers.sources.terrain)
         else:
-            draw_terrain(map_layers.sources.default_terrain, grayscale=True)
             colored = draw_terrain(
                 map_layers.sources.terrain,
                 include_below_sea_level=True,

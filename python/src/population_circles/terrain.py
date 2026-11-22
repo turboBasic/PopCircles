@@ -62,17 +62,10 @@ def paint(
     elevation: NDArray[np.float32],
     valid: NDArray[np.bool_],
     bounds: tuple[float, float, float, float],
-    *,
-    grayscale: bool = False,
 ) -> NDArray[np.uint8]:
     rgba = np.zeros((*elevation.shape, 4), dtype=np.uint8)
-    if grayscale:
-        gray = np.clip(0.62 + 0.33 * elevation[valid] / 4500, 0.0, 1.0)
-        rgba[valid, :3] = np.rint(gray[:, None] * 255).astype(np.uint8)
-        rgba[valid, 3] = 255
-    else:
-        colours, scale = palette()
-        rgba[valid] = np.rint(colours(scale(elevation[valid])) * 255).astype(np.uint8)
+    colours, scale = palette()
+    rgba[valid] = np.rint(colours(scale(elevation[valid])) * 255).astype(np.uint8)
 
     xmin, ymin, xmax, ymax = bounds
     shade = LightSource(azdeg=HILLSHADE_AZIMUTH, altdeg=HILLSHADE_ALTITUDE).hillshade(
@@ -86,10 +79,6 @@ def paint(
         rgba[valid, :3].astype(np.float32) * (1 - HILLSHADE_ALPHA)
         + shade[valid, None] * 255 * HILLSHADE_ALPHA
     ).astype(np.uint8)
-    if grayscale:
-        rgba[valid, :3] = np.rint(rgba[valid, :3].astype(np.float32) * 0.5 + 255 * 0.5).astype(
-            np.uint8
-        )
     return rgba
 
 
@@ -135,7 +124,6 @@ def prepare_terrain(
     frame: Frame,
     *,
     root: Path = REPO_ROOT,
-    grayscale: bool = False,
     include_below_sea_level: bool = False,
 ) -> tuple[NDArray[np.uint8], tuple[float, float, float, float]]:
     bounds = frame.horizon.bounds
@@ -204,4 +192,4 @@ def prepare_terrain(
     valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA)
     if not include_below_sea_level:
         valid &= elevation > 0
-    return paint(elevation, valid, bounds, grayscale=grayscale), bounds
+    return paint(elevation, valid, bounds), bounds

@@ -112,18 +112,16 @@ def empty_boundaries(
 def fixture_map_sources(country_id: str | None) -> MapSources:
     terrain_key = "swisstopo-dhm25-200m" if country_id == "CH" else "etopo-2022-60s"
     terrain = REGISTRY.datasets[terrain_key]
-    default_terrain = REGISTRY.datasets["etopo-2022-60s"]
     lakes = REGISTRY.datasets["natural-earth-10m-lakes-v5.0.0"]
     rivers = REGISTRY.datasets["natural-earth-10m-rivers-lake-centerlines-v5.0.0"]
     roads = REGISTRY.datasets["natural-earth-10m-roads-v5.0.0"]
     places = REGISTRY.datasets["populated-places-1to10m"]
     assert isinstance(terrain, TerrainRaster)
-    assert isinstance(default_terrain, TerrainRaster)
     assert isinstance(lakes, MapContextVector)
     assert isinstance(rivers, MapContextVector)
     assert isinstance(roads, MapContextVector)
     assert isinstance(places, SettlementVector)
-    return MapSources(terrain, default_terrain, lakes, rivers, roads, places)
+    return MapSources(terrain, lakes, rivers, roads, places)
 
 
 def fixture_registered_map_sources(_registry: Registry, country_id: str | None) -> MapSources:
@@ -151,10 +149,8 @@ def transparent_terrain(
     view: Frame,
     *,
     root: Path = REPO_ROOT,
-    grayscale: bool = False,
 ) -> tuple[np.ndarray, tuple[float, float, float, float]]:
     assert root == REPO_ROOT
-    _ = grayscale
     return np.zeros((2, 2, 4), dtype=np.uint8), view.horizon.bounds
 
 
@@ -983,7 +979,6 @@ def test_map_layers_render_in_order_below_circle_and_centre() -> None:
         axes = figure.axes[0]
         assert [image.get_zorder() for image in axes.images] == [
             0,
-            render_map_module.TERRAIN_LAYER,
             render_map_module.TERRAIN_LAYER,
         ]
         assert any(patch.get_zorder() == render_map_module.WATER_LAYER for patch in axes.patches)
