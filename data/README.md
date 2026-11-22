@@ -627,6 +627,7 @@ These checksum-pinned 1° Cloud Optimized GeoTIFF tiles provide high-resolution 
 | `copdem-glo-90-n40-e048` | 1200 × 1200 | 40–41°N, 48–49°E | `89bf786b2accce3e832f9545bccd3cb7856cef7b77c970c33ddc877ed6fab835` | 5,368,833 |
 | `copdem-glo-90-n40-e049` | 1200 × 1200 | 40–41°N, 49–50°E | `8a91458d85a8154501f66db280a64d23a9a0b5b726a345d5a30daef78342edb7` | 3,526,223 |
 | `copdem-glo-90-n40-e050` | 1200 × 1200 | 40–41°N, 50–51°E | `ae854d7fe28f6aca0b81a1231124d5eaf3527ef8c22f7d9c7c4761758c2dcd08` | 459,165 |
+| `copdem-glo-90-n41-e012` | 1200 × 1200 | 41–42°N, 12–13°E | `6f3d675002c210376ecbff442c8f34dd9dc29d640c92d646640521394082efb0` | 2,292,316 |
 | `copdem-glo-90-n41-e019` | 1200 × 1200 | 41–42°N, 19–20°E | `dd5c6573613706a0453c40558d2d249739f9b66111028558001e52ce1e8a9cc6` | 3,240,529 |
 | `copdem-glo-90-n41-e020` | 1200 × 1200 | 41–42°N, 20–21°E | `507aa9a7a00337fcaf6ee77ba1f6dd6acee5eab607b62c397c68be274429c342` | 5,210,728 |
 | `copdem-glo-90-n41-e021` | 1200 × 1200 | 41–42°N, 21–22°E | `d8372f53d787fe677398c86f8c36db1ba9fd2a70abfb8b5e4a66c4ca5974ce69` | 5,271,722 |

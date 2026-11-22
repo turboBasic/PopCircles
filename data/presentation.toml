@@ -183,6 +183,7 @@ TT = [
   "copdem-glo-90-n11-w061",
 ]
 VC = ["copdem-glo-90-n12-w062", "copdem-glo-90-n13-w062"]
+VA = ["copdem-glo-90-n41-e012"]
 VG = ["copdem-glo-90-n18-w065"]
 VI = ["copdem-glo-90-n17-w065", "copdem-glo-90-n18-w066", "copdem-glo-90-n18-w065"]
 WS = ["copdem-glo-90-s15-w172", "copdem-glo-90-s14-w173", "copdem-glo-90-s14-w172"]
