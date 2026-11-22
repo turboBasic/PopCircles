@@ -27,6 +27,7 @@
   to its trigger.
 - On wide screens, navigation can be collapsed, and its state survives a reload.
 - Icon-only desktop navigation controls explain their actions with tooltips on hover and keyboard focus; the buttons retain accessible names.
+- The PopCircles logo is 2rem in the expanded desktop header and 1.25rem when collapsed; on mobile it stays 1.25rem in both states.
 
 ### Map presentation
 

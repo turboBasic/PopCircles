@@ -52,11 +52,10 @@
     gap: 0.65rem;
     color: var(--accent);
     font:
-      400 1rem/1 'Lilita One',
+      400 2rem/1 'Lilita One',
       sans-serif;
     text-decoration: none;
     text-transform: uppercase;
-    font-size: 1rem;
     letter-spacing: 0.16em;
   }
   .brand-text {
@@ -93,17 +92,28 @@
     width: 24px;
     height: 24px;
   }
+  @media (max-width: 1023px) {
+    #logo > a {
+      font-size: 1.25rem;
+      letter-spacing: 0.08em;
+    }
+    .brand-text {
+      gap: 0.08em;
+    }
+  }
   @supports (scroll-timeline: --results-scroll block) and (timeline-scope: --results-scroll) and
     (animation-range: 0px 160px) {
-    #logo > a {
-      animation: collapse-logo auto linear both;
-      animation-timeline: --results-scroll;
-      animation-range: 0px 160px;
-    }
-    @keyframes collapse-logo {
-      to {
-        font-size: 0.88rem;
-        letter-spacing: 0.13em;
+    @media (min-width: 1024px) {
+      #logo > a {
+        animation: collapse-logo auto linear both;
+        animation-timeline: --results-scroll;
+        animation-range: 0px 160px;
+      }
+      @keyframes collapse-logo {
+        to {
+          font-size: 1.25rem;
+          letter-spacing: 0.13em;
+        }
       }
     }
   }
