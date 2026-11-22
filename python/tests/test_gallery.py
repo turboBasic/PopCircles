@@ -860,23 +860,45 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     use_coastline_fixture(tmp_path, monkeypatch)
-    registry = registry_without_country_boundaries()
-    monkeypatch.setattr(gallery_module, "load", lambda: registry)
+    registry = registry_with_synthetic_map_inputs(tmp_path)
+    coastline, attribution = registered_coastline(registry)
+    output = tmp_path / "gallery"
+    output.mkdir()
+    context = gallery_module.MapRenderContext(
+        registry,
+        coastline,
+        attribution,
+        output,
+        None,
+        "fixture",
+        data_root=tmp_path,
+    )
 
     def two_workers(count: int) -> int:
         return min(2, count)
 
+    def skip_frontend(_output: Path) -> None:
+        return
+
     monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "drawable.json", document("most-populous"))
     written(corpus, "unregistered.json", document("most-populous", "no-such-dataset"))
-    output = tmp_path / "gallery"
-
     with pytest.raises(UnregisteredDatasetError) as caught:
-        build(corpus, output, country_cli([], [])[0])
+        gallery_module.build_gallery_output(
+            corpus,
+            [
+                (source, json.loads(source.read_text(encoding="utf-8")))
+                for source in sorted(corpus.glob("*.json"))
+            ],
+            {},
+            [],
+            context,
+        )
 
     assert "unregistered.json" in " ".join(caught.value.__notes__)
     assert not (output / "index.html").exists()
