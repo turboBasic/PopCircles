@@ -2,7 +2,7 @@ import hashlib
 import json
 import re
 import socket
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NoReturn, cast
 
@@ -144,12 +144,14 @@ def fixture_map_layers(
 
 
 def transparent_terrain(
-    _dataset: TerrainRaster,
+    _dataset: TerrainRaster | Sequence[TerrainRaster],
     view: Frame,
     *,
     root: Path = REPO_ROOT,
+    include_below_sea_level: bool = False,
 ) -> tuple[np.ndarray, tuple[float, float, float, float]]:
     assert root == REPO_ROOT
+    _ = include_below_sea_level
     return np.zeros((2, 2, 4), dtype=np.uint8), view.horizon.bounds
 
 
@@ -954,10 +956,38 @@ def test_city_labels_keep_priority_and_do_not_overlap() -> None:
         plt.close(figure)
 
 
-def test_map_layers_render_in_order_below_circle_and_centre() -> None:
+def test_map_layers_render_in_order_below_circle_and_centre(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     answer = circle_of(country_circle_document())
     selected_country = box(5, 47, 15, 55)
-    sources = fixture_map_sources("DE")
+    base_sources = fixture_map_sources("DE")
+    sources = MapSources(
+        base_sources.terrain,
+        base_sources.lakes,
+        base_sources.rivers,
+        base_sources.roads,
+        base_sources.places,
+        terrain_overlays=(base_sources.terrain,),
+    )
+    prepared: list[TerrainRaster | Sequence[TerrainRaster]] = []
+
+    def capture_terrain(
+        dataset: TerrainRaster | Sequence[TerrainRaster],
+        view: Frame,
+        *,
+        root: Path = REPO_ROOT,
+        include_below_sea_level: bool = False,
+    ) -> tuple[np.ndarray, tuple[float, float, float, float]]:
+        prepared.append(dataset)
+        return transparent_terrain(
+            dataset,
+            view,
+            root=root,
+            include_below_sea_level=include_below_sea_level,
+        )
+
+    monkeypatch.setattr(render_map_module, "prepare_terrain", capture_terrain)
     layers = MapLayers(
         sources,
         lakes=(box(9, 50, 10, 51),),
@@ -980,6 +1010,8 @@ def test_map_layers_render_in_order_below_circle_and_centre() -> None:
             0,
             render_map_module.TERRAIN_LAYER,
         ]
+        assert axes.images[1].get_clip_path() is not None
+        assert prepared == [sources.terrain_overlays]
         assert any(patch.get_zorder() == render_map_module.WATER_LAYER for patch in axes.patches)
         assert any(
             collection.get_zorder() == render_map_module.ROAD_LAYER

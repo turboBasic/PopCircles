@@ -1137,20 +1137,26 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
                 zorder=TERRAIN_LAYER,
             )
 
-        draw_terrain(map_layers.sources.terrain)
-        if map_layers.sources.terrain_overlays:
-            colored = draw_terrain(
-                map_layers.sources.terrain_overlays,
-                include_below_sea_level=country_clip is not None,
-            )
-            if country_clip is not None and view.country_outline is not None:
-                paths = [compound(polygon) for polygon in polygons(view.country_outline)]
-                if paths:
-                    clip = PathPatch(
+        def clip_to_country(image: AxesImage) -> None:
+            if country_clip is None or view.country_outline is None:
+                return
+            paths = [compound(polygon) for polygon in polygons(view.country_outline)]
+            if paths:
+                image.set_clip_path(
+                    PathPatch(
                         DrawPath.make_compound_path(*paths),
                         transform=axes.transData,
                     )
-                    colored.set_clip_path(clip)
+                )
+
+        if map_layers.sources.terrain_overlays:
+            terrain = draw_terrain(
+                map_layers.sources.terrain_overlays,
+                include_below_sea_level=country_clip is not None,
+            )
+        else:
+            terrain = draw_terrain(map_layers.sources.terrain)
+        clip_to_country(terrain)
     draw(axes, view, coastline, other_countries, map_layers, country_clip, country_labels)
 
 
