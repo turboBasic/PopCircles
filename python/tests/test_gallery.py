@@ -1,7 +1,5 @@
 import copy
-import importlib.metadata
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -19,6 +17,7 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery as gallery_module
 import population_circles.gallery_country_sweep as country_sweep_module
+import population_circles.gallery_rendering as rendering_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.terrain as terrain_module
@@ -33,14 +32,12 @@ from population_circles.dataset_registry import (
     load,
 )
 from population_circles.gallery import build
-from population_circles.map_frame import ORTHOGRAPHIC
 from population_circles.render_map import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
     registered_coastline,
 )
 from test_render_map import (
-    country_circle_document,
     fixture_map_layers,
     fixture_registered_map_sources,
     transparent_terrain,
@@ -60,7 +57,6 @@ VISIBLE_FOOTER = (
 )
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
-RENDER_WORKER_COUNT = gallery_module.render_worker_count
 AVAILABLE_CPUS = 6
 EXPECTED_WORKERS = min(2, AVAILABLE_CPUS - 1)
 SMALL_MAP_COUNT = 2
@@ -94,14 +90,15 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
     def one_worker(count: int) -> int:
         return min(1, count)
 
-    monkeypatch.setattr(gallery_module, "render_worker_count", one_worker)
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(
-        gallery_module,
+        rendering_module,
         "registered_map_sources",
         fixture_registered_map_sources,
     )
-    monkeypatch.setattr(gallery_module, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(rendering_module, "render_worker_count", one_worker)
+    monkeypatch.setattr(rendering_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(rendering_module, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
 
 
@@ -517,7 +514,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     swept = [swept_country("AA", "Alpha")]
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     render = Mock(wraps=render_map_module.render)
-    monkeypatch.setattr(gallery_module, "render", render)
+    monkeypatch.setattr(rendering_module, "render", render)
     invoke = country_cli(countries, swept)[0]
     first, _ = build(corpus, output, invoke)
     original_bytes = {one.figure.name: one.figure.read_bytes() for one in first}
@@ -570,13 +567,13 @@ def test_map_text_rendering_change_misses_the_gallery_map_cache(
         encoding="utf-8",
     )
     monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
-    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (config_path,))
+    monkeypatch.setattr(rendering_module, "RENDER_INPUTS", (config_path,))
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "world.json", document("most-populous"))
     output = tmp_path / "build" / "gallery"
     render = Mock(wraps=render_map_module.render)
-    monkeypatch.setattr(gallery_module, "render", render)
+    monkeypatch.setattr(rendering_module, "render", render)
     invoke = country_cli([], [])[0]
 
     first, _ = build(corpus, output, invoke)
@@ -651,8 +648,8 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path
     Image.new("RGB", (200, 100)).save(germany)
     data = gallery_module.page_data(
         [
-            gallery_module.Drawn(Path("germany.json"), germany, "Germany", "DE"),
-            gallery_module.Drawn(Path("france.json"), france, "France", "FR"),
+            rendering_module.Drawn(Path("germany.json"), germany, "Germany", "DE"),
+            rendering_module.Drawn(Path("france.json"), france, "France", "FR"),
         ],
         ["Missing country"],
     )
@@ -669,130 +666,6 @@ def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path
     assert [
         figure["aspect_ratio"] for country in data["countries"] for figure in country["figures"]
     ] == [0.5, 2.0]
-
-
-def test_figure_caption_includes_country_and_world_answers() -> None:
-    caption = gallery_module.figure_caption(circle_of(country_circle_document()))
-
-    assert caption == {
-        "radius_km": 200.0,
-        "share": 0.5,
-        "population": 40.0,
-        "centre_lat": 51.0,
-        "centre_lon": 10.0,
-        "settlement": None,
-    }
-
-    world = gallery_module.figure_caption(circle_of(document("most-populous")))
-    assert world["radius_km"] == WORLD_RADIUS_KM
-    assert world["share"] == WORLD_SHARE
-    assert world["population"] == WORLD_POPULATION
-    assert "territory_share" not in world
-
-    world_with_territory = gallery_module.figure_caption(
-        circle_of(document("most-populous", territory_share=WORLD_TERRITORY_SHARE))
-    )
-    assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
-    assert world_with_territory.get("territory_name") == "Earth\u2019s land area"
-
-    country = country_circle_document()
-    country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
-    assert (
-        gallery_module.figure_caption(circle_of(country)).get("territory_share")
-        == COUNTRY_TERRITORY_SHARE
-    )
-    assert gallery_module.figure_caption(circle_of(country)).get("territory_name") == "Germany"
-
-
-def test_map_cache_key_changes_for_each_render_input_category() -> None:
-    coastline = box(-20, -10, 20, 10)
-    outline = box(-5, -5, 5, 5)
-    base = gallery_module.map_cache_key("context", b"document", coastline, outline)
-
-    assert base != gallery_module.map_cache_key("changed context", b"document", coastline, outline)
-    assert base != gallery_module.map_cache_key("context", b"changed document", coastline, outline)
-    assert base != gallery_module.map_cache_key("context", b"document", box(-1, -1, 1, 1), outline)
-    assert base != gallery_module.map_cache_key(
-        "context", b"document", coastline, box(-1, -1, 1, 1)
-    )
-    assert base != gallery_module.map_cache_key(
-        "context", b"document", coastline, outline, ORTHOGRAPHIC
-    )
-
-
-def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
-    assert CORPUS.parent / "mise.toml" not in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "pyproject.toml" not in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "uv.lock" not in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "data" / "presentation.toml" in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "data" / "registry.toml" in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
-        gallery_module.RENDER_INPUTS
-    )
-
-
-def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    version = Mock(wraps=importlib.metadata.version)
-    monkeypatch.setattr(importlib.metadata, "version", version)
-
-    gallery_module.render_context_digest()
-
-    assert "rasterio" in [call.args[0] for call in version.call_args_list]
-
-
-def test_render_context_hashes_source_and_configuration_files(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    source = tmp_path / "renderer.py"
-    source.write_text("first", encoding="utf-8")
-    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
-    first = gallery_module.render_context_digest()
-
-    source.write_text("second", encoding="utf-8")
-
-    assert gallery_module.render_context_digest() != first
-
-
-@pytest.mark.parametrize(
-    ("source_kind", "before", "after"),
-    [
-        ("terrain-checksum", "terrain sha256 = 111", "terrain sha256 = 222"),
-        ("context-checksum", "roads sha256 = 111", "roads sha256 = 222"),
-        ("palette", "ELEVATION_STOPS = low", "ELEVATION_STOPS = high"),
-        ("illumination", "HILLSHADE_ALPHA = 0.34", "HILLSHADE_ALPHA = 0.35"),
-        ("renderer", "circle below roads", "circle above roads"),
-    ],
-)
-def test_map_cache_key_changes_when_terrain_inputs_or_presentation_change(
-    source_kind: str,
-    before: str,
-    after: str,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    source = tmp_path / f"{source_kind}.txt"
-    source.write_text(before, encoding="utf-8")
-    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
-    coastline = box(-20, -10, 20, 10)
-    outline = box(-5, -5, 5, 5)
-    context = gallery_module.render_context_digest()
-    cached_key = gallery_module.map_cache_key(context, b"document", coastline, outline)
-    assert gallery_module.map_cache_key(context, b"document", coastline, outline) == cached_key
-
-    source.write_text(after, encoding="utf-8")
-    updated_context = gallery_module.render_context_digest()
-
-    assert (
-        gallery_module.map_cache_key(updated_context, b"document", coastline, outline) != cached_key
-    )
-
-
-def test_render_worker_count_is_capped_at_two(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(os, "process_cpu_count", lambda: AVAILABLE_CPUS)
-
-    assert RENDER_WORKER_COUNT(20) == EXPECTED_WORKERS
-    assert RENDER_WORKER_COUNT(SMALL_MAP_COUNT) == SMALL_MAP_COUNT
-    assert RENDER_WORKER_COUNT(1) == 1
 
 
 def test_serial_and_concurrent_gallery_maps_are_identical(
@@ -817,10 +690,10 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     concurrent_output = tmp_path / "concurrent"
     serial_output.mkdir()
     concurrent_output.mkdir()
-    serial_context = gallery_module.MapRenderContext(
+    serial_context = rendering_module.MapRenderContext(
         registry, coastline, attribution, serial_output, None, "fixture", data_root=tmp_path
     )
-    concurrent_context = gallery_module.MapRenderContext(
+    concurrent_context = rendering_module.MapRenderContext(
         registry, coastline, attribution, concurrent_output, None, "fixture", data_root=tmp_path
     )
 
@@ -828,12 +701,13 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
         return {}
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(
-        gallery_module,
+        rendering_module,
         "registered_map_sources",
         render_map_module.registered_map_sources,
     )
-    monkeypatch.setattr(gallery_module, "load_map_layers", render_map_module.load_map_layers)
+    monkeypatch.setattr(rendering_module, "load_map_layers", render_map_module.load_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
 
     serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
@@ -841,7 +715,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     def two_workers(count: int) -> int:
         return min(2, count)
 
-    monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
     concurrent, _ = gallery_module.build_gallery_output(
         tmp_path, sources, {}, [], concurrent_context
     )
@@ -864,7 +738,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     coastline, attribution = registered_coastline(registry)
     output = tmp_path / "gallery"
     output.mkdir()
-    context = gallery_module.MapRenderContext(
+    context = rendering_module.MapRenderContext(
         registry,
         coastline,
         attribution,
@@ -880,7 +754,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     def skip_frontend(_output: Path) -> None:
         return
 
-    monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
     monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
@@ -916,7 +790,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     use_coastline_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     render = Mock(return_value=Figure())
-    monkeypatch.setattr(gallery_module, "render", render)
+    monkeypatch.setattr(rendering_module, "render", render)
     output = tmp_path / "gallery"
     corpus = tmp_path / "corpus"
     corpus.mkdir()

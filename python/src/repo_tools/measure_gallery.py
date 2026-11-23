@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from population_circles import gallery, render_map
+from population_circles import gallery_rendering, render_map
 from population_circles.dataset_registry import REPO_ROOT, TerrainRaster, load
 from population_circles.map_frame import Frame
 from population_circles.presentation_config import map_text_rendering
@@ -25,13 +25,13 @@ output.mkdir(parents=True, exist_ok=True)
 cache.mkdir(parents=True, exist_ok=True)
 registry = load()
 coastline, coastline_credit = registered_coastline(registry)
-context = gallery.MapRenderContext(
+context = gallery_rendering.MapRenderContext(
     registry,
     coastline,
     coastline_credit,
     output,
     cache,
-    gallery.render_context_digest(),
+    gallery_rendering.render_context_digest(),
     map_text_rendering(),
 )
 original_prepare = prepare_terrain
@@ -62,8 +62,8 @@ for index, country_id in enumerate(ids, start=1):
     payload = json.loads(source.read_text())
     terrain_seconds[0] = 0.0
     started = time.perf_counter()
-    drawn, reused = gallery.render_document(
-        gallery.RenderJob(source, payload, index, total), context
+    drawn, reused = gallery_rendering.render_document(
+        gallery_rendering.RenderJob(source, payload, index, total), context
     )
     if reused:
         raise AssertionError
@@ -84,8 +84,8 @@ for index, country_id in enumerate(ids, start=1):
     source = next(corpus.glob(f"country-*-{country_id}-half.json"))
     payload = json.loads(source.read_text())
     started = time.perf_counter()
-    drawn, reused = gallery.render_document(
-        gallery.RenderJob(source, payload, index, total), context
+    drawn, reused = gallery_rendering.render_document(
+        gallery_rendering.RenderJob(source, payload, index, total), context
     )
     elapsed = time.perf_counter() - started
     warm[country_id] = {"seconds_total": round(elapsed, 3), "reused_cache": reused}

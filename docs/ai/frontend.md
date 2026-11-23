@@ -105,8 +105,9 @@ buttons, forms, and dialogs according to their native purpose.
 ## Data contract
 
 Python writes `gallery-data.json`; the Svelte app reads it at runtime. The `PageData`, `PageCountry`,
-`PageFigure`, and caption `TypedDict`s in
-[the Gallery producer](../../python/src/population_circles/gallery.py) own the wire shape.
+and `PageFigure` types in the [Gallery producer](../../python/src/population_circles/gallery.py),
+together with the caption types in
+[Gallery rendering](../../python/src/population_circles/gallery_rendering.py), own the wire shape.
 [Frontend types](../../frontend/src/lib/types/gallery.ts) mirror those types for static checking. Keep required
 fields, optional omitted fields, and nullable fields aligned in both places. Add generated-data
 assertions to the [Python Gallery tests](../../python/tests/test_gallery.py) when changing the contract.
