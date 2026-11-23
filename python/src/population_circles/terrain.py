@@ -21,6 +21,7 @@ from population_circles.map_frame import Frame
 TARGET_HEIGHT = 1440
 MIN_WIDTH = 720
 MAX_WIDTH = 1800
+GEOGRAPHIC_CRS = CRS.from_epsg(4326)
 DESTINATION_NODATA = -99999.0
 HILLSHADE_AZIMUTH = 315
 HILLSHADE_ALTITUDE = 45
@@ -156,9 +157,9 @@ def prepare_terrain(
             _check_source(item, source)
         source_crs = cast(CRS | None, sources[0].crs) or CRS.from_epsg(datasets[0].epsg)
         projected_bounds = transform_bounds(
-            CRS.from_string(frame.crs.to_string()),
+            GEOGRAPHIC_CRS,
             source_crs,
-            *padded_bounds,
+            *frame.visible.bounds,
             densify_pts=41,
         )
         west, south, east, north = projected_bounds
