@@ -1,488 +1,48 @@
 import argparse
-import concurrent.futures
-import contextvars
-import hashlib
-import importlib.metadata
 import json
-import os
 import shutil
 import subprocess
 import sys
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, NotRequired, TypedDict, cast
+from typing import Any, cast
 from urllib.parse import quote
-from uuid import uuid4
 
-import matplotlib as mpl
-from matplotlib import font_manager
-from matplotlib import pyplot as plt
 from PIL import Image, ImageChops
-from shapely.geometry.base import BaseGeometry
 
-from population_circles.circle_document import CIRCLE_KINDS, Answer, Envelope, circle_of
-from population_circles.circle_map import Invoke, WorkflowError, child, invoke_cli, require_success
+from population_circles import gallery_country_sweep as country_sweep_module
+from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.circle_map import Invoke, child, invoke_cli, require_success
 from population_circles.country_outline import load_map_boundaries
-from population_circles.dataset_registry import (
-    REPO_ROOT,
-    Registry,
-    load,
+from population_circles.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.gallery_country_sweep import (
+    HALF_SHARE,
+    CountryRefresh,
+    CountrySweepRequest,
 )
-from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
+from population_circles.gallery_page import page_data
+from population_circles.gallery_rendering import (
+    Drawn,
+    MapRenderContext,
+    RenderJob,
+    render_context_digest,
+    render_documents,
+)
+from population_circles.map_frame import ORTHOGRAPHIC
+from population_circles.map_layers import registered_coastline
 from population_circles.presentation_config import load as load_presentation_config
-from population_circles.render_map import (
-    OCEAN,
-    citation,
-    copyright_of,
-    description_of,
-    exif_gps_packet,
-    load_map_layers,
-    metadata_json_fields,
-    other_countries,
-    other_country_labels,
-    png_metadata,
-    registered_coastline,
-    registered_map_sources,
-    render,
-    title_of,
-    xmp_properties,
-)
+from population_circles.render_map import OCEAN
 from population_circles.territory_coverage import enrich_document
 
-HALF_SHARE = 0.5
-HALF_SHARE_PERCENT = "50"
-CountryRefresh = Literal["sweep", "coverage"]
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2
 HEADER_CROP_ASPECT_TOLERANCE = 2
-PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
-RENDER_INPUTS = tuple(
-    sorted(
-        [
-            *Path(__file__).parent.rglob("*.py"),
-            REPO_ROOT / "data" / "config.toml",
-            REPO_ROOT / "data" / "presentation.toml",
-            REPO_ROOT / "data" / "registry.toml",
-        ],
-        key=lambda path: path.as_posix(),
-    )
-)
-
-
-def excluded_country_ids() -> set[str]:
-    return set(load_presentation_config().gallery.excluded_country_ids)
-
-
-class SettlementCaption(TypedDict):
-    name: str
-    country: str
-    distance_km: float
-
-
-class FigureCaption(TypedDict):
-    radius_km: float
-    share: float
-    population: float
-    centre_lat: float
-    centre_lon: float
-    settlement: SettlementCaption | None
-    territory_share: NotRequired[float]
-    territory_name: NotRequired[str]
-
-
-@dataclass(frozen=True)
-class Drawn:
-    document: Path
-    figure: Path
-    country_name: str | None = None
-    country_id: str | None = None
-    caption: FigureCaption | None = None
 
 
 @dataclass(frozen=True)
 class Skipped:
     document: Path
     kind: str
-
-
-@dataclass(frozen=True)
-class RenderJob:
-    source: Path
-    payload: dict[str, Any]
-    index: int
-    total: int
-    projection: str = PLATE_CARREE
-    figure_suffix: str = ""
-
-
-class PageFigure(TypedDict):
-    map: str
-    document: str
-    country_id: str | None
-    alt: str
-    aspect_ratio: float
-    caption: NotRequired[FigureCaption]
-
-
-class PageCountry(TypedDict):
-    name: str
-    anchor: str
-    figures: list[PageFigure]
-    missing: bool
-
-
-class PageData(TypedDict):
-    world: list[PageFigure]
-    countries: list[PageCountry]
-
-
-@dataclass(frozen=True)
-class MapRenderContext:
-    registry: Registry
-    coastline: BaseGeometry
-    coastline_attribution: str
-    output: Path
-    cache_directory: Path | None
-    digest: str
-    render_text: tuple[bool, bool] = (False, False)
-    data_root: Path = REPO_ROOT
-    map_titles: dict[str, str] = field(default_factory=dict[str, str])
-
-
-_WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
-    "gallery_render_context", default=None
-)
-
-
-def init_render_worker(context: MapRenderContext) -> None:
-    _WORKER_CONTEXT.set(context)
-
-
-def render_document_in_worker(
-    job: RenderJob,
-) -> tuple[Drawn, bool]:
-    context = _WORKER_CONTEXT.get()
-    if context is None:
-        message = "gallery render worker was not initialized"
-        raise RuntimeError(message)
-    return render_document(job, context)
-
-
-def render_worker_count(map_count: int) -> int:
-    return min(2, max(1, (os.process_cpu_count() or 1) - 1), map_count)
-
-
-def render_documents(
-    jobs: list[RenderJob], context: MapRenderContext
-) -> tuple[list[tuple[Drawn, bool]], int, float]:
-    workers = render_worker_count(len(jobs))
-    started = time.perf_counter()
-    if workers == 1:
-        results = [render_document(job, context) for job in jobs]
-    elif workers > 1:
-        with concurrent.futures.ProcessPoolExecutor(
-            max_workers=workers,
-            initializer=init_render_worker,
-            initargs=(context,),
-        ) as pool:
-            results = list(pool.map(render_document_in_worker, jobs))
-    else:
-        results = []
-    return results, workers, time.perf_counter() - started
-
-
-def render_context_digest() -> str:
-    digest = hashlib.sha256()
-    digest.update(sys.version.encode())
-    for package in ("matplotlib", "pyproj", "rasterio", "shapely"):
-        digest.update(importlib.metadata.version(package).encode())
-    digest.update(
-        json.dumps(
-            {key: repr(mpl.rcParams[key]) for key in sorted(mpl.rcParams)},
-            sort_keys=True,
-        ).encode()
-    )
-    for path in RENDER_INPUTS:
-        digest.update(path.as_posix().encode())
-        digest.update(path.read_bytes())
-    font_path = Path(
-        cast(
-            str,
-            font_manager.findfont(font_manager.FontProperties()),  # pyright: ignore[reportUnknownMemberType] — Matplotlib's FontManager stub leaves path types partial.
-        )
-    )
-    digest.update(font_path.as_posix().encode())
-    digest.update(font_path.read_bytes())
-    return digest.hexdigest()
-
-
-def map_cache_key(
-    context: str,
-    document: bytes,
-    coastline: BaseGeometry,
-    outline: BaseGeometry | None,
-    projection: str = PLATE_CARREE,
-) -> str:
-    digest = hashlib.sha256()
-    for value in (
-        context.encode(),
-        document,
-        coastline.wkb,
-        outline.wkb if outline is not None else b"",
-        projection.encode(),
-    ):
-        digest.update(len(value).to_bytes(8, "big"))
-        digest.update(value)
-    return digest.hexdigest()
-
-
-def figure_caption(answer: Answer) -> FigureCaption:
-    settlement = answer.caption.settlement
-    caption: FigureCaption = {
-        "radius_km": answer.circle.radius_km,
-        "share": answer.caption.share,
-        "population": answer.caption.population,
-        "centre_lat": answer.circle.centre.lat,
-        "centre_lon": answer.circle.centre.lon,
-        "settlement": (
-            {
-                "name": settlement.name,
-                "country": settlement.country,
-                "distance_km": settlement.distance_km,
-            }
-            if settlement is not None
-            else None
-        ),
-    }
-    if answer.caption.territory_share is not None:
-        caption["territory_share"] = answer.caption.territory_share
-        caption["territory_name"] = (
-            answer.country.name if answer.country else "Earth\u2019s land area"
-        )
-    return caption
-
-
-def reuse_cached_map(cache: Path, key: str, target: Path) -> bool:
-    entry = cache / target.stem
-    image_path = entry / "map.png"
-    metadata_path = entry / "identity.json"
-    try:
-        image = image_path.read_bytes()
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        if not image.startswith(PNG_MAGIC) or metadata != {
-            "key": key,
-            "sha256": hashlib.sha256(image).hexdigest(),
-        }:
-            return False
-        target.write_bytes(image)
-    except OSError, UnicodeDecodeError, json.JSONDecodeError:
-        return False
-    return True
-
-
-def store_cached_map(cache: Path, key: str, target: Path) -> None:
-    entry = cache / target.stem
-    temporary = entry / f".{uuid4().hex}.tmp"
-    try:
-        image = target.read_bytes()
-        metadata = json.dumps({"key": key, "sha256": hashlib.sha256(image).hexdigest()})
-        entry.mkdir(parents=True, exist_ok=True)
-        temporary.write_bytes(image)
-        temporary.replace(entry / "map.png")
-        temporary.write_text(metadata, encoding="utf-8")
-        temporary.replace(entry / "identity.json")
-    except OSError:
-        temporary.unlink(missing_ok=True)
-
-
-def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, bool]:
-    source = job.source
-    payload = job.payload
-    projection = job.projection
-    figure_suffix = job.figure_suffix
-    try:
-        answer = circle_of(payload)
-        boundaries = load_map_boundaries(answer, context.registry)
-        selected = boundaries.get(answer.country.id) if answer.country is not None else None
-        map_sources = registered_map_sources(
-            context.registry,
-            answer.country.id if answer.country is not None else None,
-        )
-        population_attribution = (
-            answer.selection.population_source.attribution if answer.selection is not None else None
-        ) or citation(context.registry, answer.provenance.dataset)
-        outline_and_credit = None
-        if answer.country is not None:
-            boundary_attribution = (
-                answer.selection.boundary_source.attribution
-                if answer.selection is not None
-                else None
-            ) or citation(context.registry, answer.country.boundary_dataset)
-            outline_and_credit = (selected, boundary_attribution)
-        target = context.output / f"{source.stem}{figure_suffix}.png"
-        title_label = context.map_titles.get(target.stem)
-        title = title_of(answer, title_label)
-        copyright_text = copyright_of(
-            answer,
-            population_attribution,
-            context.coastline_attribution,
-            outline_and_credit[1] if outline_and_credit is not None else None,
-            map_sources.attributions,
-        )
-        description = description_of(answer)
-        properties = xmp_properties(
-            answer,
-            title,
-            description,
-            copyright_text,
-            map_sources.attributions,
-        )
-        payload["render_metadata"] = metadata_json_fields(answer, properties)
-        outline = outline_and_credit[0] if outline_and_credit is not None else None
-        cache_key = (
-            map_cache_key(
-                context.digest,
-                json.dumps(payload, sort_keys=True).encode(),
-                context.coastline,
-                outline,
-                projection,
-            )
-            if context.cache_directory is not None
-            else None
-        )
-        if (
-            context.cache_directory is not None
-            and cache_key is not None
-            and reuse_cached_map(context.cache_directory, cache_key, target)
-        ):
-            if not figure_suffix:
-                (context.output / source.name).write_text(
-                    json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-                )
-            print(
-                f"Gallery: [{job.index}/{job.total}] reused {target.name}",
-                file=sys.stderr,
-                flush=True,
-            )
-            return (
-                Drawn(
-                    source,
-                    target,
-                    answer.country.name if answer.country is not None else None,
-                    answer.country.id if answer.country is not None else None,
-                    figure_caption(answer),
-                ),
-                True,
-            )
-        print(
-            f"Gallery: [{job.index}/{job.total}] rendering {target.name}",
-            file=sys.stderr,
-            flush=True,
-        )
-        map_layers = load_map_layers(
-            map_sources,
-            root=context.data_root,
-            country_outline=outline,
-        )
-        figure = render(
-            answer,
-            projection,
-            coastline=context.coastline,
-            country_outline=outline,
-            other_countries=other_countries(boundaries, answer),
-            country_labels=other_country_labels(boundaries, answer),
-            render_text=context.render_text,
-            map_layers=map_layers,
-            title_label=title_label,
-        )
-    except Exception as error:
-        # The early-built page is removed by `build_gallery_output` if a map fails.
-        # Re-raise rather than publishing a partial gallery.
-        error.add_note(f"raised while rendering {source}")
-        raise
-    figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-        target,
-        dpi=200,
-        metadata=png_metadata(
-            title,
-            copyright_text,
-            description,
-            properties,
-        ),
-        pil_kwargs={"exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)},
-    )
-    plt.close(figure)
-    if context.cache_directory is not None and cache_key is not None:
-        store_cached_map(context.cache_directory, cache_key, target)
-    # The document travels beside its figure, so the caption's link resolves on the published
-    # site rather than pointing back into a tree the reader does not have.
-    if not figure_suffix:
-        (context.output / source.name).write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-    print(
-        f"Gallery: [{job.index}/{job.total}] wrote {target.name}",
-        file=sys.stderr,
-        flush=True,
-    )
-    return (
-        Drawn(
-            source,
-            target,
-            answer.country.name if answer.country is not None else None,
-            answer.country.id if answer.country is not None else None,
-            figure_caption(answer),
-        ),
-        False,
-    )
-
-
-def page_figure(one: Drawn) -> PageFigure:
-    with Image.open(one.figure) as image:
-        aspect_ratio = image.width / image.height
-    figure: PageFigure = {
-        "map": one.figure.name,
-        "document": one.document.name,
-        "country_id": one.country_id,
-        "alt": one.figure.stem,
-        "aspect_ratio": aspect_ratio,
-    }
-    if one.caption is not None:
-        figure["caption"] = one.caption
-    return figure
-
-
-def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
-    countries: dict[tuple[str, str], list[Drawn]] = {}
-    world: list[Drawn] = []
-    for one in drawn:
-        if one.country_name is None or one.country_id is None:
-            world.append(one)
-        else:
-            countries.setdefault((one.country_name, one.country_id), []).append(one)
-
-    ordered = sorted(countries.items(), key=lambda item: (item[0][0].casefold(), item[0][1]))
-    page_countries: list[PageCountry] = [
-        {
-            "name": name,
-            "anchor": f"country-result-{quote(identifier, safe='')}",
-            "figures": [page_figure(figure) for figure in figures],
-            "missing": False,
-        }
-        for (name, identifier), figures in ordered
-    ]
-    page_countries.extend(
-        {
-            "name": name,
-            "anchor": f"country-missing-{quote(name, safe='')}",
-            "figures": [],
-            "missing": True,
-        }
-        for name in missing
-    )
-    page_countries.sort(key=lambda country: (country["name"].casefold(), country["anchor"]))
-    return {"world": [page_figure(one) for one in world], "countries": page_countries}
 
 
 def build_frontend(output: Path) -> None:
@@ -577,7 +137,7 @@ def build_gallery_output(
     skipped: list[Skipped] = []
     reused_maps = rendered_maps = 0
     unavailable = set(missing)
-    excluded = excluded_country_ids()
+    excluded = country_sweep_module.excluded_country_ids()
     sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
     skipped.extend(excluded_sources)
     render_jobs: list[RenderJob] = []
@@ -659,69 +219,6 @@ def build_gallery_output(
     return drawn, skipped
 
 
-def omit_excluded_sources(
-    sources: list[tuple[Path, dict[str, Any]]], output: Path, excluded: set[str]
-) -> tuple[list[tuple[Path, dict[str, Any]]], list[Skipped]]:
-    rendered: list[tuple[Path, dict[str, Any]]] = []
-    skipped: list[Skipped] = []
-    for source, payload in sources:
-        if payload.get("result", {}).get("country", {}).get("id") in excluded:
-            (output / source.name).unlink(missing_ok=True)
-            (output / f"{source.stem}.png").unlink(missing_ok=True)
-            skipped.append(Skipped(source, "excluded country"))
-        else:
-            rendered.append((source, payload))
-    return rendered, skipped
-
-
-def country_result_document(
-    sweep: dict[str, Any], selection: dict[str, Any], swept_country: dict[str, Any]
-) -> dict[str, Any]:
-    country = swept_country["country"]
-    record = next(record for record in swept_country["records"] if record["share"] == HALF_SHARE)
-    return {
-        "schema_version": sweep["schema_version"],
-        "document": "country-smallest",
-        "tool": sweep["tool"],
-        "tool_version": sweep["tool_version"],
-        "earth_model": sweep["earth_model"],
-        "result": {
-            "selection": selection,
-            "country": country,
-            "population_dataset": selection["population_source"]["name"],
-            "decimation": selection["resolution"],
-            "ledger": swept_country["ledger"],
-            "circle": {key: value for key, value in record["circle"].items() if key != "stats"},
-        },
-    }
-
-
-def stable_country_sweep(sweep: dict[str, Any]) -> dict[str, Any]:
-    return {
-        **sweep,
-        "result": {
-            **sweep["result"],
-            "countries": [
-                {
-                    **country,
-                    "records": [
-                        {
-                            **record,
-                            "circle": {
-                                key: value
-                                for key, value in record["circle"].items()
-                                if key != "stats"
-                            },
-                        }
-                        for record in country["records"]
-                    ],
-                }
-                for country in sweep["result"]["countries"]
-            ],
-        },
-    }
-
-
 def same_country_answer(existing: bytes, generated: bytes) -> bool:
     try:
         previous_value: Any = json.loads(existing)
@@ -750,153 +247,19 @@ def same_country_answer(existing: bytes, generated: bytes) -> bool:
         return previous == current
 
 
-def missing_country_names(sweep: dict[str, Any], countries: list[dict[str, Any]]) -> list[str]:
-    expected = {country["id"]: country["name"] for country in countries}
-    accounted_for: set[str] = set()
-    for country in sweep["result"]["countries"]:
-        identity = country["country"]
-        country_id = identity["id"]
-        if country_id not in expected or expected[country_id] != identity["name"]:
-            message = f"country sweep: unexpected feature ID {country_id!r}"
-            raise ValueError(message)
-        if country_id in accounted_for:
-            message = f"country sweep: duplicate feature ID {country_id!r}"
-            raise ValueError(message)
-        accounted_for.add(country_id)
-    missing: list[str] = []
-    for country in sweep["result"]["countries_without_population_cells"]:
-        country_id = country["id"]
-        if country_id not in expected or expected[country_id] != country["name"]:
-            message = f"country sweep: unexpected unavailable feature ID {country_id!r}"
-            raise ValueError(message)
-        if country_id in accounted_for:
-            message = f"country sweep: duplicate feature ID {country_id!r}"
-            raise ValueError(message)
-        accounted_for.add(country_id)
-        missing.append(country_id)
-    if accounted_for != expected.keys():
-        message = "country sweep: result does not account for every configured country"
-        raise ValueError(message)
-    excluded = excluded_country_ids()
-    return [expected[country_id] for country_id in missing if country_id not in excluded]
-
-
-def cached_sweep(
-    path: Path, selection: dict[str, Any], countries: list[dict[str, Any]]
-) -> dict[str, Any] | None:
-    try:
-        sweep: Any = json.loads(path.read_text(encoding="utf-8"))
-        if Envelope.model_validate(sweep).document != "country-sweep":
-            return None
-        if sweep["result"]["selection"] != selection:
-            return None
-        swept_countries = sweep["result"]["countries"]
-        missing_country_names(sweep, countries)
-        for country in swept_countries:
-            if sum(record["share"] == HALF_SHARE for record in country["records"]) != 1:
-                return None
-            circle_of(country_result_document(sweep, selection, country))
-    except OSError, ValueError, TypeError, KeyError, IndexError:
-        return None
-    return sweep
-
-
-def report_sweep_work(sweep: dict[str, Any]) -> None:
-    evaluated = reused = 0
-    for country in sweep["result"]["countries"]:
-        for record in country["records"]:
-            stats = record["circle"].get("stats", {})
-            evaluated += stats.get("radii_evaluated", 0)
-            reused += stats.get("radii_reused", 0)
-    print(
-        f"Gallery: country sweep evaluated {evaluated} radii and reused {reused}",
-        file=sys.stderr,
-        flush=True,
-    )
-
-
-def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
-    sweep = json.loads(path.read_text(encoding="utf-8"))
-    if sweep.get("document") != "country-sweep":
-        message = "country coverage: saved document is not a country-sweep"
-        raise ValueError(message)
-    if sweep["result"]["selection"] != selection:
-        message = "country coverage: saved sweep selection does not match configuration"
-        raise ValueError(message)
-    return enrich_document(sweep)
-
-
-def refresh_coverage(corpus: Path) -> None:
-    supported = CIRCLE_KINDS | {"country-smallest", "country-sweep"}
-    for path in sorted(corpus.glob("*.json")):
-        document: Any = json.loads(path.read_text(encoding="utf-8"))
-        if Envelope.model_validate(document).document not in supported:
-            continue
-        enriched = enrich_document(document)
-        path.write_text(json.dumps(enriched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def country_sweep(
-    invoke: Invoke,
-    corpus: Path,
-    selection: dict[str, Any],
-    countries: list[dict[str, Any]],
-    refresh: CountryRefresh | None,
-) -> dict[str, Any]:
-    filename = (
-        f"country-sweep-{quote(selection['combination_id'], safe='')}-"
-        f"{selection['resolution']}-half.json"
-    )
-    saved = None if refresh == "sweep" else cached_sweep(corpus / filename, selection, countries)
-    country_ids = [country["id"] for country in countries]
-    if refresh == "coverage":
-        if saved is None:
-            message = "country coverage refresh requires a valid saved country sweep"
-            raise WorkflowError(message)
-        sweep = coverage_sweep(corpus / filename, selection)
-        print(
-            f"Gallery: refreshed territory coverage for {len(countries)} saved country results",
-            file=sys.stderr,
-            flush=True,
-        )
-        return sweep
-    if saved is not None and refresh != "sweep":
-        print(
-            "Gallery: reused saved 50% country sweep; "
-            f"sweep work avoided for {len(country_ids)} countries",
-            file=sys.stderr,
-            flush=True,
-        )
-        return saved
-    arguments = [
-        "country",
-        "sweep",
-        "--combination",
-        selection["combination_id"],
-        "--resolution",
-        str(selection["resolution"]),
-        "--from",
-        HALF_SHARE_PERCENT,
-        "--to",
-        HALF_SHARE_PERCENT,
-        "--step",
-        "1",
-    ]
-    for country_id in country_ids:
-        arguments.extend(["--country", country_id])
-    print(
-        f"Gallery: calculating 50% circles for {len(country_ids)} countries",
-        file=sys.stderr,
-        flush=True,
-    )
-    swept = child("country sweep", arguments, invoke)
-    require_success("country sweep", swept)
-    result = json.loads(swept.stdout)
-    if result.get("document") != "country-sweep":
-        message = "country sweep: Rust CLI returned a document other than country-sweep"
-        raise ValueError(message)
-    report_sweep_work(result)
-    return result
+def omit_excluded_sources(
+    sources: list[tuple[Path, dict[str, Any]]], output: Path, excluded: set[str]
+) -> tuple[list[tuple[Path, dict[str, Any]]], list[Skipped]]:
+    rendered: list[tuple[Path, dict[str, Any]]] = []
+    skipped: list[Skipped] = []
+    for source, payload in sources:
+        if payload.get("result", {}).get("country", {}).get("id") in excluded:
+            (output / source.name).unlink(missing_ok=True)
+            (output / f"{source.stem}.png").unlink(missing_ok=True)
+            skipped.append(Skipped(source, "excluded country"))
+        else:
+            rendered.append((source, payload))
+    return rendered, skipped
 
 
 def country_documents(
@@ -922,12 +285,21 @@ def country_documents(
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
-    sweep = country_sweep(invoke, corpus, selection, countries, country_refresh)
+    sweep = country_sweep_module.country_sweep(
+        CountrySweepRequest(
+            invoke,
+            corpus,
+            selection,
+            countries,
+            country_refresh,
+            report_country_sweep,
+        )
+    )
     sweep_selection = sweep["result"]["selection"]
     if sweep_selection != listing["result"]["selection"]:
         message = "country sweep: result selection differs from the configured country list"
         raise ValueError(message)
-    missing = missing_country_names(sweep, countries)
+    missing = country_sweep_module.missing_country_names(sweep, countries)
     expected = {country["id"]: country for country in countries}
     result_ids: set[str] = set()
     documents: dict[str, dict[str, Any]] = {}
@@ -942,14 +314,16 @@ def country_documents(
             message = f"country sweep: {country_id!r} has no unique 50% result"
             raise ValueError(message)
         result_ids.add(country_id)
-        document = country_result_document(sweep, sweep_selection, swept_country)
+        document = country_sweep_module.country_result_document(
+            sweep, sweep_selection, swept_country
+        )
         filename = (
             f"country-{quote(selection['combination_id'], safe='')}-"
             f"{selection['resolution']}-{quote(country_id, safe='')}-half.json"
         )
         documents[filename] = document
 
-    documents[sweep_filename] = stable_country_sweep(sweep)
+    documents[sweep_filename] = country_sweep_module.stable_country_sweep(sweep)
     print(
         f"Gallery: prepared {len(documents)} country result documents",
         file=sys.stderr,
@@ -959,6 +333,10 @@ def country_documents(
         missing,
         documents,
     )
+
+
+def report_country_sweep(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
 
 
 def build(
@@ -995,7 +373,7 @@ def build(
     (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     if country_refresh == "coverage":
-        refresh_coverage(corpus)
+        country_sweep_module.refresh_coverage(corpus)
     missing, generated = country_documents(
         invoke,
         corpus,

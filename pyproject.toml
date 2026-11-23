@@ -75,6 +75,9 @@ ignore = [
 "python/src/population_circles/gallery.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
+"python/src/population_circles/gallery_rendering.py" = [
+  "T201", # render progress is Gallery command output, not incidental debug printing
+]
 "python/src/population_circles/render_globe.py" = [
   "T201", # the path a globe was written to is this command's output, not debug printing
   "S314", # parse_svg rejects DTDs and entities before ElementTree parses generated SVG files

@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-from population_circles import circle_map, render_map
+from population_circles import circle_map, map_layers, map_metadata, render_map
 from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import Registry, load
@@ -34,8 +34,8 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(render_map, "registered_map_sources", fixture_registered_map_sources)
-    monkeypatch.setattr(render_map, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
 
@@ -326,7 +326,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
 ) -> None:
     seen_credits: list[str] = []
     original = render_map.render
-    original_copyright = render_map.copyright_of
+    original_copyright = map_metadata.copyright_of
     render_spy = Mock(wraps=original)
 
     def capture_copyright(
@@ -346,7 +346,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
         )
 
     monkeypatch.setattr(render_map, "render", render_spy)
-    monkeypatch.setattr(render_map, "copyright_of", capture_copyright)
+    monkeypatch.setattr(map_metadata, "copyright_of", capture_copyright)
     payload = document()
     payload["earth_model"]["radius_km"] = CUSTOM_EARTH_RADIUS_KM
     workflow(options, Children([0, 0], json.dumps(payload).encode()))
@@ -354,4 +354,4 @@ def test_success_uses_the_documents_credit_and_earth_model(
     render_answer = render_spy.call_args.args[0]
     assert isinstance(render_answer, Answer)
     assert render_answer.circle.earth_radius_km == CUSTOM_EARTH_RADIUS_KM
-    assert seen_credits == [render_map.citation(load(), DATASET)]
+    assert seen_credits == [map_layers.citation(load(), DATASET)]

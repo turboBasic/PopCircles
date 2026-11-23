@@ -1,7 +1,5 @@
 import copy
-import importlib.metadata
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,10 +16,12 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery as gallery_module
+import population_circles.gallery_country_sweep as country_sweep_module
+import population_circles.gallery_rendering as rendering_module
+import population_circles.map_layers as map_layers_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.terrain as terrain_module
-import population_circles.territory_coverage as territory_coverage_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.circle_map import Invoke, WorkflowError
 from population_circles.dataset_registry import (
@@ -32,15 +32,19 @@ from population_circles.dataset_registry import (
     country_boundary_dataset_key,
     load,
 )
-from population_circles.gallery import build, country_documents
-from population_circles.map_frame import ORTHOGRAPHIC
-from population_circles.render_map import (
+from population_circles.gallery import build
+from population_circles.map_layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
     registered_coastline,
 )
+from population_circles.map_layers import (
+    load_map_layers as real_load_map_layers,
+)
+from population_circles.map_layers import (
+    registered_map_sources as real_registered_map_sources,
+)
 from test_render_map import (
-    country_circle_document,
     fixture_map_layers,
     fixture_registered_map_sources,
     transparent_terrain,
@@ -53,14 +57,13 @@ WORLD_SHARE = 0.1616868627727305
 WORLD_RADIUS_KM = 1000.0
 WORLD_TERRITORY_SHARE = 0.375
 COUNTRY_TERRITORY_SHARE = 0.625
+EXPECTED_COUNTRY_CLI_CALLS = 2
 VISIBLE_FOOTER = (
     "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
     "© EuroGeographics for the administrative boundaries"
 )
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 COASTLINE_CREDIT = "© EuroGeographics for the administrative boundaries"
-EXPECTED_COUNTRY_CLI_CALLS = 2
-RENDER_WORKER_COUNT = gallery_module.render_worker_count
 AVAILABLE_CPUS = 6
 EXPECTED_WORKERS = min(2, AVAILABLE_CPUS - 1)
 SMALL_MAP_COUNT = 2
@@ -69,7 +72,7 @@ SMALL_MAP_COUNT = 2
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     registry = load()
     monkeypatch.setattr(gallery_module, "load", lambda: registry)
-    monkeypatch.setattr(render_map_module, "REPO_ROOT", root)
+    monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
     path = root / registry.datasets[COASTLINE_DATASET].path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -94,14 +97,15 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
     def one_worker(count: int) -> int:
         return min(1, count)
 
-    monkeypatch.setattr(gallery_module, "render_worker_count", one_worker)
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(
-        gallery_module,
+        map_layers_module,
         "registered_map_sources",
         fixture_registered_map_sources,
     )
-    monkeypatch.setattr(gallery_module, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(rendering_module, "render_worker_count", one_worker)
+    monkeypatch.setattr(rendering_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(map_layers_module, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
 
 
@@ -426,7 +430,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     coastline_path = tmp_path / load().datasets[COASTLINE_DATASET].path
     basemap_paths: list[Path] = []
     annotations: list[str] = []
-    current_basemap = render_map_module.basemap
+    current_basemap = map_layers_module.basemap
     current_annotate = render_map_module.annotate
 
     def capture_basemap(path: Path) -> BaseGeometry:
@@ -439,7 +443,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         annotations.append(text)
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(render_map_module, "basemap", capture_basemap)
+    monkeypatch.setattr(map_layers_module, "basemap", capture_basemap)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     drawn, skipped = build(corpus, tmp_path / "gallery", country_cli([], [])[0])
@@ -517,7 +521,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     swept = [swept_country("AA", "Alpha")]
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     render = Mock(wraps=render_map_module.render)
-    monkeypatch.setattr(gallery_module, "render", render)
+    monkeypatch.setattr(rendering_module, "render", render)
     invoke = country_cli(countries, swept)[0]
     first, _ = build(corpus, output, invoke)
     original_bytes = {one.figure.name: one.figure.read_bytes() for one in first}
@@ -570,13 +574,13 @@ def test_map_text_rendering_change_misses_the_gallery_map_cache(
         encoding="utf-8",
     )
     monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
-    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (config_path,))
+    monkeypatch.setattr(rendering_module, "RENDER_INPUTS", (config_path,))
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "world.json", document("most-populous"))
     output = tmp_path / "build" / "gallery"
     render = Mock(wraps=render_map_module.render)
-    monkeypatch.setattr(gallery_module, "render", render)
+    monkeypatch.setattr(rendering_module, "render", render)
     invoke = country_cli([], [])[0]
 
     first, _ = build(corpus, output, invoke)
@@ -644,157 +648,6 @@ def test_gallery_data_uses_only_the_current_maps(
     assert "old.png" not in json.dumps(data)
 
 
-def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path) -> None:
-    france = tmp_path / "france.png"
-    germany = tmp_path / "germany.png"
-    Image.new("RGB", (100, 200)).save(france)
-    Image.new("RGB", (200, 100)).save(germany)
-    data = gallery_module.page_data(
-        [
-            gallery_module.Drawn(Path("germany.json"), germany, "Germany", "DE"),
-            gallery_module.Drawn(Path("france.json"), france, "France", "FR"),
-        ],
-        ["Missing country"],
-    )
-
-    assert [country["anchor"] for country in data["countries"]] == [
-        "country-result-FR",
-        "country-result-DE",
-        "country-missing-Missing%20country",
-    ]
-    assert [figure["map"] for country in data["countries"] for figure in country["figures"]] == [
-        "france.png",
-        "germany.png",
-    ]
-    assert [
-        figure["aspect_ratio"] for country in data["countries"] for figure in country["figures"]
-    ] == [0.5, 2.0]
-
-
-def test_figure_caption_includes_country_and_world_answers() -> None:
-    caption = gallery_module.figure_caption(circle_of(country_circle_document()))
-
-    assert caption == {
-        "radius_km": 200.0,
-        "share": 0.5,
-        "population": 40.0,
-        "centre_lat": 51.0,
-        "centre_lon": 10.0,
-        "settlement": None,
-    }
-
-    world = gallery_module.figure_caption(circle_of(document("most-populous")))
-    assert world["radius_km"] == WORLD_RADIUS_KM
-    assert world["share"] == WORLD_SHARE
-    assert world["population"] == WORLD_POPULATION
-    assert "territory_share" not in world
-
-    world_with_territory = gallery_module.figure_caption(
-        circle_of(document("most-populous", territory_share=WORLD_TERRITORY_SHARE))
-    )
-    assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
-    assert world_with_territory.get("territory_name") == "Earth\u2019s land area"
-
-    country = country_circle_document()
-    country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
-    assert (
-        gallery_module.figure_caption(circle_of(country)).get("territory_share")
-        == COUNTRY_TERRITORY_SHARE
-    )
-    assert gallery_module.figure_caption(circle_of(country)).get("territory_name") == "Germany"
-
-
-def test_map_cache_key_changes_for_each_render_input_category() -> None:
-    coastline = box(-20, -10, 20, 10)
-    outline = box(-5, -5, 5, 5)
-    base = gallery_module.map_cache_key("context", b"document", coastline, outline)
-
-    assert base != gallery_module.map_cache_key("changed context", b"document", coastline, outline)
-    assert base != gallery_module.map_cache_key("context", b"changed document", coastline, outline)
-    assert base != gallery_module.map_cache_key("context", b"document", box(-1, -1, 1, 1), outline)
-    assert base != gallery_module.map_cache_key(
-        "context", b"document", coastline, box(-1, -1, 1, 1)
-    )
-    assert base != gallery_module.map_cache_key(
-        "context", b"document", coastline, outline, ORTHOGRAPHIC
-    )
-
-
-def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
-    assert CORPUS.parent / "mise.toml" not in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "pyproject.toml" not in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "uv.lock" not in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "data" / "presentation.toml" in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "data" / "registry.toml" in gallery_module.RENDER_INPUTS
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
-        gallery_module.RENDER_INPUTS
-    )
-
-
-def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    version = Mock(wraps=importlib.metadata.version)
-    monkeypatch.setattr(importlib.metadata, "version", version)
-
-    gallery_module.render_context_digest()
-
-    assert "rasterio" in [call.args[0] for call in version.call_args_list]
-
-
-def test_render_context_hashes_source_and_configuration_files(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    source = tmp_path / "renderer.py"
-    source.write_text("first", encoding="utf-8")
-    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
-    first = gallery_module.render_context_digest()
-
-    source.write_text("second", encoding="utf-8")
-
-    assert gallery_module.render_context_digest() != first
-
-
-@pytest.mark.parametrize(
-    ("source_kind", "before", "after"),
-    [
-        ("terrain-checksum", "terrain sha256 = 111", "terrain sha256 = 222"),
-        ("context-checksum", "roads sha256 = 111", "roads sha256 = 222"),
-        ("palette", "ELEVATION_STOPS = low", "ELEVATION_STOPS = high"),
-        ("illumination", "HILLSHADE_ALPHA = 0.34", "HILLSHADE_ALPHA = 0.35"),
-        ("renderer", "circle below roads", "circle above roads"),
-    ],
-)
-def test_map_cache_key_changes_when_terrain_inputs_or_presentation_change(
-    source_kind: str,
-    before: str,
-    after: str,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    source = tmp_path / f"{source_kind}.txt"
-    source.write_text(before, encoding="utf-8")
-    monkeypatch.setattr(gallery_module, "RENDER_INPUTS", (source,))
-    coastline = box(-20, -10, 20, 10)
-    outline = box(-5, -5, 5, 5)
-    context = gallery_module.render_context_digest()
-    cached_key = gallery_module.map_cache_key(context, b"document", coastline, outline)
-    assert gallery_module.map_cache_key(context, b"document", coastline, outline) == cached_key
-
-    source.write_text(after, encoding="utf-8")
-    updated_context = gallery_module.render_context_digest()
-
-    assert (
-        gallery_module.map_cache_key(updated_context, b"document", coastline, outline) != cached_key
-    )
-
-
-def test_render_worker_count_is_capped_at_two(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(os, "process_cpu_count", lambda: AVAILABLE_CPUS)
-
-    assert RENDER_WORKER_COUNT(20) == EXPECTED_WORKERS
-    assert RENDER_WORKER_COUNT(SMALL_MAP_COUNT) == SMALL_MAP_COUNT
-    assert RENDER_WORKER_COUNT(1) == 1
-
-
 def test_serial_and_concurrent_gallery_maps_are_identical(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -817,10 +670,10 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     concurrent_output = tmp_path / "concurrent"
     serial_output.mkdir()
     concurrent_output.mkdir()
-    serial_context = gallery_module.MapRenderContext(
+    serial_context = rendering_module.MapRenderContext(
         registry, coastline, attribution, serial_output, None, "fixture", data_root=tmp_path
     )
-    concurrent_context = gallery_module.MapRenderContext(
+    concurrent_context = rendering_module.MapRenderContext(
         registry, coastline, attribution, concurrent_output, None, "fixture", data_root=tmp_path
     )
 
@@ -828,12 +681,13 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
         return {}
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(
-        gallery_module,
+        map_layers_module,
         "registered_map_sources",
-        render_map_module.registered_map_sources,
+        real_registered_map_sources,
     )
-    monkeypatch.setattr(gallery_module, "load_map_layers", render_map_module.load_map_layers)
+    monkeypatch.setattr(map_layers_module, "load_map_layers", real_load_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
 
     serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
@@ -841,7 +695,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     def two_workers(count: int) -> int:
         return min(2, count)
 
-    monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
     concurrent, _ = gallery_module.build_gallery_output(
         tmp_path, sources, {}, [], concurrent_context
     )
@@ -864,7 +718,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     coastline, attribution = registered_coastline(registry)
     output = tmp_path / "gallery"
     output.mkdir()
-    context = gallery_module.MapRenderContext(
+    context = rendering_module.MapRenderContext(
         registry,
         coastline,
         attribution,
@@ -880,7 +734,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     def skip_frontend(_output: Path) -> None:
         return
 
-    monkeypatch.setattr(gallery_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
     monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
@@ -916,7 +770,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     use_coastline_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     render = Mock(return_value=Figure())
-    monkeypatch.setattr(gallery_module, "render", render)
+    monkeypatch.setattr(rendering_module, "render", render)
     output = tmp_path / "gallery"
     corpus = tmp_path / "corpus"
     corpus.mkdir()
@@ -940,11 +794,11 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         for source in committed
         if source.name in zero_population
     }
-    assert zero_population_ids <= gallery_module.excluded_country_ids()
+    assert zero_population_ids <= country_sweep_module.excluded_country_ids()
     assert not zero_population.intersection(one.document.name for one in drawn)
     assert any(one.country_id == "DE" for one in drawn)
     assert any(one.country_id == "CW" for one in drawn)
-    assert not any(one.country_id in gallery_module.excluded_country_ids() for one in drawn)
+    assert not any(one.country_id in country_sweep_module.excluded_country_ids() for one in drawn)
     for one in drawn:
         assert one.figure.read_bytes().startswith(PNG_MAGIC)
         assert (output / one.document.name).is_file()
@@ -962,7 +816,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
             if payload["document"] == "smallest"
             else answer.caption.share
         )
-        if answer.country is None and share == gallery_module.HALF_SHARE:
+        if answer.country is None and share == country_sweep_module.HALF_SHARE:
             expected_orthographic_maps.add(f"{source.stem}-orthographic.png")
     assert expected_orthographic_maps <= figure_names
     for one in skipped:
@@ -974,8 +828,8 @@ def test_world_half_target_adds_orthographic_gallery_map() -> None:
     payload = json.loads(source.read_text(encoding="utf-8"))
     answer = circle_of(payload)
 
-    assert answer.caption.share != gallery_module.HALF_SHARE
-    assert payload["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
+    assert answer.caption.share != country_sweep_module.HALF_SHARE
+    assert payload["result"]["circle"]["target"]["share"] == country_sweep_module.HALF_SHARE
     assert [job.figure_suffix for job in gallery_module.render_jobs_for(source, payload, 1, 1)] == [
         "",
         "-orthographic",
@@ -1062,7 +916,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     for name in result_names:
         result = json.loads((corpus / name).read_text(encoding="utf-8"))
         assert result["document"] == "country-smallest"
-        assert result["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
+        assert result["result"]["circle"]["target"]["share"] == country_sweep_module.HALF_SHARE
         assert (corpus / name).is_file()
     assert (output / result_names[0]).is_file()
     assert_country_metadata_mirrors_json(output, result_names[0])
@@ -1143,241 +997,6 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         assert "Title" in image.info
         assert "Description" in image.info
         assert "Copyright" in image.info
-
-
-def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: Path) -> None:
-    countries = [configured_country("AA", "Alpha"), configured_country("BB", "Beta")]
-    swept = [swept_country("AA", "Alpha"), swept_country("BB", "Beta")]
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    written(corpus, "country-sweep-fixture-10-half.json", country_sweep(swept))
-    invoke, calls = country_cli(countries, swept)
-
-    missing, generated = country_documents(invoke, corpus)
-
-    assert calls == [["country", "list"]]
-    assert missing == []
-    assert set(generated) == {
-        "country-fixture-10-AA-half.json",
-        "country-fixture-10-BB-half.json",
-        "country-sweep-fixture-10-half.json",
-    }
-    assert "stats" not in generated["country-fixture-10-AA-half.json"]["result"]["circle"]
-    assert (
-        "stats"
-        not in generated["country-sweep-fixture-10-half.json"]["result"]["countries"][0]["records"][
-            0
-        ]["circle"]
-    )
-
-
-def test_country_coverage_refresh_uses_saved_answers_without_running_country_sweep(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    countries = [configured_country("AA", "Alpha")]
-    swept = [swept_country("AA", "Alpha")]
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    sweep_path = corpus / "country-sweep-fixture-10-half.json"
-    written(corpus, sweep_path.name, country_sweep(swept))
-    invoke, calls = country_cli(countries, swept)
-
-    def country_boundaries(answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
-        assert answer.country is not None
-        centre = answer.circle.centre
-        return {
-            answer.country.id: box(
-                centre.lon - 5,
-                centre.lat - 5,
-                centre.lon + 5,
-                centre.lat + 5,
-            )
-        }
-
-    monkeypatch.setattr(territory_coverage_module, "load_country_boundaries", country_boundaries)
-
-    missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
-
-    assert calls == [["country", "list"]]
-    assert missing == []
-    circle = generated["country-fixture-10-AA-half.json"]["result"]["circle"]
-    assert 0.0 < circle["territory_share"] < 1.0
-    assert (
-        circle["centre"],
-        circle["radius_km"],
-        circle["population"],
-        circle["share_achieved"],
-    ) == (
-        swept[0]["records"][0]["circle"]["centre"],
-        swept[0]["records"][0]["circle"]["radius_km"],
-        swept[0]["records"][0]["circle"]["population"],
-        swept[0]["records"][0]["circle"]["share_achieved"],
-    )
-
-
-def test_country_coverage_refresh_requires_a_valid_saved_sweep(tmp_path: Path) -> None:
-    countries = [configured_country("AA", "Alpha")]
-    invoke, calls = country_cli(countries, [swept_country("AA", "Alpha")])
-
-    with pytest.raises(WorkflowError, match="requires a valid saved country sweep"):
-        country_documents(invoke, tmp_path / "missing", country_refresh="coverage")
-
-    assert calls == [["country", "list"]]
-
-
-def test_a_saved_sweep_without_unavailable_country_metadata_is_refreshed(tmp_path: Path) -> None:
-    countries = [configured_country("AA", "Alpha")]
-    swept = [swept_country("AA", "Alpha")]
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    stale = country_sweep(swept)
-    del stale["result"]["countries_without_population_cells"]
-    written(corpus, "country-sweep-fixture-10-half.json", stale)
-    invoke, calls = country_cli(countries, swept)
-
-    country_documents(invoke, corpus)
-
-    assert calls[0] == ["country", "list"]
-    assert calls[1][0:2] == ["country", "sweep"]
-
-
-def test_sweep_with_unavailable_country_reuses_independent_of_result_order(
-    tmp_path: Path,
-) -> None:
-    countries = [
-        configured_country("AA", "Alpha"),
-        configured_country("BB", "Beta"),
-        configured_country("CC", "Gamma"),
-    ]
-    swept = [swept_country("CC", "Gamma"), swept_country("AA", "Alpha")]
-    invoke, calls = country_cli(
-        countries,
-        swept,
-        countries_without_population_cells=[{"id": "BB", "name": "Beta"}],
-    )
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    cached = country_sweep(swept)
-    cached["result"]["countries_without_population_cells"] = [{"id": "BB", "name": "Beta"}]
-    written(corpus, "country-sweep-fixture-10-half.json", cached)
-
-    missing, generated = country_documents(invoke, corpus)
-
-    assert calls == [["country", "list"]]
-    assert missing == ["Beta"]
-    assert set(generated) == {
-        "country-fixture-10-AA-half.json",
-        "country-fixture-10-CC-half.json",
-        "country-sweep-fixture-10-half.json",
-    }
-
-
-def test_country_answer_documents_are_stable_when_only_sweep_stats_change(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    countries = [configured_country("AA", "Alpha")]
-    first_swept = swept_country("AA", "Alpha")
-    first_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 5
-    first_swept["records"][0]["circle"]["stats"]["radii_reused"] = 3
-    first_invoke, _ = country_cli(countries, [first_swept])
-    first = country_documents(first_invoke, tmp_path / "first", country_refresh="sweep")[1]
-    assert "country sweep evaluated 5 radii and reused 3" in capsys.readouterr().err
-
-    second_swept = swept_country("AA", "Alpha")
-    second_swept["records"][0]["circle"]["stats"]["radii_evaluated"] = 99
-    second_swept["records"][0]["circle"]["stats"]["radii_reused"] = 42
-    second_invoke, _ = country_cli(countries, [second_swept])
-    second = country_documents(second_invoke, tmp_path / "second", country_refresh="sweep")[1]
-
-    assert {name: json.dumps(payload, indent=2) for name, payload in first.items()} == {
-        name: json.dumps(payload, indent=2) for name, payload in second.items()
-    }
-
-
-def test_a_stats_free_sweep_is_reusable_and_reports_avoided_work(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    countries = [configured_country("AA", "Alpha")]
-    swept = [swept_country("AA", "Alpha")]
-    invoke, calls = country_cli(countries, swept)
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    generated = country_documents(invoke, corpus, country_refresh="sweep")[1]
-    sweep_path = corpus / "country-sweep-fixture-10-half.json"
-    sweep_path.write_text(json.dumps(generated[sweep_path.name]), encoding="utf-8")
-    calls.clear()
-
-    country_documents(invoke, corpus)
-
-    assert calls == [["country", "list"]]
-    diagnostics = capsys.readouterr().err
-    assert "sweep work avoided for 1 countries" in diagnostics
-    assert "radii evaluated" not in diagnostics
-
-
-@pytest.mark.parametrize(
-    ("path", "value", "raw"),
-    [
-        (("result", "selection", "combination_id"), "other", None),
-        (("result", "selection", "resolution"), 5, None),
-        (("result", "selection", "population_source", "name"), "other", None),
-        (("result", "selection", "population_source", "sha256"), "a" * 64, None),
-        (("result", "selection", "boundary_source", "name"), "other", None),
-        (("result", "selection", "boundary_source", "sha256"), "b" * 64, None),
-        (("result", "countries", 0, "country", "id"), "XX", None),
-        (("result", "countries", 0, "country", "name"), "Other", None),
-        (("result", "countries"), [swept_country("AA", "Alpha")], None),
-        (
-            ("result", "countries"),
-            [swept_country("AA", "Alpha"), swept_country("AA", "Alpha")],
-            None,
-        ),
-        (("result", "countries", 0, "records"), [], None),
-        (
-            ("result", "countries", 0, "records"),
-            [swept_country("AA", "Alpha")["records"][0]] * 2,
-            None,
-        ),
-        (None, None, "{"),
-    ],
-)
-def test_an_invalid_country_sweep_cache_runs_one_fresh_sweep(
-    tmp_path: Path, path: tuple[str | int, ...] | None, value: object, raw: str | None
-) -> None:
-    countries = [configured_country("AA", "Alpha"), configured_country("BB", "Beta")]
-    swept = [swept_country("AA", "Alpha"), swept_country("BB", "Beta")]
-    cache: Any = copy.deepcopy(country_sweep(swept))
-    if path is not None:
-        target = cache
-        for key in path[:-1]:
-            target = target[key]
-        target[path[-1]] = value
-
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    cache_path = corpus / "country-sweep-fixture-10-half.json"
-    cache_path.write_text(raw if raw is not None else json.dumps(cache))
-    invoke, calls = country_cli(countries, swept)
-
-    country_documents(invoke, corpus)
-
-    assert calls[0] == ["country", "list"]
-    assert calls[1][0:2] == ["country", "sweep"]
-    assert len(calls) == EXPECTED_COUNTRY_CLI_CALLS
-
-
-def test_refresh_bypasses_a_matching_country_sweep_cache(tmp_path: Path) -> None:
-    countries = [configured_country("AA", "Alpha")]
-    swept = [swept_country("AA", "Alpha")]
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    written(corpus, "country-sweep-fixture-10-half.json", country_sweep(swept))
-    invoke, calls = country_cli(countries, swept)
-
-    country_documents(invoke, corpus, country_refresh="sweep")
-
-    assert len(calls) == EXPECTED_COUNTRY_CLI_CALLS
-    assert calls[1][0:2] == ["country", "sweep"]
 
 
 def test_a_failed_render_does_not_replace_saved_country_results(
@@ -1493,14 +1112,3 @@ def test_a_country_without_a_unique_half_record_leaves_no_gallery_index(
         build(corpus, output, invoke)
 
     assert not (output / "index.html").exists()
-
-
-def test_excluded_ids_are_omitted_from_missing_country_names(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(gallery_module, "excluded_country_ids", lambda: {"HK"})
-    countries = [configured_country("DE", "Germany"), configured_country("HK", "Hong Kong")]
-    sweep = country_sweep([])
-    sweep["result"]["countries_without_population_cells"] = countries
-
-    assert gallery_module.missing_country_names(sweep, countries) == ["Germany"]
