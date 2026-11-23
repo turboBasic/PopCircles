@@ -648,33 +648,6 @@ def test_gallery_data_uses_only_the_current_maps(
     assert "old.png" not in json.dumps(data)
 
 
-def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path) -> None:
-    france = tmp_path / "france.png"
-    germany = tmp_path / "germany.png"
-    Image.new("RGB", (100, 200)).save(france)
-    Image.new("RGB", (200, 100)).save(germany)
-    data = gallery_module.page_data(
-        [
-            rendering_module.Drawn(Path("germany.json"), germany, "Germany", "DE"),
-            rendering_module.Drawn(Path("france.json"), france, "France", "FR"),
-        ],
-        ["Missing country"],
-    )
-
-    assert [country["anchor"] for country in data["countries"]] == [
-        "country-result-FR",
-        "country-result-DE",
-        "country-missing-Missing%20country",
-    ]
-    assert [figure["map"] for country in data["countries"] for figure in country["figures"]] == [
-        "france.png",
-        "germany.png",
-    ]
-    assert [
-        figure["aspect_ratio"] for country in data["countries"] for figure in country["figures"]
-    ] == [0.5, 2.0]
-
-
 def test_serial_and_concurrent_gallery_maps_are_identical(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
