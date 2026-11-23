@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-from population_circles import circle_map, render_map
+from population_circles import circle_map, map_metadata, render_map
 from population_circles.circle_document import Answer
 from population_circles.circle_map import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import Registry, load
@@ -326,7 +326,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
 ) -> None:
     seen_credits: list[str] = []
     original = render_map.render
-    original_copyright = render_map.copyright_of
+    original_copyright = map_metadata.copyright_of
     render_spy = Mock(wraps=original)
 
     def capture_copyright(
@@ -346,7 +346,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
         )
 
     monkeypatch.setattr(render_map, "render", render_spy)
-    monkeypatch.setattr(render_map, "copyright_of", capture_copyright)
+    monkeypatch.setattr(map_metadata, "copyright_of", capture_copyright)
     payload = document()
     payload["earth_model"]["radius_km"] = CUSTOM_EARTH_RADIUS_KM
     workflow(options, Children([0, 0], json.dumps(payload).encode()))

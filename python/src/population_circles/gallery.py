@@ -11,7 +11,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, NotRequired, TypedDict, cast
+from typing import Any, NotRequired, TypedDict, cast
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -21,38 +21,43 @@ from matplotlib import pyplot as plt
 from PIL import Image, ImageChops
 from shapely.geometry.base import BaseGeometry
 
+from population_circles import gallery_country_sweep as country_sweep_module
 from population_circles.circle_document import CIRCLE_KINDS, Answer, Envelope, circle_of
-from population_circles.circle_map import Invoke, WorkflowError, child, invoke_cli, require_success
+from population_circles.circle_map import Invoke, child, invoke_cli, require_success
 from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import (
     REPO_ROOT,
     Registry,
     load,
 )
+from population_circles.gallery_country_sweep import (
+    HALF_SHARE,
+    CountryRefresh,
+    CountrySweepRequest,
+)
 from population_circles.map_frame import ORTHOGRAPHIC, PLATE_CARREE
+from population_circles.map_metadata import (
+    copyright_of,
+    description_of,
+    exif_gps_packet,
+    metadata_json_fields,
+    png_metadata,
+    xmp_properties,
+)
 from population_circles.presentation_config import load as load_presentation_config
 from population_circles.render_map import (
     OCEAN,
     citation,
-    copyright_of,
-    description_of,
-    exif_gps_packet,
     load_map_layers,
-    metadata_json_fields,
     other_countries,
     other_country_labels,
-    png_metadata,
     registered_coastline,
     registered_map_sources,
     render,
     title_of,
-    xmp_properties,
 )
 from population_circles.territory_coverage import enrich_document
 
-HALF_SHARE = 0.5
-HALF_SHARE_PERCENT = "50"
-CountryRefresh = Literal["sweep", "coverage"]
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2
 HEADER_CROP_ASPECT_TOLERANCE = 2
@@ -68,10 +73,6 @@ RENDER_INPUTS = tuple(
         key=lambda path: path.as_posix(),
     )
 )
-
-
-def excluded_country_ids() -> set[str]:
-    return set(load_presentation_config().gallery.excluded_country_ids)
 
 
 class SettlementCaption(TypedDict):
@@ -577,7 +578,7 @@ def build_gallery_output(
     skipped: list[Skipped] = []
     reused_maps = rendered_maps = 0
     unavailable = set(missing)
-    excluded = excluded_country_ids()
+    excluded = country_sweep_module.excluded_country_ids()
     sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
     skipped.extend(excluded_sources)
     render_jobs: list[RenderJob] = []
@@ -659,69 +660,6 @@ def build_gallery_output(
     return drawn, skipped
 
 
-def omit_excluded_sources(
-    sources: list[tuple[Path, dict[str, Any]]], output: Path, excluded: set[str]
-) -> tuple[list[tuple[Path, dict[str, Any]]], list[Skipped]]:
-    rendered: list[tuple[Path, dict[str, Any]]] = []
-    skipped: list[Skipped] = []
-    for source, payload in sources:
-        if payload.get("result", {}).get("country", {}).get("id") in excluded:
-            (output / source.name).unlink(missing_ok=True)
-            (output / f"{source.stem}.png").unlink(missing_ok=True)
-            skipped.append(Skipped(source, "excluded country"))
-        else:
-            rendered.append((source, payload))
-    return rendered, skipped
-
-
-def country_result_document(
-    sweep: dict[str, Any], selection: dict[str, Any], swept_country: dict[str, Any]
-) -> dict[str, Any]:
-    country = swept_country["country"]
-    record = next(record for record in swept_country["records"] if record["share"] == HALF_SHARE)
-    return {
-        "schema_version": sweep["schema_version"],
-        "document": "country-smallest",
-        "tool": sweep["tool"],
-        "tool_version": sweep["tool_version"],
-        "earth_model": sweep["earth_model"],
-        "result": {
-            "selection": selection,
-            "country": country,
-            "population_dataset": selection["population_source"]["name"],
-            "decimation": selection["resolution"],
-            "ledger": swept_country["ledger"],
-            "circle": {key: value for key, value in record["circle"].items() if key != "stats"},
-        },
-    }
-
-
-def stable_country_sweep(sweep: dict[str, Any]) -> dict[str, Any]:
-    return {
-        **sweep,
-        "result": {
-            **sweep["result"],
-            "countries": [
-                {
-                    **country,
-                    "records": [
-                        {
-                            **record,
-                            "circle": {
-                                key: value
-                                for key, value in record["circle"].items()
-                                if key != "stats"
-                            },
-                        }
-                        for record in country["records"]
-                    ],
-                }
-                for country in sweep["result"]["countries"]
-            ],
-        },
-    }
-
-
 def same_country_answer(existing: bytes, generated: bytes) -> bool:
     try:
         previous_value: Any = json.loads(existing)
@@ -750,153 +688,19 @@ def same_country_answer(existing: bytes, generated: bytes) -> bool:
         return previous == current
 
 
-def missing_country_names(sweep: dict[str, Any], countries: list[dict[str, Any]]) -> list[str]:
-    expected = {country["id"]: country["name"] for country in countries}
-    accounted_for: set[str] = set()
-    for country in sweep["result"]["countries"]:
-        identity = country["country"]
-        country_id = identity["id"]
-        if country_id not in expected or expected[country_id] != identity["name"]:
-            message = f"country sweep: unexpected feature ID {country_id!r}"
-            raise ValueError(message)
-        if country_id in accounted_for:
-            message = f"country sweep: duplicate feature ID {country_id!r}"
-            raise ValueError(message)
-        accounted_for.add(country_id)
-    missing: list[str] = []
-    for country in sweep["result"]["countries_without_population_cells"]:
-        country_id = country["id"]
-        if country_id not in expected or expected[country_id] != country["name"]:
-            message = f"country sweep: unexpected unavailable feature ID {country_id!r}"
-            raise ValueError(message)
-        if country_id in accounted_for:
-            message = f"country sweep: duplicate feature ID {country_id!r}"
-            raise ValueError(message)
-        accounted_for.add(country_id)
-        missing.append(country_id)
-    if accounted_for != expected.keys():
-        message = "country sweep: result does not account for every configured country"
-        raise ValueError(message)
-    excluded = excluded_country_ids()
-    return [expected[country_id] for country_id in missing if country_id not in excluded]
-
-
-def cached_sweep(
-    path: Path, selection: dict[str, Any], countries: list[dict[str, Any]]
-) -> dict[str, Any] | None:
-    try:
-        sweep: Any = json.loads(path.read_text(encoding="utf-8"))
-        if Envelope.model_validate(sweep).document != "country-sweep":
-            return None
-        if sweep["result"]["selection"] != selection:
-            return None
-        swept_countries = sweep["result"]["countries"]
-        missing_country_names(sweep, countries)
-        for country in swept_countries:
-            if sum(record["share"] == HALF_SHARE for record in country["records"]) != 1:
-                return None
-            circle_of(country_result_document(sweep, selection, country))
-    except OSError, ValueError, TypeError, KeyError, IndexError:
-        return None
-    return sweep
-
-
-def report_sweep_work(sweep: dict[str, Any]) -> None:
-    evaluated = reused = 0
-    for country in sweep["result"]["countries"]:
-        for record in country["records"]:
-            stats = record["circle"].get("stats", {})
-            evaluated += stats.get("radii_evaluated", 0)
-            reused += stats.get("radii_reused", 0)
-    print(
-        f"Gallery: country sweep evaluated {evaluated} radii and reused {reused}",
-        file=sys.stderr,
-        flush=True,
-    )
-
-
-def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
-    sweep = json.loads(path.read_text(encoding="utf-8"))
-    if sweep.get("document") != "country-sweep":
-        message = "country coverage: saved document is not a country-sweep"
-        raise ValueError(message)
-    if sweep["result"]["selection"] != selection:
-        message = "country coverage: saved sweep selection does not match configuration"
-        raise ValueError(message)
-    return enrich_document(sweep)
-
-
-def refresh_coverage(corpus: Path) -> None:
-    supported = CIRCLE_KINDS | {"country-smallest", "country-sweep"}
-    for path in sorted(corpus.glob("*.json")):
-        document: Any = json.loads(path.read_text(encoding="utf-8"))
-        if Envelope.model_validate(document).document not in supported:
-            continue
-        enriched = enrich_document(document)
-        path.write_text(json.dumps(enriched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def country_sweep(
-    invoke: Invoke,
-    corpus: Path,
-    selection: dict[str, Any],
-    countries: list[dict[str, Any]],
-    refresh: CountryRefresh | None,
-) -> dict[str, Any]:
-    filename = (
-        f"country-sweep-{quote(selection['combination_id'], safe='')}-"
-        f"{selection['resolution']}-half.json"
-    )
-    saved = None if refresh == "sweep" else cached_sweep(corpus / filename, selection, countries)
-    country_ids = [country["id"] for country in countries]
-    if refresh == "coverage":
-        if saved is None:
-            message = "country coverage refresh requires a valid saved country sweep"
-            raise WorkflowError(message)
-        sweep = coverage_sweep(corpus / filename, selection)
-        print(
-            f"Gallery: refreshed territory coverage for {len(countries)} saved country results",
-            file=sys.stderr,
-            flush=True,
-        )
-        return sweep
-    if saved is not None and refresh != "sweep":
-        print(
-            "Gallery: reused saved 50% country sweep; "
-            f"sweep work avoided for {len(country_ids)} countries",
-            file=sys.stderr,
-            flush=True,
-        )
-        return saved
-    arguments = [
-        "country",
-        "sweep",
-        "--combination",
-        selection["combination_id"],
-        "--resolution",
-        str(selection["resolution"]),
-        "--from",
-        HALF_SHARE_PERCENT,
-        "--to",
-        HALF_SHARE_PERCENT,
-        "--step",
-        "1",
-    ]
-    for country_id in country_ids:
-        arguments.extend(["--country", country_id])
-    print(
-        f"Gallery: calculating 50% circles for {len(country_ids)} countries",
-        file=sys.stderr,
-        flush=True,
-    )
-    swept = child("country sweep", arguments, invoke)
-    require_success("country sweep", swept)
-    result = json.loads(swept.stdout)
-    if result.get("document") != "country-sweep":
-        message = "country sweep: Rust CLI returned a document other than country-sweep"
-        raise ValueError(message)
-    report_sweep_work(result)
-    return result
+def omit_excluded_sources(
+    sources: list[tuple[Path, dict[str, Any]]], output: Path, excluded: set[str]
+) -> tuple[list[tuple[Path, dict[str, Any]]], list[Skipped]]:
+    rendered: list[tuple[Path, dict[str, Any]]] = []
+    skipped: list[Skipped] = []
+    for source, payload in sources:
+        if payload.get("result", {}).get("country", {}).get("id") in excluded:
+            (output / source.name).unlink(missing_ok=True)
+            (output / f"{source.stem}.png").unlink(missing_ok=True)
+            skipped.append(Skipped(source, "excluded country"))
+        else:
+            rendered.append((source, payload))
+    return rendered, skipped
 
 
 def country_documents(
@@ -922,12 +726,21 @@ def country_documents(
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
-    sweep = country_sweep(invoke, corpus, selection, countries, country_refresh)
+    sweep = country_sweep_module.country_sweep(
+        CountrySweepRequest(
+            invoke,
+            corpus,
+            selection,
+            countries,
+            country_refresh,
+            report_country_sweep,
+        )
+    )
     sweep_selection = sweep["result"]["selection"]
     if sweep_selection != listing["result"]["selection"]:
         message = "country sweep: result selection differs from the configured country list"
         raise ValueError(message)
-    missing = missing_country_names(sweep, countries)
+    missing = country_sweep_module.missing_country_names(sweep, countries)
     expected = {country["id"]: country for country in countries}
     result_ids: set[str] = set()
     documents: dict[str, dict[str, Any]] = {}
@@ -942,14 +755,16 @@ def country_documents(
             message = f"country sweep: {country_id!r} has no unique 50% result"
             raise ValueError(message)
         result_ids.add(country_id)
-        document = country_result_document(sweep, sweep_selection, swept_country)
+        document = country_sweep_module.country_result_document(
+            sweep, sweep_selection, swept_country
+        )
         filename = (
             f"country-{quote(selection['combination_id'], safe='')}-"
             f"{selection['resolution']}-{quote(country_id, safe='')}-half.json"
         )
         documents[filename] = document
 
-    documents[sweep_filename] = stable_country_sweep(sweep)
+    documents[sweep_filename] = country_sweep_module.stable_country_sweep(sweep)
     print(
         f"Gallery: prepared {len(documents)} country result documents",
         file=sys.stderr,
@@ -959,6 +774,10 @@ def country_documents(
         missing,
         documents,
     )
+
+
+def report_country_sweep(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
 
 
 def build(
@@ -995,7 +814,7 @@ def build(
     (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     if country_refresh == "coverage":
-        refresh_coverage(corpus)
+        country_sweep_module.refresh_coverage(corpus)
     missing, generated = country_documents(
         invoke,
         corpus,

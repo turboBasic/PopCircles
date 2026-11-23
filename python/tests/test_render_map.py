@@ -17,6 +17,7 @@ from PIL import Image
 from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 
+import population_circles.map_metadata as map_metadata_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.territory_coverage as territory_coverage_module
@@ -1395,7 +1396,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
-    original_copyright = render_map_module.copyright_of
+    original_copyright = map_metadata_module.copyright_of
 
     def capture_copyright(
         answer: Answer,
@@ -1413,7 +1414,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
             map_attributions,
         )
 
-    monkeypatch.setattr("population_circles.render_map.copyright_of", capture_copyright)
+    monkeypatch.setattr("population_circles.map_metadata.copyright_of", capture_copyright)
 
     named = document()
     named["provenance"]["dataset"] = "second-raster"

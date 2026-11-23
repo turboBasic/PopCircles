@@ -18,6 +18,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery as gallery_module
+import population_circles.gallery_country_sweep as country_sweep_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.terrain as terrain_module
@@ -940,11 +941,11 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         for source in committed
         if source.name in zero_population
     }
-    assert zero_population_ids <= gallery_module.excluded_country_ids()
+    assert zero_population_ids <= country_sweep_module.excluded_country_ids()
     assert not zero_population.intersection(one.document.name for one in drawn)
     assert any(one.country_id == "DE" for one in drawn)
     assert any(one.country_id == "CW" for one in drawn)
-    assert not any(one.country_id in gallery_module.excluded_country_ids() for one in drawn)
+    assert not any(one.country_id in country_sweep_module.excluded_country_ids() for one in drawn)
     for one in drawn:
         assert one.figure.read_bytes().startswith(PNG_MAGIC)
         assert (output / one.document.name).is_file()
@@ -962,7 +963,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
             if payload["document"] == "smallest"
             else answer.caption.share
         )
-        if answer.country is None and share == gallery_module.HALF_SHARE:
+        if answer.country is None and share == country_sweep_module.HALF_SHARE:
             expected_orthographic_maps.add(f"{source.stem}-orthographic.png")
     assert expected_orthographic_maps <= figure_names
     for one in skipped:
@@ -974,8 +975,8 @@ def test_world_half_target_adds_orthographic_gallery_map() -> None:
     payload = json.loads(source.read_text(encoding="utf-8"))
     answer = circle_of(payload)
 
-    assert answer.caption.share != gallery_module.HALF_SHARE
-    assert payload["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
+    assert answer.caption.share != country_sweep_module.HALF_SHARE
+    assert payload["result"]["circle"]["target"]["share"] == country_sweep_module.HALF_SHARE
     assert [job.figure_suffix for job in gallery_module.render_jobs_for(source, payload, 1, 1)] == [
         "",
         "-orthographic",
@@ -1062,7 +1063,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     for name in result_names:
         result = json.loads((corpus / name).read_text(encoding="utf-8"))
         assert result["document"] == "country-smallest"
-        assert result["result"]["circle"]["target"]["share"] == gallery_module.HALF_SHARE
+        assert result["result"]["circle"]["target"]["share"] == country_sweep_module.HALF_SHARE
         assert (corpus / name).is_file()
     assert (output / result_names[0]).is_file()
     assert_country_metadata_mirrors_json(output, result_names[0])
@@ -1498,9 +1499,9 @@ def test_a_country_without_a_unique_half_record_leaves_no_gallery_index(
 def test_excluded_ids_are_omitted_from_missing_country_names(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(gallery_module, "excluded_country_ids", lambda: {"HK"})
+    monkeypatch.setattr(country_sweep_module, "excluded_country_ids", lambda: {"HK"})
     countries = [configured_country("DE", "Germany"), configured_country("HK", "Hong Kong")]
     sweep = country_sweep([])
     sweep["result"]["countries_without_population_cells"] = countries
 
-    assert gallery_module.missing_country_names(sweep, countries) == ["Germany"]
+    assert country_sweep_module.missing_country_names(sweep, countries) == ["Germany"]
