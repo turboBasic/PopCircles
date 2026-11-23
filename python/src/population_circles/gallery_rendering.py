@@ -16,6 +16,7 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
+from population_circles import map_layers as map_data
 from population_circles.circle_document import Answer, circle_of
 from population_circles.country_outline import load_map_boundaries
 from population_circles.dataset_registry import REPO_ROOT, Registry
@@ -29,11 +30,8 @@ from population_circles.map_metadata import (
     xmp_properties,
 )
 from population_circles.render_map import (
-    citation,
-    load_map_layers,
     other_countries,
     other_country_labels,
-    registered_map_sources,
     render,
     title_of,
 )
@@ -256,20 +254,20 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
         answer = circle_of(payload)
         boundaries = load_map_boundaries(answer, context.registry)
         selected = boundaries.get(answer.country.id) if answer.country is not None else None
-        map_sources = registered_map_sources(
+        map_sources = map_data.registered_map_sources(
             context.registry,
             answer.country.id if answer.country is not None else None,
         )
         population_attribution = (
             answer.selection.population_source.attribution if answer.selection is not None else None
-        ) or citation(context.registry, answer.provenance.dataset)
+        ) or map_data.citation(context.registry, answer.provenance.dataset)
         outline_and_credit = None
         if answer.country is not None:
             boundary_attribution = (
                 answer.selection.boundary_source.attribution
                 if answer.selection is not None
                 else None
-            ) or citation(context.registry, answer.country.boundary_dataset)
+            ) or map_data.citation(context.registry, answer.country.boundary_dataset)
             outline_and_credit = (selected, boundary_attribution)
         target = context.output / f"{source.stem}{figure_suffix}.png"
         title_label = context.map_titles.get(target.stem)
@@ -331,7 +329,7 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
             file=sys.stderr,
             flush=True,
         )
-        map_layers = load_map_layers(
+        map_layers = map_data.load_map_layers(
             map_sources,
             root=context.data_root,
             country_outline=outline,

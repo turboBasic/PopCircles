@@ -29,8 +29,9 @@ from population_circles.gallery_rendering import (
     render_documents,
 )
 from population_circles.map_frame import ORTHOGRAPHIC
+from population_circles.map_layers import registered_coastline
 from population_circles.presentation_config import load as load_presentation_config
-from population_circles.render_map import OCEAN, registered_coastline
+from population_circles.render_map import OCEAN
 from population_circles.territory_coverage import enrich_document
 
 HEADER_OCEAN_MATCH_TOLERANCE = 8

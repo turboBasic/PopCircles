@@ -29,7 +29,7 @@ from population_circles.dataset_registry import (
     load,
 )
 from population_circles.map_frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
-from population_circles.render_map import UnregisteredDatasetError, basemap
+from population_circles.map_layers import UnregisteredDatasetError, basemap
 
 VIEW_SIZE = 512
 VIEW_CENTRE = VIEW_SIZE / 2

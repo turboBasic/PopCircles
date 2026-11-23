@@ -18,6 +18,7 @@ from shapely.geometry.base import BaseGeometry
 import population_circles.gallery as gallery_module
 import population_circles.gallery_country_sweep as country_sweep_module
 import population_circles.gallery_rendering as rendering_module
+import population_circles.map_layers as map_layers_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.terrain as terrain_module
@@ -32,10 +33,16 @@ from population_circles.dataset_registry import (
     load,
 )
 from population_circles.gallery import build
-from population_circles.render_map import (
+from population_circles.map_layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
     registered_coastline,
+)
+from population_circles.map_layers import (
+    load_map_layers as real_load_map_layers,
+)
+from population_circles.map_layers import (
+    registered_map_sources as real_registered_map_sources,
 )
 from test_render_map import (
     fixture_map_layers,
@@ -65,7 +72,7 @@ SMALL_MAP_COUNT = 2
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     registry = load()
     monkeypatch.setattr(gallery_module, "load", lambda: registry)
-    monkeypatch.setattr(render_map_module, "REPO_ROOT", root)
+    monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
     path = root / registry.datasets[COASTLINE_DATASET].path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -92,13 +99,13 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(
-        rendering_module,
+        map_layers_module,
         "registered_map_sources",
         fixture_registered_map_sources,
     )
     monkeypatch.setattr(rendering_module, "render_worker_count", one_worker)
     monkeypatch.setattr(rendering_module, "load_map_boundaries", fixture_boundaries)
-    monkeypatch.setattr(rendering_module, "load_map_layers", fixture_map_layers)
+    monkeypatch.setattr(map_layers_module, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
 
 
@@ -423,7 +430,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     coastline_path = tmp_path / load().datasets[COASTLINE_DATASET].path
     basemap_paths: list[Path] = []
     annotations: list[str] = []
-    current_basemap = render_map_module.basemap
+    current_basemap = map_layers_module.basemap
     current_annotate = render_map_module.annotate
 
     def capture_basemap(path: Path) -> BaseGeometry:
@@ -436,7 +443,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         annotations.append(text)
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(render_map_module, "basemap", capture_basemap)
+    monkeypatch.setattr(map_layers_module, "basemap", capture_basemap)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     drawn, skipped = build(corpus, tmp_path / "gallery", country_cli([], [])[0])
@@ -703,11 +710,11 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(
-        rendering_module,
+        map_layers_module,
         "registered_map_sources",
-        render_map_module.registered_map_sources,
+        real_registered_map_sources,
     )
-    monkeypatch.setattr(rendering_module, "load_map_layers", render_map_module.load_map_layers)
+    monkeypatch.setattr(map_layers_module, "load_map_layers", real_load_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
 
     serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)

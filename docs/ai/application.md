@@ -113,9 +113,11 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    - `circle_geometry` builds the circle cap and owns the only PROJ definition.
    - `map_frame` defines the display projection, visible extent, and graticule.
    - `centre_caption` formats the centre for Markdown and figure titles.
-   - `render_map` draws figures and resolves datasets only from keys in the answer. For a country
-     result, it selects the outline by canonical ID, applies presentation settings, and checks the
-     boundary revision and digest. It derives the map extent from the outline and result circle.
+   - `map_layers` resolves registered terrain and context sources, loads their geometries, and owns
+     the prepared layers passed to the renderer.
+   - `render_map` draws figures and resolves document inputs only from keys in the answer. For a
+     country result, it selects the outline by canonical ID, applies presentation settings, and checks
+     the boundary revision and digest. It derives the map extent from the outline and result circle.
      Population and boundary credits come from registry rows. The renderer measures country captions
      and credits before allocating footer space.
 

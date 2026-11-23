@@ -13,8 +13,8 @@ from PIL import Image
 from population_circles import gallery_rendering, render_map
 from population_circles.dataset_registry import REPO_ROOT, TerrainRaster, load
 from population_circles.map_frame import Frame
+from population_circles.map_layers import registered_coastline
 from population_circles.presentation_config import map_text_rendering
-from population_circles.render_map import registered_coastline
 from population_circles.terrain import prepare_terrain
 
 ids = ("FR", "NL", "CH", "CL", "JP", "BR", "NP", "CN")
