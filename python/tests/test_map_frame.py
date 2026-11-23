@@ -6,6 +6,7 @@ from shapely.geometry import MultiPolygon, Polygon, box
 
 from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
+    HALF_TURN_DEG,
     METRES_PER_KM,
     WORLD,
     cap,
@@ -76,6 +77,26 @@ def test_the_orthographic_frame_is_the_globe_seen_from_the_centre() -> None:
     assert (-west, -south, east, north) == pytest.approx((GLOBE_METRES,) * 4, abs=1.0)
     assert GLOBE_METRES - east == pytest.approx(LIMB_GAP_METRES, abs=1e-4)
     assert built.circle.bounds == pytest.approx((-CAP_METRES, -CAP_METRES, CAP_METRES, CAP_METRES))
+
+
+def test_geographic_footprint_covers_a_global_orthographic_view() -> None:
+    built = view(ORTHOGRAPHIC, CENTRE, RADIUS_KM)
+
+    footprint = built.geographic_footprint
+
+    assert footprint.equals(built.visible)
+
+
+def test_geographic_footprint_stays_inside_a_zoomed_orthographic_view() -> None:
+    outline = box(1.4, 42.4, 1.8, 42.7)
+    built = cap(Coordinate(lat=42.55, lon=1.6), 1.0, EARTH_RADIUS_KM)
+    country = country_frame(built, outline)
+
+    footprint = country.geographic_footprint
+
+    assert footprint.within(country.visible)
+    assert footprint.bounds[2] - footprint.bounds[0] < 1
+    assert footprint.bounds[3] - footprint.bounds[1] < 1
 
 
 def test_an_orthographic_cap_at_the_seam_carries_no_cut() -> None:
@@ -186,7 +207,7 @@ def test_country_frame_uses_an_explicit_orthographic_centre() -> None:
 
 
 def test_country_frame_dissolves_outline_parts_meeting_at_the_antimeridian() -> None:
-    built = cap(Coordinate(lat=65.0, lon=100.0), 100.0, EARTH_RADIUS_KM)
+    built = cap(Coordinate(lat=65.0, lon=179.0), 100.0, EARTH_RADIUS_KM)
     outline = MultiPolygon(
         [
             Polygon([(170, 60), (179.999988, 60), (179.999988, 70), (170, 70), (170, 60)]),
@@ -201,12 +222,15 @@ def test_country_frame_dissolves_outline_parts_meeting_at_the_antimeridian() -> 
         outline,
         CountryFrameSettings(
             projection="albers-equal-area",
-            projection_parameters={"lon_0": 100.0, "lat_0": 65.0, "lat_1": 50.0, "lat_2": 70.0},
+            projection_parameters={"lon_0": 180.0, "lat_0": 65.0, "lat_1": 50.0, "lat_2": 70.0},
         ),
     )
 
     assert view.country_outline is not None
     assert view.country_outline.geom_type == "Polygon"
+    footprint = polygons(view.geographic_footprint)
+    assert any(part.bounds[0] > HALF_TURN_DEG - GRATICULE_STEP_DEG for part in footprint)
+    assert any(part.bounds[2] < -HALF_TURN_DEG + GRATICULE_STEP_DEG for part in footprint)
 
 
 def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:

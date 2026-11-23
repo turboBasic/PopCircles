@@ -98,6 +98,7 @@ def projected_frame(epsg: int = 3857) -> Frame:
         visible=box(-2, -2, 2, 2),
         circle=Point(0, 0),
         horizon=horizon,
+        geographic_footprint=box(-0.9, -0.9, 0.9, 0.9),
     )
 
 
