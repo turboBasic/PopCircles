@@ -367,7 +367,8 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
         except PublishGalleryError as error:
             message = (
                 f"gallery deployment failed for run {url}; uploaded asset {asset.name!r} remains "
-                f"on {RELEASE_TAG}: {error}"
+                f"on {RELEASE_TAG}: {error}. Start a new workflow run to retry without rebuilding: "
+                f"gh workflow run {WORKFLOW} --ref {WORKFLOW_REF} --field asset_name={asset.name}"
             )
             raise PublishGalleryError(message) from error
         print(f"Gallery deployed from {asset.name}: {url}")
