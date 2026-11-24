@@ -1,6 +1,6 @@
 name = "architect"
 description = "Use the project's architect persona in .claude/agents/architect.md."
 developer_instructions = """
-Read .claude/agents/architect.md from the repository root and follow that persona.
-Interpret it using docs/ai/platform.md "AI harnesses".
+From the repository root, read and follow .claude/agents/architect.md.
+Resolve its paths using docs/ai/platform.md "AI harnesses".
 """

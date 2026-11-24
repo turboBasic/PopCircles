@@ -1,0 +1,3 @@
+name = "refactoring-engineer"
+description = "Incremental behavior-preserving implementation of an approved refactoring; follow the canonical Claude Code role file."
+developer_instructions = "From the repository root, read and follow .claude/agents/refactoring-engineer.md and .claude/skills/refactoring/SKILL.md. Return the implementation using .claude/skills/refactoring/templates/implementation-brief.md."
