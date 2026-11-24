@@ -87,6 +87,18 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
+    for unrelated in (
+        "gallery.py",
+        "gallery_country_sweep.py",
+        "circle_map.py",
+        "gallery_page.py",
+        "centre_caption.py",
+        "country_caption.py",
+        "render_globe.py",
+    ):
+        assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
+            rendering_module.RENDER_INPUTS
+        )
     assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
         rendering_module.RENDER_INPUTS
     )
@@ -112,6 +124,22 @@ def test_render_context_hashes_source_and_configuration_files(
     source.write_text("second", encoding="utf-8")
 
     assert rendering_module.render_context_digest() != first
+
+
+def test_map_source_identity_hashes_file_contents(tmp_path: Path) -> None:
+    source = tmp_path / "terrain.tif"
+    source.write_bytes(b"first terrain")
+    first = rendering_module.source_identity((source,), {})
+
+    source.write_bytes(b"updated terrain")
+
+    updated = rendering_module.source_identity((source,), {})
+    assert updated != first
+    coastline = box(-20, -10, 20, 10)
+    outline = box(-5, -5, 5, 5)
+    assert rendering_module.map_cache_key("context", first, coastline, outline) != (
+        rendering_module.map_cache_key("context", updated, coastline, outline)
+    )
 
 
 @pytest.mark.parametrize(

@@ -112,7 +112,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      settings.
    - `circle_geometry` builds the circle cap and owns the only PROJ definition.
    - `map_frame` defines the display projection, visible extent, and graticule.
-   - `centre_caption` formats the centre for Markdown and figure titles.
+   - `centre_caption` formats the centre for Markdown output.
    - `map_layers` resolves registered terrain and context sources, loads their geometries, and owns
      the prepared layers passed to the renderer.
    - `render_map` draws figures and resolves document inputs only from keys in the answer. For a
@@ -120,6 +120,10 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      the boundary revision and digest. It derives the map extent from the outline and result circle.
      Population and boundary credits come from registry rows. The renderer measures country captions
      and credits before allocating footer space.
+
+   When changing code that affects gallery map pixels, metadata, titles, or visible credits, update
+   `RENDER_MODULES` in `gallery_rendering` and its cache-input test. Keep modules that do not affect
+   rendered maps out of that list.
 
    Build circles as azimuthal-equidistant buffers and pass them to PROJ's polygon transform
    ([ADR 0008](../decisions/0008-a-circle-is-projected-never-drawn.md)). Keep the buffer vertices and
