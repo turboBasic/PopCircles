@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -28,6 +29,8 @@ WORKFLOW = "gallery.yml"
 WORKFLOW_REF = "main"
 RUN_TIMEOUT_S = 90
 POLL_S = 3
+UPLOAD_ATTEMPTS = 3
+UPLOAD_RETRY_DELAYS = (5, 15)
 ASSET_NAME = re.compile(r"gallery-(?P<created>\d{8}T\d{12}Z)-[0-9a-f]{32}\.zip\Z")
 
 
@@ -145,11 +148,106 @@ def zip_site(site: Path, destination: Path) -> None:
 
 
 def release_assets() -> list[str]:
-    output = checked("gh", "release", "view", RELEASE_TAG, "--json", "isDraft,assets")
-    release = json.loads(output)
+    release = release_details()
     if not release["isDraft"]:
         raise PublishGalleryError(f"release {RELEASE_TAG!r} is not a draft")  # noqa: EM102, TRY003
-    return [asset["name"] for asset in release["assets"]]
+    assets = cast(list[dict[str, object]], release["assets"])
+    return [cast(str, asset["name"]) for asset in assets]
+
+
+def release_details() -> dict[str, object]:
+    output = checked("gh", "release", "view", RELEASE_TAG, "--json", "isDraft,assets")
+    return cast(dict[str, object], json.loads(output))
+
+
+def release_asset(name: str) -> dict[str, object] | None:
+    release = release_details()
+    if not release["isDraft"]:
+        raise PublishGalleryError(f"release {RELEASE_TAG!r} is not a draft")  # noqa: EM102, TRY003
+    assets = cast(list[dict[str, object]], release["assets"])
+    matches = [asset for asset in assets if asset["name"] == name]
+    if len(matches) > 1:
+        raise PublishGalleryError(f"release has multiple assets named {name!r}")  # noqa: EM102, TRY003
+    return matches[0] if matches else None
+
+
+def uploaded_asset_matches(asset: Path) -> bool | None:
+    remote = release_asset(asset.name)
+    if remote is None:
+        return None
+    digest = remote.get("digest")
+    size = remote.get("size")
+    if not isinstance(digest, str) or not isinstance(size, int):
+        message = (
+            f"cannot verify existing release asset {asset.name!r}; its size or digest is missing"
+        )
+        raise PublishGalleryError(message)
+    with asset.open("rb") as source:
+        local_digest = f"sha256:{hashlib.file_digest(source, 'sha256').hexdigest()}"
+    return size == asset.stat().st_size and digest == local_digest
+
+
+def transient_upload_error(error: PublishGalleryError) -> bool:
+    return re.search(r"\bHTTP (?:408|429|5\d{2})\b", str(error)) is not None
+
+
+def resume_uploaded_asset(asset: Path) -> bool:
+    status = uploaded_asset_matches(asset)
+    if status is True:
+        print(
+            f"Gallery: {asset.name} is already uploaded and verified",
+            file=sys.stderr,
+            flush=True,
+        )
+        return True
+    if status is False:
+        checked("gh", "release", "delete-asset", RELEASE_TAG, asset.name, "--yes")
+    return False
+
+
+def check_upload_after_timeout(asset: Path) -> bool:
+    status = uploaded_asset_matches(asset)
+    if status is True:
+        print(
+            f"Gallery: verified {asset.name} on the release after the timeout",
+            file=sys.stderr,
+            flush=True,
+        )
+        return True
+    if status is False:
+        checked("gh", "release", "delete-asset", RELEASE_TAG, asset.name, "--yes")
+    return False
+
+
+def upload_asset(asset: Path, *, resume: bool = False) -> None:
+    if resume and resume_uploaded_asset(asset):
+        return
+
+    for attempt in range(1, UPLOAD_ATTEMPTS + 1):
+        print(
+            f"Gallery: uploading {asset.name} (attempt {attempt}/{UPLOAD_ATTEMPTS})",
+            file=sys.stderr,
+            flush=True,
+        )
+        try:
+            checked("gh", "release", "upload", RELEASE_TAG, str(asset))
+        except PublishGalleryError as error:
+            if not transient_upload_error(error):
+                raise
+            if check_upload_after_timeout(asset):
+                return
+            if attempt == UPLOAD_ATTEMPTS:
+                raise
+            delay = UPLOAD_RETRY_DELAYS[attempt - 1]
+            print(
+                f"Gallery: upload timed out; retrying in {delay}s",
+                file=sys.stderr,
+                flush=True,
+            )
+            time.sleep(delay)
+        else:
+            print(f"Gallery: uploaded {asset.name}", file=sys.stderr, flush=True)
+            return
 
 
 def safe_asset_name(name: str) -> re.Match[str]:
@@ -303,6 +401,84 @@ def run_after(baseline: int, asset_name: str) -> tuple[int, str]:
     raise PublishGalleryError(message)
 
 
+def dispatch_and_watch(asset_name: str) -> None:
+    baseline = latest_run_id()
+    print(
+        f"Gallery: starting GitHub workflow {WORKFLOW} on {WORKFLOW_REF}",
+        file=sys.stderr,
+        flush=True,
+    )
+    try:
+        checked(
+            "gh",
+            "workflow",
+            "run",
+            WORKFLOW,
+            "--ref",
+            WORKFLOW_REF,
+            "--field",
+            f"asset_name={asset_name}",
+        )
+    except PublishGalleryError as error:
+        message = (
+            f"gallery workflow dispatch failed; uploaded asset {asset_name!r} remains on "
+            f"{RELEASE_TAG}: {error}"
+        )
+        raise PublishGalleryError(message) from error
+
+    print(
+        f"Gallery: waiting for the {WORKFLOW} run for {asset_name}",
+        file=sys.stderr,
+        flush=True,
+    )
+    run_id, url = run_after(baseline, asset_name)
+    print(f"Gallery: watching workflow run {url}", file=sys.stderr, flush=True)
+    try:
+        checked("gh", "run", "watch", str(run_id), "--exit-status")
+    except PublishGalleryError as error:
+        message = (
+            f"gallery deployment failed for run {url}; uploaded asset {asset_name!r} remains "
+            f"on {RELEASE_TAG}: {error}. Start a new workflow run to retry without rebuilding: "
+            f"gh workflow run {WORKFLOW} --ref {WORKFLOW_REF} --field asset_name={asset_name}"
+        )
+        raise PublishGalleryError(message) from error
+    print(f"Gallery deployed from {asset_name}: {url}")
+
+
+def retain_for_retry(asset: Path) -> Path:
+    retry_directory = BUILD / "gallery-retry"
+    retry_directory.mkdir(parents=True, exist_ok=True)
+    destination = retry_directory / asset.name
+    asset.replace(destination)
+    return destination
+
+
+def retry_publish(asset_name: str) -> None:
+    safe_asset_name(asset_name)
+    asset = BUILD / "gallery-retry" / asset_name
+    if not asset.is_file():
+        message = f"saved gallery ZIP not found at {asset}; run `mise run gallery:publish` first"
+        raise PublishGalleryError(message)
+    try:
+        with zipfile.ZipFile(asset) as archive:
+            if "index.html" not in archive.namelist() or archive.testzip() is not None:
+                raise PublishGalleryError(f"saved gallery ZIP is invalid: {asset}")  # noqa: EM102, TRY003
+    except (OSError, zipfile.BadZipFile) as error:
+        raise PublishGalleryError(f"saved gallery ZIP is invalid: {asset}") from error  # noqa: EM102, TRY003
+
+    try:
+        checked("gh", "auth", "status", "--hostname", "github.com")
+    except PublishGalleryError as error:
+        message = (
+            f"GitHub authentication is required; run `gh auth login` or provide GH_TOKEN: {error}"
+        )
+        raise PublishGalleryError(message) from error
+    ensure_draft_release()
+    upload_asset(asset, resume=True)
+    dispatch_and_watch(asset_name)
+    asset.unlink()
+
+
 def publish(*, refresh_country_sweep: bool = False) -> None:
     require_inputs()
     try:
@@ -337,41 +513,15 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
         persist_rendered_results(SITE)
         ensure_draft_release()
         try:
-            checked("gh", "release", "upload", RELEASE_TAG, str(asset))
+            upload_asset(asset)
         except PublishGalleryError as error:
-            message = f"gallery asset upload failed; existing release assets were retained: {error}"
-            raise PublishGalleryError(message) from error
-
-        baseline = latest_run_id()
-        try:
-            checked(
-                "gh",
-                "workflow",
-                "run",
-                WORKFLOW,
-                "--ref",
-                WORKFLOW_REF,
-                "--field",
-                f"asset_name={asset.name}",
-            )
-        except PublishGalleryError as error:
+            retained = retain_for_retry(asset)
             message = (
-                f"gallery workflow dispatch failed; uploaded asset {asset.name!r} remains on "
-                f"{RELEASE_TAG}: {error}"
+                f"gallery asset upload failed; saved {retained} for retry. Run `uv run "
+                f"publish-gallery retry {asset.name}`: {error}"
             )
             raise PublishGalleryError(message) from error
-
-        run_id, url = run_after(baseline, asset.name)
-        try:
-            checked("gh", "run", "watch", str(run_id), "--exit-status")
-        except PublishGalleryError as error:
-            message = (
-                f"gallery deployment failed for run {url}; uploaded asset {asset.name!r} remains "
-                f"on {RELEASE_TAG}: {error}. Start a new workflow run to retry without rebuilding: "
-                f"gh workflow run {WORKFLOW} --ref {WORKFLOW_REF} --field asset_name={asset.name}"
-            )
-            raise PublishGalleryError(message) from error
-        print(f"Gallery deployed from {asset.name}: {url}")
+        dispatch_and_watch(asset.name)
 
 
 def parse(argv: list[str] | None = None) -> argparse.Namespace:
@@ -383,6 +533,8 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
     stage_command.add_argument("asset_name")
     cleanup_command = commands.add_parser("cleanup", help="remove superseded handoff ZIP assets")
     cleanup_command.add_argument("asset_name")
+    retry_command = commands.add_parser("retry", help="upload and deploy a saved gallery ZIP")
+    retry_command.add_argument("asset_name")
     return parser.parse_args(argv)
 
 
@@ -395,6 +547,8 @@ def main(argv: list[str] | None = None) -> int:
             stage(args.asset_name)
         elif args.command == "cleanup":
             cleanup(args.asset_name)
+        elif args.command == "retry":
+            retry_publish(args.asset_name)
     except PublishGalleryError as error:
         print(f"publish-gallery: {error}", file=sys.stderr)
         return 1

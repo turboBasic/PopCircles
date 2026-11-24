@@ -446,6 +446,11 @@ def test_remote_failures_keep_existing_release_assets(
     assert "previous.zip" in assets
     if failure == "upload":
         assert assets == ["previous.zip"]
+        saved = list((pg.BUILD / "gallery-retry").glob("gallery-*.zip"))
+        assert len(saved) == 1
+        assert f"publish-gallery retry {saved[0].name}" in str(error.value)
+        with zipfile.ZipFile(saved[0]) as archive:
+            assert "index.html" in archive.namelist()
     else:
         assert len(assets) == 2  # noqa: PLR2004
         assert github.uploaded[0] in assets
@@ -455,6 +460,33 @@ def test_remote_failures_keep_existing_release_assets(
             f"--field asset_name={github.uploaded[0]}" in str(error.value)
         )
     assert not any(command[:3] == ("gh", "release", "delete-asset") for command in github.commands)
+
+
+def test_upload_retries_transient_failures_with_bounded_backoff(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    asset = tmp_path / pg.new_asset_name()
+    asset.write_bytes(b"gallery ZIP")
+    attempts = 0
+    delays: list[int] = []
+
+    def upload(*args: str) -> str:
+        del args
+        nonlocal attempts
+        attempts += 1
+        if attempts < pg.UPLOAD_ATTEMPTS:
+            message = "gh release failed: HTTP 408: upload timed out"
+            raise pg.PublishGalleryError(message)
+        return ""
+
+    monkeypatch.setattr(pg, "checked", upload)
+    monkeypatch.setattr(pg, "uploaded_asset_matches", lambda _asset: None)
+    monkeypatch.setattr(time, "sleep", delays.append)
+
+    pg.upload_asset(asset)
+
+    assert attempts == pg.UPLOAD_ATTEMPTS
+    assert delays == [5, 15]
 
 
 def test_asset_names_are_unique() -> None:
