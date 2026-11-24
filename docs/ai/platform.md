@@ -35,7 +35,13 @@ specific denial.
 
 ## AI harnesses
 
-Resolve relative paths in reused skills and personas from their source files. Follow their workflows
+Claude Code loads project skills from `.claude/skills/`; Codex discovers the same skills through this
+repository's `.agents/skills` symlink. Copilot agent profiles must name a shared skill explicitly;
+Copilot does not import Claude agent definitions.
+
+Resolve every repository path in agent and skill instructions from the repository root, regardless of
+the file containing the instruction or the harness's current directory. Markdown links are the
+exception: their targets resolve relative to the document containing the link. Follow each workflow
 with the current harness's tools. Claude Code frontmatter, hooks, and permission settings do not
 configure other harnesses. Follow a persona's editing limits in Codex; its custom agents inherit the
 parent's permissions, not Claude Code's withheld tools.
@@ -349,6 +355,7 @@ benchmarks/                      reviewed, immutable benchmark history records
 .agents/skills                   Codex skill discovery — symlink to .claude/skills
 .codex/agents/                   Codex persona adapters — routing only
 .github/copilot-instructions.md  Copilot entry point — routing only
+.github/agents/                  Copilot persona adapters — routing only
 opencode.json                    the agent's entry point — routing only
 .github/workflows/               CI
 docs/ai-instructions.md          the router: invariants and layering

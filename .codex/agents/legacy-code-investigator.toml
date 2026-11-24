@@ -1,0 +1,3 @@
+name = "legacy-code-investigator"
+description = "Read-only evidence gathering for legacy refactoring; follow the canonical Claude Code role file."
+developer_instructions = "From the repository root, read and follow .claude/agents/legacy-code-investigator.md and .claude/skills/refactoring/SKILL.md. Return the report using .claude/skills/refactoring/templates/investigation.md."
