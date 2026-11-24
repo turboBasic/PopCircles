@@ -15,12 +15,14 @@ from rasterio.merge import merge
 from rasterio.transform import from_bounds
 from rasterio.warp import reproject, transform_bounds
 
+from population_circles.circle_geometry import polygons
 from population_circles.dataset_registry import REPO_ROOT, TerrainRaster
 from population_circles.map_frame import Frame
 
 TARGET_HEIGHT = 1440
 MIN_WIDTH = 720
 MAX_WIDTH = 1800
+GEOGRAPHIC_CRS = CRS.from_epsg(4326)
 DESTINATION_NODATA = -99999.0
 HILLSHADE_AZIMUTH = 315
 HILLSHADE_ALTITUDE = 45
@@ -155,39 +157,37 @@ def prepare_terrain(
         for item, source in zip(datasets, sources, strict=True):
             _check_source(item, source)
         source_crs = cast(CRS | None, sources[0].crs) or CRS.from_epsg(datasets[0].epsg)
-        projected_bounds = transform_bounds(
-            CRS.from_string(frame.crs.to_string()),
-            source_crs,
-            *padded_bounds,
-            densify_pts=41,
-        )
-        west, south, east, north = projected_bounds
-        source_west = min(source.bounds.left for source in sources)
-        source_east = max(source.bounds.right for source in sources)
-        longitude_ranges = (
-            ((west, east),) if west <= east else ((west, source_east), (source_west, east))
-        )
-        ranges = [
-            (left, right)
-            for left, right in longitude_ranges
-            if left < right
+        footprint_bounds = [
+            transform_bounds(
+                GEOGRAPHIC_CRS,
+                source_crs,
+                *part.bounds,
+                densify_pts=41,
+            )
+            for part in polygons(frame.geographic_footprint)
+        ]
+        source_windows = [
+            bounds
+            for bounds in footprint_bounds
+            if bounds[0] < bounds[2]
+            and bounds[1] < bounds[3]
             and any(
-                left < source.bounds.right
-                and right > source.bounds.left
-                and south < source.bounds.top
-                and north > source.bounds.bottom
+                bounds[0] < source.bounds.right
+                and bounds[2] > source.bounds.left
+                and bounds[1] < source.bounds.top
+                and bounds[3] > source.bounds.bottom
                 for source in sources
             )
         ]
-        if not ranges:
+        if not source_windows:
             names = ", ".join(dataset.path for dataset in datasets)
             message = f"terrain sources {names!r} do not overlap the map frame"
             raise ValueError(message)
         destination_crs = CRS.from_string(frame.crs.to_string())
-        for left, right in ranges:
+        for source_bounds in source_windows:
             mosaic, mosaic_transform = merge(
                 sources,
-                bounds=(left, south, right, north),
+                bounds=source_bounds,
                 nodata=DESTINATION_NODATA,
                 dtype="float32",
                 method="first",

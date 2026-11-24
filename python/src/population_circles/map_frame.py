@@ -6,9 +6,13 @@ from typing import cast
 from pyproj import CRS, Transformer
 from shapely import (
     get_coordinates,
+    get_parts,
+    make_valid,
+    segmentize,
     set_precision,  # pyright: ignore[reportUnknownVariableType] — Shapely leaves this overload partially typed
     transform,
 )
+from shapely.affinity import translate
 from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -47,6 +51,7 @@ LIMB_SHAVE = 1e-4
 GRATICULE_STEP_DEG = 30
 ANTIMERIDIAN_LIMIT_DEG = 179.9
 ANTIMERIDIAN_SNAP_METRES = 25.0
+FOOTPRINT_SEGMENTS = 256
 # Each side gets this share of the content width or height when no extent is configured.
 COUNTRY_FRAME_MARGIN = 0.02
 # A meridian and a parallel are straight only in the frame they are stated in, so each is walked at
@@ -65,7 +70,46 @@ class Frame:
     # The circle and the outline of the frame itself, both already in the frame's coordinates.
     circle: BaseGeometry
     horizon: BaseGeometry
+    geographic_footprint: BaseGeometry
     country_outline: BaseGeometry | None = None
+
+
+def _geographic_footprint(
+    horizon: BaseGeometry,
+    projection_domain: BaseGeometry,
+    crs: CRS,
+    visible: BaseGeometry,
+    longitude_center: float,
+) -> BaseGeometry:
+    projected = horizon.intersection(projection_domain)
+    if projected.is_empty:
+        message = "map frame has no visible geographic footprint"
+        raise ValueError(message)
+    west, south, east, north = projected.bounds
+    max_segment_length = max(east - west, north - south) / FOOTPRINT_SEGMENTS
+    projected = segmentize(projected, max_segment_length)
+    geographic = _transform(
+        projected,
+        Transformer.from_crs(crs, CRS.from_epsg(4326), always_xy=True).transform,
+        include_z=None,
+        interleaved=False,
+    )
+
+    def unwrap(x: Iterable[float], y: Iterable[float]) -> tuple[list[float], Iterable[float]]:
+        return (
+            [longitude_center + (lon - longitude_center + 180) % 360 - 180 for lon in x],
+            y,
+        )
+
+    # Keep rings continuous across ±180 before topology operations.
+    geographic = _transform(geographic, unwrap, include_z=False, interleaved=False)
+    wrapped = unary_union(
+        [
+            translate(make_valid(geographic), xoff=shift * 360).intersection(visible)
+            for shift in (-1, 0, 1)
+        ]
+    )
+    return unary_union([part for part in get_parts(wrapped) if part.geom_type == "Polygon"])
 
 
 @dataclass(frozen=True)
@@ -96,6 +140,7 @@ def plate_carree(built: Cap) -> Frame:
         visible=WORLD,
         circle=geographic(built),
         horizon=WORLD,
+        geographic_footprint=WORLD,
     )
 
 
@@ -108,17 +153,20 @@ def orthographic(built: Cap) -> Frame:
     to_face = Transformer.from_crs(built.source, face, always_xy=True)
     limb_km = hemisphere_km(built.earth_radius_km) * (1.0 - LIMB_SHAVE)
     disc = Point(0.0, 0.0).buffer(limb_km * METRES_PER_KM, quad_segs=QUAD_SEGS)
+    horizon = _transform(disc, to_face.transform, include_z=None, interleaved=False)
+    visible = geographic(cap(built.centre, limb_km, built.earth_radius_km))
     return Frame(
         crs=face,
         to_frame=Transformer.from_crs(built.geodetic, face, always_xy=True),
-        visible=geographic(cap(built.centre, limb_km, built.earth_radius_km)),
+        visible=visible,
         circle=_transform(
             built.polygon.intersection(disc),
             to_face.transform,
             include_z=None,
             interleaved=False,
         ),
-        horizon=_transform(disc, to_face.transform, include_z=None, interleaved=False),
+        horizon=horizon,
+        geographic_footprint=visible,
     )
 
 
@@ -151,15 +199,23 @@ def country_frame(
         south = min(country_outline.bounds[1], circle.bounds[1])
         east = max(country_outline.bounds[2], circle.bounds[2])
         north = max(country_outline.bounds[3], circle.bounds[3])
+        horizon = (
+            box(*extent)
+            if extent is not None
+            else box(*_country_extent((west, south, east, north)))
+        )
         return Frame(
             crs=world.crs,
             to_frame=world.to_frame,
             visible=world.visible,
             circle=circle,
-            horizon=(
-                box(*extent)
-                if extent is not None
-                else box(*_country_extent((west, south, east, north)))
+            horizon=horizon,
+            geographic_footprint=_geographic_footprint(
+                horizon,
+                WORLD,
+                world.crs,
+                world.visible,
+                built.centre.lon,
             ),
             country_outline=country_outline,
         )
@@ -239,16 +295,31 @@ def country_frame(
         if projection == ORTHOGRAPHIC
         else WORLD
     )
+    horizon = (
+        box(*extent) if extent is not None else box(*_country_extent((west, south, east, north)))
+    )
+    projection_domain = (
+        Point(0.0, 0.0).buffer(
+            built.earth_radius_km * (1.0 - LIMB_SHAVE) * METRES_PER_KM,
+            quad_segs=QUAD_SEGS,
+        )
+        if projection == ORTHOGRAPHIC
+        else horizon
+    )
+    geographic_footprint = _geographic_footprint(
+        horizon,
+        projection_domain,
+        face,
+        visible,
+        centre.lon,
+    )
     return Frame(
         crs=face,
         to_frame=to_face,
         visible=visible,
         circle=circle,
-        horizon=(
-            box(*extent)
-            if extent is not None
-            else box(*_country_extent((west, south, east, north)))
-        ),
+        horizon=horizon,
+        geographic_footprint=geographic_footprint,
         country_outline=outline,
     )
 
