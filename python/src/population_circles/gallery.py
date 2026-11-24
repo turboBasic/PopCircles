@@ -144,11 +144,6 @@ def build_gallery_output(
     try:
         (output / "header-background.png").unlink(missing_ok=True)
         build_frontend(output)
-        print(
-            f"Gallery: rendering {len(sources)} result documents",
-            file=sys.stderr,
-            flush=True,
-        )
         for index, (source, source_payload) in enumerate(sources, start=1):
             envelope = Envelope.model_validate(source_payload)
             if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
@@ -182,6 +177,22 @@ def build_gallery_output(
                 continue
             render_jobs.extend(render_jobs_for(source, payload, index, len(sources)))
 
+        render_jobs = [
+            RenderJob(
+                job.source,
+                job.payload,
+                index,
+                len(render_jobs),
+                job.projection,
+                job.figure_suffix,
+            )
+            for index, job in enumerate(render_jobs, start=1)
+        ]
+        print(
+            f"Gallery: rendering {len(render_jobs)} maps from {len(sources)} result documents",
+            file=sys.stderr,
+            flush=True,
+        )
         drawn_results, workers, render_seconds = render_documents(render_jobs, context)
         for drawn_map, reused in drawn_results:
             drawn.append(drawn_map)
@@ -211,7 +222,8 @@ def build_gallery_output(
         (output / "gallery-data.json").unlink(missing_ok=True)
         raise
     print(
-        f"Gallery: complete ({len(drawn)} maps, {len(skipped)} skipped; "
+        f"Gallery: complete ({len(drawn)} maps from {len(sources)} result documents, "
+        f"{len(skipped)} skipped; "
         f"{reused_maps} reused, {rendered_maps} rendered)",
         file=sys.stderr,
         flush=True,
