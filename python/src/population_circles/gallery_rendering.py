@@ -6,7 +6,7 @@ import json
 import os
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, NotRequired, TypedDict, cast
 from uuid import uuid4
@@ -37,10 +37,24 @@ from population_circles.render_map import (
 )
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+RENDER_MODULES = (
+    "circle_document.py",
+    "circle_geometry.py",
+    "country_outline.py",
+    "dataset_registry.py",
+    "gallery_rendering.py",
+    "map_frame.py",
+    "map_layers.py",
+    "map_metadata.py",
+    "presentation_config.py",
+    "render_map.py",
+    "terrain.py",
+    "territory_coverage.py",
+)
 RENDER_INPUTS = tuple(
     sorted(
         [
-            *Path(__file__).parent.rglob("*.py"),
+            *(Path(__file__).with_name(name) for name in RENDER_MODULES),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "presentation.toml",
             REPO_ROOT / "data" / "registry.toml",
@@ -97,6 +111,7 @@ class MapRenderContext:
     render_text: tuple[bool, bool] = (False, False)
     data_root: Path = REPO_ROOT
     map_titles: dict[str, str] = field(default_factory=dict[str, str])
+    source_digests: dict[Path, str] = field(default_factory=dict[Path, str], repr=False)
 
 
 _WORKER_CONTEXT: contextvars.ContextVar[MapRenderContext | None] = contextvars.ContextVar(
@@ -125,6 +140,8 @@ def render_worker_count(map_count: int) -> int:
 def render_documents(
     jobs: list[RenderJob], context: MapRenderContext
 ) -> tuple[list[tuple[Drawn, bool]], int, float]:
+    if context.cache_directory is not None:
+        context = replace(context, source_digests=source_digests(jobs, context))
     workers = render_worker_count(len(jobs))
     started = time.perf_counter()
     if workers == 1:
@@ -184,6 +201,46 @@ def map_cache_key(
         digest.update(len(value).to_bytes(8, "big"))
         digest.update(value)
     return digest.hexdigest()
+
+
+def map_source_paths(sources: map_data.MapSources, root: Path) -> tuple[Path, ...]:
+    datasets = (
+        sources.terrain,
+        *sources.terrain_overlays,
+        sources.lakes,
+        sources.rivers,
+        sources.roads,
+        sources.places,
+    )
+    return tuple(dataset.file(root) for dataset in datasets)
+
+
+def source_digest(path: Path) -> str:
+    if not path.is_file():
+        return "missing"
+    with path.open("rb") as source:
+        return hashlib.file_digest(source, "sha256").hexdigest()
+
+
+def source_identity(paths: tuple[Path, ...], digests: dict[Path, str]) -> bytes:
+    return json.dumps(
+        [(path.as_posix(), digests.get(path) or source_digest(path)) for path in paths],
+        separators=(",", ":"),
+    ).encode()
+
+
+def source_digests(jobs: list[RenderJob], context: MapRenderContext) -> dict[Path, str]:
+    digests: dict[Path, str] = {}
+    for job in jobs:
+        answer = circle_of(job.payload)
+        sources = map_data.registered_map_sources(
+            context.registry,
+            answer.country.id if answer.country is not None else None,
+        )
+        for path in map_source_paths(sources, context.data_root):
+            if path not in digests:
+                digests[path] = source_digest(path)
+    return digests
 
 
 def figure_caption(answer: Answer) -> FigureCaption:
@@ -289,10 +346,13 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
         )
         payload["render_metadata"] = metadata_json_fields(answer, properties)
         outline = outline_and_credit[0] if outline_and_credit is not None else None
+        source_key = source_identity(
+            map_source_paths(map_sources, context.data_root), context.source_digests
+        )
         cache_key = (
             map_cache_key(
                 context.digest,
-                json.dumps(payload, sort_keys=True).encode(),
+                json.dumps(payload, sort_keys=True).encode() + source_key,
                 context.coastline,
                 outline,
                 projection,
