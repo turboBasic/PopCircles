@@ -438,7 +438,7 @@ def test_remote_failures_keep_existing_release_assets(
     monkeypatch.setattr(pg, "build_gallery", successful_build())
     monkeypatch.setattr(time, "sleep", no_sleep)
 
-    with pytest.raises(pg.PublishGalleryError):
+    with pytest.raises(pg.PublishGalleryError) as error:
         pg.publish()
 
     release = github.releases[0]
@@ -449,6 +449,11 @@ def test_remote_failures_keep_existing_release_assets(
     else:
         assert len(assets) == 2  # noqa: PLR2004
         assert github.uploaded[0] in assets
+    if failure == "watch":
+        assert (
+            f"gh workflow run {pg.WORKFLOW} --ref {pg.WORKFLOW_REF} "
+            f"--field asset_name={github.uploaded[0]}" in str(error.value)
+        )
     assert not any(command[:3] == ("gh", "release", "delete-asset") for command in github.commands)
 
 
@@ -556,6 +561,7 @@ def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy(
 
     assert "run-name: Gallery ${{ inputs.asset_name }}" in triggers
     assert "\non:\n  workflow_dispatch:\n    inputs:\n      asset_name:" in triggers
+    assert "cancel-in-progress: false" in workflow
     assert not any(f"\n  {event}:" in triggers for event in ("push", "pull_request", "schedule"))
     assert re.search(
         (
@@ -566,9 +572,17 @@ def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy(
     )
     assert 'run: mise run gallery:stage -- "$ASSET_NAME"' in workflow
     assert "ASSET_NAME: ${{ inputs.asset_name }}" in workflow
+    assert "  stage:\n" in workflow
+    assert "  deploy:\n    needs: stage\n" in workflow
+    assert "name=github-pages-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" in workflow
     assert re.search(
-        r"uses: actions/upload-pages-artifact@[^\n]+\n\s+with:\n\s+path: build/gallery",
+        r"uses: actions/upload-pages-artifact@[^\n]+\n\s+with:\n"
+        r"\s+name: \$\{\{ steps.artifact.outputs.name \}\}\n\s+path: build/gallery",
         workflow,
+    )
+    assert "artifact_name: ${{ needs.stage.outputs.artifact_name }}" in workflow
+    assert workflow.index("actions/upload-pages-artifact@") < workflow.index(
+        "actions/deploy-pages@"
     )
     assert workflow.index("actions/deploy-pages@") < workflow.index(
         "name: Clean superseded gallery assets"
