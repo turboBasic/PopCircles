@@ -479,8 +479,11 @@ def test_upload_retries_transient_failures_with_bounded_backoff(
             raise pg.PublishGalleryError(message)
         return ""
 
+    def no_remote_asset(_asset: Path) -> bool | None:
+        return None
+
     monkeypatch.setattr(pg, "checked", upload)
-    monkeypatch.setattr(pg, "uploaded_asset_matches", lambda _asset: None)
+    monkeypatch.setattr(pg, "uploaded_asset_matches", no_remote_asset)
     monkeypatch.setattr(time, "sleep", delays.append)
 
     pg.upload_asset(asset)
