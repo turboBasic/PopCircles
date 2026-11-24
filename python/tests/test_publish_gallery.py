@@ -608,6 +608,7 @@ def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy(
     assert 'run: mise run gallery:stage -- "$ASSET_NAME"' in workflow
     assert "ASSET_NAME: ${{ inputs.asset_name }}" in workflow
     assert "  stage:\n" in workflow
+    assert re.search(r"  stage:\n(?:.*\n)*?    permissions:\n      contents: write", workflow)
     assert "  deploy:\n    needs: stage\n" in workflow
     assert "name=github-pages-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" in workflow
     assert re.search(
