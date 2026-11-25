@@ -3,7 +3,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 from population_circles.circle_centre_text import markdown_centre, plain_centre
-from population_circles.render_map import title_of
+from population_circles.maps.render_map import title_of
 from population_circles.result_document import Answer, Settlement, circle_of
 from test_render_map import CENTRE_LAT, CENTRE_LON, country_result_document, document
 

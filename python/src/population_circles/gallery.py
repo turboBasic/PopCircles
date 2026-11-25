@@ -27,10 +27,10 @@ from population_circles.gallery_rendering import (
     render_context_digest,
     render_documents,
 )
-from population_circles.map_frame import ORTHOGRAPHIC
-from population_circles.map_layers import registered_coastline
-from population_circles.presentation_config import load as load_presentation_config
-from population_circles.render_map import OCEAN
+from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.maps.layers import registered_coastline
+from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.maps.render_map import OCEAN
 from population_circles.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.territory_share import enrich_document
 

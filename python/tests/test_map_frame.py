@@ -13,7 +13,7 @@ from population_circles.circle_geometry import (
     linestrings,
     polygons,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     GRATICULE_STEP_DEG,
     LIMB_SHAVE,
     ORTHOGRAPHIC,

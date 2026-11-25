@@ -22,8 +22,8 @@ publish-gallery = "repo_tools.publish_gallery:main"
 release-smoke = "repo_tools.release_smoke:main"
 release-trust = "repo_tools.release_trust:main"
 render-gallery = "population_circles.gallery:main"
-render-globe = "population_circles.render_globe:main"
-render-map = "population_circles.render_map:main"
+render-globe = "population_circles.maps.render_globe:main"
+render-map = "population_circles.maps.render_map:main"
 
 [build-system]
 requires = ["uv_build>=0.12,<0.14"]
@@ -78,11 +78,11 @@ ignore = [
 "python/src/population_circles/gallery_rendering.py" = [
   "T201", # render progress is Gallery command output, not incidental debug printing
 ]
-"python/src/population_circles/render_globe.py" = [
+"python/src/population_circles/maps/render_globe.py" = [
   "T201", # the path a globe was written to is this command's output, not debug printing
   "S314", # parse_svg rejects DTDs and entities before ElementTree parses generated SVG files
 ]
-"python/src/population_circles/render_map.py" = [
+"python/src/population_circles/maps/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
 ]
 "python/src/population_circles/circle_centre_text.py" = [

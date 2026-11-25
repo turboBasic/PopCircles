@@ -770,7 +770,7 @@ Identifiers are flat, sequential and never reused.
 
 - **Status** — `closed` (2026-08-19, issue #94): the citation is keyed by the document. `report`'s
   `provenance` carries the registry key of the dataset a table was built from, read out of the cache
-  header, and `python/src/population_circles/render_map.py` resolves that key rather than a constant of its
+  header, and `python/src/population_circles/maps/render_map.py` resolves that key rather than a constant of its
   own — `rg -n 'POPULATION_KEY' python/` returns nothing. Closed while still dormant: the registry carries
   one attributed row, so the Condition never fired, and what the entry guarded against is now impossible
   rather than merely absent. A document that names no dataset is refused rather than credited from a
@@ -792,7 +792,7 @@ Identifiers are flat, sequential and never reused.
   the dataset the renderer was written against rather than the one its document was answered from.
 - **Condition** — [`data/registry.toml`](../data/registry.toml) carries a second dataset **whose licence
   requires attribution**. The sweep is the count of rows with a non-empty `attribution` against the number
-  of datasets `python/src/population_circles/render_map.py` can select between: one and one today. A second
+  of datasets `python/src/population_circles/maps/render_map.py` can select between: one and one today. A second
   such dataset makes the credited dataset whichever one `POPULATION_KEY` happens to name, and a figure
   rendered from the other credits the wrong source while `python/tests/test_render_map.py` still passes —
   the test compares the drawn text against that same key's row, so it stays true of the wrong entry.

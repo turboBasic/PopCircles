@@ -27,8 +27,8 @@ from population_circles.dataset_registry import (
     country_boundary_dataset_key,
     load,
 )
-from population_circles.map_frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
-from population_circles.map_layers import UnregisteredDatasetError, basemap
+from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
+from population_circles.maps.layers import UnregisteredDatasetError, basemap
 from population_circles.result_document import Coordinate
 
 VIEW_SIZE = 512

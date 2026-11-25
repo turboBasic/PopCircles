@@ -8,10 +8,10 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import cast
 
-from population_circles import render_map
 from population_circles.country_boundaries import load_map_boundaries
 from population_circles.dataset_registry import load
-from population_circles.map_frame import PLATE_CARREE, PROJECTIONS
+from population_circles.maps import render_map
+from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
 from population_circles.result_document import circle_of
 from population_circles.territory_share import enrich_document
 

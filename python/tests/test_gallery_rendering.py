@@ -7,7 +7,7 @@ import pytest
 from shapely.geometry import box
 
 import population_circles.gallery_rendering as rendering_module
-from population_circles.map_frame import ORTHOGRAPHIC
+from population_circles.maps.frame import ORTHOGRAPHIC
 from population_circles.result_document import circle_of
 from test_gallery import (
     AVAILABLE_CPUS,
@@ -82,12 +82,16 @@ def test_map_cache_key_changes_for_each_render_input_category() -> None:
 
 
 def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
+    package = CORPUS.parent / "python" / "src" / "population_circles"
+    python_sources = [path for path in rendering_module.RENDER_INPUTS if path.suffix == ".py"]
+    assert all(path.is_file() for path in python_sources)
+    assert all(path.is_relative_to(package) for path in python_sources)
     assert CORPUS.parent / "mise.toml" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "pyproject.toml" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "map_labels.py" in (
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (
         rendering_module.RENDER_INPUTS
     )
     for unrelated in (
@@ -102,7 +106,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
             rendering_module.RENDER_INPUTS
         )
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/terrain.py" in (
         rendering_module.RENDER_INPUTS
     )
 

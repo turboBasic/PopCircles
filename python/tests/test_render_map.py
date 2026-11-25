@@ -16,11 +16,11 @@ from PIL import Image
 from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.map_labels as map_labels_module
-import population_circles.map_layers as map_layers_module
-import population_circles.map_metadata as map_metadata_module
-import population_circles.presentation_config as presentation_config_module
-import population_circles.render_map as render_map_module
+import population_circles.maps.labels as map_labels_module
+import population_circles.maps.layers as map_layers_module
+import population_circles.maps.metadata as map_metadata_module
+import population_circles.maps.presentation_config as presentation_config_module
+import population_circles.maps.render_map as render_map_module
 import population_circles.territory_share as territory_share_module
 from population_circles.circle_geometry import Cap, cap
 from population_circles.country_boundaries import BoundaryIdentityError, load_outline
@@ -33,28 +33,28 @@ from population_circles.dataset_registry import (
     load,
     parse,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
     CountryFrameSettings,
     Frame,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     country_frame as build_country_frame,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     frame as world_frame,
 )
-from population_circles.map_layers import (
+from population_circles.maps.layers import (
     COASTLINE_DATASET,
     MapLayers,
     MapSources,
     citation,
     registered_coastline,
 )
-from population_circles.presentation_config import CountryMap
-from population_circles.presentation_config import load as load_presentation_config
-from population_circles.render_map import (
+from population_circles.maps.presentation_config import CountryMap
+from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.maps.render_map import (
     COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
@@ -1232,7 +1232,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     # other case here hands `citation` a literal, so a constant put back in `main` would pass them
     # all. The fixture registry carries neither committed row, so a `main` reaching for one of those
     # cannot resolve it at all.
-    monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
+    monkeypatch.setattr("population_circles.maps.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
     original_copyright = map_metadata_module.copyright_of
@@ -1253,7 +1253,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
             map_attributions,
         )
 
-    monkeypatch.setattr("population_circles.map_metadata.copyright_of", capture_copyright)
+    monkeypatch.setattr("population_circles.maps.metadata.copyright_of", capture_copyright)
 
     named = document()
     named["provenance"]["dataset"] = "second-raster"

@@ -12,10 +12,13 @@ from matplotlib.figure import Figure
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-from population_circles import circle_map_workflow, map_layers, map_metadata, render_map
+from population_circles import circle_map_workflow
 from population_circles.circle_map_workflow import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import Registry, load
-from population_circles.map_frame import ORTHOGRAPHIC
+from population_circles.maps import layers as map_layers
+from population_circles.maps import metadata as map_metadata
+from population_circles.maps import render_map
+from population_circles.maps.frame import ORTHOGRAPHIC
 from population_circles.result_document import Answer
 from test_render_map import (
     DATASET,

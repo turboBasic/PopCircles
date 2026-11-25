@@ -19,7 +19,7 @@ from population_circles.dataset_registry import (
     TerrainRaster,
     coastline_dataset_key,
 )
-from population_circles.presentation_config import load as load_presentation_config
+from population_circles.maps.presentation_config import load as load_presentation_config
 
 COASTLINE_DATASET = coastline_dataset_key()
 

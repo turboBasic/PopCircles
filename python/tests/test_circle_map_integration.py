@@ -6,9 +6,11 @@ from typing import Any
 
 import pytest
 
-from population_circles import circle_map_workflow, map_layers, render_map
+from population_circles import circle_map_workflow
 from population_circles.circle_map_workflow import REPO_ROOT, Options, WorkflowError, workflow
 from population_circles.dataset_registry import parse
+from population_circles.maps import layers as map_layers
+from population_circles.maps import render_map
 from population_circles.result_document import SweepRecords, circle_of
 from test_render_map import (
     PNG_MAGIC,

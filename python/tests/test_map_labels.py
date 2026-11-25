@@ -6,8 +6,8 @@ from matplotlib.text import Text
 from pyproj import CRS, Transformer
 from shapely.geometry import Point, box
 
-from population_circles import map_labels
-from population_circles.map_frame import Frame
+from population_circles.maps import labels as map_labels
+from population_circles.maps.frame import Frame
 
 
 def test_city_labels_keep_priority_and_do_not_overlap() -> None:
