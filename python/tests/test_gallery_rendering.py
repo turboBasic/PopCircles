@@ -102,7 +102,6 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
         "circle_map_workflow.py",
         "gallery/page_data.py",
         "circle_centre_text.py",
-        "country_caption.py",
         "render_globe.py",
     ):
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
