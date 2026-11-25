@@ -92,6 +92,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
     assert package / "gallery" / "rendering.py" in rendering_module.RENDER_INPUTS
+    assert package / "data_config.py" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (
         rendering_module.RENDER_INPUTS
     )

@@ -21,10 +21,10 @@ from population_circles.circle_geometry import (
     hemisphere_km,
     polygons,
 )
+from population_circles.data_config import country_boundary_dataset_key
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
-    country_boundary_dataset_key,
     load,
 )
 from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project

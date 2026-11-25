@@ -41,6 +41,7 @@ RENDER_MODULES = (
     "result_document.py",
     "circle_geometry.py",
     "country_boundaries.py",
+    "data_config.py",
     "dataset_registry.py",
     "gallery/rendering.py",
     "maps/frame.py",

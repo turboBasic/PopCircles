@@ -106,6 +106,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      caption, and provenance. It rejects unknown schema versions, unsupported result kinds, non-spherical
      earth models, and documents without a dataset. The renderer needs the dataset to provide the
      required credit.
+   - `data_config` reads dataset selections from `data/config.toml` for Python rendering workflows.
    - `dataset_registry` reads `data/registry.toml`. It rejects rows whose dataset key does not match the
      file stem and supplies the attribution required for each figure.
    - `circle_map_workflow` coordinates the `circle-map` command and publishes its result document.

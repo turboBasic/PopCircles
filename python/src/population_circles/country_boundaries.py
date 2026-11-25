@@ -7,11 +7,11 @@ from typing import Any, NoReturn, cast
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
+from population_circles.data_config import country_boundary_dataset_key
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
     Registry,
-    country_boundary_dataset_key,
 )
 from population_circles.result_document import Answer, CountryIdentity
 

@@ -23,12 +23,12 @@ import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
 from population_circles.circle_map_workflow import Invoke, WorkflowError
+from population_circles.data_config import country_boundary_dataset_key
 from population_circles.dataset_registry import (
     MapContextVector,
     Registry,
     SettlementVector,
     TerrainRaster,
-    country_boundary_dataset_key,
     load,
 )
 from population_circles.gallery.build import build
