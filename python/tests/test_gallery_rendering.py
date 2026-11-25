@@ -87,6 +87,9 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "map_labels.py" in (
+        rendering_module.RENDER_INPUTS
+    )
     for unrelated in (
         "gallery.py",
         "gallery_country_sweep.py",

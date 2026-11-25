@@ -4,7 +4,7 @@ import re
 import socket
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NoReturn, cast
+from typing import Any, NoReturn
 
 import numpy as np
 import pytest
@@ -12,11 +12,11 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
-from matplotlib.text import Text
 from PIL import Image
 from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 
+import population_circles.map_labels as map_labels_module
 import population_circles.map_layers as map_layers_module
 import population_circles.map_metadata as map_metadata_module
 import population_circles.presentation_config as presentation_config_module
@@ -61,7 +61,6 @@ from population_circles.render_map import (
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
     main,
-    place_city_labels,
     render,
     render_file,
     title_of,
@@ -816,37 +815,6 @@ def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
     assert "\n" not in title
 
 
-def test_city_labels_keep_priority_and_do_not_overlap() -> None:
-    figure, axes = plt.subplots(figsize=(4, 3))
-    axes.set_xlim(0, 10)
-    axes.set_ylim(0, 10)
-    labels: list[tuple[Text, float, float, bool]] = []
-    for name, x, y, capital in (
-        ("Capital", 5.0, 5.0, True),
-        ("Nearby", 5.01, 5.0, False),
-        ("Distant", 8.0, 8.0, False),
-    ):
-        label = cast(
-            Text,
-            axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
-                name, (x, y), visible=False
-            ),
-        )
-        labels.append((label, x, y, capital))
-
-    try:
-        place_city_labels(axes, labels)
-        assert labels[0][0].get_visible()
-        assert not labels[1][0].get_visible()
-        assert labels[2][0].get_visible()
-        canvas = cast(FigureCanvasAgg, figure.canvas)
-        renderer = canvas.get_renderer()
-        bounds = [label.get_window_extent(renderer) for label, *_ in labels if label.get_visible()]
-        assert not bounds[0].overlaps(bounds[1])
-    finally:
-        plt.close(figure)
-
-
 def test_map_layers_render_in_order_below_circle_and_centre(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -909,7 +877,7 @@ def test_map_layers_render_in_order_below_circle_and_centre(
             for collection in axes.collections
         )
         assert any(
-            collection.get_zorder() == render_map_module.PLACE_LAYER
+            collection.get_zorder() == map_labels_module.PLACE_LAYER
             for collection in axes.collections
         )
         assert any(text.get_text() == "Example" for text in axes.texts)

@@ -44,6 +44,7 @@ RENDER_MODULES = (
     "dataset_registry.py",
     "gallery_rendering.py",
     "map_frame.py",
+    "map_labels.py",
     "map_layers.py",
     "map_metadata.py",
     "presentation_config.py",
