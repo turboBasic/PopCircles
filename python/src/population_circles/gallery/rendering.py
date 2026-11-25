@@ -42,7 +42,7 @@ RENDER_MODULES = (
     "circle_geometry.py",
     "country_boundaries.py",
     "dataset_registry.py",
-    "gallery_rendering.py",
+    "gallery/rendering.py",
     "maps/frame.py",
     "maps/labels.py",
     "maps/layers.py",
@@ -55,7 +55,7 @@ RENDER_MODULES = (
 RENDER_INPUTS = tuple(
     sorted(
         [
-            *(Path(__file__).parent / name for name in RENDER_MODULES),
+            *(Path(__file__).resolve().parents[1] / name for name in RENDER_MODULES),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "presentation.toml",
             REPO_ROOT / "data" / "registry.toml",

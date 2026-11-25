@@ -15,9 +15,9 @@ from rasterio.transform import from_origin
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.gallery as gallery_module
-import population_circles.gallery_country_sweep as country_sweep_module
-import population_circles.gallery_rendering as rendering_module
+import population_circles.gallery.build as gallery_module
+import population_circles.gallery.country_sweep as country_sweep_module
+import population_circles.gallery.rendering as rendering_module
 import population_circles.maps.layers as map_layers_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
@@ -31,7 +31,7 @@ from population_circles.dataset_registry import (
     country_boundary_dataset_key,
     load,
 )
-from population_circles.gallery import build
+from population_circles.gallery.build import build
 from population_circles.maps.layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,

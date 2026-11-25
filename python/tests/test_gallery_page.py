@@ -2,8 +2,8 @@ from pathlib import Path
 
 from PIL import Image
 
-from population_circles.gallery_page import page_data
-from population_circles.gallery_rendering import Drawn
+from population_circles.gallery.page_data import page_data
+from population_circles.gallery.rendering import Drawn
 
 
 def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path) -> None:

@@ -21,7 +21,7 @@ post-agent-answer = "repo_tools.post_agent_answer:main"
 publish-gallery = "repo_tools.publish_gallery:main"
 release-smoke = "repo_tools.release_smoke:main"
 release-trust = "repo_tools.release_trust:main"
-render-gallery = "population_circles.gallery:main"
+render-gallery = "population_circles.gallery.build:main"
 render-globe = "population_circles.maps.render_globe:main"
 render-map = "population_circles.maps.render_map:main"
 
@@ -72,10 +72,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"python/src/population_circles/gallery.py" = [
+"python/src/population_circles/gallery/build.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
-"python/src/population_circles/gallery_rendering.py" = [
+"python/src/population_circles/gallery/rendering.py" = [
   "T201", # render progress is Gallery command output, not incidental debug printing
 ]
 "python/src/population_circles/maps/render_globe.py" = [

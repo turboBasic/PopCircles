@@ -10,17 +10,17 @@ from urllib.parse import quote
 
 from PIL import Image, ImageChops
 
-from population_circles import gallery_country_sweep as country_sweep_module
 from population_circles.circle_map_workflow import Invoke, child, invoke_cli, require_success
 from population_circles.country_boundaries import load_map_boundaries
 from population_circles.dataset_registry import REPO_ROOT, Registry, load
-from population_circles.gallery_country_sweep import (
+from population_circles.gallery import country_sweep as country_sweep_module
+from population_circles.gallery.country_sweep import (
     HALF_SHARE,
     CountryRefresh,
     CountrySweepRequest,
 )
-from population_circles.gallery_page import page_data
-from population_circles.gallery_rendering import (
+from population_circles.gallery.page_data import page_data
+from population_circles.gallery.rendering import (
     Drawn,
     MapRenderContext,
     RenderJob,
