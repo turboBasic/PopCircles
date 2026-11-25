@@ -16,12 +16,11 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
-from population_circles import map_layers as map_data
-from population_circles.circle_document import Answer, circle_of
-from population_circles.country_outline import load_map_boundaries
+from population_circles.country_boundaries import load_map_boundaries
 from population_circles.dataset_registry import REPO_ROOT, Registry
-from population_circles.map_frame import PLATE_CARREE
-from population_circles.map_metadata import (
+from population_circles.maps import layers as map_data
+from population_circles.maps.frame import PLATE_CARREE
+from population_circles.maps.metadata import (
     copyright_of,
     description_of,
     exif_gps_packet,
@@ -29,32 +28,35 @@ from population_circles.map_metadata import (
     png_metadata,
     xmp_properties,
 )
-from population_circles.render_map import (
+from population_circles.maps.render_map import (
     other_countries,
     other_country_labels,
     render,
     title_of,
 )
+from population_circles.result_document import Answer, circle_of
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_MODULES = (
-    "circle_document.py",
+    "result_document.py",
     "circle_geometry.py",
-    "country_outline.py",
+    "country_boundaries.py",
+    "data_config.py",
     "dataset_registry.py",
-    "gallery_rendering.py",
-    "map_frame.py",
-    "map_layers.py",
-    "map_metadata.py",
-    "presentation_config.py",
-    "render_map.py",
-    "terrain.py",
-    "territory_coverage.py",
+    "gallery/rendering.py",
+    "maps/frame.py",
+    "maps/labels.py",
+    "maps/layers.py",
+    "maps/metadata.py",
+    "maps/presentation_config.py",
+    "maps/render_map.py",
+    "maps/terrain.py",
+    "territory_share.py",
 )
 RENDER_INPUTS = tuple(
     sorted(
         [
-            *(Path(__file__).with_name(name) for name in RENDER_MODULES),
+            *(Path(__file__).resolve().parents[1] / name for name in RENDER_MODULES),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "presentation.toml",
             REPO_ROOT / "data" / "registry.toml",

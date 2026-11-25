@@ -2,7 +2,7 @@ import functools
 import tomllib
 from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Literal, Self, cast
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 REGISTRY = REPO_ROOT / "data" / "registry.toml"
 SHA256_HEX_LENGTH = 64
 
-# `extra="forbid"` where `circle_document.py` uses `extra="ignore"`, and the difference is which
+# `extra="forbid"` where `result_document.py` uses `extra="ignore"`, and the difference is which
 # side of a boundary the producer sits on. That file consumes a format Rust writes and grows
 # additively, so an unknown field must not become a refusal. This file and this reader land in one
 # commit, so an unknown key is a typo — and a field added for Rust turns pytest red until the model
@@ -180,42 +180,3 @@ def parse(text: str) -> Registry:
 @functools.cache
 def load() -> Registry:
     return parse(REGISTRY.read_text(encoding="utf-8"))
-
-
-@functools.cache
-def coastline_dataset_key() -> str:
-    config = tomllib.loads((REPO_ROOT / "data" / "config.toml").read_text(encoding="utf-8"))
-    defaults = config.get("defaults")
-    if not isinstance(defaults, dict):
-        message = "data/config.toml must set defaults.coastline_dataset"
-        raise TypeError(message)
-    key = cast(dict[str, object], defaults).get("coastline_dataset")
-    if not isinstance(key, str) or not key:
-        message = "data/config.toml must set defaults.coastline_dataset"
-        raise ValueError(message)
-    return key
-
-
-@functools.cache
-def country_boundary_dataset_key() -> str:
-    config = tomllib.loads((REPO_ROOT / "data" / "config.toml").read_text(encoding="utf-8"))
-    defaults = config.get("defaults")
-    combinations = config.get("combinations")
-    if not isinstance(defaults, dict) or not isinstance(combinations, dict):
-        message = "data/config.toml must define a default country combination"
-        raise TypeError(message)
-    combinations = cast(dict[str, object], combinations)
-    name = cast(dict[str, object], defaults).get("country_combination")
-    if not isinstance(name, str) or name not in combinations:
-        message = "data/config.toml defaults.country_combination is not configured"
-        raise ValueError(message)
-    combination = combinations[name]
-    if not isinstance(combination, dict):
-        message = f"data/config.toml combination {name!r} is malformed"
-        raise TypeError(message)
-    source = cast(dict[str, object], combination).get("boundary_source")
-    prefix = "dataset:"
-    if not isinstance(source, str) or not source.startswith(prefix):
-        message = f"data/config.toml combination {name!r} must use a registered boundary dataset"
-        raise ValueError(message)
-    return source.removeprefix(prefix)

@@ -4,7 +4,7 @@ import re
 import socket
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NoReturn, cast
+from typing import Any, NoReturn
 
 import numpy as np
 import pytest
@@ -12,19 +12,18 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
-from matplotlib.text import Text
 from PIL import Image
 from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.map_layers as map_layers_module
-import population_circles.map_metadata as map_metadata_module
-import population_circles.presentation_config as presentation_config_module
-import population_circles.render_map as render_map_module
-import population_circles.territory_coverage as territory_coverage_module
-from population_circles.circle_document import Answer, Circle, circle_of
+import population_circles.maps.labels as map_labels_module
+import population_circles.maps.layers as map_layers_module
+import population_circles.maps.metadata as map_metadata_module
+import population_circles.maps.presentation_config as presentation_config_module
+import population_circles.maps.render_map as render_map_module
+import population_circles.territory_share as territory_share_module
 from population_circles.circle_geometry import Cap, cap
-from population_circles.country_outline import BoundaryIdentityError, load_outline
+from population_circles.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
@@ -34,38 +33,38 @@ from population_circles.dataset_registry import (
     load,
     parse,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
     CountryFrameSettings,
     Frame,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     country_frame as build_country_frame,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     frame as world_frame,
 )
-from population_circles.map_layers import (
+from population_circles.maps.layers import (
     COASTLINE_DATASET,
     MapLayers,
     MapSources,
     citation,
     registered_coastline,
 )
-from population_circles.presentation_config import CountryMap
-from population_circles.presentation_config import load as load_presentation_config
-from population_circles.render_map import (
+from population_circles.maps.presentation_config import CountryMap
+from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.maps.render_map import (
     COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
     main,
-    place_city_labels,
     render,
     render_file,
     title_of,
 )
+from population_circles.result_document import Answer, Circle, circle_of
 
 REGISTRY = load()
 DATASET = "population-count-2020-30arcsec"
@@ -239,7 +238,7 @@ def country_document(count: int = 1) -> dict[str, Any]:
     return result
 
 
-def country_circle_document(digest: str = "a" * 64) -> dict[str, Any]:
+def country_result_document(digest: str = "a" * 64) -> dict[str, Any]:
     result = document()
     result["document"] = "country-smallest"
     result["result"] = {
@@ -317,7 +316,7 @@ def country_fixture(
     path = registry.datasets["gisco-countries-2024-1m"].file(tmp_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
-    document = country_circle_document(registry_digest)
+    document = country_result_document(registry_digest)
     document["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
     return circle_of(document), registry, path
 
@@ -409,7 +408,7 @@ def test_a_country_result_is_not_rendered_without_its_outline() -> None:
     with pytest.raises(
         MissingCountryOutlineError, match="requires its registered boundary outline"
     ):
-        render(circle_of(country_circle_document()), PLATE_CARREE, coastline=None)
+        render(circle_of(country_result_document()), PLATE_CARREE, coastline=None)
     assert plt.get_fignums() == before
 
 
@@ -427,7 +426,7 @@ def test_country_render_uses_presentation_settings_by_canonical_id(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     country_id, centre, outline, expected_projection, expected_centre = case
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["id"] = country_id
     payload["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
     answer = circle_of(payload)
@@ -480,7 +479,7 @@ def test_country_render_rejects_an_invalid_presentation_config(
         encoding="utf-8",
     )
     monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["id"] = "US"
     payload["result"]["circle"]["centre"] = {"lat": 44.0, "lon": -96.0}
 
@@ -720,7 +719,7 @@ def test_country_figure_shows_only_the_approved_visible_footer(
 
 
 def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> None:
-    answer = circle_of(country_circle_document())
+    answer = circle_of(country_result_document())
     for registry in (
         country_boundary_registry(revision="a different snapshot"),
         country_boundary_registry(digest="b" * 64),
@@ -730,7 +729,7 @@ def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> N
 
 
 def test_country_outline_names_the_fetch_task_when_its_file_is_missing(tmp_path: Path) -> None:
-    answer = circle_of(country_circle_document())
+    answer = circle_of(country_result_document())
     with pytest.raises(FileNotFoundError, match="mise run data:get"):
         load_outline(answer, country_boundary_registry(), tmp_path)
 
@@ -790,7 +789,7 @@ nodata = -1.0
 
 
 def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["id"] = "AD"
     payload["result"]["country"]["name"] = "Andorra"
     payload["result"]["circle"].update(
@@ -816,41 +815,10 @@ def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
     assert "\n" not in title
 
 
-def test_city_labels_keep_priority_and_do_not_overlap() -> None:
-    figure, axes = plt.subplots(figsize=(4, 3))
-    axes.set_xlim(0, 10)
-    axes.set_ylim(0, 10)
-    labels: list[tuple[Text, float, float, bool]] = []
-    for name, x, y, capital in (
-        ("Capital", 5.0, 5.0, True),
-        ("Nearby", 5.01, 5.0, False),
-        ("Distant", 8.0, 8.0, False),
-    ):
-        label = cast(
-            Text,
-            axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
-                name, (x, y), visible=False
-            ),
-        )
-        labels.append((label, x, y, capital))
-
-    try:
-        place_city_labels(axes, labels)
-        assert labels[0][0].get_visible()
-        assert not labels[1][0].get_visible()
-        assert labels[2][0].get_visible()
-        canvas = cast(FigureCanvasAgg, figure.canvas)
-        renderer = canvas.get_renderer()
-        bounds = [label.get_window_extent(renderer) for label, *_ in labels if label.get_visible()]
-        assert not bounds[0].overlaps(bounds[1])
-    finally:
-        plt.close(figure)
-
-
 def test_map_layers_render_in_order_below_circle_and_centre(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    answer = circle_of(country_circle_document())
+    answer = circle_of(country_result_document())
     selected_country = box(5, 47, 15, 55)
     base_sources = fixture_map_sources("DE")
     sources = MapSources(
@@ -909,7 +877,7 @@ def test_map_layers_render_in_order_below_circle_and_centre(
             for collection in axes.collections
         )
         assert any(
-            collection.get_zorder() == render_map_module.PLACE_LAYER
+            collection.get_zorder() == map_labels_module.PLACE_LAYER
             for collection in axes.collections
         )
         assert any(text.get_text() == "Example" for text in axes.texts)
@@ -952,7 +920,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
         fixture_boundaries,
     )
     monkeypatch.setattr(
-        territory_coverage_module,
+        territory_share_module,
         "territory_share",
         fixture_territory_share,
     )
@@ -1121,7 +1089,7 @@ def test_map_title_label_replaces_the_generic_subject_and_keeps_technical_detail
 
 
 def test_country_title_names_the_country_and_population_dataset() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["circle"]["territory_share"] = TERRITORY_SHARE
     answer = circle_of(payload)
     assert title_of(answer) == (
@@ -1142,7 +1110,7 @@ def test_title_formats_territory_percentage_to_two_significant_digits() -> None:
 def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["selection"] = {
         "combination_id": "local-preview",
         "resolution": 2,
@@ -1195,7 +1163,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
 
 
 def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["boundary_dataset"] = "file:data/boundaries/local.geojson"
     payload["result"]["country"]["boundary_revision"] = None
     payload["result"]["selection"] = {
@@ -1264,7 +1232,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     # other case here hands `citation` a literal, so a constant put back in `main` would pass them
     # all. The fixture registry carries neither committed row, so a `main` reaching for one of those
     # cannot resolve it at all.
-    monkeypatch.setattr("population_circles.render_map.load", lambda: parse(TWO_ATTRIBUTED))
+    monkeypatch.setattr("population_circles.maps.render_map.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
     original_copyright = map_metadata_module.copyright_of
@@ -1285,7 +1253,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
             map_attributions,
         )
 
-    monkeypatch.setattr("population_circles.map_metadata.copyright_of", capture_copyright)
+    monkeypatch.setattr("population_circles.maps.metadata.copyright_of", capture_copyright)
 
     named = document()
     named["provenance"]["dataset"] = "second-raster"

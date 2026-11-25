@@ -17,7 +17,7 @@ from rasterio.warp import reproject, transform_bounds
 
 from population_circles.circle_geometry import polygons
 from population_circles.dataset_registry import REPO_ROOT, TerrainRaster
-from population_circles.map_frame import Frame
+from population_circles.maps.frame import Frame
 
 TARGET_HEIGHT = 1440
 MIN_WIDTH = 720

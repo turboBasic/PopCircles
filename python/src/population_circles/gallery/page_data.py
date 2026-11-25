@@ -3,7 +3,7 @@ from urllib.parse import quote
 
 from PIL import Image
 
-from population_circles.gallery_rendering import Drawn, FigureCaption
+from population_circles.gallery.rendering import Drawn, FigureCaption
 
 
 class PageFigure(TypedDict):

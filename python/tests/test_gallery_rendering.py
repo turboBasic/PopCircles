@@ -6,9 +6,9 @@ from unittest.mock import Mock
 import pytest
 from shapely.geometry import box
 
-import population_circles.gallery_rendering as rendering_module
-from population_circles.circle_document import circle_of
-from population_circles.map_frame import ORTHOGRAPHIC
+import population_circles.gallery.rendering as rendering_module
+from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.result_document import circle_of
 from test_gallery import (
     AVAILABLE_CPUS,
     CORPUS,
@@ -21,13 +21,13 @@ from test_gallery import (
     WORLD_TERRITORY_SHARE,
     document,
 )
-from test_render_map import country_circle_document
+from test_render_map import country_result_document
 
 RENDER_WORKER_COUNT = rendering_module.render_worker_count
 
 
 def test_figure_caption_includes_country_and_world_answers() -> None:
-    caption = rendering_module.figure_caption(circle_of(country_circle_document()))
+    caption = rendering_module.figure_caption(circle_of(country_result_document()))
 
     assert caption == {
         "radius_km": 200.0,
@@ -50,7 +50,7 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
     assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
     assert world_with_territory.get("territory_name") == "Earth\u2019s land area"
 
-    country = country_circle_document()
+    country = country_result_document()
     country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
     assert (
         rendering_module.figure_caption(circle_of(country)).get("territory_share")
@@ -82,24 +82,31 @@ def test_map_cache_key_changes_for_each_render_input_category() -> None:
 
 
 def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
+    package = CORPUS.parent / "python" / "src" / "population_circles"
+    python_sources = [path for path in rendering_module.RENDER_INPUTS if path.suffix == ".py"]
+    assert all(path.is_file() for path in python_sources)
+    assert all(path.is_relative_to(package) for path in python_sources)
     assert CORPUS.parent / "mise.toml" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "pyproject.toml" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
+    assert package / "gallery" / "rendering.py" in rendering_module.RENDER_INPUTS
+    assert package / "data_config.py" in rendering_module.RENDER_INPUTS
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (
+        rendering_module.RENDER_INPUTS
+    )
     for unrelated in (
-        "gallery.py",
-        "gallery_country_sweep.py",
-        "circle_map.py",
-        "gallery_page.py",
-        "centre_caption.py",
-        "country_caption.py",
+        "gallery/build.py",
+        "gallery/country_sweep.py",
+        "circle_map_workflow.py",
+        "gallery/page_data.py",
         "render_globe.py",
     ):
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
             rendering_module.RENDER_INPUTS
         )
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "terrain.py" in (
+    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/terrain.py" in (
         rendering_module.RENDER_INPUTS
     )
 

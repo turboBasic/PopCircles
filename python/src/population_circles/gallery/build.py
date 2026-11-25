@@ -10,29 +10,29 @@ from urllib.parse import quote
 
 from PIL import Image, ImageChops
 
-from population_circles import gallery_country_sweep as country_sweep_module
-from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.circle_map import Invoke, child, invoke_cli, require_success
-from population_circles.country_outline import load_map_boundaries
+from population_circles.circle_map_workflow import Invoke, child, invoke_cli, require_success
+from population_circles.country_boundaries import load_map_boundaries
 from population_circles.dataset_registry import REPO_ROOT, Registry, load
-from population_circles.gallery_country_sweep import (
+from population_circles.gallery import country_sweep as country_sweep_module
+from population_circles.gallery.country_sweep import (
     HALF_SHARE,
     CountryRefresh,
     CountrySweepRequest,
 )
-from population_circles.gallery_page import page_data
-from population_circles.gallery_rendering import (
+from population_circles.gallery.page_data import page_data
+from population_circles.gallery.rendering import (
     Drawn,
     MapRenderContext,
     RenderJob,
     render_context_digest,
     render_documents,
 )
-from population_circles.map_frame import ORTHOGRAPHIC
-from population_circles.map_layers import registered_coastline
-from population_circles.presentation_config import load as load_presentation_config
-from population_circles.render_map import OCEAN
-from population_circles.territory_coverage import enrich_document
+from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.maps.layers import registered_coastline
+from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.maps.render_map import OCEAN
+from population_circles.result_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.territory_share import enrich_document
 
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2

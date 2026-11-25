@@ -10,7 +10,17 @@ from shapely.geometry import MultiPolygon, Point, Polygon, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.circle_document import (
+from population_circles.circle_geometry import (
+    METRES_PER_KM,
+    POLE_LAT,
+    QUAD_SEGS,
+    cap,
+    geodetic_crs,
+    geographic,
+)
+from population_circles.country_boundaries import load_country_boundaries, load_map_boundaries
+from population_circles.dataset_registry import Registry, load
+from population_circles.result_document import (
     Answer,
     Caption,
     Circle,
@@ -20,16 +30,6 @@ from population_circles.circle_document import (
     Provenance,
     circle_of,
 )
-from population_circles.circle_geometry import (
-    METRES_PER_KM,
-    POLE_LAT,
-    QUAD_SEGS,
-    cap,
-    geodetic_crs,
-    geographic,
-)
-from population_circles.country_outline import load_country_boundaries, load_map_boundaries
-from population_circles.dataset_registry import Registry, load
 
 HALF_TURN_DEG = 180.0
 MAX_SOURCE_SEGMENT_DEG = 0.01

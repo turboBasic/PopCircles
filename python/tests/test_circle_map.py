@@ -12,11 +12,14 @@ from matplotlib.figure import Figure
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-from population_circles import circle_map, map_layers, map_metadata, render_map
-from population_circles.circle_document import Answer
-from population_circles.circle_map import Options, WorkflowError, parse, workflow
+from population_circles import circle_map_workflow
+from population_circles.circle_map_workflow import Options, WorkflowError, parse, workflow
 from population_circles.dataset_registry import Registry, load
-from population_circles.map_frame import ORTHOGRAPHIC
+from population_circles.maps import layers as map_layers
+from population_circles.maps import metadata as map_metadata
+from population_circles.maps import render_map
+from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.result_document import Answer
 from test_render_map import (
     DATASET,
     PNG_MAGIC,
@@ -33,7 +36,7 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(circle_map_workflow, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
@@ -155,7 +158,7 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
     if override:
         options = replace(options, document=options.document.parent / "nested" / "answer.json")
 
-    monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
+    monkeypatch.setattr(circle_map_workflow, "load_map_boundaries", intersecting_boundaries)
     monkeypatch.setattr(
         render_map,
         "enrich_document",
@@ -183,7 +186,7 @@ def test_save_failure_closes_the_figure_and_retains_the_document(
         raise OSError(message)
 
     monkeypatch.setattr(Figure, "savefig", fail)
-    monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
+    monkeypatch.setattr(circle_map_workflow, "load_map_boundaries", intersecting_boundaries)
     children = Children([0, 0])
     with pytest.raises(WorkflowError, match="render: cannot save figure"):
         workflow(options, children)
@@ -277,13 +280,13 @@ def test_actual_child_uses_checkout_argv_and_inherits_stderr(
 
     monkeypatch.setattr(subprocess, "run", capture)
     assert (
-        circle_map.invoke_cli(["table", "query", "--dataset", "literal;$(value)"]).stdout
+        circle_map_workflow.invoke_cli(["table", "query", "--dataset", "literal;$(value)"]).stdout
         == b"answer"
     )
     assert captured == [
         (
             ["mise", "run", "cli", "--", "table", "query", "--dataset", "literal;$(value)"],
-            circle_map.REPO_ROOT,
+            circle_map_workflow.REPO_ROOT,
             subprocess.PIPE,
         )
     ]
@@ -301,7 +304,7 @@ def test_main_reports_child_diagnostic_without_masking_it(
 
     monkeypatch.setattr(subprocess, "run", missing)
     assert (
-        circle_map.main(
+        circle_map_workflow.main(
             [
                 "--dataset",
                 DATASET,

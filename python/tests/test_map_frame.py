@@ -4,7 +4,6 @@ import pytest
 from shapely import get_coordinates
 from shapely.geometry import MultiPolygon, Polygon, box
 
-from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
     HALF_TURN_DEG,
     METRES_PER_KM,
@@ -14,7 +13,7 @@ from population_circles.circle_geometry import (
     linestrings,
     polygons,
 )
-from population_circles.map_frame import (
+from population_circles.maps.frame import (
     GRATICULE_STEP_DEG,
     LIMB_SHAVE,
     ORTHOGRAPHIC,
@@ -26,6 +25,7 @@ from population_circles.map_frame import (
     graticule,
     project,
 )
+from population_circles.result_document import Coordinate
 
 EARTH_RADIUS_KM = 6371.0088
 CENTRE = Coordinate(lat=25.125, lon=79.708)

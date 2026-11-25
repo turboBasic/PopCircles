@@ -10,6 +10,7 @@ from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
+from population_circles.data_config import coastline_dataset_key
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
@@ -17,9 +18,8 @@ from population_circles.dataset_registry import (
     Registry,
     SettlementVector,
     TerrainRaster,
-    coastline_dataset_key,
 )
-from population_circles.presentation_config import load as load_presentation_config
+from population_circles.maps.presentation_config import load as load_presentation_config
 
 COASTLINE_DATASET = coastline_dataset_key()
 

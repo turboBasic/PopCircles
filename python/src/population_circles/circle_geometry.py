@@ -7,7 +7,7 @@ from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, P
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.circle_document import Coordinate
+from population_circles.result_document import Coordinate
 
 METRES_PER_KM = 1000.0
 

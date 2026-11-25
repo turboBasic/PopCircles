@@ -11,7 +11,7 @@ Repository = "https://github.com/turboBasic/PopCircles"
 # The three repository tools reach their subjects through REPO_ROOT rather than an argument, so an
 # entry point is what lets a hook and a mise task call one without naming where its file sits.
 [project.scripts]
-circle-map = "population_circles.circle_map:main"
+circle-map = "population_circles.circle_map_workflow:main"
 popcircles-bench = "repo_tools.bench:main"
 capture-agent-answer = "repo_tools.capture_agent_answer:main"
 fetch-data = "repo_tools.fetch_data:main"
@@ -21,9 +21,9 @@ post-agent-answer = "repo_tools.post_agent_answer:main"
 publish-gallery = "repo_tools.publish_gallery:main"
 release-smoke = "repo_tools.release_smoke:main"
 release-trust = "repo_tools.release_trust:main"
-render-gallery = "population_circles.gallery:main"
-render-globe = "population_circles.render_globe:main"
-render-map = "population_circles.render_map:main"
+render-gallery = "population_circles.gallery.build:main"
+render-globe = "population_circles.maps.render_globe:main"
+render-map = "population_circles.maps.render_map:main"
 
 [build-system]
 requires = ["uv_build>=0.12,<0.14"]
@@ -72,21 +72,18 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"python/src/population_circles/gallery.py" = [
+"python/src/population_circles/gallery/build.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
-"python/src/population_circles/gallery_rendering.py" = [
+"python/src/population_circles/gallery/rendering.py" = [
   "T201", # render progress is Gallery command output, not incidental debug printing
 ]
-"python/src/population_circles/render_globe.py" = [
+"python/src/population_circles/maps/render_globe.py" = [
   "T201", # the path a globe was written to is this command's output, not debug printing
   "S314", # parse_svg rejects DTDs and entities before ElementTree parses generated SVG files
 ]
-"python/src/population_circles/render_map.py" = [
+"python/src/population_circles/maps/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
-]
-"python/src/population_circles/centre_caption.py" = [
-  "T201", # this command's Markdown fragment is its output, not incidental debug printing
 ]
 "python/src/repo_tools/*.py" = [
   "T201", # a lint script's findings are its output, not incidental debug printing

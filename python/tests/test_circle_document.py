@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from population_circles.circle_document import (
+from population_circles.result_document import (
     CIRCLE_KINDS,
     SCHEMA_VERSION,
     Circle,
