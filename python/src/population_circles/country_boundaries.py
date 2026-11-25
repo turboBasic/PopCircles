@@ -7,13 +7,13 @@ from typing import Any, NoReturn, cast
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.circle_document import Answer, CountryIdentity
 from population_circles.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
     Registry,
     country_boundary_dataset_key,
 )
+from population_circles.result_document import Answer, CountryIdentity
 
 
 class BoundaryIdentityError(ValueError):

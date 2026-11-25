@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 REGISTRY = REPO_ROOT / "data" / "registry.toml"
 SHA256_HEX_LENGTH = 64
 
-# `extra="forbid"` where `circle_document.py` uses `extra="ignore"`, and the difference is which
+# `extra="forbid"` where `result_document.py` uses `extra="ignore"`, and the difference is which
 # side of a boundary the producer sits on. That file consumes a format Rust writes and grows
 # additively, so an unknown field must not become a refusal. This file and this reader land in one
 # commit, so an unknown key is a typo — and a field added for Rust turns pytest red until the model

@@ -1,4 +1,4 @@
-from population_circles.circle_document import Answer
+from population_circles.result_document import Answer
 
 
 def lines_for(answer: Answer) -> list[str]:

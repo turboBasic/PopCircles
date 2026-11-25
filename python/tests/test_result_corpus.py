@@ -4,8 +4,8 @@ from typing import Any
 
 import pytest
 
-from population_circles.centre_caption import markdown_centre
-from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.circle_centre_text import markdown_centre
+from population_circles.result_document import CIRCLE_KINDS, Envelope, circle_of
 
 # The only check a committed document faces (ADR 0011), and through the reader's own boundary rather
 # than a second parser — so a schema bump fails here rather than in a gallery build.

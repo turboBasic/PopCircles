@@ -391,7 +391,7 @@ def document_contract_findings(rust_source: str, python_source: str) -> list[str
 
 def check_document_contract() -> list[Finding]:
     report = REPO_ROOT / "crates" / "popcircles" / "src" / "report.rs"
-    reader = REPO_ROOT / "python" / "src" / "population_circles" / "circle_document.py"
+    reader = REPO_ROOT / "python" / "src" / "population_circles" / "result_document.py"
     findings = document_contract_findings(
         report.read_text(encoding="utf-8"),
         reader.read_text(encoding="utf-8"),

@@ -7,8 +7,8 @@ import pytest
 from PIL import Image
 
 from population_circles import render_globe
-from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
+from population_circles.result_document import Coordinate
 
 SVG = "http://www.w3.org/2000/svg"
 

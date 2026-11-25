@@ -8,11 +8,11 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery_country_sweep as country_sweep_module
-import population_circles.territory_coverage as territory_coverage_module
-from population_circles.circle_document import Answer
-from population_circles.circle_map import WorkflowError
+import population_circles.territory_share as territory_share_module
+from population_circles.circle_map_workflow import WorkflowError
 from population_circles.dataset_registry import Registry
 from population_circles.gallery import country_documents
+from population_circles.result_document import Answer
 from test_gallery import (
     EXPECTED_COUNTRY_CLI_CALLS,
     configured_country,
@@ -72,7 +72,7 @@ def test_country_coverage_refresh_uses_saved_answers_without_running_country_swe
             )
         }
 
-    monkeypatch.setattr(territory_coverage_module, "load_country_boundaries", country_boundaries)
+    monkeypatch.setattr(territory_share_module, "load_country_boundaries", country_boundaries)
 
     missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
 

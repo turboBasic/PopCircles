@@ -1,5 +1,5 @@
-from population_circles.circle_document import Answer, circle_of
 from population_circles.country_caption import lines_for
+from population_circles.result_document import Answer, circle_of
 from test_circle_document import envelope, measured
 
 

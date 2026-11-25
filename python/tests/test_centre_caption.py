@@ -2,10 +2,10 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from population_circles.centre_caption import markdown_centre, plain_centre
-from population_circles.circle_document import Answer, Settlement, circle_of
+from population_circles.circle_centre_text import markdown_centre, plain_centre
 from population_circles.render_map import title_of
-from test_render_map import CENTRE_LAT, CENTRE_LON, country_circle_document, document
+from population_circles.result_document import Answer, Settlement, circle_of
+from test_render_map import CENTRE_LAT, CENTRE_LON, country_result_document, document
 
 DEFAULT_SETTLEMENT = Settlement(
     name="Fixture Place",
@@ -152,7 +152,7 @@ def test_long_figure_place_stays_in_the_one_line_title() -> None:
 
 
 def test_country_figure_title_uses_nested_nearest_settlement() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["circle"]["nearest_settlement"] = DEFAULT_SETTLEMENT.model_dump()
 
     title = title_of(circle_of(payload))

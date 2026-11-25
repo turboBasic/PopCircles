@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
-from population_circles.circle_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.circle_map import Invoke, WorkflowError, child, require_success
+from population_circles.circle_map_workflow import Invoke, WorkflowError, child, require_success
 from population_circles.presentation_config import load as load_presentation_config
-from population_circles.territory_coverage import enrich_document
+from population_circles.result_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.territory_share import enrich_document
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"

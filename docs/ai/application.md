@@ -102,7 +102,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    the committed basemap, dataset registry, and presentation config. The modules in `population_circles`
    divide the work:
 
-   - `circle_document` validates a document and turns it into an immutable answer with separate geometry,
+   - `result_document` validates a document and turns it into an immutable answer with separate geometry,
      caption, and provenance. It rejects unknown schema versions, unsupported result kinds, non-spherical
      earth models, and documents without a dataset. The renderer needs the dataset to provide the
      required credit.
@@ -112,7 +112,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      settings.
    - `circle_geometry` builds the circle cap and owns the only PROJ definition.
    - `map_frame` defines the display projection, visible extent, and graticule.
-   - `centre_caption` formats the centre for Markdown output.
+   - `circle_centre_text` formats the centre for Markdown output.
    - `map_layers` resolves registered terrain and context sources, loads their geometries, and owns
      the prepared layers passed to the renderer.
    - `render_map` draws figures and resolves document inputs only from keys in the answer. For a

@@ -21,10 +21,9 @@ import population_circles.map_layers as map_layers_module
 import population_circles.map_metadata as map_metadata_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
-import population_circles.territory_coverage as territory_coverage_module
-from population_circles.circle_document import Answer, Circle, circle_of
+import population_circles.territory_share as territory_share_module
 from population_circles.circle_geometry import Cap, cap
-from population_circles.country_outline import BoundaryIdentityError, load_outline
+from population_circles.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
@@ -65,6 +64,7 @@ from population_circles.render_map import (
     render_file,
     title_of,
 )
+from population_circles.result_document import Answer, Circle, circle_of
 
 REGISTRY = load()
 DATASET = "population-count-2020-30arcsec"
@@ -238,7 +238,7 @@ def country_document(count: int = 1) -> dict[str, Any]:
     return result
 
 
-def country_circle_document(digest: str = "a" * 64) -> dict[str, Any]:
+def country_result_document(digest: str = "a" * 64) -> dict[str, Any]:
     result = document()
     result["document"] = "country-smallest"
     result["result"] = {
@@ -316,7 +316,7 @@ def country_fixture(
     path = registry.datasets["gisco-countries-2024-1m"].file(tmp_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content)
-    document = country_circle_document(registry_digest)
+    document = country_result_document(registry_digest)
     document["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
     return circle_of(document), registry, path
 
@@ -408,7 +408,7 @@ def test_a_country_result_is_not_rendered_without_its_outline() -> None:
     with pytest.raises(
         MissingCountryOutlineError, match="requires its registered boundary outline"
     ):
-        render(circle_of(country_circle_document()), PLATE_CARREE, coastline=None)
+        render(circle_of(country_result_document()), PLATE_CARREE, coastline=None)
     assert plt.get_fignums() == before
 
 
@@ -426,7 +426,7 @@ def test_country_render_uses_presentation_settings_by_canonical_id(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     country_id, centre, outline, expected_projection, expected_centre = case
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["id"] = country_id
     payload["result"]["circle"]["centre"] = {"lat": centre[0], "lon": centre[1]}
     answer = circle_of(payload)
@@ -479,7 +479,7 @@ def test_country_render_rejects_an_invalid_presentation_config(
         encoding="utf-8",
     )
     monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["id"] = "US"
     payload["result"]["circle"]["centre"] = {"lat": 44.0, "lon": -96.0}
 
@@ -719,7 +719,7 @@ def test_country_figure_shows_only_the_approved_visible_footer(
 
 
 def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> None:
-    answer = circle_of(country_circle_document())
+    answer = circle_of(country_result_document())
     for registry in (
         country_boundary_registry(revision="a different snapshot"),
         country_boundary_registry(digest="b" * 64),
@@ -729,7 +729,7 @@ def test_country_outline_rejects_a_registry_source_mismatch(tmp_path: Path) -> N
 
 
 def test_country_outline_names_the_fetch_task_when_its_file_is_missing(tmp_path: Path) -> None:
-    answer = circle_of(country_circle_document())
+    answer = circle_of(country_result_document())
     with pytest.raises(FileNotFoundError, match="mise run data:get"):
         load_outline(answer, country_boundary_registry(), tmp_path)
 
@@ -789,7 +789,7 @@ nodata = -1.0
 
 
 def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["id"] = "AD"
     payload["result"]["country"]["name"] = "Andorra"
     payload["result"]["circle"].update(
@@ -818,7 +818,7 @@ def test_country_title_is_one_line_and_uses_approved_rounding() -> None:
 def test_map_layers_render_in_order_below_circle_and_centre(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    answer = circle_of(country_circle_document())
+    answer = circle_of(country_result_document())
     selected_country = box(5, 47, 15, 55)
     base_sources = fixture_map_sources("DE")
     sources = MapSources(
@@ -920,7 +920,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
         fixture_boundaries,
     )
     monkeypatch.setattr(
-        territory_coverage_module,
+        territory_share_module,
         "territory_share",
         fixture_territory_share,
     )
@@ -1089,7 +1089,7 @@ def test_map_title_label_replaces_the_generic_subject_and_keeps_technical_detail
 
 
 def test_country_title_names_the_country_and_population_dataset() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["circle"]["territory_share"] = TERRITORY_SHARE
     answer = circle_of(payload)
     assert title_of(answer) == (
@@ -1110,7 +1110,7 @@ def test_title_formats_territory_percentage_to_two_significant_digits() -> None:
 def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["selection"] = {
         "combination_id": "local-preview",
         "resolution": 2,
@@ -1163,7 +1163,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
 
 
 def test_local_country_boundary_without_a_registry_row_has_no_outline() -> None:
-    payload = country_circle_document()
+    payload = country_result_document()
     payload["result"]["country"]["boundary_dataset"] = "file:data/boundaries/local.geojson"
     payload["result"]["country"]["boundary_revision"] = None
     payload["result"]["selection"] = {

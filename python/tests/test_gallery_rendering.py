@@ -7,8 +7,8 @@ import pytest
 from shapely.geometry import box
 
 import population_circles.gallery_rendering as rendering_module
-from population_circles.circle_document import circle_of
 from population_circles.map_frame import ORTHOGRAPHIC
+from population_circles.result_document import circle_of
 from test_gallery import (
     AVAILABLE_CPUS,
     CORPUS,
@@ -21,13 +21,13 @@ from test_gallery import (
     WORLD_TERRITORY_SHARE,
     document,
 )
-from test_render_map import country_circle_document
+from test_render_map import country_result_document
 
 RENDER_WORKER_COUNT = rendering_module.render_worker_count
 
 
 def test_figure_caption_includes_country_and_world_answers() -> None:
-    caption = rendering_module.figure_caption(circle_of(country_circle_document()))
+    caption = rendering_module.figure_caption(circle_of(country_result_document()))
 
     assert caption == {
         "radius_km": 200.0,
@@ -50,7 +50,7 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
     assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
     assert world_with_territory.get("territory_name") == "Earth\u2019s land area"
 
-    country = country_circle_document()
+    country = country_result_document()
     country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
     assert (
         rendering_module.figure_caption(circle_of(country)).get("territory_share")
@@ -93,9 +93,9 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     for unrelated in (
         "gallery.py",
         "gallery_country_sweep.py",
-        "circle_map.py",
+        "circle_map_workflow.py",
         "gallery_page.py",
-        "centre_caption.py",
+        "circle_centre_text.py",
         "country_caption.py",
         "render_globe.py",
     ):

@@ -9,11 +9,11 @@ from tempfile import NamedTemporaryFile
 from typing import cast
 
 from population_circles import render_map
-from population_circles.circle_document import circle_of
-from population_circles.country_outline import load_map_boundaries
+from population_circles.country_boundaries import load_map_boundaries
 from population_circles.dataset_registry import load
 from population_circles.map_frame import PLATE_CARREE, PROJECTIONS
-from population_circles.territory_coverage import enrich_document
+from population_circles.result_document import circle_of
+from population_circles.territory_share import enrich_document
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 Invoke = Callable[[list[str]], subprocess.CompletedProcess[bytes]]

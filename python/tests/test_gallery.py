@@ -22,8 +22,7 @@ import population_circles.map_layers as map_layers_module
 import population_circles.presentation_config as presentation_config_module
 import population_circles.render_map as render_map_module
 import population_circles.terrain as terrain_module
-from population_circles.circle_document import CIRCLE_KINDS, Answer, circle_of
-from population_circles.circle_map import Invoke, WorkflowError
+from population_circles.circle_map_workflow import Invoke, WorkflowError
 from population_circles.dataset_registry import (
     MapContextVector,
     Registry,
@@ -44,6 +43,7 @@ from population_circles.map_layers import (
 from population_circles.map_layers import (
     registered_map_sources as real_registered_map_sources,
 )
+from population_circles.result_document import CIRCLE_KINDS, Answer, circle_of
 from test_render_map import (
     fixture_map_layers,
     fixture_registered_map_sources,

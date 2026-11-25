@@ -11,7 +11,7 @@ Repository = "https://github.com/turboBasic/PopCircles"
 # The three repository tools reach their subjects through REPO_ROOT rather than an argument, so an
 # entry point is what lets a hook and a mise task call one without naming where its file sits.
 [project.scripts]
-circle-map = "population_circles.circle_map:main"
+circle-map = "population_circles.circle_map_workflow:main"
 popcircles-bench = "repo_tools.bench:main"
 capture-agent-answer = "repo_tools.capture_agent_answer:main"
 fetch-data = "repo_tools.fetch_data:main"
@@ -85,7 +85,7 @@ ignore = [
 "python/src/population_circles/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
 ]
-"python/src/population_circles/centre_caption.py" = [
+"python/src/population_circles/circle_centre_text.py" = [
   "T201", # this command's Markdown fragment is its output, not incidental debug printing
 ]
 "python/src/repo_tools/*.py" = [

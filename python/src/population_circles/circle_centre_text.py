@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from urllib.parse import urlencode
 
-from population_circles.circle_document import Answer, circle_of
+from population_circles.result_document import Answer, circle_of
 
 
 def coordinate_text(answer: Answer) -> str:

@@ -14,7 +14,6 @@ from shapely.geometry import MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
-from population_circles.circle_document import Coordinate
 from population_circles.circle_geometry import (
     HALF_TURN_DEG,
     POLE_LAT,
@@ -30,6 +29,7 @@ from population_circles.dataset_registry import (
 )
 from population_circles.map_frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 from population_circles.map_layers import UnregisteredDatasetError, basemap
+from population_circles.result_document import Coordinate
 
 VIEW_SIZE = 512
 VIEW_CENTRE = VIEW_SIZE / 2
