@@ -323,18 +323,6 @@ mise run render -- --input results/country-gpw-2020-gisco-2024-2-AD-half.json --
 Fetch the boundary vector with `mise run data:get` when it is absent. Existing world documents need no
 country boundary file.
 
-Circle documents carry their nearest settlement, so a figure title can name it without opening the
-fetched places file. Markdown centre fragments use the same decision and link the circle's centre to
-OpenStreetMap. After `mise run data:get` and a circle search, format a document with:
-
-```sh
-uv run python -m population_circles.centre_caption --input results/world-half-30arcsec.json
-# [28.84 N, 100.66 E](https://www.openstreetmap.org/?mlat=28.8375&mlon=100.66250000000002) (192 km from Xichang, China)
-```
-
-Older documents and centres without a nearby settlement still produce a linked coordinate. Rendering
-and formatting need the document, basemap and dataset registry; they do not need the settlement file.
-
 ## Publishing the gallery
 
 For a local preview, use a temporary copy of `results/`:

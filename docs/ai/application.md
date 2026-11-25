@@ -111,7 +111,6 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      file stem and supplies the attribution required for each figure.
    - `circle_map_workflow` coordinates the `circle-map` command and publishes its result document.
    - `circle_geometry` builds the circle cap and owns the only PROJ definition.
-   - `circle_centre_text` formats the centre for Markdown output.
    - `maps.presentation_config` reads `data/presentation.toml`, which owns renderer text and country
      display settings.
    - `maps.frame` defines the display projection, visible extent, and graticule.
