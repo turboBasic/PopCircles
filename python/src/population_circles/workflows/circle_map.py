@@ -1,6 +1,4 @@
 import json
-import subprocess
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -12,9 +10,13 @@ from population_circles.maps import render_map
 from population_circles.maps.frame import PLATE_CARREE
 from population_circles.result_document import circle_of
 from population_circles.territory_share import enrich_document
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-Invoke = Callable[[list[str]], subprocess.CompletedProcess[bytes]]
+from population_circles.workflows.rust_cli import (
+    Invoke,
+    WorkflowError,
+    child,
+    invoke_cli,
+    require_success,
+)
 
 
 @dataclass(frozen=True)
@@ -29,33 +31,6 @@ class Options:
     spacing: str | None = None
     projection: str = PLATE_CARREE
     no_coastlines: bool = False
-
-
-class WorkflowError(Exception):
-    pass
-
-
-def invoke_cli(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
-    return subprocess.run(  # noqa: S603 — argument vector, never a shell
-        ["mise", "run", "cli", "--", *arguments],  # noqa: S607 — checkout's mise task
-        cwd=REPO_ROOT,
-        stdout=subprocess.PIPE,
-        check=False,
-    )
-
-
-def child(stage: str, arguments: list[str], invoke: Invoke) -> subprocess.CompletedProcess[bytes]:
-    try:
-        return invoke(arguments)
-    except OSError as error:
-        message = f"{stage}: could not launch Rust CLI: {error}"
-        raise WorkflowError(message) from error
-
-
-def require_success(stage: str, result: subprocess.CompletedProcess[bytes]) -> None:
-    if result.returncode != 0:
-        message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
-        raise WorkflowError(message)
 
 
 def check_destinations(options: Options) -> None:

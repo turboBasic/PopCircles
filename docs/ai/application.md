@@ -109,7 +109,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    - `data_config` reads dataset selections from `data/config.toml` for Python rendering workflows.
    - `dataset_registry` reads `data/registry.toml`. It rejects rows whose dataset key does not match the
      file stem and supplies the attribution required for each figure.
-   - `circle_map_workflow` coordinates the `circle-map` command and publishes its result document.
+   - `workflows/circle_map.py` coordinates `visualizer map` and publishes its result document.
    - `circle_geometry` builds the circle cap and owns the only PROJ definition.
    - `maps.presentation_config` reads `data/presentation.toml`, which owns renderer text and country
      display settings.

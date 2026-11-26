@@ -9,10 +9,10 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery.country_sweep as country_sweep_module
 import population_circles.territory_share as territory_share_module
-from population_circles.circle_map_workflow import WorkflowError
 from population_circles.dataset_registry import Registry
 from population_circles.gallery.build import country_documents
 from population_circles.result_document import Answer
+from population_circles.workflows.rust_cli import WorkflowError
 from test_gallery import (
     EXPECTED_COUNTRY_CLI_CALLS,
     configured_country,

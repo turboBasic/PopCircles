@@ -4,9 +4,10 @@ from unittest.mock import Mock
 from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
-from population_circles import circle_map_workflow, cli
+from population_circles import cli
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
+from population_circles.workflows import circle_map
 
 runner = CliRunner()
 INVALID_ARGUMENT_EXIT = 2
@@ -51,7 +52,7 @@ def test_map_rejects_invalid_projection() -> None:
 
 def test_map_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch) -> None:
     workflow = Mock()
-    monkeypatch.setattr(circle_map_workflow, "workflow", workflow)
+    monkeypatch.setattr(circle_map, "workflow", workflow)
     document = Path("other.json")
 
     result = runner.invoke(
@@ -82,7 +83,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
     render_file = Mock()
     render_command = Mock(return_value=Path("globe.svg"))
     gallery = Mock(return_value=([], []))
-    monkeypatch.setattr(circle_map_workflow, "workflow", workflow)
+    monkeypatch.setattr(circle_map, "workflow", workflow)
     monkeypatch.setattr(render_map, "render_file", render_file)
     monkeypatch.setattr(render_globe, "render_command", render_command)
     monkeypatch.setattr(gallery_build, "build", gallery)

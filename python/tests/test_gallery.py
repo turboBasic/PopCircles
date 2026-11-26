@@ -24,7 +24,6 @@ import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
 from population_circles import cli
-from population_circles.circle_map_workflow import Invoke, WorkflowError
 from population_circles.data_config import country_boundary_dataset_key
 from population_circles.dataset_registry import (
     MapContextVector,
@@ -46,6 +45,7 @@ from population_circles.maps.layers import (
     registered_map_sources as real_registered_map_sources,
 )
 from population_circles.result_document import CIRCLE_KINDS, Answer, circle_of
+from population_circles.workflows.rust_cli import Invoke, WorkflowError
 from test_render_map import (
     fixture_map_layers,
     fixture_registered_map_sources,

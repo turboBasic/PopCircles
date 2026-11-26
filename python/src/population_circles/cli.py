@@ -4,10 +4,10 @@ from typing import Annotated
 
 import typer
 
-from population_circles import circle_map_workflow
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
+from population_circles.workflows import circle_map, rust_cli
 
 app = typer.Typer(no_args_is_help=True)
 render_app = typer.Typer(no_args_is_help=True)
@@ -38,7 +38,7 @@ def map_command(
         message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
         raise typer.BadParameter(message)
     search_document = document if document is not None else output.with_suffix(".json")
-    options = circle_map_workflow.Options(
+    options = circle_map.Options(
         dataset=dataset,
         share=share,
         cache=cache,
@@ -50,15 +50,15 @@ def map_command(
         projection=projection,
         no_coastlines=no_coastlines,
     )
-    if Path.cwd().resolve() != circle_map_workflow.REPO_ROOT:
+    if Path.cwd().resolve() != rust_cli.REPO_ROOT:
         typer.echo(
-            f"visualizer map: run from the checkout root: {circle_map_workflow.REPO_ROOT}",
+            f"visualizer map: run from the checkout root: {rust_cli.REPO_ROOT}",
             err=True,
         )
         raise typer.Exit(1)
     try:
-        circle_map_workflow.workflow(options)
-    except circle_map_workflow.WorkflowError as error:
+        circle_map.workflow(options)
+    except rust_cli.WorkflowError as error:
         typer.echo(f"visualizer map: {error}", err=True)
         raise typer.Exit(1) from error
     typer.echo(f"image: {options.output}\ndocument: {options.document}")
