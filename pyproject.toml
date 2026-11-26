@@ -48,6 +48,7 @@ dev = [
   "resvg-py>=0.5.0",
   "ruff>=0.16.2",
   "shapely>=2.1.2",
+  "typer>=0.20.0",
 ]
 
 [tool.ruff]
@@ -72,6 +73,11 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"python/src/population_circles/cli.py" = [
+  "FBT002",  # Typer maps boolean CLI flags to function parameters with false defaults.
+  "PLR0913", # Typer exposes each CLI option as a separate handler parameter.
+  "PLR0917", # Typer invokes handlers with each parsed CLI option as an argument.
+]
 "python/src/population_circles/gallery/build.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
