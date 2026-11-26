@@ -100,17 +100,23 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    probes.
 5. **Rendering.** Python renders published documents in a separate layer from the Rust search. It reads
    the committed basemap, dataset registry, and presentation config. The modules in `population_circles`
-   divide the work:
+   divide the work behind one Typer app, `visualizer`:
 
-   - `result_document` validates a document and turns it into an immutable answer with separate geometry,
-     caption, and provenance. It rejects unknown schema versions, unsupported result kinds, non-spherical
-     earth models, and documents without a dataset. The renderer needs the dataset to provide the
-     required credit.
-   - `data_config` reads dataset selections from `data/config.toml` for Python rendering workflows.
-   - `dataset_registry` reads `data/registry.toml`. It rejects rows whose dataset key does not match the
-     file stem and supplies the attribution required for each figure.
-   - `workflows/circle_map.py` coordinates `visualizer map` and publishes its result document.
-   - `circle_geometry` builds the circle cap and owns the only PROJ definition.
+   - `cli.py` defines the command tree: `visualizer map`, `visualizer render map`,
+     `visualizer render globe`, and `visualizer gallery build`. It parses options and dispatches to
+     the feature modules; workflow and rendering logic stays outside the CLI.
+   - `workflows/` coordinates search, document publication, and Rust subprocess calls.
+     `workflows/circle_map.py` implements `visualizer map`; `workflows/rust_cli.py` owns its Rust
+     process boundary.
+   - `data/` reads dataset selections from `data/config.toml` and validates `data/registry.toml`.
+     The registry rejects rows whose dataset key does not match the file stem and supplies the
+     attribution required for each figure.
+   - `documents/result_document.py` validates a document and turns it into an immutable answer with
+     separate geometry, caption, and provenance. It rejects unknown schema versions, unsupported
+     result kinds, non-spherical earth models, and documents without a dataset. The renderer needs the
+     dataset to provide the required credit.
+   - `geography/` owns circle geometry, country-boundary loading, and territory-share calculations.
+     `geography/circle_geometry.py` builds the circle cap and owns the only PROJ definition.
    - `maps.presentation_config` reads `data/presentation.toml`, which owns renderer text and country
      display settings.
    - `maps.frame` defines the display projection, visible extent, and graticule.
@@ -123,8 +129,8 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
      and credits before allocating footer space.
    - `maps.render_globe` is the separate globe renderer; the two renderers share the map frame and
      layer preparation in `maps/`.
-   - `gallery.build` coordinates the Gallery build and uses `gallery.country_sweep` for country results.
-     `gallery.rendering` draws and caches Gallery figures; `gallery.page_data` builds frontend page data.
+   - `gallery/` coordinates the Gallery build and country sweep, draws and caches Gallery figures,
+     and builds frontend page data.
 
    When changing code that affects Gallery map pixels, metadata, titles, or visible credits, update
    `RENDER_MODULES` in `gallery/rendering.py` and its cache-input test. Keep modules that do not affect

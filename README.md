@@ -83,9 +83,10 @@ The [gallery][gallery] shows maps generated from result files in `results/`, inc
 framed 50% country circle for each available country result. Publish it with `mise run gallery:publish`.
 Each caption shows the circle's population share, radius and centre. See [the gallery publishing
 instructions][usage] for setup.
-The Python `circle-map` workflow coordinates search and map output. Shared map presentation lives in
-`population_circles.maps`, while `population_circles.gallery` builds the static Gallery, country sweep,
-map cache and page data.
+The Python application CLI is `visualizer`, with `map`, `render map`, `render globe`, and
+`gallery build` commands. Its `workflows` coordinate search and map output; shared map presentation
+lives in `population_circles.maps`, while `population_circles.gallery` builds the static Gallery,
+country sweep, map cache and page data.
 The [frontend reference](docs/ai/frontend.md#behaviour) defines browser interactions and links them to
 verification.
 
