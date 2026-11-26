@@ -740,7 +740,6 @@ def test_an_unknown_terminal_projection_exits_two() -> None:
     result = cli_runner.invoke(
         cli.app,
         [
-            "render",
             "map",
             "--input",
             "unused.json",
@@ -1200,7 +1199,7 @@ def test_a_complete_figure_is_written_where_it_is_told(
     use_coastline_fixture(tmp_path, monkeypatch)
 
     argv = ["--input", str(source), "--output", str(output), "--projection", projection]
-    result = cli_runner.invoke(cli.app, ["render", "map", *argv])
+    result = cli_runner.invoke(cli.app, ["map", *argv])
     assert result.exit_code == 0, result.output
     assert output.read_bytes().startswith(PNG_MAGIC)
 
@@ -1237,7 +1236,6 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     result = cli_runner.invoke(
         cli.app,
         [
-            "render",
             "map",
             "--input",
             str(source),
@@ -1291,7 +1289,6 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
         cli_runner.invoke(
             cli.app,
             [
-                "render",
                 "map",
                 "--input",
                 str(source),

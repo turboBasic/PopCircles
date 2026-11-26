@@ -4,7 +4,8 @@ from typing import Annotated
 
 import typer
 
-from population_circles.applications import circle_map, population_engine
+from population_circles.applications import circle_map, popcircles_cli
+from population_circles.applications.errors import PopulationApplicationError
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
@@ -36,7 +37,7 @@ def circle_command(
         message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
         raise typer.BadParameter(message)
     search_document = document if document is not None else output.with_suffix(".json")
-    options = circle_map.Options(
+    circle_map_request = circle_map.CircleMapRequest(
         dataset=dataset,
         share=share,
         cache=cache,
@@ -48,18 +49,18 @@ def circle_command(
         projection=projection,
         no_coastlines=no_coastlines,
     )
-    if Path.cwd().resolve() != population_engine.REPO_ROOT:
+    if Path.cwd().resolve() != popcircles_cli.REPO_ROOT:
         typer.echo(
-            f"visualizer circle: run from the checkout root: {population_engine.REPO_ROOT}",
+            f"visualizer circle: run from the checkout root: {popcircles_cli.REPO_ROOT}",
             err=True,
         )
         raise typer.Exit(1)
     try:
-        circle_map.search_and_render_circle_map(options)
-    except population_engine.WorkflowError as error:
+        circle_map.search_and_render_circle_map(circle_map_request)
+    except PopulationApplicationError as error:
         typer.echo(f"visualizer circle: {error}", err=True)
         raise typer.Exit(1) from error
-    typer.echo(f"image: {options.output}\ndocument: {options.document}")
+    typer.echo(f"image: {circle_map_request.output}\ndocument: {circle_map_request.document}")
 
 
 @app.command("map", help="Render a map from an existing result document.")

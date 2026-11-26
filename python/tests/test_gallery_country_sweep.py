@@ -9,7 +9,7 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery.country_sweep as country_sweep_module
 import population_circles.geography.territory_share as territory_share_module
-from population_circles.applications.population_engine import WorkflowError
+from population_circles.applications.errors import PopulationApplicationError
 from population_circles.data.dataset_registry import Registry
 from population_circles.documents.result_document import Answer
 from population_circles.gallery.build import country_documents
@@ -97,7 +97,7 @@ def test_country_coverage_refresh_requires_a_valid_saved_sweep(tmp_path: Path) -
     countries = [configured_country("AA", "Alpha")]
     invoke, calls = country_cli(countries, [swept_country("AA", "Alpha")])
 
-    with pytest.raises(WorkflowError, match="requires a valid saved country sweep"):
+    with pytest.raises(PopulationApplicationError, match="requires a valid saved country sweep"):
         country_documents(invoke, tmp_path / "missing", country_refresh="coverage")
 
     assert calls == [["country", "list"]]

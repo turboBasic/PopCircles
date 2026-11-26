@@ -14,9 +14,12 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 from population_circles import cli
-from population_circles.applications import circle_map, population_engine
-from population_circles.applications.circle_map import Options, search_and_render_circle_map
-from population_circles.applications.population_engine import WorkflowError
+from population_circles.applications import circle_map, popcircles_cli
+from population_circles.applications.circle_map import (
+    CircleMapRequest,
+    search_and_render_circle_map,
+)
+from population_circles.applications.errors import PopulationApplicationError
 from population_circles.data.dataset_registry import Registry, load
 from population_circles.documents.result_document import Answer
 from population_circles.maps import layers as map_layers
@@ -46,10 +49,10 @@ def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def options(tmp_path: Path) -> Options:
+def options(tmp_path: Path) -> CircleMapRequest:
     output = tmp_path / "figure.png"
     document_path = output.with_suffix(".json")
-    return Options(
+    return CircleMapRequest(
         dataset=DATASET,
         share="50",
         cache=tmp_path / "cache",
@@ -70,12 +73,22 @@ class Children:
         self.stdout = json.dumps(document()).encode() if stdout is None else stdout
         self.calls: list[list[str]] = []
 
-    def __call__(self, arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+    def __call__(
+        self,
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
         self.calls.append(arguments)
-        return subprocess.CompletedProcess(arguments, next(self.codes), self.stdout)
+        result = subprocess.CompletedProcess(arguments, next(self.codes), self.stdout)
+        if result.returncode not in accepted_exit_codes:
+            message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
+            raise PopulationApplicationError(message)
+        return result
 
 
-def test_reuse_forwards_every_parameter_and_draws_this_document(options: Options) -> None:
+def test_reuse_forwards_every_parameter_and_draws_this_document(options: CircleMapRequest) -> None:
     options = replace(options, decimate="10", spacing="4", projection=ORTHOGRAPHIC)
     children = Children([0, 0])
     search_and_render_circle_map(options, children)
@@ -103,17 +116,17 @@ def test_reuse_forwards_every_parameter_and_draws_this_document(options: Options
 
 
 @pytest.mark.parametrize("code", [1, 2, 4, -9])
-def test_a_failed_probe_never_builds_or_renders(options: Options, code: int) -> None:
+def test_a_failed_probe_never_builds_or_renders(options: CircleMapRequest, code: int) -> None:
     options.document.write_text("older document")
     children = Children([code])
-    with pytest.raises(WorkflowError, match="cache probe: Rust CLI exited"):
+    with pytest.raises(PopulationApplicationError, match="cache probe: Rust CLI exited"):
         search_and_render_circle_map(options, children)
     assert len(children.calls) == 1
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
 
 
-def test_only_a_missing_or_incompatible_probe_builds(options: Options) -> None:
+def test_only_a_missing_or_incompatible_probe_builds(options: CircleMapRequest) -> None:
     children = Children([3, 0, 0])
     search_and_render_circle_map(options, children)
     common = ["--dataset", DATASET, "--cache", str(options.cache), "--decimate", "1"]
@@ -129,13 +142,13 @@ def test_only_a_missing_or_incompatible_probe_builds(options: Options) -> None:
     ("codes", "stage"), [([3, 3], "table build"), ([0, 3], "search"), ([3, 0, 1], "search")]
 )
 def test_failed_build_or_search_keeps_the_previous_document(
-    options: Options,
+    options: CircleMapRequest,
     codes: list[int],
     stage: str,
 ) -> None:
     options.document.write_text("older document")
     children = Children(codes)
-    with pytest.raises(WorkflowError, match=f"{stage}: Rust CLI exited"):
+    with pytest.raises(PopulationApplicationError, match=f"{stage}: Rust CLI exited"):
         search_and_render_circle_map(options, children)
     assert len(children.calls) == len(codes)
     assert options.document.read_text() == "older document"
@@ -143,9 +156,11 @@ def test_failed_build_or_search_keeps_the_previous_document(
 
 
 @pytest.mark.parametrize("payload", [b"", b"{", b"[]", b'{"schema_version":99}'])
-def test_rejected_documents_are_retained_and_never_drawn(options: Options, payload: bytes) -> None:
+def test_rejected_documents_are_retained_and_never_drawn(
+    options: CircleMapRequest, payload: bytes
+) -> None:
     options.document.write_text("older document")
-    with pytest.raises(WorkflowError, match=r"render:.*") as caught:
+    with pytest.raises(PopulationApplicationError, match=r"render:.*") as caught:
         search_and_render_circle_map(options, Children([0, 0], payload))
     assert str(options.document) in str(caught.value)
     assert options.document.read_bytes() == payload
@@ -154,7 +169,7 @@ def test_rejected_documents_are_retained_and_never_drawn(options: Options, paylo
 
 @pytest.mark.parametrize("override", [False, True])
 def test_a_render_failure_keeps_this_runs_enriched_document(
-    options: Options, monkeypatch: pytest.MonkeyPatch, *, override: bool
+    options: CircleMapRequest, monkeypatch: pytest.MonkeyPatch, *, override: bool
 ) -> None:
     if override:
         options = replace(options, document=options.document.parent / "nested" / "answer.json")
@@ -167,7 +182,8 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
     )
     children = Children([0, 0])
     with pytest.raises(
-        WorkflowError, match=r"unsupported projection.*current search document retained"
+        PopulationApplicationError,
+        match=r"unsupported projection.*current search document retained",
     ) as caught:
         search_and_render_circle_map(replace(options, projection="unknown"), children)
     assert str(options.document) in str(caught.value)
@@ -177,7 +193,7 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
 
 
 def test_save_failure_closes_the_figure_and_retains_the_document(
-    options: Options,
+    options: CircleMapRequest,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     before = plt.get_fignums()
@@ -189,13 +205,15 @@ def test_save_failure_closes_the_figure_and_retains_the_document(
     monkeypatch.setattr(Figure, "savefig", fail)
     monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
     children = Children([0, 0])
-    with pytest.raises(WorkflowError, match="render: cannot save figure"):
+    with pytest.raises(PopulationApplicationError, match="render: cannot save figure"):
         search_and_render_circle_map(options, children)
     assert "territory_share" in json.loads(options.document.read_bytes())["result"]
     assert plt.get_fignums() == before
 
 
-def test_draw_failure_closes_the_figure(options: Options, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_draw_failure_closes_the_figure(
+    options: CircleMapRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
     before = plt.get_fignums()
 
     def fail(*_args: object) -> None:
@@ -203,7 +221,7 @@ def test_draw_failure_closes_the_figure(options: Options, monkeypatch: pytest.Mo
         raise ValueError(message)
 
     monkeypatch.setattr(render_map, "draw", fail)
-    with pytest.raises(WorkflowError, match="render: cannot draw geometry"):
+    with pytest.raises(PopulationApplicationError, match="render: cannot draw geometry"):
         search_and_render_circle_map(options, Children([0, 0]))
     assert plt.get_fignums() == before
 
@@ -212,7 +230,7 @@ def test_draw_failure_closes_the_figure(options: Options, monkeypatch: pytest.Mo
     "collision", ["output-document", "output-ledger", "document-ledger", "hardlink"]
 )
 def test_colliding_destinations_are_refused_before_children(
-    options: Options,
+    options: CircleMapRequest,
     collision: Literal["output-document", "output-ledger", "document-ledger", "hardlink"],
 ) -> None:
     match collision:
@@ -226,13 +244,16 @@ def test_colliding_destinations_are_refused_before_children(
             options.output.touch()
             options.document.hardlink_to(options.output)
     children = Children([])
-    with pytest.raises(WorkflowError, match="destinations: image, document and ledger must differ"):
+    with pytest.raises(
+        PopulationApplicationError,
+        match="destinations: image, document and ledger must differ",
+    ):
         search_and_render_circle_map(options, children)
     assert children.calls == []
 
 
 def test_publication_failure_preserves_the_existing_document(
-    options: Options,
+    options: CircleMapRequest,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     options.document.write_text("older document")
@@ -242,23 +263,29 @@ def test_publication_failure_preserves_the_existing_document(
         raise PermissionError(message)
 
     monkeypatch.setattr(Path, "replace", fail)
-    with pytest.raises(WorkflowError, match=r"document publication:.*replace denied"):
+    with pytest.raises(PopulationApplicationError, match=r"document publication:.*replace denied"):
         search_and_render_circle_map(options, Children([0, 0]))
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
     assert list(options.document.parent.glob(f".{options.document.name}.*")) == []
 
 
-def test_missing_executable_reports_the_launch_stage(options: Options) -> None:
-    def missing(_arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+def test_missing_executable_reports_the_launch_stage(
+    options: CircleMapRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def missing(*_args: object, **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
         message = "missing mise executable"
         raise FileNotFoundError(message)
 
-    with pytest.raises(WorkflowError, match="cache probe: could not launch Rust CLI: missing mise"):
-        search_and_render_circle_map(options, missing)
+    monkeypatch.setattr(subprocess, "run", missing)
+    with pytest.raises(
+        PopulationApplicationError,
+        match="cache probe: could not launch Rust CLI: missing mise",
+    ):
+        search_and_render_circle_map(options)
 
 
-def test_invoke_runs_from_checkout_and_inherits_stderr(
+def test_invoke_popcircles_cli_runs_from_checkout_and_inherits_stderr(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured: list[tuple[list[str], Path, int]] = []
@@ -272,7 +299,9 @@ def test_invoke_runs_from_checkout_and_inherits_stderr(
 
     monkeypatch.setattr(subprocess, "run", capture)
     assert (
-        population_engine.invoke(["table", "query", "--dataset", "literal;$(value)"]).stdout
+        popcircles_cli.invoke_popcircles_cli(
+            "table query", ["table", "query", "--dataset", "literal;$(value)"]
+        ).stdout
         == b"answer"
     )
     assert captured == [
@@ -287,14 +316,25 @@ def test_invoke_runs_from_checkout_and_inherits_stderr(
                 "--dataset",
                 "literal;$(value)",
             ],
-            population_engine.REPO_ROOT,
+            popcircles_cli.REPO_ROOT,
             subprocess.PIPE,
         )
     ]
 
 
+def test_invoke_popcircles_cli_rejects_unaccepted_return_codes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(arguments: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(arguments, 7, b"diagnostic")
+
+    monkeypatch.setattr(subprocess, "run", fail)
+    with pytest.raises(PopulationApplicationError, match="table build: Rust CLI exited 7"):
+        popcircles_cli.invoke_popcircles_cli("table build", ["table", "build"])
+
+
 def test_main_reports_child_diagnostic_without_masking_it(
-    options: Options,
+    options: CircleMapRequest,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def missing(arguments: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
@@ -306,7 +346,7 @@ def test_main_reports_child_diagnostic_without_masking_it(
     result = CliRunner().invoke(
         cli.app,
         [
-            "map",
+            "circle",
             "--dataset",
             DATASET,
             "--share",
@@ -323,7 +363,7 @@ def test_main_reports_child_diagnostic_without_masking_it(
 
 
 def test_success_uses_the_documents_credit_and_earth_model(
-    options: Options,
+    options: CircleMapRequest,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seen_credits: list[str] = []

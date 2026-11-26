@@ -9,11 +9,9 @@ from urllib.parse import quote
 
 from PIL import Image, ImageChops
 
-from population_circles.applications.population_engine import (
+from population_circles.applications.popcircles_cli import (
     PopulationRunner,
-    check_returncode,
-    invoke,
-    run_stage,
+    invoke_popcircles_cli,
 )
 from population_circles.data.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
@@ -279,13 +277,12 @@ def omit_excluded_sources(
 
 
 def country_documents(
-    invoke: PopulationRunner,
+    run_population_command: PopulationRunner,
     corpus: Path,
     *,
     country_refresh: CountryRefresh | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
-    listed = run_stage("country list", ["country", "list"], invoke)
-    check_returncode("country list", listed)
+    listed = run_population_command("country list", ["country", "list"])
     listing: Any = json.loads(listed.stdout)
     if listing.get("document") != "country-list":
         message = "country list: Rust CLI returned a document other than country-list"
@@ -303,7 +300,7 @@ def country_documents(
     )
     sweep = country_sweep_module.country_sweep(
         CountrySweepRequest(
-            invoke,
+            run_population_command,
             corpus,
             selection,
             countries,
@@ -358,7 +355,7 @@ def report_country_sweep(message: str) -> None:
 def build(
     corpus: Path,
     output: Path,
-    invoke: PopulationRunner = invoke,
+    run_population_command: PopulationRunner = invoke_popcircles_cli,
     *,
     country_refresh: CountryRefresh | None = None,
     cache_directory: Path | None = None,
@@ -391,7 +388,7 @@ def build(
     if country_refresh == "coverage":
         country_sweep_module.refresh_coverage(corpus)
     missing, generated = country_documents(
-        invoke,
+        run_population_command,
         corpus,
         country_refresh=country_refresh,
     )

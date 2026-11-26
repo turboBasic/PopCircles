@@ -4,12 +4,10 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import cast
 
-from population_circles.applications.population_engine import (
+from population_circles.applications.errors import PopulationApplicationError
+from population_circles.applications.popcircles_cli import (
     PopulationRunner,
-    WorkflowError,
-    check_returncode,
-    invoke,
-    run_stage,
+    invoke_popcircles_cli,
 )
 from population_circles.data.dataset_registry import load
 from population_circles.documents.result_document import circle_of
@@ -20,7 +18,7 @@ from population_circles.maps.frame import PLATE_CARREE
 
 
 @dataclass(frozen=True)
-class Options:
+class CircleMapRequest:
     dataset: str
     share: str
     cache: Path
@@ -33,7 +31,7 @@ class Options:
     no_coastlines: bool = False
 
 
-def check_destinations(options: Options) -> None:
+def _validate_distinct_circle_map_output_paths(options: CircleMapRequest) -> None:
     destinations = (options.output, options.document, options.ledger)
     for index, path in enumerate(destinations):
         for other in destinations[index + 1 :]:
@@ -43,10 +41,10 @@ def check_destinations(options: Options) -> None:
                 message = (
                     f"destinations: image, document and ledger must differ: {path} and {other}"
                 )
-                raise WorkflowError(message)
+                raise PopulationApplicationError(message)
 
 
-def publish(destination: Path, content: bytes) -> None:
+def _write_bytes_atomically(destination: Path, content: bytes) -> None:
     temporary: Path | None = None
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -61,7 +59,7 @@ def publish(destination: Path, content: bytes) -> None:
             temporary.unlink(missing_ok=True)
 
 
-def _enriched_search_result(content: bytes) -> bytes:
+def _enrich_search_document_with_territory_coverage(content: bytes) -> bytes:
     try:
         document = json.loads(content)
     except json.JSONDecodeError:
@@ -77,12 +75,15 @@ def _enriched_search_result(content: bytes) -> bytes:
     return (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
 
 
-def search_and_render_circle_map(options: Options, invoke: PopulationRunner = invoke) -> None:
+def search_and_render_circle_map(
+    options: CircleMapRequest,
+    run_population_command: PopulationRunner = invoke_popcircles_cli,
+) -> None:
     try:
-        check_destinations(options)
+        _validate_distinct_circle_map_output_paths(options)
     except OSError as error:
         message = f"destinations: {error}"
-        raise WorkflowError(message) from error
+        raise PopulationApplicationError(message) from error
     common = [
         "--dataset",
         options.dataset,
@@ -91,12 +92,11 @@ def search_and_render_circle_map(options: Options, invoke: PopulationRunner = in
         "--decimate",
         options.decimate,
     ]
-    probe = run_stage("cache probe", ["table", "query", *common], invoke)
+    probe = run_population_command(
+        "cache probe", ["table", "query", *common], accepted_exit_codes=(0, 3)
+    )
     if probe.returncode == 3:  # noqa: PLR2004 — Rust's missing/incompatible input exit code
-        build = run_stage("table build", ["table", "build", *common], invoke)
-        check_returncode("table build", build)
-    else:
-        check_returncode("cache probe", probe)
+        run_population_command("table build", ["table", "build", *common])
     search = [
         "smallest-for-share",
         *common,
@@ -107,13 +107,15 @@ def search_and_render_circle_map(options: Options, invoke: PopulationRunner = in
     ]
     if options.spacing is not None:
         search.extend(["--spacing", options.spacing])
-    result = run_stage("search", search, invoke)
-    check_returncode("search", result)
+    result = run_population_command("search", search)
     try:
-        publish(options.document, _enriched_search_result(result.stdout))
+        _write_bytes_atomically(
+            options.document,
+            _enrich_search_document_with_territory_coverage(result.stdout),
+        )
     except OSError as error:
         message = f"document publication: could not replace {options.document}: {error}"
-        raise WorkflowError(message) from error
+        raise PopulationApplicationError(message) from error
     try:
         render_map.render_file(
             options.document,
@@ -125,11 +127,11 @@ def search_and_render_circle_map(options: Options, invoke: PopulationRunner = in
     except Exception as error:
         # Rendering errors vary by library; the retained document locates the failure.
         message = f"render: {error}; current search document retained at {options.document}"
-        raise WorkflowError(message) from error
+        raise PopulationApplicationError(message) from error
     sidecar = options.output.with_suffix(".json")
     if sidecar.resolve() != options.document.resolve():
         try:
-            publish(options.document, sidecar.read_bytes())
+            _write_bytes_atomically(options.document, sidecar.read_bytes())
         except OSError as error:
             message = f"document publication: could not replace {options.document}: {error}"
-            raise WorkflowError(message) from error
+            raise PopulationApplicationError(message) from error

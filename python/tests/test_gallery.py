@@ -24,7 +24,8 @@ import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
 from population_circles import cli
-from population_circles.applications.population_engine import PopulationRunner, WorkflowError
+from population_circles.applications.errors import PopulationApplicationError
+from population_circles.applications.popcircles_cli import PopulationRunner
 from population_circles.data.data_config import country_boundary_dataset_key
 from population_circles.data.dataset_registry import (
     MapContextVector,
@@ -324,14 +325,23 @@ def country_cli(
             record["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
     calls: list[list[str]] = []
 
-    def invoke(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+    def invoke(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
         calls.append(arguments)
         output = (
             json.dumps(covered).encode()
             if arguments[1:2] == ["coverage"]
             else outputs[min(len(calls) - 1, 1)]
         )
-        return subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
+        result = subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
+        if result.returncode not in accepted_exit_codes:
+            message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
+            raise PopulationApplicationError(message)
+        return result
 
     return invoke, calls
 
@@ -1040,13 +1050,19 @@ def test_a_failed_sweep_does_not_replace_saved_country_results(
     before = {path.name: path.read_bytes() for path in (sweep_path, country_path)}
     list_invoke, calls = country_cli(countries, swept)
 
-    def fail_sweep(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
-        result = list_invoke(arguments)
+    def fail_sweep(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
+        result = list_invoke(stage, arguments, accepted_exit_codes=accepted_exit_codes)
         if arguments[1] == "sweep":
-            return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+            message = f"{stage}: Rust CLI exited 1; see child diagnostic above"
+            raise PopulationApplicationError(message)
         return result
 
-    with pytest.raises(WorkflowError):
+    with pytest.raises(PopulationApplicationError):
         build(corpus, tmp_path / "gallery", fail_sweep, country_refresh="sweep")
 
     assert calls[0] == ["country", "list"]
@@ -1064,7 +1080,6 @@ def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPa
         cli.app,
         [
             "gallery",
-            "build",
             "--input",
             "results",
             "--output",
@@ -1079,7 +1094,6 @@ def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPa
         cli.app,
         [
             "gallery",
-            "build",
             "--input",
             "results",
             "--output",
@@ -1094,7 +1108,6 @@ def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPa
         cli.app,
         [
             "gallery",
-            "build",
             "--input",
             "results",
             "--output",
@@ -1117,10 +1130,19 @@ def test_a_failed_country_command_leaves_no_gallery_index(
     output.mkdir()
     (output / "index.html").write_text("stale", encoding="utf-8")
 
-    def fail(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
-        return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+    def fail(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
+        result = subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+        if result.returncode not in accepted_exit_codes:
+            message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
+            raise PopulationApplicationError(message)
+        return result
 
-    with pytest.raises(WorkflowError):
+    with pytest.raises(PopulationApplicationError):
         build(corpus, output, fail)
 
     assert not (output / "index.html").exists()

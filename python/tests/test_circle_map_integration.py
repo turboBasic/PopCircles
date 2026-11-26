@@ -7,8 +7,12 @@ from typing import Any
 import pytest
 
 from population_circles.applications import circle_map
-from population_circles.applications.circle_map import Options, search_and_render_circle_map
-from population_circles.applications.population_engine import REPO_ROOT, WorkflowError
+from population_circles.applications.circle_map import (
+    CircleMapRequest,
+    search_and_render_circle_map,
+)
+from population_circles.applications.errors import PopulationApplicationError
+from population_circles.applications.popcircles_cli import REPO_ROOT
 from population_circles.data.dataset_registry import parse
 from population_circles.documents.result_document import SweepRecords, circle_of
 from population_circles.maps import layers as map_layers
@@ -73,7 +77,7 @@ def test_real_build_reuse_and_missing_raster(
     registry = parse((tmp_path / "data/registry.toml").read_text())
     monkeypatch.setattr(render_map, "load", lambda: registry)
     monkeypatch.setattr(circle_map, "load", lambda: registry)
-    options = Options(
+    options = CircleMapRequest(
         dataset="tiny",
         share="50",
         cache=tmp_path / "table",
@@ -85,7 +89,12 @@ def test_real_build_reuse_and_missing_raster(
     calls: list[list[str]] = []
     results: list[subprocess.CompletedProcess[bytes]] = []
 
-    def invoke(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+    def invoke(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
         calls.append(arguments)
         result = subprocess.run(  # noqa: S603 — the real numeric binary, no shell
             [str(numeric_binary), *arguments],
@@ -94,6 +103,9 @@ def test_real_build_reuse_and_missing_raster(
             check=False,
         )
         sys.stderr.write(result.stderr.decode())
+        if result.returncode not in accepted_exit_codes:
+            message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
+            raise PopulationApplicationError(message)
         results.append(result)
         return result
 
@@ -110,7 +122,7 @@ def test_real_build_reuse_and_missing_raster(
     calls.clear()
     results.clear()
     options.output.unlink()
-    with pytest.raises(WorkflowError, match="search: Rust CLI exited 3"):
+    with pytest.raises(PopulationApplicationError, match="search: Rust CLI exited 3"):
         search_and_render_circle_map(options, invoke)
     assert len(calls) == 2  # noqa: PLR2004 — cached table query then raster-dependent circle
     assert calls[0][:2] == ["table", "query"]
@@ -122,7 +134,7 @@ def test_real_build_reuse_and_missing_raster(
         cache_file.unlink()
     calls.clear()
     options.output.unlink(missing_ok=True)
-    with pytest.raises(WorkflowError, match="table build: Rust CLI exited 3"):
+    with pytest.raises(PopulationApplicationError, match="table build: Rust CLI exited 3"):
         search_and_render_circle_map(options, invoke)
     assert "mise run data:get" in capsys.readouterr().err
     assert options.document.read_bytes() == current

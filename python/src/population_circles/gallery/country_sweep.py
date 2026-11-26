@@ -5,12 +5,8 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
-from population_circles.applications.population_engine import (
-    PopulationRunner,
-    WorkflowError,
-    check_returncode,
-    run_stage,
-)
+from population_circles.applications.errors import PopulationApplicationError
+from population_circles.applications.popcircles_cli import PopulationRunner
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.geography.territory_share import enrich_document
 from population_circles.maps.presentation_config import load as load_presentation_config
@@ -22,7 +18,7 @@ CountryRefresh = Literal["sweep", "coverage"]
 
 @dataclass(frozen=True)
 class CountrySweepRequest:
-    invoke: PopulationRunner
+    run_population_command: PopulationRunner
     corpus: Path
     selection: dict[str, Any]
     countries: list[dict[str, Any]]
@@ -167,7 +163,7 @@ def refresh_coverage(corpus: Path) -> None:
 def country_sweep(
     request: CountrySweepRequest,
 ) -> dict[str, Any]:
-    invoke = request.invoke
+    run_population_command = request.run_population_command
     corpus = request.corpus
     selection = request.selection
     countries = request.countries
@@ -182,7 +178,7 @@ def country_sweep(
     if refresh == "coverage":
         if saved is None:
             message = "country coverage refresh requires a valid saved country sweep"
-            raise WorkflowError(message)
+            raise PopulationApplicationError(message)
         sweep = coverage_sweep(corpus / filename, selection)
         report(f"Gallery: refreshed territory coverage for {len(countries)} saved country results")
         return sweep
@@ -209,8 +205,7 @@ def country_sweep(
     for country_id in country_ids:
         arguments.extend(["--country", country_id])
     report(f"Gallery: calculating 50% circles for {len(country_ids)} countries")
-    swept = run_stage("country sweep", arguments, invoke)
-    check_returncode("country sweep", swept)
+    swept = run_population_command("country sweep", arguments)
     result = json.loads(swept.stdout)
     if result.get("document") != "country-sweep":
         message = "country sweep: Rust CLI returned a document other than country-sweep"
