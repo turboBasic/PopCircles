@@ -14,9 +14,9 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 from population_circles import cli
-from population_circles.applications import circle_map, rust_cli
+from population_circles.applications import circle_map, population_engine
 from population_circles.applications.circle_map import Options, search_and_render_circle_map
-from population_circles.applications.rust_cli import WorkflowError
+from population_circles.applications.population_engine import WorkflowError
 from population_circles.data.dataset_registry import Registry, load
 from population_circles.documents.result_document import Answer
 from population_circles.maps import layers as map_layers
@@ -258,7 +258,7 @@ def test_missing_executable_reports_the_launch_stage(options: Options) -> None:
         search_and_render_circle_map(options, missing)
 
 
-def test_actual_child_uses_checkout_argv_and_inherits_stderr(
+def test_invoke_runs_from_checkout_and_inherits_stderr(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured: list[tuple[list[str], Path, int]] = []
@@ -272,7 +272,8 @@ def test_actual_child_uses_checkout_argv_and_inherits_stderr(
 
     monkeypatch.setattr(subprocess, "run", capture)
     assert (
-        rust_cli.invoke_cli(["table", "query", "--dataset", "literal;$(value)"]).stdout == b"answer"
+        population_engine.invoke(["table", "query", "--dataset", "literal;$(value)"]).stdout
+        == b"answer"
     )
     assert captured == [
         (
@@ -286,7 +287,7 @@ def test_actual_child_uses_checkout_argv_and_inherits_stderr(
                 "--dataset",
                 "literal;$(value)",
             ],
-            rust_cli.REPO_ROOT,
+            population_engine.REPO_ROOT,
             subprocess.PIPE,
         )
     ]

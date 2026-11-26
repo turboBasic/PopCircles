@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
-from population_circles.applications.rust_cli import Invoke, WorkflowError, child, require_success
+from population_circles.applications.population_engine import (
+    PopulationRunner,
+    WorkflowError,
+    check_returncode,
+    run_stage,
+)
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.geography.territory_share import enrich_document
 from population_circles.maps.presentation_config import load as load_presentation_config
@@ -17,7 +22,7 @@ CountryRefresh = Literal["sweep", "coverage"]
 
 @dataclass(frozen=True)
 class CountrySweepRequest:
-    invoke: Invoke
+    invoke: PopulationRunner
     corpus: Path
     selection: dict[str, Any]
     countries: list[dict[str, Any]]
@@ -204,8 +209,8 @@ def country_sweep(
     for country_id in country_ids:
         arguments.extend(["--country", country_id])
     report(f"Gallery: calculating 50% circles for {len(country_ids)} countries")
-    swept = child("country sweep", arguments, invoke)
-    require_success("country sweep", swept)
+    swept = run_stage("country sweep", arguments, invoke)
+    check_returncode("country sweep", swept)
     result = json.loads(swept.stdout)
     if result.get("document") != "country-sweep":
         message = "country sweep: Rust CLI returned a document other than country-sweep"

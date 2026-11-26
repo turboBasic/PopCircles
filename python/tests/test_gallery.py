@@ -24,7 +24,7 @@ import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
 from population_circles import cli
-from population_circles.applications.rust_cli import Invoke, WorkflowError
+from population_circles.applications.population_engine import PopulationRunner, WorkflowError
 from population_circles.data.data_config import country_boundary_dataset_key
 from population_circles.data.dataset_registry import (
     MapContextVector,
@@ -305,7 +305,7 @@ def country_cli(
     countries: list[dict[str, str]],
     swept_countries: list[dict[str, Any]],
     countries_without_population_cells: list[dict[str, str]] | None = None,
-) -> tuple[Invoke, list[list[str]]]:
+) -> tuple[PopulationRunner, list[list[str]]]:
     selection = country_selection()
     listing = {
         "schema_version": 1,

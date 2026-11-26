@@ -8,7 +8,7 @@ import pytest
 
 from population_circles.applications import circle_map
 from population_circles.applications.circle_map import Options, search_and_render_circle_map
-from population_circles.applications.rust_cli import REPO_ROOT, WorkflowError
+from population_circles.applications.population_engine import REPO_ROOT, WorkflowError
 from population_circles.data.dataset_registry import parse
 from population_circles.documents.result_document import SweepRecords, circle_of
 from population_circles.maps import layers as map_layers

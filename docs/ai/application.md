@@ -102,7 +102,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    `visualizer` command surface dispatches to packages organized by responsibility:
 
    - `cli.py` owns command parsing and dispatch for `circle`, `map`, `globe-animation`, and `gallery`.
-   - `applications/` owns application flows and shared Rust CLI integration.
+   - `applications/` owns application flows and shared calls for population calculations.
    - `data/` owns access to dataset configuration and the dataset registry.
    - `documents/` owns the published-result contract used between search and rendering.
    - `geography/` owns geographic operations shared by application flows and renderers, including

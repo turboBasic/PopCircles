@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from population_circles.applications import circle_map, rust_cli
+from population_circles.applications import circle_map, population_engine
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
@@ -48,15 +48,15 @@ def circle_command(
         projection=projection,
         no_coastlines=no_coastlines,
     )
-    if Path.cwd().resolve() != rust_cli.REPO_ROOT:
+    if Path.cwd().resolve() != population_engine.REPO_ROOT:
         typer.echo(
-            f"visualizer circle: run from the checkout root: {rust_cli.REPO_ROOT}",
+            f"visualizer circle: run from the checkout root: {population_engine.REPO_ROOT}",
             err=True,
         )
         raise typer.Exit(1)
     try:
         circle_map.search_and_render_circle_map(options)
-    except rust_cli.WorkflowError as error:
+    except population_engine.WorkflowError as error:
         typer.echo(f"visualizer circle: {error}", err=True)
         raise typer.Exit(1) from error
     typer.echo(f"image: {options.output}\ndocument: {options.document}")

@@ -4,12 +4,12 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import cast
 
-from population_circles.applications.rust_cli import (
-    Invoke,
+from population_circles.applications.population_engine import (
+    PopulationRunner,
     WorkflowError,
-    child,
-    invoke_cli,
-    require_success,
+    check_returncode,
+    invoke,
+    run_stage,
 )
 from population_circles.data.dataset_registry import load
 from population_circles.documents.result_document import circle_of
@@ -77,7 +77,7 @@ def _enriched_search_result(content: bytes) -> bytes:
     return (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
 
 
-def search_and_render_circle_map(options: Options, invoke: Invoke = invoke_cli) -> None:
+def search_and_render_circle_map(options: Options, invoke: PopulationRunner = invoke) -> None:
     try:
         check_destinations(options)
     except OSError as error:
@@ -91,11 +91,12 @@ def search_and_render_circle_map(options: Options, invoke: Invoke = invoke_cli) 
         "--decimate",
         options.decimate,
     ]
-    probe = child("cache probe", ["table", "query", *common], invoke)
+    probe = run_stage("cache probe", ["table", "query", *common], invoke)
     if probe.returncode == 3:  # noqa: PLR2004 — Rust's missing/incompatible input exit code
-        require_success("table build", child("table build", ["table", "build", *common], invoke))
+        build = run_stage("table build", ["table", "build", *common], invoke)
+        check_returncode("table build", build)
     else:
-        require_success("cache probe", probe)
+        check_returncode("cache probe", probe)
     search = [
         "smallest-for-share",
         *common,
@@ -106,8 +107,8 @@ def search_and_render_circle_map(options: Options, invoke: Invoke = invoke_cli) 
     ]
     if options.spacing is not None:
         search.extend(["--spacing", options.spacing])
-    result = child("search", search, invoke)
-    require_success("search", result)
+    result = run_stage("search", search, invoke)
+    check_returncode("search", result)
     try:
         publish(options.document, _enriched_search_result(result.stdout))
     except OSError as error:

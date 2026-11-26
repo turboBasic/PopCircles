@@ -105,7 +105,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
         "gallery/build.py",
         "gallery/country_sweep.py",
         "applications/circle_map.py",
-        "applications/rust_cli.py",
+        "applications/population_engine.py",
         "gallery/page_data.py",
         "render_globe.py",
     ):

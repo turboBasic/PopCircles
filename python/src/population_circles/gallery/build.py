@@ -9,7 +9,12 @@ from urllib.parse import quote
 
 from PIL import Image, ImageChops
 
-from population_circles.applications.rust_cli import Invoke, child, invoke_cli, require_success
+from population_circles.applications.population_engine import (
+    PopulationRunner,
+    check_returncode,
+    invoke,
+    run_stage,
+)
 from population_circles.data.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.gallery import country_sweep as country_sweep_module
@@ -274,13 +279,13 @@ def omit_excluded_sources(
 
 
 def country_documents(
-    invoke: Invoke,
+    invoke: PopulationRunner,
     corpus: Path,
     *,
     country_refresh: CountryRefresh | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
-    listed = child("country list", ["country", "list"], invoke)
-    require_success("country list", listed)
+    listed = run_stage("country list", ["country", "list"], invoke)
+    check_returncode("country list", listed)
     listing: Any = json.loads(listed.stdout)
     if listing.get("document") != "country-list":
         message = "country list: Rust CLI returned a document other than country-list"
@@ -353,7 +358,7 @@ def report_country_sweep(message: str) -> None:
 def build(
     corpus: Path,
     output: Path,
-    invoke: Invoke = invoke_cli,
+    invoke: PopulationRunner = invoke,
     *,
     country_refresh: CountryRefresh | None = None,
     cache_directory: Path | None = None,
