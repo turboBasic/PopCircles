@@ -52,7 +52,7 @@ xattr -d com.apple.quarantine popcircles-aarch64-apple-darwin
 
 [`USAGE.md`][usage] shows commands and their output for measuring distances, looking up population,
 searching for circles, and drawing maps. It also explains how to choose `--decimate` for faster searches.
-Run `mise run cli -- --help` for the full command and option reference.
+Run `mise run popcircles-cli -- --help` for the full command and option reference.
 
 Questions about using the project or early ideas belong in [Discussions][discussions]. Report
 reproducible bugs or work ready to be scoped in [Issues][issues].
@@ -83,9 +83,12 @@ The [gallery][gallery] shows maps generated from result files in `results/`, inc
 framed 50% country circle for each available country result. Publish it with `mise run gallery:publish`.
 Each caption shows the circle's population share, radius and centre. See [the gallery publishing
 instructions][usage] for setup.
-The Python `circle-map` workflow coordinates search and map output. Shared map presentation lives in
-`population_circles.maps`, while `population_circles.gallery` builds the static Gallery, country sweep,
-map cache and page data.
+The Python application CLI is `visualizer`, with `circle`, `map`, `globe-animation`, and `gallery` commands.
+`circle` searches for a population circle and renders its map; `map` renders an existing result;
+`globe-animation` renders an animated globe as SVG or GIF; and `gallery` builds the static Gallery. Its
+`applications` coordinates search and map output; shared map presentation
+lives in `population_circles.maps`, while `population_circles.gallery` builds the static Gallery,
+country sweep, map cache and page data.
 The [frontend reference](docs/ai/frontend.md#behaviour) defines browser interactions and links them to
 verification.
 

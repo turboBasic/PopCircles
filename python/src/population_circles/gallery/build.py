@@ -1,4 +1,3 @@
-import argparse
 import json
 import shutil
 import subprocess
@@ -10,9 +9,12 @@ from urllib.parse import quote
 
 from PIL import Image, ImageChops
 
-from population_circles.circle_map_workflow import Invoke, child, invoke_cli, require_success
-from population_circles.country_boundaries import load_map_boundaries
-from population_circles.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.applications.popcircles_cli import (
+    PopulationRunner,
+    invoke_popcircles_cli,
+)
+from population_circles.data.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.gallery import country_sweep as country_sweep_module
 from population_circles.gallery.country_sweep import (
     HALF_SHARE,
@@ -27,12 +29,12 @@ from population_circles.gallery.rendering import (
     render_context_digest,
     render_documents,
 )
+from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.geography.territory_share import enrich_document
 from population_circles.maps.frame import ORTHOGRAPHIC
 from population_circles.maps.layers import registered_coastline
 from population_circles.maps.presentation_config import load as load_presentation_config
 from population_circles.maps.render_map import OCEAN
-from population_circles.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.territory_share import enrich_document
 
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2
@@ -275,13 +277,12 @@ def omit_excluded_sources(
 
 
 def country_documents(
-    invoke: Invoke,
+    run_population_command: PopulationRunner,
     corpus: Path,
     *,
     country_refresh: CountryRefresh | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
-    listed = child("country list", ["country", "list"], invoke)
-    require_success("country list", listed)
+    listed = run_population_command("country list", ["country", "list"])
     listing: Any = json.loads(listed.stdout)
     if listing.get("document") != "country-list":
         message = "country list: Rust CLI returned a document other than country-list"
@@ -299,7 +300,7 @@ def country_documents(
     )
     sweep = country_sweep_module.country_sweep(
         CountrySweepRequest(
-            invoke,
+            run_population_command,
             corpus,
             selection,
             countries,
@@ -354,7 +355,7 @@ def report_country_sweep(message: str) -> None:
 def build(
     corpus: Path,
     output: Path,
-    invoke: Invoke = invoke_cli,
+    run_population_command: PopulationRunner = invoke_popcircles_cli,
     *,
     country_refresh: CountryRefresh | None = None,
     cache_directory: Path | None = None,
@@ -387,7 +388,7 @@ def build(
     if country_refresh == "coverage":
         country_sweep_module.refresh_coverage(corpus)
     missing, generated = country_documents(
-        invoke,
+        run_population_command,
         corpus,
         country_refresh=country_refresh,
     )
@@ -406,41 +407,3 @@ def build(
         missing,
         render_context,
     )
-
-
-def parse(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Render every renderable document in a corpus.")
-    parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    refresh = parser.add_mutually_exclusive_group()
-    refresh.add_argument(
-        "--refresh-country-sweep", dest="country_refresh", action="store_const", const="sweep"
-    )
-    refresh.add_argument(
-        "--refresh-country-coverage", dest="country_refresh", action="store_const", const="coverage"
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse(argv)
-    corpus: Path = args.input
-    output: Path = args.output
-
-    drawn, skipped = build(
-        corpus,
-        output,
-        country_refresh=args.country_refresh,
-    )
-    for one in drawn:
-        print(one.figure)
-    for one in skipped:
-        if one.kind == "zero-population country":
-            print(f"{one.document}: skipped, country population is zero")
-        else:
-            print(f"{one.document}: skipped, kind {one.kind!r} carries no circle to draw")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

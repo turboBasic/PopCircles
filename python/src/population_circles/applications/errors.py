@@ -1,0 +1,2 @@
+class PopulationApplicationError(Exception):
+    pass

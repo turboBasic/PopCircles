@@ -14,6 +14,7 @@ from PIL import Image
 from rasterio.transform import from_origin
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
+from typer.testing import CliRunner
 
 import population_circles.gallery.build as gallery_module
 import population_circles.gallery.country_sweep as country_sweep_module
@@ -22,15 +23,18 @@ import population_circles.maps.layers as map_layers_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
-from population_circles.circle_map_workflow import Invoke, WorkflowError
-from population_circles.data_config import country_boundary_dataset_key
-from population_circles.dataset_registry import (
+from population_circles import cli
+from population_circles.applications.errors import PopulationApplicationError
+from population_circles.applications.popcircles_cli import PopulationRunner
+from population_circles.data.data_config import country_boundary_dataset_key
+from population_circles.data.dataset_registry import (
     MapContextVector,
     Registry,
     SettlementVector,
     TerrainRaster,
     load,
 )
+from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.gallery.build import build
 from population_circles.maps.layers import (
     COASTLINE_DATASET,
@@ -43,7 +47,6 @@ from population_circles.maps.layers import (
 from population_circles.maps.layers import (
     registered_map_sources as real_registered_map_sources,
 )
-from population_circles.result_document import CIRCLE_KINDS, Answer, circle_of
 from test_render_map import (
     fixture_map_layers,
     fixture_registered_map_sources,
@@ -51,6 +54,8 @@ from test_render_map import (
 )
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
+CLI_ERROR_EXIT = 2
+REFRESH_OPTION_COUNT = 2
 DATASET = "population-count-2020-30arcsec"
 WORLD_POPULATION = 1_254_363_867.93
 WORLD_SHARE = 0.1616868627727305
@@ -301,7 +306,7 @@ def country_cli(
     countries: list[dict[str, str]],
     swept_countries: list[dict[str, Any]],
     countries_without_population_cells: list[dict[str, str]] | None = None,
-) -> tuple[Invoke, list[list[str]]]:
+) -> tuple[PopulationRunner, list[list[str]]]:
     selection = country_selection()
     listing = {
         "schema_version": 1,
@@ -320,14 +325,23 @@ def country_cli(
             record["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
     calls: list[list[str]] = []
 
-    def invoke(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
+    def invoke(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
         calls.append(arguments)
         output = (
             json.dumps(covered).encode()
             if arguments[1:2] == ["coverage"]
             else outputs[min(len(calls) - 1, 1)]
         )
-        return subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
+        result = subprocess.CompletedProcess(arguments, 0, stdout=output, stderr=b"")
+        if result.returncode not in accepted_exit_codes:
+            message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
+            raise PopulationApplicationError(message)
+        return result
 
     return invoke, calls
 
@@ -1036,13 +1050,19 @@ def test_a_failed_sweep_does_not_replace_saved_country_results(
     before = {path.name: path.read_bytes() for path in (sweep_path, country_path)}
     list_invoke, calls = country_cli(countries, swept)
 
-    def fail_sweep(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
-        result = list_invoke(arguments)
+    def fail_sweep(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
+        result = list_invoke(stage, arguments, accepted_exit_codes=accepted_exit_codes)
         if arguments[1] == "sweep":
-            return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+            message = f"{stage}: Rust CLI exited 1; see child diagnostic above"
+            raise PopulationApplicationError(message)
         return result
 
-    with pytest.raises(WorkflowError):
+    with pytest.raises(PopulationApplicationError):
         build(corpus, tmp_path / "gallery", fail_sweep, country_refresh="sweep")
 
     assert calls[0] == ["country", "list"]
@@ -1051,29 +1071,53 @@ def test_a_failed_sweep_does_not_replace_saved_country_results(
     assert {path.name: path.read_bytes() for path in (sweep_path, country_path)} == before
 
 
-def test_gallery_cli_accepts_forced_country_sweep_refresh() -> None:
-    args = gallery_module.parse(
-        ["--input", "results", "--output", "build/gallery", "--refresh-country-sweep"]
+def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
+    build = Mock(return_value=([], []))
+    monkeypatch.setattr(gallery_module, "build", build)
+    runner = CliRunner()
+
+    sweep = runner.invoke(
+        cli.app,
+        [
+            "gallery",
+            "--input",
+            "results",
+            "--output",
+            "build/gallery",
+            "--refresh-country-sweep",
+        ],
     )
+    assert sweep.exit_code == 0
+    assert build.call_args.kwargs["country_refresh"] == "sweep"
 
-    assert args.country_refresh == "sweep"
-
-    coverage_args = gallery_module.parse(
-        ["--input", "results", "--output", "build/gallery", "--refresh-country-coverage"]
+    coverage = runner.invoke(
+        cli.app,
+        [
+            "gallery",
+            "--input",
+            "results",
+            "--output",
+            "build/gallery",
+            "--refresh-country-coverage",
+        ],
     )
-    assert coverage_args.country_refresh == "coverage"
+    assert coverage.exit_code == 0
+    assert build.call_args.kwargs["country_refresh"] == "coverage"
 
-    with pytest.raises(SystemExit):
-        gallery_module.parse(
-            [
-                "--input",
-                "results",
-                "--output",
-                "build/gallery",
-                "--refresh-country-sweep",
-                "--refresh-country-coverage",
-            ]
-        )
+    invalid = runner.invoke(
+        cli.app,
+        [
+            "gallery",
+            "--input",
+            "results",
+            "--output",
+            "build/gallery",
+            "--refresh-country-sweep",
+            "--refresh-country-coverage",
+        ],
+    )
+    assert invalid.exit_code == CLI_ERROR_EXIT
+    assert build.call_count == REFRESH_OPTION_COUNT
 
 
 def test_a_failed_country_command_leaves_no_gallery_index(
@@ -1086,10 +1130,19 @@ def test_a_failed_country_command_leaves_no_gallery_index(
     output.mkdir()
     (output / "index.html").write_text("stale", encoding="utf-8")
 
-    def fail(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
-        return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+    def fail(
+        stage: str,
+        arguments: list[str],
+        *,
+        accepted_exit_codes: tuple[int, ...] = (0,),
+    ) -> subprocess.CompletedProcess[bytes]:
+        result = subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"failed")
+        if result.returncode not in accepted_exit_codes:
+            message = f"{stage}: Rust CLI exited {result.returncode}; see child diagnostic above"
+            raise PopulationApplicationError(message)
+        return result
 
-    with pytest.raises(WorkflowError):
+    with pytest.raises(PopulationApplicationError):
         build(corpus, output, fail)
 
     assert not (output / "index.html").exists()

@@ -160,7 +160,7 @@ Identifiers are flat, sequential and never reused.
   `python/src/population_circles/`, which is the repository root for exactly as long as that holds.
 
   **A second resolution joined the first, and one consumer of it writes** (2026-08-16, issue #57).
-  `dataset_registry.py`'s `REGISTRY` reaches `data/registry.toml` the same way `render_map.py`'s
+  `data/dataset_registry.py`'s `REGISTRY` reaches `data/registry.toml` the same way `render_map.py`'s
   `COASTLINE` reaches the basemap, so the count this entry sweeps for is two. `mise run data:get` then
   resolves paths against that same root to place 428 MB, so under a wheel it would `mkdir` under
   `site-packages` — it happens to fail loudly first, because the coastline sorts before the raster and
@@ -229,7 +229,7 @@ Identifiers are flat, sequential and never reused.
   `rg -c '^fetch_url' data/registry.toml` is 1, and that row's path is gitignored and untracked.
 - **Fix** — the check reads the registry rather than grepping it and asserts both halves: every file
   matching the extension set has a row, and no file whose row carries a `fetch_url` is tracked. That means
-  a `python/src/repo_tools/` entry point reusing `population_circles.dataset_registry`, which is where the
+  a `python/src/repo_tools/` entry point reusing `population_circles.data.dataset_registry`, which is where the
   registry is parsed — `repo_tools/fetch_data.py` is the precedent for a repo tool importing it, and
   reusing it rather than writing a second parser is the constraint the hook's own comment raises.
 
@@ -810,9 +810,9 @@ Identifiers are flat, sequential and never reused.
   `earth_radius_km`; `render_map` uses the answer for titles and dataset credit while geometry receives
   only the circle. Synthetic measured and nested documents preserve their numeric values and title text.
 - **Condition** — a second field on `Circle` in
-  [`python/src/population_circles/result_document.py`](../python/src/population_circles/result_document.py)
+  [`python/src/population_circles/documents/result_document.py`](../python/src/population_circles/documents/result_document.py)
   is read by no caller that draws or measures. The sweep is the field list of `Circle` against what
-  `circle_geometry.py` and `map_frame.py` reference: `centre`, `radius_km` and `earth_radius_km` are the
+  `geography/circle_geometry.py` and `maps/frame.py` reference: `centre`, `radius_km` and `earth_radius_km` are the
   geometry's, `population` and `share` are the caption's, and `dataset` is the credit's. A digest, a
   decimation or a table path arriving for a caption is the event.
 - **Fix** — `circle_of` returns a frozen answer carrying separate geometry, caption facts and provenance,

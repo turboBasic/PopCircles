@@ -15,16 +15,16 @@ from matplotlib.figure import Figure
 from PIL import Image
 from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
+from typer.testing import CliRunner
 
+import population_circles.geography.territory_share as territory_share_module
 import population_circles.maps.labels as map_labels_module
 import population_circles.maps.layers as map_layers_module
 import population_circles.maps.metadata as map_metadata_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
-import population_circles.territory_share as territory_share_module
-from population_circles.circle_geometry import Cap, cap
-from population_circles.country_boundaries import BoundaryIdentityError, load_outline
-from population_circles.dataset_registry import (
+from population_circles import cli
+from population_circles.data.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
     Registry,
@@ -33,6 +33,9 @@ from population_circles.dataset_registry import (
     load,
     parse,
 )
+from population_circles.documents.result_document import Answer, Circle, circle_of
+from population_circles.geography.circle_geometry import Cap, cap
+from population_circles.geography.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
@@ -59,14 +62,13 @@ from population_circles.maps.render_map import (
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
-    main,
     render,
     render_file,
     title_of,
 )
-from population_circles.result_document import Answer, Circle, circle_of
 
 REGISTRY = load()
+cli_runner = CliRunner()
 DATASET = "population-count-2020-30arcsec"
 PROSE = Path(__file__).resolve().parents[2] / "data" / "README.md"
 
@@ -735,9 +737,19 @@ def test_country_outline_names_the_fetch_task_when_its_file_is_missing(tmp_path:
 
 
 def test_an_unknown_terminal_projection_exits_two() -> None:
-    with pytest.raises(SystemExit) as caught:
-        main(["--input", "unused.json", "--output", "unused.png", "--projection", "unknown"])
-    assert caught.value.code == 2  # noqa: PLR2004 — argparse's usage-error exit code
+    result = cli_runner.invoke(
+        cli.app,
+        [
+            "map",
+            "--input",
+            "unused.json",
+            "--output",
+            "unused.png",
+            "--projection",
+            "unknown",
+        ],
+    )
+    assert result.exit_code == 2  # noqa: PLR2004 — CLI validation error exit code
 
 
 def normalised(text: str) -> str:
@@ -1187,7 +1199,8 @@ def test_a_complete_figure_is_written_where_it_is_told(
     use_coastline_fixture(tmp_path, monkeypatch)
 
     argv = ["--input", str(source), "--output", str(output), "--projection", projection]
-    assert main(argv) == 0
+    result = cli_runner.invoke(cli.app, ["map", *argv])
+    assert result.exit_code == 0, result.output
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
@@ -1220,7 +1233,19 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
     monkeypatch.chdir(tmp_path)
 
-    assert main(["--input", str(source), "--output", str(output), "--projection", projection]) == 0
+    result = cli_runner.invoke(
+        cli.app,
+        [
+            "map",
+            "--input",
+            str(source),
+            "--output",
+            str(output),
+            "--projection",
+            projection,
+        ],
+    )
+    assert result.exit_code == 0, result.output
     assert output.read_bytes().startswith(PNG_MAGIC)
 
 
@@ -1261,9 +1286,17 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     source.write_text(json.dumps(named), encoding="utf-8")
 
     assert (
-        main(
-            ["--input", str(source), "--output", str(tmp_path / "map.png"), "--no-coastlines"],
-        )
+        cli_runner.invoke(
+            cli.app,
+            [
+                "map",
+                "--input",
+                str(source),
+                "--output",
+                str(tmp_path / "map.png"),
+                "--no-coastlines",
+            ],
+        ).exit_code
         == 0
     )
     assert drawn == ["the credit the second dataset requires"]

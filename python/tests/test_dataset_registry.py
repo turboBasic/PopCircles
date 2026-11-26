@@ -1,11 +1,11 @@
 import hashlib
 import struct
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 import pytest
 from pydantic import ValidationError
 
-from population_circles.dataset_registry import (
+from population_circles.data.dataset_registry import (
     REGISTRY,
     REPO_ROOT,
     BoundaryVector,
@@ -98,6 +98,10 @@ source_id_field = "CNTR_ID"
 display_name_field = "CNTR_NAME"
 identity_policy = "ADR 0015"
 """
+
+
+def test_repository_root_is_the_checkout() -> None:
+    assert Path(__file__).resolve().parents[2] == REPO_ROOT
 
 
 def test_every_key_is_its_paths_filename_stem() -> None:

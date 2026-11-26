@@ -98,33 +98,17 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    reaches the country total. Use the globe-covering ceiling only when no smaller radius reaches that
    total. The ledger records the full country identity so a resumed run cannot reuse another country's
    probes.
-5. **Rendering.** Python renders published documents in a separate layer from the Rust search. It reads
-   the committed basemap, dataset registry, and presentation config. The modules in `population_circles`
-   divide the work:
+5. **Rendering.** Python renders published documents in a separate layer from the Rust search. Its
+   `visualizer` command surface dispatches to packages organized by responsibility:
 
-   - `result_document` validates a document and turns it into an immutable answer with separate geometry,
-     caption, and provenance. It rejects unknown schema versions, unsupported result kinds, non-spherical
-     earth models, and documents without a dataset. The renderer needs the dataset to provide the
-     required credit.
-   - `data_config` reads dataset selections from `data/config.toml` for Python rendering workflows.
-   - `dataset_registry` reads `data/registry.toml`. It rejects rows whose dataset key does not match the
-     file stem and supplies the attribution required for each figure.
-   - `circle_map_workflow` coordinates the `circle-map` command and publishes its result document.
-   - `circle_geometry` builds the circle cap and owns the only PROJ definition.
-   - `maps.presentation_config` reads `data/presentation.toml`, which owns renderer text and country
-     display settings.
-   - `maps.frame` defines the display projection, visible extent, and graticule.
-   - `maps.layers` resolves registered terrain and context sources, loads their geometries, and owns
-     the prepared layers passed to the renderers.
-   - `maps.render_map` draws static figures and resolves document inputs only from keys in the answer. For a
-     country result, it selects the outline by canonical ID, applies presentation settings, and checks
-     the boundary revision and digest. It derives the map extent from the outline and result circle.
-     Population and boundary credits come from registry rows. The renderer measures country captions
-     and credits before allocating footer space.
-   - `maps.render_globe` is the separate globe renderer; the two renderers share the map frame and
-     layer preparation in `maps/`.
-   - `gallery.build` coordinates the Gallery build and uses `gallery.country_sweep` for country results.
-     `gallery.rendering` draws and caches Gallery figures; `gallery.page_data` builds frontend page data.
+   - `cli.py` owns command parsing and dispatch for `circle`, `map`, `globe-animation`, and `gallery`.
+   - `applications/` owns application flows and shared calls for population calculations.
+   - `data/` owns access to dataset configuration and the dataset registry.
+   - `documents/` owns the published-result contract used between search and rendering.
+   - `geography/` owns geographic operations shared by application flows and renderers, including
+     circle geometry, boundary loading, and territory coverage.
+   - `maps/` owns map presentation, flat map rendering, and animated globe output as SVG or GIF.
+   - `gallery/` owns gallery assembly, country results, figure caching, and frontend page data.
 
    When changing code that affects Gallery map pixels, metadata, titles, or visible credits, update
    `RENDER_MODULES` in `gallery/rendering.py` and its cache-input test. Keep modules that do not affect

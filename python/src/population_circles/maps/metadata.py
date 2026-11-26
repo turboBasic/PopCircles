@@ -6,7 +6,7 @@ from typing import cast
 from PIL import ExifTags, Image
 from PIL.TiffImagePlugin import IFDRational
 
-from population_circles.result_document import Answer
+from population_circles.documents.result_document import Answer
 
 MINUTES_PER_DEGREE = 60
 

@@ -16,7 +16,7 @@ on a sphere.
 Wiesbaden to Rome:
 
 ```sh
-mise run cli -- distance 50.0782 8.2398 41.9028 12.4964
+mise run popcircles-cli -- distance 50.0782 8.2398 41.9028 12.4964
 # {"schema_version":2,"tool":"popcircles","result":{"great_circle_km":966.3013398709427, …}}
 ```
 
@@ -32,7 +32,7 @@ For the GPWv4.11 population raster — a map made of cells — without reading t
 [`data/README.md`][data-readme]):
 
 ```sh
-mise run cli -- grid describe --dataset population-count-2020-30arcsec
+mise run popcircles-cli -- grid describe --dataset population-count-2020-30arcsec
 # {"schema_version":2,"tool":"popcircles","result":{"middle_row_cell_area_km2":0.8586351267048113, …}}
 ```
 
@@ -43,7 +43,7 @@ native 30 arc-second raster. Each explicit grid flag overrides its own default, 
 resolved geometry is checked before use. For an explicit-only grid, supply all six flags:
 
 ```sh
-mise run cli -- grid describe --width 36 --height 18 \
+mise run popcircles-cli -- grid describe --width 36 --height 18 \
   --origin-lat 90 --origin-lon -180 \
   --lon-step 10 --lat-step -10
 ```
@@ -54,7 +54,7 @@ A lookup table lets searches quickly add up population in an area. Build it once
 commands can reuse the saved table. Fetch the raster first with `mise run data:get`.
 
 ```sh
-mise run cli -- table build --dataset population-count-2020-30arcsec \
+mise run popcircles-cli -- table build --dataset population-count-2020-30arcsec \
   --decimate 10 --cache out/gpw-5arcmin
 ```
 
@@ -65,7 +65,7 @@ locate circle centres less precisely. See [Choosing the inputs][inputs] for a st
 To count population in a rectangle, give its north, south, west and east edges:
 
 ```sh
-mise run cli -- table query --dataset population-count-2020-30arcsec \
+mise run popcircles-cli -- table query --dataset population-count-2020-30arcsec \
   --decimate 10 --cache out/gpw-5arcmin \
   --north 55.06 --south 47.27 --west 5.87 --east 15.04
 # the box around Germany; the result includes nearby areas outside Germany
@@ -75,7 +75,7 @@ mise run cli -- table query --dataset population-count-2020-30arcsec \
 A rectangle follows latitude and longitude lines, not a country's borders. To count only people
 inside a country's borders, use the country search described below. The table uses grid settings from
 `data/registry.toml` unless you supply overrides. For the full command options, run
-`mise run cli -- table --help`.
+`mise run popcircles-cli -- table --help`.
 
 ## Circles
 
@@ -86,7 +86,7 @@ function again, and the outputs below are from one run against the 5 arcmin tabl
 search() {
   local command="$1"
   shift
-  mise run cli -- "$command" --dataset population-count-2020-30arcsec \
+  mise run popcircles-cli -- "$command" --dataset population-count-2020-30arcsec \
     --decimate 10 --cache out/gpw-5arcmin "$@"
 }
 ```
@@ -188,7 +188,7 @@ remain selectable by their native IDs and names. Result identities keep the sour
 boundary provenance, and include `iso_alpha2` only when the code is unique.
 
 ```sh
-mise run cli -- country list --config my-data.toml
+mise run popcircles-cli -- country list --config my-data.toml
 # {…,"document":"country-list","result":{"selection":{"combination_id":"local-gpw",
 #  "resolution":10,"population_source":{"name":"population.tif",…},
 #  "boundary_source":{"name":"gisco-countries-2024-1m",…}},"countries":[…]}}
@@ -205,7 +205,7 @@ One country uses the same share search, restricted to its uniquely owned populat
 configured choices with `--combination` and `--resolution`:
 
 ```sh
-mise run cli -- country smallest --country DE --share 50 \
+mise run popcircles-cli -- country smallest --country DE --share 50 \
   --combination gpw-2020-gisco-2024 --resolution 10
 # {…,"document":"country-smallest","result":{"country":{"id":"DE","name":"Germany",
 #  "iso_alpha2":"DE","boundary_dataset":"gisco-countries-2024-1m",…},
@@ -217,7 +217,7 @@ Several countries and shares run in one command. Repeat `--country` for each sel
 countries by name and each country's records by requested share:
 
 ```sh
-mise run cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
+mise run popcircles-cli -- country sweep --country DE --country FR --from 10 --to 90 --step 10 \
   --combination gpw-2020-gisco-2024 --resolution 10
 # {…,"schema_version":2,"document":"country-sweep","result":{"shares":{"from_percent":10,…},
 #  "countries":[{"country":{"id":"DE","name":"Germany",…},"ledger":{"path":"out/countries/4445.json",…},
@@ -344,7 +344,7 @@ It needs the prepared country bundle selected in `data/config.toml`, that combin
 and the configured coastline vector. Install the prepared bundle and fetch the registered vectors with:
 
 ```sh
-mise run cli -- country fetch
+mise run popcircles-cli -- country fetch
 mise run data:get -- --dataset <country-boundary-dataset-key>
 mise run data:get -- --dataset <coastline-dataset-key>
 ```
@@ -375,7 +375,7 @@ the meter says how far a run has got. So `--log-level error` still draws a meter
 to a file draws none — the meter is silent when stderr is not a terminal. Both write to stderr, and
 stdout stays exactly one JSON document at every level.
 
-`mise run cli -- --help` has the full command and flag reference.
+`mise run popcircles-cli -- --help` has the full command and flag reference.
 
 ## Choosing the inputs
 
@@ -416,7 +416,7 @@ and `attribution` text can be recorded on a new combination.
 List the effective built-in and user combinations with:
 
 ```sh
-mise run cli -- country combinations --config my-data.toml
+mise run popcircles-cli -- country combinations --config my-data.toml
 # {…,"document":"country-combinations","result":{"combinations":[…]}}
 ```
 
@@ -426,8 +426,8 @@ source or prepared-data files exist.
 Prepare a combination before using its country tables:
 
 ```sh
-mise run cli -- country prepare
-mise run cli -- country prepare --combination local-gpw --resolution 10
+mise run popcircles-cli -- country prepare
+mise run popcircles-cli -- country prepare --combination local-gpw --resolution 10
 ```
 
 The command defaults to the configured country combination and its default resolution. It reads
@@ -453,8 +453,8 @@ remote = "https://data.example.org/prepared/local-gpw/10"
 Then run the explicit fetch command:
 
 ```sh
-mise run cli -- country fetch
-mise run cli -- country fetch --combination local-gpw --resolution 10
+mise run popcircles-cli -- country fetch
+mise run popcircles-cli -- country fetch --combination local-gpw --resolution 10
 ```
 
 Fetch defaults to the configured combination and its default resolution. It accepts direct HTTPS
@@ -464,7 +464,7 @@ network access. If the target is invalid or belongs to a different configured id
 `--replace`; failed downloads or validation leave the previous bundle intact:
 
 ```sh
-mise run cli -- country fetch --combination local-gpw --resolution 10 --replace
+mise run popcircles-cli -- country fetch --combination local-gpw --resolution 10 --replace
 ```
 
 Fetch never runs implicitly during a search. Use `country prepare` when the raw population and boundary
@@ -474,8 +474,8 @@ at its remote location.
 The built-in country combinations use GPW 2020 with either GISCO Countries 2024 (`gpw-2020-gisco-2024`)
 or GADM 4.1 (`gpw-2020-gadm-4.1`). GISCO is the default. Both offer factor 1 (30 arc-seconds) and
 factor 2 (1 arcminute); factor 2 is the default. Fetch the selected default bundle with
-`mise run cli -- country fetch`, or choose GADM with
-`mise run cli -- country fetch --combination gpw-2020-gadm-4.1`. Each source and resolution has its
+`mise run popcircles-cli -- country fetch`, or choose GADM with
+`mise run popcircles-cli -- country fetch --combination gpw-2020-gadm-4.1`. Each source and resolution has its
 own prepared release, and the selected bundle keeps its source-specific country identifiers.
 
 The release comparison measured the same world radii at both factors (1,227 km at 20%, 3,360 km at

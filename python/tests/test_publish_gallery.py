@@ -626,7 +626,7 @@ def test_pages_workflow_only_stages_the_requested_asset_and_cleans_after_deploy(
     assert 'run: mise run gallery:cleanup -- "$ASSET_NAME"' in workflow
     assert not any(
         forbidden in workflow
-        for forbidden in ("country sweep", "render-gallery", "mise run gallery --")
+        for forbidden in ("country sweep", "visualizer gallery", "mise run gallery --")
     )
 
 

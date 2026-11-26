@@ -7,8 +7,8 @@ import pytest
 from shapely.geometry import box
 
 import population_circles.gallery.rendering as rendering_module
+from population_circles.documents.result_document import circle_of
 from population_circles.maps.frame import ORTHOGRAPHIC
-from population_circles.result_document import circle_of
 from test_gallery import (
     AVAILABLE_CPUS,
     CORPUS,
@@ -92,14 +92,20 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
     assert package / "gallery" / "rendering.py" in rendering_module.RENDER_INPUTS
-    assert package / "data_config.py" in rendering_module.RENDER_INPUTS
+    assert package / "data" / "data_config.py" in rendering_module.RENDER_INPUTS
+    assert package / "data" / "dataset_registry.py" in rendering_module.RENDER_INPUTS
+    assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
+    assert package / "geography" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
+    assert package / "geography" / "country_boundaries.py" in rendering_module.RENDER_INPUTS
+    assert package / "geography" / "territory_share.py" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (
         rendering_module.RENDER_INPUTS
     )
     for unrelated in (
         "gallery/build.py",
         "gallery/country_sweep.py",
-        "circle_map_workflow.py",
+        "applications/circle_map.py",
+        "applications/popcircles_cli.py",
         "gallery/page_data.py",
         "render_globe.py",
     ):

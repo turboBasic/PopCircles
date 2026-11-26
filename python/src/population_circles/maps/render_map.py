@@ -1,4 +1,3 @@
-import argparse
 import json
 import math
 from collections.abc import Callable, Mapping, Sequence
@@ -21,17 +20,18 @@ from shapely.geometry import MultiLineString, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
-from population_circles.circle_geometry import cap, linestrings, polygons
-from population_circles.country_boundaries import load_map_boundaries
-from population_circles.dataset_registry import (
+from population_circles.data.dataset_registry import (
     TerrainRaster,
     load,
 )
+from population_circles.documents.result_document import Answer, circle_of
+from population_circles.geography.circle_geometry import cap, linestrings, polygons
+from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.geography.territory_share import enrich_document
 from population_circles.maps import layers as map_data
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps.frame import (
     PLATE_CARREE,
-    PROJECTIONS,
     CountryFrameSettings,
     Frame,
     country_frame,
@@ -53,8 +53,6 @@ from population_circles.maps.presentation_config import (
     load as load_presentation_config,
 )
 from population_circles.maps.terrain import prepare_terrain
-from population_circles.result_document import Answer, circle_of
-from population_circles.territory_share import enrich_document
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
 # for one is what fails on a machine with no display, rather than falling back.
@@ -574,15 +572,6 @@ def country_map_display(
     )
 
 
-def parse(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Render a circle from a popcircles document.")
-    parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--projection", choices=PROJECTIONS, default=PLATE_CARREE)
-    parser.add_argument("--no-coastlines", action="store_true")
-    return parser.parse_args(argv)
-
-
 def render_file(
     input_path: Path,
     output_path: Path,
@@ -670,14 +659,3 @@ def render_file(
         )
     finally:
         plt.close(figure)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse(argv)
-    render_file(args.input, args.output, args.projection, no_coastlines=args.no_coastlines)
-    print(args.output)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

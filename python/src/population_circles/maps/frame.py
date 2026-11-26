@@ -17,7 +17,8 @@ from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.circle_geometry import (
+from population_circles.documents.result_document import Coordinate
+from population_circles.geography.circle_geometry import (
     HALF_TURN_DEG,
     METRES_PER_KM,
     POLE_LAT,
@@ -29,7 +30,6 @@ from population_circles.circle_geometry import (
     hemisphere_km,
     projected_crs,
 )
-from population_circles.result_document import Coordinate
 
 # Shapely's stubs omit the documented interleaved=False callback and include_z=None options.
 _transform = cast(Callable[..., BaseGeometry], transform)
