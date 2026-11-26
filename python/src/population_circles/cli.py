@@ -10,12 +10,10 @@ from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
 from population_circles.workflows import circle_map, rust_cli
 
 app = typer.Typer(no_args_is_help=True)
-render_app = typer.Typer(no_args_is_help=True)
-gallery_app = typer.Typer(no_args_is_help=True)
 
 
-@app.command("map")
-def map_command(
+@app.command("circle")
+def circle_command(
     dataset: Annotated[str, typer.Option()],
     share: Annotated[
         str, typer.Option(help="Population share in whole percent; validated by Rust.")
@@ -52,19 +50,19 @@ def map_command(
     )
     if Path.cwd().resolve() != rust_cli.REPO_ROOT:
         typer.echo(
-            f"visualizer map: run from the checkout root: {rust_cli.REPO_ROOT}",
+            f"visualizer circle: run from the checkout root: {rust_cli.REPO_ROOT}",
             err=True,
         )
         raise typer.Exit(1)
     try:
         circle_map.workflow(options)
     except rust_cli.WorkflowError as error:
-        typer.echo(f"visualizer map: {error}", err=True)
+        typer.echo(f"visualizer circle: {error}", err=True)
         raise typer.Exit(1) from error
     typer.echo(f"image: {options.output}\ndocument: {options.document}")
 
 
-@render_app.command("map")
+@app.command("map")
 def render_map_command(
     input_path: Annotated[Path, typer.Option("--input")],
     output: Annotated[Path, typer.Option()],
@@ -78,7 +76,7 @@ def render_map_command(
     typer.echo(output)
 
 
-@render_app.command("globe")
+@app.command("globe")
 def render_globe_command(
     center: Annotated[str, typer.Option("--center", "--centre", metavar="LAT,LON")],
     output: Annotated[Path, typer.Option()],
@@ -119,7 +117,7 @@ def render_globe_command(
         typer.echo(rendered)
 
 
-@gallery_app.command("build")
+@app.command("gallery")
 def gallery_build_command(
     input_path: Annotated[Path, typer.Option("--input")],
     output: Annotated[Path, typer.Option()],
@@ -140,10 +138,6 @@ def gallery_build_command(
             typer.echo(f"{one.document}: skipped, country population is zero")
         else:
             typer.echo(f"{one.document}: skipped, kind {one.kind!r} carries no circle to draw")
-
-
-app.add_typer(render_app, name="render")
-app.add_typer(gallery_app, name="gallery")
 
 
 if __name__ == "__main__":

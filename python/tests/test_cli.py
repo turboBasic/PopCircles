@@ -17,23 +17,24 @@ def test_help_lists_commands() -> None:
     result = runner.invoke(cli.app, ["--help"])
 
     assert result.exit_code == 0
+    assert "circle" in result.stdout
     assert "map" in result.stdout
-    assert "render" in result.stdout
+    assert "globe" in result.stdout
     assert "gallery" in result.stdout
 
 
-def test_map_requires_dataset() -> None:
-    result = runner.invoke(cli.app, ["map"])
+def test_circle_requires_dataset() -> None:
+    result = runner.invoke(cli.app, ["circle"])
 
     assert result.exit_code == INVALID_ARGUMENT_EXIT
     assert "--dataset" in result.output
 
 
-def test_map_rejects_invalid_projection() -> None:
+def test_circle_rejects_invalid_projection() -> None:
     result = runner.invoke(
         cli.app,
         [
-            "map",
+            "circle",
             "--dataset",
             "world",
             "--share",
@@ -50,7 +51,7 @@ def test_map_rejects_invalid_projection() -> None:
     assert result.exit_code == INVALID_ARGUMENT_EXIT
 
 
-def test_map_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch) -> None:
+def test_circle_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch) -> None:
     workflow = Mock()
     monkeypatch.setattr(circle_map, "workflow", workflow)
     document = Path("other.json")
@@ -58,7 +59,7 @@ def test_map_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch)
     result = runner.invoke(
         cli.app,
         [
-            "map",
+            "circle",
             "--dataset",
             "world",
             "--share",
@@ -92,7 +93,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
         runner.invoke(
             cli.app,
             [
-                "map",
+                "circle",
                 "--dataset",
                 "world",
                 "--share",
@@ -103,9 +104,9 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
                 "map.png",
             ],
         ),
-        runner.invoke(cli.app, ["render", "map", "--input", "answer.json", "--output", "map.png"]),
-        runner.invoke(cli.app, ["render", "globe", "--center", "0,0", "--output", "globe.svg"]),
-        runner.invoke(cli.app, ["gallery", "build", "--input", "corpus", "--output", "gallery"]),
+        runner.invoke(cli.app, ["map", "--input", "answer.json", "--output", "map.png"]),
+        runner.invoke(cli.app, ["globe", "--center", "0,0", "--output", "globe.svg"]),
+        runner.invoke(cli.app, ["gallery", "--input", "corpus", "--output", "gallery"]),
     ]
 
     assert [result.exit_code for result in results] == [0, 0, 0, 0]
