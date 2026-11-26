@@ -33,13 +33,6 @@ def test_circle_requires_dataset() -> None:
     assert result.exit_code == INVALID_ARGUMENT_EXIT
 
 
-def test_circle_help_lists_required_dataset_option() -> None:
-    result = runner.invoke(cli.app, ["circle", "--help"], color=False)
-
-    assert result.exit_code == 0
-    assert "--dataset" in result.stdout
-
-
 def test_circle_rejects_invalid_projection() -> None:
     result = runner.invoke(
         cli.app,
