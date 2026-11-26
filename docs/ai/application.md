@@ -101,7 +101,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
 5. **Rendering.** Python renders published documents in a separate layer from the Rust search. Its
    `visualizer` command surface dispatches to packages organized by responsibility:
 
-   - `cli.py` owns command parsing and dispatch for `circle`, `map`, `globe`, and `gallery`.
+   - `cli.py` owns command parsing and dispatch for `circle`, `map`, `globe-animation`, and `gallery`.
    - `workflows/` owns application flows that combine Rust search, result documents, and rendering.
    - `data/` owns access to dataset configuration and the dataset registry.
    - `documents/` owns the published-result contract used between search and rendering.

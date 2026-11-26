@@ -76,7 +76,7 @@ def render_map_command(
     typer.echo(output)
 
 
-@app.command("globe", help="Render an animated globe as SVG or GIF.")
+@app.command("globe-animation", help="Render an animated globe as SVG or GIF.")
 def render_globe_command(
     center: Annotated[str, typer.Option("--center", "--centre", metavar="LAT,LON")],
     output: Annotated[Path, typer.Option()],

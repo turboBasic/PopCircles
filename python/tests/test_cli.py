@@ -19,7 +19,8 @@ def test_help_lists_commands() -> None:
     assert result.exit_code == 0
     assert "circle" in result.stdout
     assert "map" in result.stdout
-    assert "globe" in result.stdout
+    assert "globe-animation" in result.stdout
+    assert "animated globe as SVG or GIF" in result.stdout
     assert "gallery" in result.stdout
 
 
@@ -105,7 +106,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
             ],
         ),
         runner.invoke(cli.app, ["map", "--input", "answer.json", "--output", "map.png"]),
-        runner.invoke(cli.app, ["globe", "--center", "0,0", "--output", "globe.svg"]),
+        runner.invoke(cli.app, ["globe-animation", "--center", "0,0", "--output", "globe.svg"]),
         runner.invoke(cli.app, ["gallery", "--input", "corpus", "--output", "gallery"]),
     ]
 

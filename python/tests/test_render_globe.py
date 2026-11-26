@@ -167,7 +167,7 @@ def test_render_gif_preserves_source_frame_order(
 def test_svg_sprite_requires_latitude_steps() -> None:
     result = CliRunner().invoke(
         cli.app,
-        ["render", "globe", "--center", "0,0", "--output", "globe.svg", "--svg-sprite"],
+        ["globe-animation", "--center", "0,0", "--output", "globe.svg", "--svg-sprite"],
     )
     assert result.exit_code == CLI_ERROR_EXIT
 
@@ -183,7 +183,7 @@ def test_renderer_value_error_keeps_runtime_failure_status(
 
     result = CliRunner().invoke(
         cli.app,
-        ["render", "globe", "--center", "0,0", "--output", "globe.svg"],
+        ["globe-animation", "--center", "0,0", "--output", "globe.svg"],
     )
 
     assert result.exit_code == 1
