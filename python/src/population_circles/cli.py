@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from typing import Annotated
 
@@ -90,6 +91,18 @@ def render_globe_command(
 ) -> None:
     try:
         centre = render_globe.parse_center(center)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    if not math.isfinite(detalization) or detalization <= 0:
+        message = "detalization must be finite and greater than zero"
+        raise typer.BadParameter(message)
+    if latitude_steps is not None and latitude_steps <= 0:
+        message = "latitude-steps must be greater than zero"
+        raise typer.BadParameter(message)
+    if svg_sprite and latitude_steps is None:
+        message = "--svg-sprite requires --latitude-steps"
+        raise typer.BadParameter(message)
+    try:
         rendered = render_globe.render_command(
             render_globe.RenderOptions(
                 centre,
@@ -100,7 +113,7 @@ def render_globe_command(
                 detalization,
             )
         )
-    except ValueError as error:
+    except render_globe.GifRenderError as error:
         raise typer.BadParameter(str(error)) from error
     if rendered is not None:
         typer.echo(rendered)

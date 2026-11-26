@@ -172,6 +172,24 @@ def test_svg_sprite_requires_latitude_steps() -> None:
     assert result.exit_code == CLI_ERROR_EXIT
 
 
+def test_renderer_value_error_keeps_runtime_failure_status(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_args: object, **_kwargs: object) -> None:
+        message = "bad registered boundary"
+        raise ValueError(message)
+
+    monkeypatch.setattr(render_globe, "render_globe", fail)
+
+    result = CliRunner().invoke(
+        cli.app,
+        ["render", "globe", "--center", "0,0", "--output", "globe.svg"],
+    )
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, ValueError)
+
+
 def test_parse_svg_rejects_entities(tmp_path: Path) -> None:
     svg = tmp_path / "unsafe.svg"
     svg.write_text(

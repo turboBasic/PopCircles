@@ -289,6 +289,10 @@ class RenderOptions:
     detalization: float = 1
 
 
+class GifRenderError(Exception):
+    pass
+
+
 def render_command(
     options: RenderOptions,
 ) -> Path | None:
@@ -298,15 +302,6 @@ def render_command(
     svg_sprite = options.svg_sprite
     latitude_steps = options.latitude_steps
     detalization = options.detalization
-    if not math.isfinite(detalization) or detalization <= 0:
-        message = "detalization must be finite and greater than zero"
-        raise ValueError(message)
-    if latitude_steps is not None and latitude_steps <= 0:
-        message = "latitude-steps must be greater than zero"
-        raise ValueError(message)
-    if svg_sprite and latitude_steps is None:
-        message = "--svg-sprite requires --latitude-steps"
-        raise ValueError(message)
     sequence_svg: Path | None = output
     if latitude_steps is None:
         render_globe(centre, output, detalization)
@@ -329,5 +324,5 @@ def render_command(
             else:
                 render_gif(output_gif, sequence_svg)
         except (OSError, ValueError) as error:
-            raise ValueError(str(error)) from error
+            raise GifRenderError(str(error)) from error
     return output if svg_sprite else sequence_svg
