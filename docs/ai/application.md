@@ -107,7 +107,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
    - `documents/` owns the published-result contract used between search and rendering.
    - `geography/` owns geographic operations shared by workflows and renderers, including circle
      geometry, boundary loading, and territory coverage.
-   - `maps/` owns map presentation and the map and globe renderers.
+   - `maps/` owns map presentation, flat map rendering, and animated globe output as SVG or GIF.
    - `gallery/` owns gallery assembly, country results, figure caching, and frontend page data.
 
    When changing code that affects Gallery map pixels, metadata, titles, or visible credits, update

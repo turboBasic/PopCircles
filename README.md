@@ -85,8 +85,8 @@ Each caption shows the circle's population share, radius and centre. See [the ga
 instructions][usage] for setup.
 The Python application CLI is `visualizer`, with `circle`, `map`, `globe`, and `gallery` commands.
 `circle` searches for a population circle and renders its map; `map` renders an existing result;
-`globe` renders a globe view; and `gallery` builds the static Gallery. Its `workflows` coordinate
-search and map output; shared map presentation
+`globe` renders an animated globe as SVG or GIF; and `gallery` builds the static Gallery. Its
+`workflows` coordinate search and map output; shared map presentation
 lives in `population_circles.maps`, while `population_circles.gallery` builds the static Gallery,
 country sweep, map cache and page data.
 The [frontend reference](docs/ai/frontend.md#behaviour) defines browser interactions and links them to

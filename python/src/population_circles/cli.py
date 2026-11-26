@@ -12,7 +12,7 @@ from population_circles.workflows import circle_map, rust_cli
 app = typer.Typer(no_args_is_help=True)
 
 
-@app.command("circle")
+@app.command("circle", help="Search for a population circle and render its map.")
 def circle_command(
     dataset: Annotated[str, typer.Option()],
     share: Annotated[
@@ -62,7 +62,7 @@ def circle_command(
     typer.echo(f"image: {options.output}\ndocument: {options.document}")
 
 
-@app.command("map")
+@app.command("map", help="Render a map from an existing result document.")
 def render_map_command(
     input_path: Annotated[Path, typer.Option("--input")],
     output: Annotated[Path, typer.Option()],
@@ -76,7 +76,7 @@ def render_map_command(
     typer.echo(output)
 
 
-@app.command("globe")
+@app.command("globe", help="Render an animated globe as SVG or GIF.")
 def render_globe_command(
     center: Annotated[str, typer.Option("--center", "--centre", metavar="LAT,LON")],
     output: Annotated[Path, typer.Option()],
@@ -117,7 +117,7 @@ def render_globe_command(
         typer.echo(rendered)
 
 
-@app.command("gallery")
+@app.command("gallery", help="Build the static gallery from result documents.")
 def gallery_build_command(
     input_path: Annotated[Path, typer.Option("--input")],
     output: Annotated[Path, typer.Option()],
