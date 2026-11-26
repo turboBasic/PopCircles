@@ -55,7 +55,7 @@ def circle_command(
         )
         raise typer.Exit(1)
     try:
-        circle_map.workflow(options)
+        circle_map.search_and_render_circle_map(options)
     except rust_cli.WorkflowError as error:
         typer.echo(f"visualizer circle: {error}", err=True)
         raise typer.Exit(1) from error

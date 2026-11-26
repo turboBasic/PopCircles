@@ -21,7 +21,7 @@ from population_circles.maps import metadata as map_metadata
 from population_circles.maps import render_map
 from population_circles.maps.frame import ORTHOGRAPHIC
 from population_circles.workflows import circle_map, rust_cli
-from population_circles.workflows.circle_map import Options, workflow
+from population_circles.workflows.circle_map import Options, search_and_render_circle_map
 from population_circles.workflows.rust_cli import WorkflowError
 from test_render_map import (
     DATASET,
@@ -78,7 +78,7 @@ class Children:
 def test_reuse_forwards_every_parameter_and_draws_this_document(options: Options) -> None:
     options = replace(options, decimate="10", spacing="4", projection=ORTHOGRAPHIC)
     children = Children([0, 0])
-    workflow(options, children)
+    search_and_render_circle_map(options, children)
     common = ["--dataset", DATASET, "--cache", str(options.cache), "--decimate", "10"]
     assert children.calls == [
         ["table", "query", *common],
@@ -107,7 +107,7 @@ def test_a_failed_probe_never_builds_or_renders(options: Options, code: int) -> 
     options.document.write_text("older document")
     children = Children([code])
     with pytest.raises(WorkflowError, match="cache probe: Rust CLI exited"):
-        workflow(options, children)
+        search_and_render_circle_map(options, children)
     assert len(children.calls) == 1
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
@@ -115,7 +115,7 @@ def test_a_failed_probe_never_builds_or_renders(options: Options, code: int) -> 
 
 def test_only_a_missing_or_incompatible_probe_builds(options: Options) -> None:
     children = Children([3, 0, 0])
-    workflow(options, children)
+    search_and_render_circle_map(options, children)
     common = ["--dataset", DATASET, "--cache", str(options.cache), "--decimate", "1"]
     assert children.calls == [
         ["table", "query", *common],
@@ -136,7 +136,7 @@ def test_failed_build_or_search_keeps_the_previous_document(
     options.document.write_text("older document")
     children = Children(codes)
     with pytest.raises(WorkflowError, match=f"{stage}: Rust CLI exited"):
-        workflow(options, children)
+        search_and_render_circle_map(options, children)
     assert len(children.calls) == len(codes)
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
@@ -146,7 +146,7 @@ def test_failed_build_or_search_keeps_the_previous_document(
 def test_rejected_documents_are_retained_and_never_drawn(options: Options, payload: bytes) -> None:
     options.document.write_text("older document")
     with pytest.raises(WorkflowError, match=r"render:.*") as caught:
-        workflow(options, Children([0, 0], payload))
+        search_and_render_circle_map(options, Children([0, 0], payload))
     assert str(options.document) in str(caught.value)
     assert options.document.read_bytes() == payload
     assert not options.output.exists()
@@ -169,7 +169,7 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
     with pytest.raises(
         WorkflowError, match=r"unsupported projection.*current search document retained"
     ) as caught:
-        workflow(replace(options, projection="unknown"), children)
+        search_and_render_circle_map(replace(options, projection="unknown"), children)
     assert str(options.document) in str(caught.value)
     published = json.loads(options.document.read_bytes())
     assert published["provenance"]["dataset"] == DATASET
@@ -190,7 +190,7 @@ def test_save_failure_closes_the_figure_and_retains_the_document(
     monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
     children = Children([0, 0])
     with pytest.raises(WorkflowError, match="render: cannot save figure"):
-        workflow(options, children)
+        search_and_render_circle_map(options, children)
     assert "territory_share" in json.loads(options.document.read_bytes())["result"]
     assert plt.get_fignums() == before
 
@@ -204,7 +204,7 @@ def test_draw_failure_closes_the_figure(options: Options, monkeypatch: pytest.Mo
 
     monkeypatch.setattr(render_map, "draw", fail)
     with pytest.raises(WorkflowError, match="render: cannot draw geometry"):
-        workflow(options, Children([0, 0]))
+        search_and_render_circle_map(options, Children([0, 0]))
     assert plt.get_fignums() == before
 
 
@@ -227,7 +227,7 @@ def test_colliding_destinations_are_refused_before_children(
             options.document.hardlink_to(options.output)
     children = Children([])
     with pytest.raises(WorkflowError, match="destinations: image, document and ledger must differ"):
-        workflow(options, children)
+        search_and_render_circle_map(options, children)
     assert children.calls == []
 
 
@@ -243,7 +243,7 @@ def test_publication_failure_preserves_the_existing_document(
 
     monkeypatch.setattr(Path, "replace", fail)
     with pytest.raises(WorkflowError, match=r"document publication:.*replace denied"):
-        workflow(options, Children([0, 0]))
+        search_and_render_circle_map(options, Children([0, 0]))
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
     assert list(options.document.parent.glob(f".{options.document.name}.*")) == []
@@ -255,7 +255,7 @@ def test_missing_executable_reports_the_launch_stage(options: Options) -> None:
         raise FileNotFoundError(message)
 
     with pytest.raises(WorkflowError, match="cache probe: could not launch Rust CLI: missing mise"):
-        workflow(options, missing)
+        search_and_render_circle_map(options, missing)
 
 
 def test_actual_child_uses_checkout_argv_and_inherits_stderr(
@@ -341,7 +341,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
     monkeypatch.setattr(map_metadata, "copyright_of", capture_copyright)
     payload = document()
     payload["earth_model"]["radius_km"] = CUSTOM_EARTH_RADIUS_KM
-    workflow(options, Children([0, 0], json.dumps(payload).encode()))
+    search_and_render_circle_map(options, Children([0, 0], json.dumps(payload).encode()))
     assert render_spy.call_args is not None
     render_answer = render_spy.call_args.args[0]
     assert isinstance(render_answer, Answer)

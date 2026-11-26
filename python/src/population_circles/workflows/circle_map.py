@@ -77,7 +77,7 @@ def _enriched_search_result(content: bytes) -> bytes:
     return (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
 
 
-def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
+def search_and_render_circle_map(options: Options, invoke: Invoke = invoke_cli) -> None:
     try:
         check_destinations(options)
     except OSError as error:

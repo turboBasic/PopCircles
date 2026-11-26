@@ -11,7 +11,7 @@ from population_circles.documents.result_document import SweepRecords, circle_of
 from population_circles.maps import layers as map_layers
 from population_circles.maps import render_map
 from population_circles.workflows import circle_map
-from population_circles.workflows.circle_map import Options, workflow
+from population_circles.workflows.circle_map import Options, search_and_render_circle_map
 from population_circles.workflows.rust_cli import REPO_ROOT, WorkflowError
 from test_render_map import (
     PNG_MAGIC,
@@ -97,7 +97,7 @@ def test_real_build_reuse_and_missing_raster(
         results.append(result)
         return result
 
-    workflow(options, invoke)
+    search_and_render_circle_map(options, invoke)
     assert [arguments[:2] for arguments in calls[:2]] == [["table", "query"], ["table", "build"]]
     assert options.output.read_bytes().startswith(PNG_MAGIC)
     first = json.loads(options.document.read_bytes())
@@ -111,7 +111,7 @@ def test_real_build_reuse_and_missing_raster(
     results.clear()
     options.output.unlink()
     with pytest.raises(WorkflowError, match="search: Rust CLI exited 3"):
-        workflow(options, invoke)
+        search_and_render_circle_map(options, invoke)
     assert len(calls) == 2  # noqa: PLR2004 — cached table query then raster-dependent circle
     assert calls[0][:2] == ["table", "query"]
     assert calls[1][0] == "smallest-for-share"
@@ -123,7 +123,7 @@ def test_real_build_reuse_and_missing_raster(
     calls.clear()
     options.output.unlink(missing_ok=True)
     with pytest.raises(WorkflowError, match="table build: Rust CLI exited 3"):
-        workflow(options, invoke)
+        search_and_render_circle_map(options, invoke)
     assert "mise run data:get" in capsys.readouterr().err
     assert options.document.read_bytes() == current
     assert not options.output.exists()

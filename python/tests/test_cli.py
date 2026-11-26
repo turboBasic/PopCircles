@@ -54,7 +54,7 @@ def test_circle_rejects_invalid_projection() -> None:
 
 def test_circle_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch) -> None:
     workflow = Mock()
-    monkeypatch.setattr(circle_map, "workflow", workflow)
+    monkeypatch.setattr(circle_map, "search_and_render_circle_map", workflow)
     document = Path("other.json")
 
     result = runner.invoke(
@@ -85,7 +85,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
     render_file = Mock()
     render_command = Mock(return_value=Path("globe.svg"))
     gallery = Mock(return_value=([], []))
-    monkeypatch.setattr(circle_map, "workflow", workflow)
+    monkeypatch.setattr(circle_map, "search_and_render_circle_map", workflow)
     monkeypatch.setattr(render_map, "render_file", render_file)
     monkeypatch.setattr(render_globe, "render_command", render_command)
     monkeypatch.setattr(gallery_build, "build", gallery)
