@@ -14,6 +14,7 @@ from PIL import Image
 from rasterio.transform import from_origin
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
+from typer.testing import CliRunner
 
 import population_circles.gallery.build as gallery_module
 import population_circles.gallery.country_sweep as country_sweep_module
@@ -22,6 +23,7 @@ import population_circles.maps.layers as map_layers_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
+from population_circles import cli
 from population_circles.circle_map_workflow import Invoke, WorkflowError
 from population_circles.data_config import country_boundary_dataset_key
 from population_circles.dataset_registry import (
@@ -51,6 +53,8 @@ from test_render_map import (
 )
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
+CLI_ERROR_EXIT = 2
+REFRESH_OPTION_COUNT = 2
 DATASET = "population-count-2020-30arcsec"
 WORLD_POPULATION = 1_254_363_867.93
 WORLD_SHARE = 0.1616868627727305
@@ -1051,29 +1055,56 @@ def test_a_failed_sweep_does_not_replace_saved_country_results(
     assert {path.name: path.read_bytes() for path in (sweep_path, country_path)} == before
 
 
-def test_gallery_cli_accepts_forced_country_sweep_refresh() -> None:
-    args = gallery_module.parse(
-        ["--input", "results", "--output", "build/gallery", "--refresh-country-sweep"]
+def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
+    build = Mock(return_value=([], []))
+    monkeypatch.setattr(gallery_module, "build", build)
+    runner = CliRunner()
+
+    sweep = runner.invoke(
+        cli.app,
+        [
+            "gallery",
+            "build",
+            "--input",
+            "results",
+            "--output",
+            "build/gallery",
+            "--refresh-country-sweep",
+        ],
     )
+    assert sweep.exit_code == 0
+    assert build.call_args.kwargs["country_refresh"] == "sweep"
 
-    assert args.country_refresh == "sweep"
-
-    coverage_args = gallery_module.parse(
-        ["--input", "results", "--output", "build/gallery", "--refresh-country-coverage"]
+    coverage = runner.invoke(
+        cli.app,
+        [
+            "gallery",
+            "build",
+            "--input",
+            "results",
+            "--output",
+            "build/gallery",
+            "--refresh-country-coverage",
+        ],
     )
-    assert coverage_args.country_refresh == "coverage"
+    assert coverage.exit_code == 0
+    assert build.call_args.kwargs["country_refresh"] == "coverage"
 
-    with pytest.raises(SystemExit):
-        gallery_module.parse(
-            [
-                "--input",
-                "results",
-                "--output",
-                "build/gallery",
-                "--refresh-country-sweep",
-                "--refresh-country-coverage",
-            ]
-        )
+    invalid = runner.invoke(
+        cli.app,
+        [
+            "gallery",
+            "build",
+            "--input",
+            "results",
+            "--output",
+            "build/gallery",
+            "--refresh-country-sweep",
+            "--refresh-country-coverage",
+        ],
+    )
+    assert invalid.exit_code == CLI_ERROR_EXIT
+    assert build.call_count == REFRESH_OPTION_COUNT
 
 
 def test_a_failed_country_command_leaves_no_gallery_index(

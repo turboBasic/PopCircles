@@ -1,4 +1,3 @@
-import argparse
 import json
 import math
 from collections.abc import Callable, Mapping, Sequence
@@ -31,7 +30,6 @@ from population_circles.maps import layers as map_data
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps.frame import (
     PLATE_CARREE,
-    PROJECTIONS,
     CountryFrameSettings,
     Frame,
     country_frame,
@@ -574,15 +572,6 @@ def country_map_display(
     )
 
 
-def parse(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Render a circle from a popcircles document.")
-    parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--projection", choices=PROJECTIONS, default=PLATE_CARREE)
-    parser.add_argument("--no-coastlines", action="store_true")
-    return parser.parse_args(argv)
-
-
 def render_file(
     input_path: Path,
     output_path: Path,
@@ -670,14 +659,3 @@ def render_file(
         )
     finally:
         plt.close(figure)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse(argv)
-    render_file(args.input, args.output, args.projection, no_coastlines=args.no_coastlines)
-    print(args.output)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

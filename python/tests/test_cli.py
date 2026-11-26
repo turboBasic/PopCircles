@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import Mock
 
 from _pytest.monkeypatch import MonkeyPatch
@@ -48,18 +49,47 @@ def test_map_rejects_invalid_projection() -> None:
     assert result.exit_code == INVALID_ARGUMENT_EXIT
 
 
-def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> None:
-    map_main = Mock(return_value=0)
-    render_main = Mock(return_value=0)
-    globe_main = Mock(return_value=0)
-    gallery_main = Mock(return_value=0)
-    monkeypatch.setattr(circle_map_workflow, "main", map_main)
-    monkeypatch.setattr(render_map, "main", render_main)
-    monkeypatch.setattr(render_globe, "main", globe_main)
-    monkeypatch.setattr(gallery_build, "main", gallery_main)
+def test_map_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch) -> None:
+    workflow = Mock()
+    monkeypatch.setattr(circle_map_workflow, "workflow", workflow)
+    document = Path("other.json")
 
-    commands = [
-        (
+    result = runner.invoke(
+        cli.app,
+        [
+            "map",
+            "--dataset",
+            "world",
+            "--share",
+            "50",
+            "--cache",
+            "cache",
+            "--output",
+            "map.png",
+            "--document",
+            str(document),
+        ],
+    )
+
+    assert result.exit_code == 0
+    options = workflow.call_args.args[0]
+    assert options.document == document
+    assert options.ledger == document.with_suffix(".radii.json")
+
+
+def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> None:
+    workflow = Mock()
+    render_file = Mock()
+    render_command = Mock(return_value=Path("globe.svg"))
+    gallery = Mock(return_value=([], []))
+    monkeypatch.setattr(circle_map_workflow, "workflow", workflow)
+    monkeypatch.setattr(render_map, "render_file", render_file)
+    monkeypatch.setattr(render_globe, "render_command", render_command)
+    monkeypatch.setattr(gallery_build, "build", gallery)
+
+    results = [
+        runner.invoke(
+            cli.app,
             [
                 "map",
                 "--dataset",
@@ -71,29 +101,20 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
                 "--output",
                 "map.png",
             ],
-            map_main,
-            ["--dataset", "world"],
         ),
-        (
-            ["render", "map", "--input", "answer.json", "--output", "map.png"],
-            render_main,
-            ["--input", "answer.json"],
-        ),
-        (
-            ["render", "globe", "--center", "0,0", "--output", "globe.svg"],
-            globe_main,
-            ["--center", "0,0"],
-        ),
-        (
-            ["gallery", "build", "--input", "corpus", "--output", "gallery"],
-            gallery_main,
-            ["--input", "corpus"],
-        ),
+        runner.invoke(cli.app, ["render", "map", "--input", "answer.json", "--output", "map.png"]),
+        runner.invoke(cli.app, ["render", "globe", "--center", "0,0", "--output", "globe.svg"]),
+        runner.invoke(cli.app, ["gallery", "build", "--input", "corpus", "--output", "gallery"]),
     ]
 
-    for arguments, main, expected in commands:
-        result = runner.invoke(cli.app, arguments)
-        assert result.exit_code == 0, result.stdout
-        main.assert_called_once()
-        assert main.call_args.args[0][:2] == expected
-        main.reset_mock()
+    assert [result.exit_code for result in results] == [0, 0, 0, 0]
+    options = workflow.call_args.args[0]
+    assert options.dataset == "world"
+    assert options.share == "50"
+    assert options.document == Path("map.json")
+    assert options.ledger == Path("map.radii.json")
+    render_file.assert_called_once_with(
+        Path("answer.json"), Path("map.png"), "plate-carree", no_coastlines=False
+    )
+    render_command.assert_called_once()
+    assert gallery.call_args.args == (Path("corpus"), Path("gallery"))

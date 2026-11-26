@@ -11,7 +11,6 @@ Repository = "https://github.com/turboBasic/PopCircles"
 # The three repository tools reach their subjects through REPO_ROOT rather than an argument, so an
 # entry point is what lets a hook and a mise task call one without naming where its file sits.
 [project.scripts]
-circle-map = "population_circles.circle_map_workflow:main"
 popcircles-bench = "repo_tools.bench:main"
 capture-agent-answer = "repo_tools.capture_agent_answer:main"
 fetch-data = "repo_tools.fetch_data:main"
@@ -21,9 +20,7 @@ post-agent-answer = "repo_tools.post_agent_answer:main"
 publish-gallery = "repo_tools.publish_gallery:main"
 release-smoke = "repo_tools.release_smoke:main"
 release-trust = "repo_tools.release_trust:main"
-render-gallery = "population_circles.gallery.build:main"
-render-globe = "population_circles.maps.render_globe:main"
-render-map = "population_circles.maps.render_map:main"
+visualizer = "population_circles.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.12,<0.14"]

@@ -1,7 +1,5 @@
-import argparse
 import json
 import subprocess
-import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,7 +9,7 @@ from typing import cast
 from population_circles.country_boundaries import load_map_boundaries
 from population_circles.dataset_registry import load
 from population_circles.maps import render_map
-from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
+from population_circles.maps.frame import PLATE_CARREE
 from population_circles.result_document import circle_of
 from population_circles.territory_share import enrich_document
 
@@ -159,62 +157,3 @@ def workflow(options: Options, invoke: Invoke = invoke_cli) -> None:
         except OSError as error:
             message = f"document publication: could not replace {options.document}: {error}"
             raise WorkflowError(message) from error
-
-
-def parse(argv: list[str] | None = None) -> Options:
-    parser = argparse.ArgumentParser(
-        description="Search a named dataset and save its circle map (from the checkout root)."
-    )
-    parser.add_argument("--dataset", required=True)
-    parser.add_argument(
-        "--share", required=True, help="Population share in whole percent; validated by Rust."
-    )
-    parser.add_argument("--cache", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument(
-        "--document", type=Path, help="Search JSON; defaults to the image path with .json suffix."
-    )
-    parser.add_argument(
-        "--ledger",
-        type=Path,
-        help="Radii ledger; defaults to the document path with .radii.json suffix.",
-    )
-    parser.add_argument("--decimate", default="1")
-    parser.add_argument("--spacing")
-    parser.add_argument("--projection", choices=PROJECTIONS, default=PLATE_CARREE)
-    parser.add_argument("--no-coastlines", action="store_true")
-    args = parser.parse_args(argv)
-    document: Path = (
-        args.document if args.document is not None else args.output.with_suffix(".json")
-    )
-    ledger: Path = args.ledger if args.ledger is not None else document.with_suffix(".radii.json")
-    return Options(
-        dataset=args.dataset,
-        share=args.share,
-        cache=args.cache,
-        output=args.output,
-        document=document,
-        ledger=ledger,
-        decimate=args.decimate,
-        spacing=args.spacing,
-        projection=args.projection,
-        no_coastlines=args.no_coastlines,
-    )
-
-
-def main(argv: list[str] | None = None) -> int:
-    options = parse(argv)
-    if Path.cwd().resolve() != REPO_ROOT:
-        sys.stderr.write(f"circle-map: run from the checkout root: {REPO_ROOT}\n")
-        return 1
-    try:
-        workflow(options)
-    except WorkflowError as error:
-        sys.stderr.write(f"circle-map: {error}\n")
-        return 1
-    sys.stdout.write(f"image: {options.output}\ndocument: {options.document}\n")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

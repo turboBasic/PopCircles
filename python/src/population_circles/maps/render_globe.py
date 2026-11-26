@@ -1,9 +1,9 @@
-import argparse
 import math
 import re
 import tempfile
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
+from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -63,16 +63,16 @@ def parse_center(value: str) -> Coordinate:
         latitude, longitude = (float(part) for part in value.split(","))
     except ValueError as error:
         message = "centre must be LATITUDE,LONGITUDE"
-        raise argparse.ArgumentTypeError(message) from error
+        raise ValueError(message) from error
     if not math.isfinite(latitude) or not -POLE_LAT <= latitude <= POLE_LAT:
         message = "center latitude must be between -90 and 90"
-        raise argparse.ArgumentTypeError(message)
+        raise ValueError(message)
     if abs(latitude) == POLE_LAT:
         message = "center latitude cannot be -90 or 90"
-        raise argparse.ArgumentTypeError(message)
+        raise ValueError(message)
     if not math.isfinite(longitude) or not -HALF_TURN_DEG <= longitude <= HALF_TURN_DEG:
         message = "center longitude must be between -180 and 180"
-        raise argparse.ArgumentTypeError(message)
+        raise ValueError(message)
     return Coordinate(lat=latitude, lon=longitude)
 
 
@@ -279,57 +279,55 @@ def render_latitude_sequence(
     return sequence_svg
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Render an orthographic globe SVG.")
-    parser.add_argument("--center", "--centre", required=True, type=parse_center, metavar="LAT,LON")
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--output-gif", type=Path)
-    parser.add_argument("--svg-sprite", action="store_true")
-    parser.add_argument(
-        "--latitude-steps",
-        type=int,
-        help="render this many frames from pole to pole",
-    )
-    parser.add_argument("--detalization", type=float, default=1)
-    args = parser.parse_args(argv)
-    if not math.isfinite(args.detalization) or args.detalization <= 0:
-        parser.error("detalization must be finite and greater than zero")
-    if args.latitude_steps is not None and args.latitude_steps <= 0:
-        parser.error("latitude-steps must be greater than zero")
-    if args.svg_sprite and args.latitude_steps is None:
-        parser.error("--svg-sprite requires --latitude-steps")
-    sequence_svg = args.output
-    output_svg = args.output
-    if args.latitude_steps is None:
-        render_globe(args.center, args.output, args.detalization)
-    elif args.svg_sprite:
+@dataclass(frozen=True)
+class RenderOptions:
+    centre: Coordinate
+    output: Path
+    output_gif: Path | None = None
+    svg_sprite: bool = False
+    latitude_steps: int | None = None
+    detalization: float = 1
+
+
+def render_command(
+    options: RenderOptions,
+) -> Path | None:
+    centre = options.centre
+    output = options.output
+    output_gif = options.output_gif
+    svg_sprite = options.svg_sprite
+    latitude_steps = options.latitude_steps
+    detalization = options.detalization
+    if not math.isfinite(detalization) or detalization <= 0:
+        message = "detalization must be finite and greater than zero"
+        raise ValueError(message)
+    if latitude_steps is not None and latitude_steps <= 0:
+        message = "latitude-steps must be greater than zero"
+        raise ValueError(message)
+    if svg_sprite and latitude_steps is None:
+        message = "--svg-sprite requires --latitude-steps"
+        raise ValueError(message)
+    sequence_svg: Path | None = output
+    if latitude_steps is None:
+        render_globe(centre, output, detalization)
+    elif svg_sprite:
         with tempfile.TemporaryDirectory() as directory:
             sequence_svg = render_latitude_sequence(
-                args.center,
-                Path(directory) / args.output.name,
-                args.latitude_steps,
-                args.detalization,
+                centre,
+                Path(directory) / output.name,
+                latitude_steps,
+                detalization,
             )
-            render_svg_sprite(sequence_svg, args.output)
+            render_svg_sprite(sequence_svg, output)
         sequence_svg = None
     else:
-        sequence_svg = render_latitude_sequence(
-            args.center,
-            args.output,
-            args.latitude_steps,
-            args.detalization,
-        )
-    if args.output_gif:
+        sequence_svg = render_latitude_sequence(centre, output, latitude_steps, detalization)
+    if output_gif:
         try:
-            if args.svg_sprite:
-                render_gif(args.output_gif, svg_sprite=args.output)
+            if svg_sprite:
+                render_gif(output_gif, svg_sprite=output)
             else:
-                render_gif(args.output_gif, sequence_svg)
+                render_gif(output_gif, sequence_svg)
         except (OSError, ValueError) as error:
-            parser.error(str(error))
-    print(output_svg if args.svg_sprite else sequence_svg)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+            raise ValueError(str(error)) from error
+    return output if svg_sprite else sequence_svg

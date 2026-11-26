@@ -11,9 +11,10 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
+from typer.testing import CliRunner
 
-from population_circles import circle_map_workflow
-from population_circles.circle_map_workflow import Options, WorkflowError, parse, workflow
+from population_circles import circle_map_workflow, cli
+from population_circles.circle_map_workflow import Options, WorkflowError, workflow
 from population_circles.dataset_registry import Registry, load
 from population_circles.maps import layers as map_layers
 from population_circles.maps import metadata as map_metadata
@@ -44,18 +45,16 @@ def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def options(tmp_path: Path) -> Options:
-    return parse(
-        [
-            "--dataset",
-            DATASET,
-            "--share",
-            "50",
-            "--cache",
-            str(tmp_path / "cache"),
-            "--output",
-            str(tmp_path / "figure.png"),
-            "--no-coastlines",
-        ]
+    output = tmp_path / "figure.png"
+    document_path = output.with_suffix(".json")
+    return Options(
+        dataset=DATASET,
+        share="50",
+        cache=tmp_path / "cache",
+        output=output,
+        document=document_path,
+        ledger=document_path.with_suffix(".radii.json"),
+        no_coastlines=True,
     )
 
 
@@ -248,15 +247,6 @@ def test_publication_failure_preserves_the_existing_document(
     assert list(options.document.parent.glob(f".{options.document.name}.*")) == []
 
 
-def test_overrides_determine_both_document_and_default_ledger(tmp_path: Path) -> None:
-    base = ["--dataset", DATASET, "--share", "50", "--cache", "cache", "--output", "map.png"]
-    chosen = tmp_path / "other.json"
-    options = parse([*base, "--document", str(chosen)])
-    assert options.document == chosen
-    assert options.ledger == chosen.with_suffix(".radii.json")
-    assert parse([*base, "--ledger", "custom.json"]).ledger == Path("custom.json")
-
-
 def test_missing_executable_reports_the_launch_stage(options: Options) -> None:
     def missing(_arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
         message = "missing mise executable"
@@ -295,7 +285,6 @@ def test_actual_child_uses_checkout_argv_and_inherits_stderr(
 def test_main_reports_child_diagnostic_without_masking_it(
     options: Options,
     monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
 ) -> None:
     def missing(arguments: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
         if "build" in arguments:
@@ -303,24 +292,23 @@ def test_main_reports_child_diagnostic_without_masking_it(
         return subprocess.CompletedProcess(arguments, 3, b"")
 
     monkeypatch.setattr(subprocess, "run", missing)
-    assert (
-        circle_map_workflow.main(
-            [
-                "--dataset",
-                DATASET,
-                "--share",
-                "50",
-                "--cache",
-                str(options.cache),
-                "--output",
-                str(options.output),
-            ]
-        )
-        == 1
+    result = CliRunner().invoke(
+        cli.app,
+        [
+            "map",
+            "--dataset",
+            DATASET,
+            "--share",
+            "50",
+            "--cache",
+            str(options.cache),
+            "--output",
+            str(options.output),
+        ],
     )
-    diagnostic = capsys.readouterr().err
-    assert "missing raster; run mise run data:get" in diagnostic
-    assert "table build: Rust CLI exited 3" in diagnostic
+    assert result.exit_code == 1
+    assert "missing raster; run mise run data:get" in result.output
+    assert "table build: Rust CLI exited 3" in result.output
 
 
 def test_success_uses_the_documents_credit_and_earth_model(

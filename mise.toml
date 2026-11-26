@@ -75,12 +75,12 @@ run = "cargo build --release --locked -p popcircles-cli"
 # are out — not the network, since the basemap is committed and the suite draws complete figures.
 [tasks.render]
 description = "Render a map from a popcircles JSON document"
-run = "uv run render-map"
+run = "uv run visualizer render map"
 
 # Not in `lint` or `ci`: it produces files; regression tests exercise the workflow.
 [tasks.map]
 description = "Search a named dataset and render its circle map"
-run = "uv run circle-map"
+run = "uv run visualizer map"
 
 # Not in `lint` or `ci` for the same reason as `render`: it writes files. What CI runs on a pull request
 # is the suite, which builds this same gallery into a temporary directory and asserts against it — so a
@@ -88,7 +88,7 @@ run = "uv run circle-map"
 [tasks.gallery]
 description = "Generate the 50% country sweep and render result documents to a gallery"
 depends = ["deps"]
-run = "uv run render-gallery"
+run = "uv run visualizer gallery build"
 
 [tasks."gallery:frontend"]
 description = "Build the frontend and update the existing local gallery"

@@ -6,7 +6,7 @@ import typer
 from population_circles import circle_map_workflow
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
-from population_circles.maps.frame import PLATE_CARREE
+from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
 
 app = typer.Typer(no_args_is_help=True)
 render_app = typer.Typer(no_args_is_help=True)
@@ -33,26 +33,34 @@ def map_command(
     projection: Annotated[str, typer.Option()] = PLATE_CARREE,
     no_coastlines: Annotated[bool, typer.Option()] = False,
 ) -> None:
-    arguments = [
-        "--dataset",
-        dataset,
-        "--share",
-        share,
-        "--cache",
-        str(cache),
-        "--output",
-        str(output),
-    ]
-    if document is not None:
-        arguments.extend(("--document", str(document)))
-    if ledger is not None:
-        arguments.extend(("--ledger", str(ledger)))
-    arguments.extend(("--decimate", decimate, "--projection", projection))
-    if spacing is not None:
-        arguments.extend(("--spacing", spacing))
-    if no_coastlines:
-        arguments.append("--no-coastlines")
-    raise typer.Exit(circle_map_workflow.main(arguments))
+    if projection not in PROJECTIONS:
+        message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
+        raise typer.BadParameter(message)
+    search_document = document if document is not None else output.with_suffix(".json")
+    options = circle_map_workflow.Options(
+        dataset=dataset,
+        share=share,
+        cache=cache,
+        output=output,
+        document=search_document,
+        ledger=ledger if ledger is not None else search_document.with_suffix(".radii.json"),
+        decimate=decimate,
+        spacing=spacing,
+        projection=projection,
+        no_coastlines=no_coastlines,
+    )
+    if Path.cwd().resolve() != circle_map_workflow.REPO_ROOT:
+        typer.echo(
+            f"visualizer map: run from the checkout root: {circle_map_workflow.REPO_ROOT}",
+            err=True,
+        )
+        raise typer.Exit(1)
+    try:
+        circle_map_workflow.workflow(options)
+    except circle_map_workflow.WorkflowError as error:
+        typer.echo(f"visualizer map: {error}", err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"image: {options.output}\ndocument: {options.document}")
 
 
 @render_app.command("map")
@@ -62,10 +70,11 @@ def render_map_command(
     projection: Annotated[str, typer.Option()] = PLATE_CARREE,
     no_coastlines: Annotated[bool, typer.Option()] = False,
 ) -> None:
-    arguments = ["--input", str(input_path), "--output", str(output), "--projection", projection]
-    if no_coastlines:
-        arguments.append("--no-coastlines")
-    raise typer.Exit(render_map.main(arguments))
+    if projection not in PROJECTIONS:
+        message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
+        raise typer.BadParameter(message)
+    render_map.render_file(input_path, output, projection, no_coastlines=no_coastlines)
+    typer.echo(output)
 
 
 @render_app.command("globe")
@@ -79,14 +88,22 @@ def render_globe_command(
     ] = None,
     detalization: Annotated[float, typer.Option()] = 1,
 ) -> None:
-    arguments = ["--center", center, "--output", str(output), "--detalization", str(detalization)]
-    if output_gif is not None:
-        arguments.extend(("--output-gif", str(output_gif)))
-    if svg_sprite:
-        arguments.append("--svg-sprite")
-    if latitude_steps is not None:
-        arguments.extend(("--latitude-steps", str(latitude_steps)))
-    raise typer.Exit(render_globe.main(arguments))
+    try:
+        centre = render_globe.parse_center(center)
+        rendered = render_globe.render_command(
+            render_globe.RenderOptions(
+                centre,
+                output,
+                output_gif,
+                svg_sprite,
+                latitude_steps,
+                detalization,
+            )
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    if rendered is not None:
+        typer.echo(rendered)
 
 
 @gallery_app.command("build")
@@ -96,12 +113,20 @@ def gallery_build_command(
     refresh_country_sweep: Annotated[bool, typer.Option("--refresh-country-sweep")] = False,
     refresh_country_coverage: Annotated[bool, typer.Option("--refresh-country-coverage")] = False,
 ) -> None:
-    arguments = ["--input", str(input_path), "--output", str(output)]
-    if refresh_country_sweep:
-        arguments.append("--refresh-country-sweep")
-    if refresh_country_coverage:
-        arguments.append("--refresh-country-coverage")
-    raise typer.Exit(gallery_build.main(arguments))
+    if refresh_country_sweep and refresh_country_coverage:
+        message = "--refresh-country-sweep and --refresh-country-coverage are mutually exclusive"
+        raise typer.BadParameter(message)
+    country_refresh = (
+        "sweep" if refresh_country_sweep else "coverage" if refresh_country_coverage else None
+    )
+    drawn, skipped = gallery_build.build(input_path, output, country_refresh=country_refresh)
+    for one in drawn:
+        typer.echo(one.figure)
+    for one in skipped:
+        if one.kind == "zero-population country":
+            typer.echo(f"{one.document}: skipped, country population is zero")
+        else:
+            typer.echo(f"{one.document}: skipped, kind {one.kind!r} carries no circle to draw")
 
 
 app.add_typer(render_app, name="render")

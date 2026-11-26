@@ -1,16 +1,18 @@
 import xml.etree.ElementTree as ET
-from argparse import ArgumentTypeError
 from io import BytesIO
 from pathlib import Path
 
 import pytest
 from PIL import Image
+from typer.testing import CliRunner
 
+from population_circles import cli
 from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
 from population_circles.maps import render_globe
 from population_circles.result_document import Coordinate
 
 SVG = "http://www.w3.org/2000/svg"
+CLI_ERROR_EXIT = 2
 
 
 def write_frame(path: Path, colour: str) -> None:
@@ -74,7 +76,7 @@ def test_render_latitude_sequence_crosses_poles_without_flipping(
 
 @pytest.mark.parametrize("latitude", [-90, 90])
 def test_center_rejects_poles(latitude: float) -> None:
-    with pytest.raises(ArgumentTypeError):
+    with pytest.raises(ValueError, match="center latitude cannot be -90 or 90"):
         render_globe.parse_center(f"{latitude},20")
 
 
@@ -163,8 +165,11 @@ def test_render_gif_preserves_source_frame_order(
 
 
 def test_svg_sprite_requires_latitude_steps() -> None:
-    with pytest.raises(SystemExit):
-        render_globe.main(["--center", "0,0", "--output", "globe.svg", "--svg-sprite"])
+    result = CliRunner().invoke(
+        cli.app,
+        ["render", "globe", "--center", "0,0", "--output", "globe.svg", "--svg-sprite"],
+    )
+    assert result.exit_code == CLI_ERROR_EXIT
 
 
 def test_parse_svg_rejects_entities(tmp_path: Path) -> None:

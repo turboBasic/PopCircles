@@ -1,4 +1,3 @@
-import argparse
 import json
 import shutil
 import subprocess
@@ -406,41 +405,3 @@ def build(
         missing,
         render_context,
     )
-
-
-def parse(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Render every renderable document in a corpus.")
-    parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    refresh = parser.add_mutually_exclusive_group()
-    refresh.add_argument(
-        "--refresh-country-sweep", dest="country_refresh", action="store_const", const="sweep"
-    )
-    refresh.add_argument(
-        "--refresh-country-coverage", dest="country_refresh", action="store_const", const="coverage"
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse(argv)
-    corpus: Path = args.input
-    output: Path = args.output
-
-    drawn, skipped = build(
-        corpus,
-        output,
-        country_refresh=args.country_refresh,
-    )
-    for one in drawn:
-        print(one.figure)
-    for one in skipped:
-        if one.kind == "zero-population country":
-            print(f"{one.document}: skipped, country population is zero")
-        else:
-            print(f"{one.document}: skipped, kind {one.kind!r} carries no circle to draw")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
