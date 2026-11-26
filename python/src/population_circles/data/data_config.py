@@ -3,7 +3,7 @@ import tomllib
 from pathlib import Path
 from typing import cast
 
-_CONFIG_PATH = Path(__file__).resolve().parents[3] / "data" / "config.toml"
+_CONFIG_PATH = Path(__file__).resolve().parents[4] / "data" / "config.toml"
 
 
 @functools.cache

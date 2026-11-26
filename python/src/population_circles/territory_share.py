@@ -19,8 +19,8 @@ from population_circles.circle_geometry import (
     geographic,
 )
 from population_circles.country_boundaries import load_country_boundaries, load_map_boundaries
-from population_circles.dataset_registry import Registry, load
-from population_circles.result_document import (
+from population_circles.data.dataset_registry import Registry, load
+from population_circles.documents.result_document import (
     Answer,
     Caption,
     Circle,

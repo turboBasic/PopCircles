@@ -21,15 +21,15 @@ from population_circles.circle_geometry import (
     hemisphere_km,
     polygons,
 )
-from population_circles.data_config import country_boundary_dataset_key
-from population_circles.dataset_registry import (
+from population_circles.data.data_config import country_boundary_dataset_key
+from population_circles.data.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
     load,
 )
+from population_circles.documents.result_document import Coordinate
 from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 from population_circles.maps.layers import UnregisteredDatasetError, basemap
-from population_circles.result_document import Coordinate
 
 VIEW_SIZE = 512
 VIEW_CENTRE = VIEW_SIZE / 2

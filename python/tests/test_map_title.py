@@ -1,7 +1,7 @@
 import pytest
 
+from population_circles.documents.result_document import Answer, Settlement, circle_of
 from population_circles.maps.render_map import title_of
-from population_circles.result_document import Answer, Settlement, circle_of
 from test_render_map import CENTRE_LAT, CENTRE_LON, country_result_document, document
 
 DEFAULT_SETTLEMENT = Settlement(

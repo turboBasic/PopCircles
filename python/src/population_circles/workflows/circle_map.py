@@ -5,10 +5,10 @@ from tempfile import NamedTemporaryFile
 from typing import cast
 
 from population_circles.country_boundaries import load_map_boundaries
-from population_circles.dataset_registry import load
+from population_circles.data.dataset_registry import load
+from population_circles.documents.result_document import circle_of
 from population_circles.maps import render_map
 from population_circles.maps.frame import PLATE_CARREE
-from population_circles.result_document import circle_of
 from population_circles.territory_share import enrich_document
 from population_circles.workflows.rust_cli import (
     Invoke,

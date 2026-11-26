@@ -26,7 +26,7 @@ import population_circles.territory_share as territory_share_module
 from population_circles import cli
 from population_circles.circle_geometry import Cap, cap
 from population_circles.country_boundaries import BoundaryIdentityError, load_outline
-from population_circles.dataset_registry import (
+from population_circles.data.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
     Registry,
@@ -35,6 +35,7 @@ from population_circles.dataset_registry import (
     load,
     parse,
 )
+from population_circles.documents.result_document import Answer, Circle, circle_of
 from population_circles.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
@@ -65,7 +66,6 @@ from population_circles.maps.render_map import (
     render_file,
     title_of,
 )
-from population_circles.result_document import Answer, Circle, circle_of
 
 REGISTRY = load()
 cli_runner = CliRunner()

@@ -17,7 +17,8 @@ from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.country_boundaries import load_map_boundaries
-from population_circles.dataset_registry import REPO_ROOT, Registry
+from population_circles.data.dataset_registry import REPO_ROOT, Registry
+from population_circles.documents.result_document import Answer, circle_of
 from population_circles.maps import layers as map_data
 from population_circles.maps.frame import PLATE_CARREE
 from population_circles.maps.metadata import (
@@ -34,15 +35,14 @@ from population_circles.maps.render_map import (
     render,
     title_of,
 )
-from population_circles.result_document import Answer, circle_of
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_MODULES = (
-    "result_document.py",
+    "documents/result_document.py",
     "circle_geometry.py",
     "country_boundaries.py",
-    "data_config.py",
-    "dataset_registry.py",
+    "data/data_config.py",
+    "data/dataset_registry.py",
     "gallery/rendering.py",
     "maps/frame.py",
     "maps/labels.py",

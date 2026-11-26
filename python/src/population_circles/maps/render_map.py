@@ -22,10 +22,11 @@ from shapely.geometry.polygon import Polygon
 
 from population_circles.circle_geometry import cap, linestrings, polygons
 from population_circles.country_boundaries import load_map_boundaries
-from population_circles.dataset_registry import (
+from population_circles.data.dataset_registry import (
     TerrainRaster,
     load,
 )
+from population_circles.documents.result_document import Answer, circle_of
 from population_circles.maps import layers as map_data
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps.frame import (
@@ -51,7 +52,6 @@ from population_circles.maps.presentation_config import (
     load as load_presentation_config,
 )
 from population_circles.maps.terrain import prepare_terrain
-from population_circles.result_document import Answer, circle_of
 from population_circles.territory_share import enrich_document
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking

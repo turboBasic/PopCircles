@@ -14,12 +14,12 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 from population_circles import cli
-from population_circles.dataset_registry import Registry, load
+from population_circles.data.dataset_registry import Registry, load
+from population_circles.documents.result_document import Answer
 from population_circles.maps import layers as map_layers
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps import render_map
 from population_circles.maps.frame import ORTHOGRAPHIC
-from population_circles.result_document import Answer
 from population_circles.workflows import circle_map, rust_cli
 from population_circles.workflows.circle_map import Options, workflow
 from population_circles.workflows.rust_cli import WorkflowError

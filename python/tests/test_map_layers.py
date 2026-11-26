@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, box
 
-from population_circles.dataset_registry import Registry, parse
+from population_circles.data.dataset_registry import Registry, parse
 from population_circles.maps.layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,

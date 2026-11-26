@@ -13,6 +13,7 @@ from population_circles.circle_geometry import (
     linestrings,
     polygons,
 )
+from population_circles.documents.result_document import Coordinate
 from population_circles.maps.frame import (
     GRATICULE_STEP_DEG,
     LIMB_SHAVE,
@@ -25,7 +26,6 @@ from population_circles.maps.frame import (
     graticule,
     project,
 )
-from population_circles.result_document import Coordinate
 
 EARTH_RADIUS_KM = 6371.0088
 CENTRE = Coordinate(lat=25.125, lon=79.708)

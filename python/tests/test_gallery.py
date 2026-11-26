@@ -24,14 +24,15 @@ import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
 from population_circles import cli
-from population_circles.data_config import country_boundary_dataset_key
-from population_circles.dataset_registry import (
+from population_circles.data.data_config import country_boundary_dataset_key
+from population_circles.data.dataset_registry import (
     MapContextVector,
     Registry,
     SettlementVector,
     TerrainRaster,
     load,
 )
+from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.gallery.build import build
 from population_circles.maps.layers import (
     COASTLINE_DATASET,
@@ -44,7 +45,6 @@ from population_circles.maps.layers import (
 from population_circles.maps.layers import (
     registered_map_sources as real_registered_map_sources,
 )
-from population_circles.result_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.workflows.rust_cli import Invoke, WorkflowError
 from test_render_map import (
     fixture_map_layers,

@@ -1,4 +1,4 @@
-from population_circles.data_config import coastline_dataset_key, country_boundary_dataset_key
+from population_circles.data.data_config import coastline_dataset_key, country_boundary_dataset_key
 
 
 def test_dataset_selectors_read_configured_dataset_keys() -> None:
