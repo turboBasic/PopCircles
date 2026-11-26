@@ -276,7 +276,16 @@ def test_actual_child_uses_checkout_argv_and_inherits_stderr(
     )
     assert captured == [
         (
-            ["mise", "run", "cli", "--", "table", "query", "--dataset", "literal;$(value)"],
+            [
+                "mise",
+                "run",
+                "popcircles-cli",
+                "--",
+                "table",
+                "query",
+                "--dataset",
+                "literal;$(value)",
+            ],
             rust_cli.REPO_ROOT,
             subprocess.PIPE,
         )

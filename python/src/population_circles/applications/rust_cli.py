@@ -12,7 +12,7 @@ class WorkflowError(Exception):
 
 def invoke_cli(arguments: list[str]) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(  # noqa: S603 — argument vector, never a shell
-        ["mise", "run", "cli", "--", *arguments],  # noqa: S607 — checkout's mise task
+        ["mise", "run", "popcircles-cli", "--", *arguments],  # noqa: S607 — checkout's mise task
         cwd=REPO_ROOT,
         stdout=subprocess.PIPE,
         check=False,

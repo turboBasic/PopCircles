@@ -61,7 +61,7 @@ run = [
 
 # --release: a pass over the registry raster takes seconds optimised, minutes not — a debug build here
 # is how a timing gets quoted an order of magnitude wrong. `cargo run` is the fast inner loop instead.
-[tasks.cli]
+[tasks.popcircles-cli]
 description = "Run the popcircles CLI, optimised"
 run = "cargo run --release -p popcircles-cli --"
 
@@ -369,18 +369,18 @@ build_coarse_results() {
   local dataset="$1"
   local scratch="$2"
   local coarse_table=(--dataset "$dataset" --decimate 10 --cache "$scratch/gpw-5arcmin")
-  mise run cli -- table build "${coarse_table[@]}" > /dev/null
-  mise run cli -- sweep "${coarse_table[@]}" --from 10 --to 100 --step 10 --spacing 256 \
+  mise run popcircles-cli -- table build "${coarse_table[@]}" > /dev/null
+  mise run popcircles-cli -- sweep "${coarse_table[@]}" --from 10 --to 100 --step 10 --spacing 256 \
     --ledger "$scratch/corpus-5arcmin.json" > results/world-sweep-10-to-100-5arcmin.json
-  mise run cli -- most-populous "${coarse_table[@]}" --radius-km 1000 --spacing 256 \
+  mise run popcircles-cli -- most-populous "${coarse_table[@]}" --radius-km 1000 --spacing 256 \
     > results/world-most-populous-1000km-5arcmin.json
 }
 
 build_full_result() {
   local dataset="$1"
   local scratch="$2"
-  mise run cli -- table build --dataset "$dataset" --cache "$scratch/gpw-30arcsec" > /dev/null
-  mise run cli -- smallest-for-share --dataset "$dataset" --cache "$scratch/gpw-30arcsec" --share 50 \
+  mise run popcircles-cli -- table build --dataset "$dataset" --cache "$scratch/gpw-30arcsec" > /dev/null
+  mise run popcircles-cli -- smallest-for-share --dataset "$dataset" --cache "$scratch/gpw-30arcsec" --share 50 \
     --spacing 2700 --ledger "$scratch/flagship-30arcsec.json" > results/world-half-30arcsec.json
 }
 

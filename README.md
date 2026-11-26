@@ -52,7 +52,7 @@ xattr -d com.apple.quarantine popcircles-aarch64-apple-darwin
 
 [`USAGE.md`][usage] shows commands and their output for measuring distances, looking up population,
 searching for circles, and drawing maps. It also explains how to choose `--decimate` for faster searches.
-Run `mise run cli -- --help` for the full command and option reference.
+Run `mise run popcircles-cli -- --help` for the full command and option reference.
 
 Questions about using the project or early ideas belong in [Discussions][discussions]. Report
 reproducible bugs or work ready to be scoped in [Issues][issues].
