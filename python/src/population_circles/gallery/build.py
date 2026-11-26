@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 from PIL import Image, ImageChops
 
+from population_circles.applications.rust_cli import Invoke, child, invoke_cli, require_success
 from population_circles.data.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.gallery import country_sweep as country_sweep_module
@@ -31,7 +32,6 @@ from population_circles.maps.frame import ORTHOGRAPHIC
 from population_circles.maps.layers import registered_coastline
 from population_circles.maps.presentation_config import load as load_presentation_config
 from population_circles.maps.render_map import OCEAN
-from population_circles.workflows.rust_cli import Invoke, child, invoke_cli, require_success
 
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2

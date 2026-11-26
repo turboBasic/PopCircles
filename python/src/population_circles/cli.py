@@ -4,10 +4,10 @@ from typing import Annotated
 
 import typer
 
+from population_circles.applications import circle_map, rust_cli
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
-from population_circles.workflows import circle_map, rust_cli
 
 app = typer.Typer(no_args_is_help=True)
 

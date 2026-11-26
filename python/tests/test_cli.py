@@ -5,9 +5,9 @@ from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
 from population_circles import cli
+from population_circles.applications import circle_map
 from population_circles.gallery import build as gallery_build
 from population_circles.maps import render_globe, render_map
-from population_circles.workflows import circle_map
 
 runner = CliRunner()
 INVALID_ARGUMENT_EXIT = 2

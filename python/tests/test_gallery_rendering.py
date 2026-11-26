@@ -104,8 +104,8 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     for unrelated in (
         "gallery/build.py",
         "gallery/country_sweep.py",
-        "workflows/circle_map.py",
-        "workflows/rust_cli.py",
+        "applications/circle_map.py",
+        "applications/rust_cli.py",
         "gallery/page_data.py",
         "render_globe.py",
     ):
