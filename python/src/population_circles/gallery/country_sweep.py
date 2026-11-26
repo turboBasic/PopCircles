@@ -6,8 +6,8 @@ from typing import Any, Literal
 from urllib.parse import quote
 
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
+from population_circles.geography.territory_share import enrich_document
 from population_circles.maps.presentation_config import load as load_presentation_config
-from population_circles.territory_share import enrich_document
 from population_circles.workflows.rust_cli import Invoke, WorkflowError, child, require_success
 
 HALF_SHARE = 0.5

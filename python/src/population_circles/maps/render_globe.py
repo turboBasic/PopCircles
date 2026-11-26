@@ -14,13 +14,6 @@ from shapely.geometry import MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
-from population_circles.circle_geometry import (
-    HALF_TURN_DEG,
-    POLE_LAT,
-    cap,
-    hemisphere_km,
-    polygons,
-)
 from population_circles.data.data_config import country_boundary_dataset_key
 from population_circles.data.dataset_registry import (
     REPO_ROOT,
@@ -28,6 +21,13 @@ from population_circles.data.dataset_registry import (
     load,
 )
 from population_circles.documents.result_document import Coordinate
+from population_circles.geography.circle_geometry import (
+    HALF_TURN_DEG,
+    POLE_LAT,
+    cap,
+    hemisphere_km,
+    polygons,
+)
 from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 from population_circles.maps.layers import UnregisteredDatasetError, basemap
 

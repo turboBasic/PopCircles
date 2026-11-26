@@ -20,13 +20,14 @@ from shapely.geometry import MultiLineString, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
-from population_circles.circle_geometry import cap, linestrings, polygons
-from population_circles.country_boundaries import load_map_boundaries
 from population_circles.data.dataset_registry import (
     TerrainRaster,
     load,
 )
 from population_circles.documents.result_document import Answer, circle_of
+from population_circles.geography.circle_geometry import cap, linestrings, polygons
+from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.geography.territory_share import enrich_document
 from population_circles.maps import layers as map_data
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps.frame import (
@@ -52,7 +53,6 @@ from population_circles.maps.presentation_config import (
     load as load_presentation_config,
 )
 from population_circles.maps.terrain import prepare_terrain
-from population_circles.territory_share import enrich_document
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
 # for one is what fails on a machine with no display, rather than falling back.

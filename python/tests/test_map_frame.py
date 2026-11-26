@@ -4,7 +4,8 @@ import pytest
 from shapely import get_coordinates
 from shapely.geometry import MultiPolygon, Polygon, box
 
-from population_circles.circle_geometry import (
+from population_circles.documents.result_document import Coordinate
+from population_circles.geography.circle_geometry import (
     HALF_TURN_DEG,
     METRES_PER_KM,
     WORLD,
@@ -13,7 +14,6 @@ from population_circles.circle_geometry import (
     linestrings,
     polygons,
 )
-from population_circles.documents.result_document import Coordinate
 from population_circles.maps.frame import (
     GRATICULE_STEP_DEG,
     LIMB_SHAVE,

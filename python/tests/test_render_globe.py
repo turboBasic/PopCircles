@@ -7,8 +7,8 @@ from PIL import Image
 from typer.testing import CliRunner
 
 from population_circles import cli
-from population_circles.circle_geometry import HALF_TURN_DEG, POLE_LAT
 from population_circles.documents.result_document import Coordinate
+from population_circles.geography.circle_geometry import HALF_TURN_DEG, POLE_LAT
 from population_circles.maps import render_globe
 
 SVG = "http://www.w3.org/2000/svg"

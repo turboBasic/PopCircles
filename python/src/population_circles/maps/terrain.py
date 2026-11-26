@@ -15,8 +15,8 @@ from rasterio.merge import merge
 from rasterio.transform import from_bounds
 from rasterio.warp import reproject, transform_bounds
 
-from population_circles.circle_geometry import polygons
 from population_circles.data.dataset_registry import REPO_ROOT, TerrainRaster
+from population_circles.geography.circle_geometry import polygons
 from population_circles.maps.frame import Frame
 
 TARGET_HEIGHT = 1440

@@ -17,15 +17,13 @@ from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
+import population_circles.geography.territory_share as territory_share_module
 import population_circles.maps.labels as map_labels_module
 import population_circles.maps.layers as map_layers_module
 import population_circles.maps.metadata as map_metadata_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
-import population_circles.territory_share as territory_share_module
 from population_circles import cli
-from population_circles.circle_geometry import Cap, cap
-from population_circles.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.data.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
@@ -36,6 +34,8 @@ from population_circles.data.dataset_registry import (
     parse,
 )
 from population_circles.documents.result_document import Answer, Circle, circle_of
+from population_circles.geography.circle_geometry import Cap, cap
+from population_circles.geography.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,

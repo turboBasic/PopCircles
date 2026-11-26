@@ -812,7 +812,7 @@ Identifiers are flat, sequential and never reused.
 - **Condition** — a second field on `Circle` in
   [`python/src/population_circles/documents/result_document.py`](../python/src/population_circles/documents/result_document.py)
   is read by no caller that draws or measures. The sweep is the field list of `Circle` against what
-  `circle_geometry.py` and `map_frame.py` reference: `centre`, `radius_km` and `earth_radius_km` are the
+  `geography/circle_geometry.py` and `maps/frame.py` reference: `centre`, `radius_km` and `earth_radius_km` are the
   geometry's, `population` and `share` are the caption's, and `dataset` is the credit's. A digest, a
   decimation or a table path arriving for a caption is the event.
 - **Fix** — `circle_of` returns a frozen answer carrying separate geometry, caption facts and provenance,
