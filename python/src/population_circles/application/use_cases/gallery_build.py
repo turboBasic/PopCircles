@@ -24,15 +24,15 @@ class GalleryRenderContext(Protocol):
 
 
 @dataclass(frozen=True)
-class GalleryBuildCollaborators:
+class GalleryBuildCollaborators[Context: GalleryRenderContext]:
     run_population_command: PopulationRunner
-    prepare_render_context: Callable[[Path, Path | None], GalleryRenderContext]
+    prepare_render_context: Callable[[Path, Path | None], Context]
     enrich_source: Callable[[Path, dict[str, Any]], dict[str, Any]]
     country_sweep: CountrySweepCollaborators
     build_frontend: Callable[[Path], None]
     write_header: Callable[[list[GalleryFigure], Path], None]
     render_documents: Callable[
-        [list[RenderJob], GalleryRenderContext],
+        [list[RenderJob], Context],
         tuple[list[tuple[GalleryFigure, bool]], int, float],
     ]
     page_data: Callable[[Sequence[GalleryFigure], list[str]], object]
@@ -69,17 +69,17 @@ def render_jobs_for(
 
 
 @dataclass(frozen=True)
-class GalleryOutputRequest:
+class GalleryOutputRequest[Context: GalleryRenderContext]:
     corpus: Path
     sources: list[tuple[Path, dict[str, Any]]]
     generated: dict[str, dict[str, Any]]
     missing: list[str]
-    context: GalleryRenderContext
+    context: Context
 
 
-def build_gallery_output(  # noqa: PLR0915 — ordered cleanup and publication steps stay explicit
-    request: GalleryOutputRequest,
-    collaborators: GalleryBuildCollaborators,
+def build_gallery_output[Context: GalleryRenderContext](  # noqa: PLR0915 — ordered cleanup and publication steps stay explicit
+    request: GalleryOutputRequest[Context],
+    collaborators: GalleryBuildCollaborators[Context],
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
     corpus = request.corpus
     sources = request.sources
@@ -292,9 +292,9 @@ def country_documents(
     )
 
 
-def build(
+def build[Context: GalleryRenderContext](
     request: GalleryBuildRequest,
-    collaborators: GalleryBuildCollaborators,
+    collaborators: GalleryBuildCollaborators[Context],
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
     corpus = request.corpus
     output = request.output

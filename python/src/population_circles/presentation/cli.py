@@ -105,7 +105,7 @@ def render_map_file(
 
 def gallery_build_collaborators(
     run_population_command: PopulationRunner,
-) -> GalleryBuildCollaborators:
+) -> GalleryBuildCollaborators[gallery_rendering.MapRenderContext]:
     registry = load()
     presentation = load_presentation_config()
 
@@ -142,11 +142,8 @@ def gallery_build_collaborators(
 
     def render_gallery_documents(
         jobs: list[RenderJob],
-        context: gallery_build.GalleryRenderContext,
+        context: gallery_rendering.MapRenderContext,
     ) -> tuple[list[tuple[GalleryFigure, bool]], int, float]:
-        if not isinstance(context, gallery_rendering.MapRenderContext):
-            message = "Gallery render context must be MapRenderContext"
-            raise TypeError(message)
         results, workers, seconds = gallery_rendering.render_documents(jobs, context)
         return [(drawn, reused) for drawn, reused in results], workers, seconds
 

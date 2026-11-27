@@ -110,8 +110,11 @@ def render_worker_count(map_count: int) -> int:
 
 
 def render_documents(
-    jobs: list[RenderJob], context: MapRenderContext
+    jobs: list[RenderJob], context: object
 ) -> tuple[list[tuple[Drawn, bool]], int, float]:
+    if not isinstance(context, MapRenderContext):
+        message = "Gallery render context must be MapRenderContext"
+        raise TypeError(message)
     if context.cache_directory is not None:
         context = replace(context, source_digests=source_digests(jobs, context))
     workers = render_worker_count(len(jobs))

@@ -26,6 +26,11 @@ from test_render_map import country_result_document
 RENDER_WORKER_COUNT = rendering_module.render_worker_count
 
 
+def test_render_documents_rejects_invalid_context_before_rendering() -> None:
+    with pytest.raises(TypeError, match="Gallery render context must be MapRenderContext"):
+        rendering_module.render_documents([], object())
+
+
 def test_figure_caption_includes_country_and_world_answers() -> None:
     caption = rendering_module.figure_caption(circle_of(country_result_document()))
 
