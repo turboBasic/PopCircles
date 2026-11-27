@@ -27,7 +27,11 @@ import population_circles.presentation.maps.source_selection as source_selection
 import population_circles.presentation.maps.terrain as terrain_module
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
-from population_circles.application.use_cases.gallery import CountryRefresh, GalleryFigure
+from population_circles.application.use_cases.gallery import (
+    CountryRefresh,
+    GalleryFigure,
+    RenderJob,
+)
 from population_circles.application.use_cases.gallery_build import (
     GalleryBuildRequest,
     GalleryOutputRequest,
@@ -54,6 +58,7 @@ from population_circles.infrastructure.geodata.map_layers import (
     load_map_layers as real_load_map_layers,
 )
 from population_circles.presentation import cli
+from population_circles.presentation.gallery.page_data import Drawn
 from population_circles.presentation.maps.source_selection import (
     registered_map_sources as real_registered_map_sources,
 )
@@ -560,6 +565,42 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     assert basemap_paths == [coastline_path]
     assert "Coastline data:" in metadata["Copyright"]
     assert metadata["Copyright"].count(COASTLINE_CREDIT) == 1
+
+
+def test_gallery_enrichment_keeps_original_documents_on_success_and_render_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    for name in ("first.json", "second.json"):
+        written(corpus, name, document("most-populous"))
+    original_documents = {path.name: path.read_bytes() for path in corpus.glob("*.json")}
+    successful_output = tmp_path / "successful-gallery"
+    build(corpus, successful_output, country_cli([], [])[0])
+    assert {name: (corpus / name).read_bytes() for name in original_documents} == original_documents
+    successful_copy = json.loads((successful_output / "first.json").read_text(encoding="utf-8"))
+    assert successful_copy["result"]["territory_share"] == 0.0
+    render_document = rendering_module.render_document
+
+    def fail_second(
+        job: RenderJob, context: rendering_module.MapRenderContext
+    ) -> tuple[Drawn, bool]:
+        if job.source.name == "second.json":
+            message = "second render failed"
+            raise RuntimeError(message)
+        return render_document(job, context)
+
+    monkeypatch.setattr(rendering_module, "render_document", fail_second)
+    output = tmp_path / "gallery"
+    with pytest.raises(RuntimeError, match="second render failed"):
+        build(corpus, output, country_cli([], [])[0])
+
+    assert {name: (corpus / name).read_bytes() for name in original_documents} == original_documents
+    rendered = json.loads((output / "first.json").read_text(encoding="utf-8"))
+    assert rendered["result"]["territory_share"] == 0.0
+    assert not (output / "index.html").exists()
+    assert not (output / "gallery-data.json").exists()
 
 
 def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
