@@ -29,6 +29,7 @@ from population_circles.domain.circle_geometry import Cap, cap
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
 from population_circles.infrastructure.geodata.country_boundaries import (
     BoundaryIdentityError,
+    CountryBoundaries,
     load_outline,
 )
 from population_circles.infrastructure.geodata.dataset_registry import (
@@ -1006,6 +1007,43 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert observed_annotations[2].startswith(VISIBLE_FOOTER)
     assert citation(REGISTRY, "etopo-2022-60s") in observed_annotations[2]
     assert observed_annotations[2].endswith("See full attribution in image metadata")
+
+
+@pytest.mark.parametrize(
+    ("boundaries", "expected_labels"),
+    [
+        (
+            CountryBoundaries(
+                {"DE": box(5, 47, 15, 55), "FR": box(-5, 42, 8, 51)},
+                {"DE": "Germany", "FR": "France"},
+            ),
+            ((box(-5, 42, 8, 51), "France"),),
+        ),
+        (
+            {"DE": box(5, 47, 15, 55), "FR": box(-5, 42, 8, 51)},
+            (),
+        ),
+    ],
+    ids=("named-boundaries", "plain-mapping"),
+)
+def test_render_file_selects_other_country_labels_only_when_names_are_available(
+    boundaries: Mapping[str, BaseGeometry],
+    expected_labels: tuple[tuple[BaseGeometry, str], ...],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cli, "load_map_boundaries", lambda _answer, _registry: boundaries)
+    monkeypatch.setattr(territory_coverage_use_case, "territory_share", lambda _circle, _items: 0.5)
+    prepared: list[render_map_module.PreparedMapRender] = []
+    monkeypatch.setattr(render_map_module, "render_prepared", prepared.append)
+    source = tmp_path / "country.json"
+    source.write_text(json.dumps(country_result_document()), encoding="utf-8")
+
+    render_file(source, tmp_path / "country.png", no_coastlines=True, coverage_enriched=True)
+
+    assert len(prepared) == 1
+    assert prepared[0].other_countries == (boundaries["FR"],)
+    assert prepared[0].country_labels == expected_labels
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
