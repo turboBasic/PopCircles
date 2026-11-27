@@ -79,7 +79,12 @@ run = "uv run visualizer map"
 
 # Not in `lint` or `ci`: it produces files; regression tests exercise the workflow.
 [tasks.map]
-description = "Search a named dataset and render its circle map"
+description = "Render a map from a result document"
+run = "uv run visualizer map"
+
+# Not in `lint` or `ci`: it produces files; regression tests exercise the workflow.
+[tasks.circle]
+description = "Search a named dataset and write a circle result document"
 run = "uv run visualizer circle"
 
 # Not in `lint` or `ci` for the same reason as `render`: it writes files. What CI runs on a pull request

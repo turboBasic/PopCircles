@@ -26,6 +26,7 @@ import population_circles.presentation.maps.presentation_config as presentation_
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.source_selection as source_selection_module
 import population_circles.presentation.maps.terrain as terrain_module
+from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
 from population_circles.application.use_cases.gallery import (
@@ -82,7 +83,7 @@ def build(
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
     return build_workflow(
         GalleryBuildRequest(corpus, output, country_refresh, cache_directory),
-        cli.gallery_build_collaborators(run_population_command),
+        composition.gallery_build_collaborators(run_population_command),
     )
 
 
@@ -95,7 +96,7 @@ def build_gallery_output(
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
     return gallery_module.build_gallery_output(
         GalleryOutputRequest(corpus, sources, generated, missing, context),
-        cli.gallery_build_collaborators(country_cli([], [])[0]),
+        composition.gallery_build_collaborators(country_cli([], [])[0]),
     )
 
 
@@ -249,7 +250,7 @@ SMALL_MAP_COUNT = 2
 
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     registry = load()
-    monkeypatch.setattr(cli, "load", lambda: registry)
+    monkeypatch.setattr(composition, "load", lambda: registry)
     monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
     path = root / registry.datasets[COASTLINE_DATASET].path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -275,7 +276,7 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
     def one_worker(count: int) -> int:
         return min(1, count)
 
-    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(
         source_selection_module,
         "registered_map_sources",
@@ -776,7 +777,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     output = tmp_path / "build" / "gallery"
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
-    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", fixture_boundaries)
     render = Mock(wraps=render_map_module.render)
     monkeypatch.setattr(rendering_module, "render", render)
     invoke = country_cli(countries, swept)[0]
@@ -937,7 +938,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     def no_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {}
 
-    monkeypatch.setattr(cli, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(
         source_selection_module,
@@ -1026,7 +1027,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     # Keep every committed document on the Gallery parsing and classification path; representative
     # fixtures exercise actual map rendering without redrawing the full corpus in CI.
     use_coastline_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", fixture_boundaries)
     render = Mock(return_value=Figure())
     monkeypatch.setattr(rendering_module, "render", render)
     output = tmp_path / "gallery"
@@ -1143,7 +1144,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         annotations.append(text)
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     drawn, skipped = build(corpus, output, invoke)

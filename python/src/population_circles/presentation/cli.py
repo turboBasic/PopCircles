@@ -1,204 +1,45 @@
-import json
 import math
 from pathlib import Path
 from typing import Annotated
 
 import typer
-from shapely.geometry.base import BaseGeometry
 
+from population_circles import composition
 from population_circles.application.errors import GalleryPathError, PopulationApplicationError
-from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases import circle_map, gallery_build
-from population_circles.application.use_cases.gallery import (
-    CountrySweepCollaborators,
-    GalleryFigure,
-    RenderJob,
-)
-from population_circles.application.use_cases.gallery_build import (
-    GalleryBuildCollaborators,
-    GalleryBuildRequest,
-)
-from population_circles.application.use_cases.render_map import (
-    LoadedMapLayers,
-    MapBoundaries,
-    MapRenderPreferences,
-    RenderMapCollaborators,
-    RenderMapFileRequest,
-)
-from population_circles.application.use_cases.render_map import render_file as prepare_map_file
-from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.documents.result_document import Answer, circle_of
+from population_circles.application.use_cases import circle_result, gallery_build, render_map
+from population_circles.application.use_cases.circle_result import CircleResultRequest
+from population_circles.application.use_cases.gallery_build import GalleryBuildRequest
+from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.infrastructure import popcircles_cli
-from population_circles.infrastructure.file_publishing import write_bytes_atomically
-from population_circles.infrastructure.geodata import map_layers as map_data
-from population_circles.infrastructure.geodata.country_boundaries import (
-    CountryBoundaries,
-    load_country_boundaries,
-    load_map_boundaries,
-)
-from population_circles.infrastructure.geodata.dataset_registry import load
-from population_circles.presentation.gallery import output as gallery_output
-from population_circles.presentation.gallery import page_data as gallery_page_data
-from population_circles.presentation.gallery import rendering as gallery_rendering
-from population_circles.presentation.maps import render_globe, render_map, source_selection
+from population_circles.presentation.maps import render_globe
 from population_circles.presentation.maps.frame import PLATE_CARREE, PROJECTIONS
-from population_circles.presentation.maps.presentation_config import (
-    load as load_presentation_config,
-)
 
 app = typer.Typer(no_args_is_help=True)
 
 
-def render_map_file(
-    input_path: Path,
-    output_path: Path,
-    projection: str = PLATE_CARREE,
-    *,
-    no_coastlines: bool = False,
-    coverage_enriched: bool = False,
-) -> None:
-    registry = load()
-
-    def load_render_boundaries(answer: Answer) -> MapBoundaries:
-        boundaries = load_map_boundaries(answer, registry)
-        names = boundaries.names if isinstance(boundaries, CountryBoundaries) else {}
-        return MapBoundaries(boundaries, names)
-
-    def load_document(path: Path) -> dict[str, object]:
-        return json.loads(path.read_text(encoding="utf-8"))
-
-    def load_layers(answer: Answer, country_outline: BaseGeometry | None) -> LoadedMapLayers:
-        sources = source_selection.registered_map_sources(
-            registry, answer.country.id if answer.country is not None else None
-        )
-        return LoadedMapLayers(
-            map_data.load_map_layers(sources, country_outline=country_outline),
-            sources.attributions,
-        )
-
-    def load_preferences(path: Path) -> MapRenderPreferences:
-        presentation = load_presentation_config()
-        return MapRenderPreferences(
-            (presentation.map_text.render_title, presentation.map_text.render_description),
-            presentation.map_titles.get(path.stem),
-        )
-
-    prepare_map_file(
-        RenderMapFileRequest(
-            input_path,
-            output_path,
-            projection,
-            no_coastlines,
-            coverage_enriched,
-        ),
-        RenderMapCollaborators(
-            load_document=load_document,
-            load_boundaries=load_render_boundaries,
-            load_coastline=lambda: map_data.registered_coastline(registry),
-            citation=lambda key: map_data.citation(registry, key),
-            load_layers=load_layers,
-            load_preferences=load_preferences,
-            render_prepared=render_map.render_prepared,
-        ),
-    )
-
-
-def gallery_build_collaborators(
-    run_population_command: PopulationRunner,
-) -> GalleryBuildCollaborators[gallery_rendering.MapRenderContext]:
-    registry = load()
-    presentation = load_presentation_config()
-
-    def enrich_saved_document(document: dict[str, object]) -> dict[str, object]:
-        return enrich_document(
-            document,
-            load_country_boundaries=lambda answer: load_country_boundaries(answer, registry),
-            load_map_boundaries=lambda answer: load_map_boundaries(answer, registry),
-        )
-
-    def enrich_source(_source: Path, payload: dict[str, object]) -> dict[str, object]:
-        answer = circle_of(payload)
-        return enrich_document(payload, load_map_boundaries(answer, registry))
-
-    def prepare_render_context(
-        output: Path, requested_cache: Path | None
-    ) -> gallery_rendering.MapRenderContext:
-        coastline, coastline_attribution = map_data.registered_coastline(registry)
-        cache_directory = requested_cache or output.parent / ".gallery-cache"
-        try:
-            cache_directory.mkdir(parents=True, exist_ok=True)
-        except OSError:
-            cache_directory = None
-        return gallery_rendering.MapRenderContext(
-            registry,
-            coastline,
-            coastline_attribution,
-            output,
-            cache_directory,
-            gallery_rendering.render_context_digest(),
-            (presentation.map_text.render_title, presentation.map_text.render_description),
-            map_titles=presentation.map_titles,
-        )
-
-    def render_gallery_documents(
-        jobs: list[RenderJob],
-        context: gallery_rendering.MapRenderContext,
-    ) -> tuple[list[tuple[GalleryFigure, bool]], int, float]:
-        results, workers, seconds = gallery_rendering.render_documents(jobs, context)
-        return [(drawn, reused) for drawn, reused in results], workers, seconds
-
-    return GalleryBuildCollaborators(
-        run_population_command=run_population_command,
-        prepare_render_context=prepare_render_context,
-        enrich_source=enrich_source,
-        country_sweep=CountrySweepCollaborators(
-            set(presentation.gallery.excluded_country_ids),
-            enrich_saved_document,
-            lambda message: typer.echo(message, err=True),
-        ),
-        build_frontend=gallery_output.build_frontend,
-        write_header=gallery_output.write_header_background,
-        render_documents=render_gallery_documents,
-        page_data=gallery_page_data.page_data,
-        report=lambda message: typer.echo(message, err=True),
-    )
-
-
-@app.command("circle", help="Search for a population circle and render its map.")
+@app.command("circle", help="Search for a population circle and save its result document.")
 def circle_command(
     dataset: Annotated[str, typer.Option()],
     share: Annotated[
         str, typer.Option(help="Population share in whole percent; validated by Rust.")
     ],
     cache: Annotated[Path, typer.Option()],
-    output: Annotated[Path, typer.Option()],
-    document: Annotated[
-        Path | None, typer.Option(help="Search JSON; defaults to the image path with .json suffix.")
-    ] = None,
+    output: Annotated[Path, typer.Option(help="Result JSON destination.")],
     ledger: Annotated[
         Path | None,
         typer.Option(help="Radii ledger; defaults to the document path with .radii.json suffix."),
     ] = None,
     decimate: Annotated[str, typer.Option()] = "1",
     spacing: Annotated[str | None, typer.Option()] = None,
-    projection: Annotated[str, typer.Option()] = PLATE_CARREE,
-    no_coastlines: Annotated[bool, typer.Option()] = False,
 ) -> None:
-    if projection not in PROJECTIONS:
-        message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
-        raise typer.BadParameter(message)
-    search_document = document if document is not None else output.with_suffix(".json")
-    circle_map_request = circle_map.CircleMapRequest(
+    circle_result_request = CircleResultRequest(
         dataset=dataset,
         share=share,
         cache=cache,
-        output=output,
-        document=search_document,
-        ledger=ledger if ledger is not None else search_document.with_suffix(".radii.json"),
+        document=output,
+        ledger=ledger if ledger is not None else output.with_suffix(".radii.json"),
         decimate=decimate,
         spacing=spacing,
-        projection=projection,
-        no_coastlines=no_coastlines,
     )
     if Path.cwd().resolve() != popcircles_cli.REPO_ROOT:
         typer.echo(
@@ -207,17 +48,14 @@ def circle_command(
         )
         raise typer.Exit(1)
     try:
-        circle_map.search_and_render_circle_map(
-            circle_map_request,
-            popcircles_cli.invoke_popcircles_cli,
-            load_boundaries=lambda answer: load_map_boundaries(answer, load()),
-            publish_file=write_bytes_atomically,
-            render_file=render_map_file,
+        circle_result.search_and_publish_circle_result(
+            circle_result_request,
+            composition.circle_result_collaborators(),
         )
     except PopulationApplicationError as error:
         typer.echo(f"visualizer circle: {error}", err=True)
         raise typer.Exit(1) from error
-    typer.echo(f"image: {circle_map_request.output}\ndocument: {circle_map_request.document}")
+    typer.echo(f"result: {circle_result_request.document}")
 
 
 @app.command("map", help="Render a map from an existing result document.")
@@ -230,7 +68,10 @@ def render_map_command(
     if projection not in PROJECTIONS:
         message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
         raise typer.BadParameter(message)
-    render_map_file(input_path, output, projection, no_coastlines=no_coastlines)
+    render_map.render_file(
+        RenderMapFileRequest(input_path, output, projection, no_coastlines),
+        composition.render_map_collaborators(),
+    )
     typer.echo(output)
 
 
@@ -291,7 +132,7 @@ def gallery_build_command(
     try:
         drawn, skipped = gallery_build.build(
             GalleryBuildRequest(input_path, output, country_refresh),
-            gallery_build_collaborators(popcircles_cli.invoke_popcircles_cli),
+            composition.gallery_build_collaborators(),
         )
     except GalleryPathError as error:
         raise typer.BadParameter(str(error)) from error
