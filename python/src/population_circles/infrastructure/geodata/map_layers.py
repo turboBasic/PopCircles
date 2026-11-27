@@ -19,9 +19,6 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     SettlementVector,
     TerrainRaster,
 )
-from population_circles.presentation.maps.presentation_config import (
-    load as load_presentation_config,
-)
 
 COASTLINE_DATASET = coastline_dataset_key()
 
@@ -69,13 +66,17 @@ class MapLayers:
     root: Path
 
 
-def registered_map_sources(registry: Registry, country_id: str | None) -> MapSources:
-    settings = load_presentation_config().map_sources
-    terrain_key = (
-        settings.terrain_overrides.get(country_id, settings.terrain_default)
-        if country_id is not None
-        else settings.terrain_default
-    )
+@dataclass(frozen=True)
+class MapSourceSelection:
+    terrain: str
+    lakes: str
+    rivers: str
+    roads: str
+    places: str
+    terrain_overlays: tuple[str, ...] = ()
+
+
+def registered_map_sources(registry: Registry, selection: MapSourceSelection) -> MapSources:
 
     def source(
         key: str, expected: type[TerrainRaster | MapContextVector | SettlementVector]
@@ -85,20 +86,15 @@ def registered_map_sources(registry: Registry, country_id: str | None) -> MapSou
             raise UnregisteredDatasetError(key)
         return dataset
 
-    overlays = (
-        tuple(
-            cast(TerrainRaster, source(key, TerrainRaster))
-            for key in settings.terrain_overlays.get(country_id, [])
-        )
-        if country_id is not None
-        else ()
+    overlays = tuple(
+        cast(TerrainRaster, source(key, TerrainRaster)) for key in selection.terrain_overlays
     )
     return MapSources(
-        terrain=cast(TerrainRaster, source(terrain_key, TerrainRaster)),
-        lakes=cast(MapContextVector, source(settings.lakes, MapContextVector)),
-        rivers=cast(MapContextVector, source(settings.rivers, MapContextVector)),
-        roads=cast(MapContextVector, source(settings.roads, MapContextVector)),
-        places=cast(SettlementVector, source(settings.places, SettlementVector)),
+        terrain=cast(TerrainRaster, source(selection.terrain, TerrainRaster)),
+        lakes=cast(MapContextVector, source(selection.lakes, MapContextVector)),
+        rivers=cast(MapContextVector, source(selection.rivers, MapContextVector)),
+        roads=cast(MapContextVector, source(selection.roads, MapContextVector)),
+        places=cast(SettlementVector, source(selection.places, SettlementVector)),
         terrain_overlays=overlays,
     )
 

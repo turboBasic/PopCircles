@@ -95,6 +95,9 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert package / "infrastructure" / "geodata" / "data_config.py" in (
         rendering_module.RENDER_INPUTS
     )
+    assert package / "presentation" / "maps" / "source_selection.py" in (
+        rendering_module.RENDER_INPUTS
+    )
     assert package / "infrastructure" / "geodata" / "dataset_registry.py" in (
         rendering_module.RENDER_INPUTS
     )

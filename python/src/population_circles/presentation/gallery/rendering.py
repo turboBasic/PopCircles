@@ -22,6 +22,7 @@ from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry
 from population_circles.presentation.gallery.page_data import Drawn, FigureCaption
+from population_circles.presentation.maps import source_selection
 from population_circles.presentation.maps.frame import PLATE_CARREE
 from population_circles.presentation.maps.metadata import (
     copyright_of,
@@ -54,6 +55,7 @@ RENDER_MODULES = (
     "infrastructure/geodata/terrain.py",
     "presentation/maps/metadata.py",
     "presentation/maps/presentation_config.py",
+    "presentation/maps/source_selection.py",
     "presentation/maps/render_map.py",
     "presentation/maps/terrain.py",
 )
@@ -203,7 +205,7 @@ def source_digests(jobs: list[RenderJob], context: MapRenderContext) -> dict[Pat
     digests: dict[Path, str] = {}
     for job in jobs:
         answer = circle_of(job.payload)
-        sources = map_data.registered_map_sources(
+        sources = source_selection.registered_map_sources(
             context.registry,
             answer.country.id if answer.country is not None else None,
         )
@@ -281,7 +283,7 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
         answer = circle_of(payload)
         boundaries = load_map_boundaries(answer, context.registry)
         selected = boundaries.get(answer.country.id) if answer.country is not None else None
-        map_sources = map_data.registered_map_sources(
+        map_sources = source_selection.registered_map_sources(
             context.registry,
             answer.country.id if answer.country is not None else None,
         )

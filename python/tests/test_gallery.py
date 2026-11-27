@@ -23,6 +23,7 @@ import population_circles.presentation.gallery.output as gallery_output
 import population_circles.presentation.gallery.rendering as rendering_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
+import population_circles.presentation.maps.source_selection as source_selection_module
 import population_circles.presentation.maps.terrain as terrain_module
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
@@ -52,10 +53,10 @@ from population_circles.infrastructure.geodata.map_layers import (
 from population_circles.infrastructure.geodata.map_layers import (
     load_map_layers as real_load_map_layers,
 )
-from population_circles.infrastructure.geodata.map_layers import (
+from population_circles.presentation import cli
+from population_circles.presentation.maps.source_selection import (
     registered_map_sources as real_registered_map_sources,
 )
-from population_circles.presentation import cli
 from test_render_map import (
     fixture_map_layers,
     fixture_registered_map_sources,
@@ -142,7 +143,7 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(
-        map_layers_module,
+        source_selection_module,
         "registered_map_sources",
         fixture_registered_map_sources,
     )
@@ -735,7 +736,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     monkeypatch.setattr(cli, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(
-        map_layers_module,
+        source_selection_module,
         "registered_map_sources",
         real_registered_map_sources,
     )

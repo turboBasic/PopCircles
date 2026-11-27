@@ -12,11 +12,11 @@ from population_circles.infrastructure.geodata.map_layers import (
     citation,
     load_map_layers,
     registered_coastline,
-    registered_map_sources,
 )
 from population_circles.presentation.maps.presentation_config import (
     load as load_presentation_config,
 )
+from population_circles.presentation.maps.source_selection import registered_map_sources
 from test_render_map import (
     DATASET,
     PROSE,

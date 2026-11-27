@@ -38,7 +38,7 @@ from population_circles.infrastructure.geodata.dataset_registry import load
 from population_circles.presentation.gallery import output as gallery_output
 from population_circles.presentation.gallery import page_data as gallery_page_data
 from population_circles.presentation.gallery import rendering as gallery_rendering
-from population_circles.presentation.maps import render_globe, render_map
+from population_circles.presentation.maps import render_globe, render_map, source_selection
 from population_circles.presentation.maps.frame import PLATE_CARREE, PROJECTIONS
 from population_circles.presentation.maps.presentation_config import (
     load as load_presentation_config,
@@ -61,7 +61,7 @@ def render_map_file(
         return json.loads(path.read_text(encoding="utf-8"))
 
     def load_layers(answer: Answer, country_outline: BaseGeometry | None) -> LoadedMapLayers:
-        sources = map_data.registered_map_sources(
+        sources = source_selection.registered_map_sources(
             registry, answer.country.id if answer.country is not None else None
         )
         return LoadedMapLayers(
