@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.circle_map import (
@@ -33,13 +34,13 @@ def run_circle_map(options: CircleMapRequest, runner: PopulationRunner) -> None:
         runner,
         load_boundaries=lambda _answer: {},
         publish_file=write_bytes_atomically,
-        render_file=render_map.render_file,
+        render_file=cli.render_map_file,
     )
 
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
@@ -85,7 +86,7 @@ def test_real_build_reuse_and_missing_raster(
         REPO_ROOT,
     )
     registry = parse((tmp_path / "data/registry.toml").read_text())
-    monkeypatch.setattr(render_map, "load", lambda: registry)
+    monkeypatch.setattr(cli, "load", lambda: registry)
     options = CircleMapRequest(
         dataset="tiny",
         share="50",

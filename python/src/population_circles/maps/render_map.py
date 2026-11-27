@@ -1,7 +1,6 @@
 import json
 import math
 from collections.abc import Callable, Mapping, Sequence
-from pathlib import Path
 from typing import cast
 
 import matplotlib as mpl
@@ -20,19 +19,13 @@ from shapely.geometry import MultiLineString, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
-from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.documents.result_document import Answer, circle_of
+from population_circles.application.use_cases.render_map import PreparedMapRender
+from population_circles.documents.result_document import Answer
 from population_circles.domain.circle_geometry import cap, linestrings, polygons
 from population_circles.domain.geography import GeographicCoordinate
-from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
-from population_circles.infrastructure.geodata.dataset_registry import (
-    TerrainRaster,
-    load,
-)
-from population_circles.maps import layers as map_data
+from population_circles.infrastructure.geodata.dataset_registry import TerrainRaster
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps.frame import (
-    PLATE_CARREE,
     CountryFrameSettings,
     Frame,
     country_frame,
@@ -574,90 +567,57 @@ def country_map_display(
     )
 
 
-def render_file(
-    input_path: Path,
-    output_path: Path,
-    projection: str = PLATE_CARREE,
-    *,
-    no_coastlines: bool = False,
-    coverage_enriched: bool = False,
-) -> None:
-    document = json.loads(input_path.read_text(encoding="utf-8"))
-    answer = circle_of(document)
-    registry = load()
-    population_attribution = (
-        answer.selection.population_source.attribution if answer.selection is not None else None
-    ) or map_data.citation(registry, answer.provenance.dataset)
-    boundary_attribution = (
-        answer.selection.boundary_source.attribution if answer.selection is not None else None
-    )
-    coastline, coastline_attribution = (
-        (None, None) if no_coastlines else map_data.registered_coastline(registry)
-    )
-    presentation = load_presentation_config()
-    render_text = (presentation.map_text.render_title, presentation.map_text.render_description)
-    title_label = presentation.map_titles.get(output_path.stem)
-    boundaries = load_map_boundaries(answer, registry)
-    if not coverage_enriched:
-        document = enrich_document(document, boundaries)
-    answer = circle_of(document)
-    selected = boundaries.get(answer.country.id) if answer.country is not None else None
-    map_sources = map_data.registered_map_sources(
-        registry,
-        answer.country.id if answer.country is not None else None,
-    )
-    country_boundary_attribution = None
-    if answer.country is not None:
-        boundary_credit = boundary_attribution or map_data.citation(
-            registry, answer.country.boundary_dataset
-        )
-        country_boundary_attribution = boundary_credit
+def render_prepared(prepared: PreparedMapRender) -> None:
+    map_layers = prepared.map_layers
+    if not isinstance(map_layers, MapLayers):
+        message = "prepared map layers must be MapLayers"
+        raise TypeError(message)
     figure = render(
-        answer,
-        projection,
-        coastline=coastline,
-        country_outline=selected,
-        other_countries=other_countries(boundaries, answer),
-        render_text=render_text,
-        map_layers=map_data.load_map_layers(map_sources, country_outline=selected),
-        country_labels=other_country_labels(boundaries, answer),
-        title_label=title_label,
+        prepared.answer,
+        prepared.projection,
+        coastline=prepared.coastline,
+        country_outline=prepared.country_outline,
+        other_countries=prepared.other_countries,
+        render_text=prepared.render_text,
+        map_layers=map_layers,
+        country_labels=prepared.country_labels,
+        title_label=prepared.title_label,
     )
-    title = title_of(answer, title_label)
+    title = title_of(prepared.answer, prepared.title_label)
     copyright_text = map_metadata.copyright_of(
-        answer,
-        population_attribution,
-        coastline_attribution,
-        country_boundary_attribution,
-        map_sources.attributions,
+        prepared.answer,
+        prepared.population_attribution,
+        prepared.coastline_attribution,
+        prepared.country_boundary_attribution,
+        prepared.source_attributions,
     )
-    description = map_metadata.description_of(answer)
+    description = map_metadata.description_of(prepared.answer)
     properties = map_metadata.xmp_properties(
-        answer,
+        prepared.answer,
         title,
         description,
         copyright_text,
-        map_sources.attributions,
+        prepared.source_attributions,
     )
-    metadata_values = map_metadata.metadata_json_fields(answer, properties)
-    sidecar_path = output_path.with_suffix(".json")
+    metadata_values = map_metadata.metadata_json_fields(prepared.answer, properties)
+    sidecar_path = prepared.output_path.with_suffix(".json")
     try:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        prepared.output_path.parent.mkdir(parents=True, exist_ok=True)
         # No bbox_inches="tight": the title and citation use figure coordinates; cropping
         # to the drawn content moves them off the positions they were given.
         figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-            output_path,
+            prepared.output_path,
             dpi=MAP_OUTPUT_DPI,
             metadata=map_metadata.png_metadata(title, copyright_text, description, properties),
             pil_kwargs={
                 "exif": map_metadata.exif_gps_packet(
-                    answer.circle.centre.lat, answer.circle.centre.lon
+                    prepared.answer.circle.centre.lat, prepared.answer.circle.centre.lon
                 )
             },
         )
-        document["render_metadata"] = metadata_values
+        prepared.document["render_metadata"] = metadata_values
         sidecar_path.write_text(
-            json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            json.dumps(prepared.document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     finally:
         plt.close(figure)

@@ -13,6 +13,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
+import population_circles.application.use_cases.render_map as render_map_use_case
 from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
@@ -43,7 +44,7 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
@@ -106,7 +107,7 @@ def run_circle_map(
         runner,
         load_boundaries=boundary_loader,
         publish_file=write_bytes_atomically,
-        render_file=render_map.render_file,
+        render_file=cli.render_map_file,
     )
 
 
@@ -202,7 +203,7 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
         intersecting_boundary_loader,
     )
     monkeypatch.setattr(
-        render_map,
+        render_map_use_case,
         "enrich_document",
         Mock(side_effect=AssertionError("pre-enriched document should not be recalculated")),
     )

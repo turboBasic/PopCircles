@@ -1,20 +1,81 @@
+import json
 import math
 from pathlib import Path
 from typing import Annotated
 
 import typer
+from shapely.geometry.base import BaseGeometry
 
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.use_cases import circle_map
+from population_circles.application.use_cases.render_map import (
+    LoadedMapLayers,
+    MapRenderPreferences,
+    RenderMapCollaborators,
+    RenderMapFileRequest,
+)
+from population_circles.application.use_cases.render_map import render_file as prepare_map_file
+from population_circles.documents.result_document import Answer
 from population_circles.gallery import build as gallery_build
 from population_circles.infrastructure import popcircles_cli
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import load
+from population_circles.maps import layers as map_data
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
+from population_circles.maps.presentation_config import load as load_presentation_config
 
 app = typer.Typer(no_args_is_help=True)
+
+
+def render_map_file(
+    input_path: Path,
+    output_path: Path,
+    projection: str = PLATE_CARREE,
+    *,
+    no_coastlines: bool = False,
+    coverage_enriched: bool = False,
+) -> None:
+    registry = load()
+
+    def load_document(path: Path) -> dict[str, object]:
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def load_layers(answer: Answer, country_outline: BaseGeometry | None) -> LoadedMapLayers:
+        sources = map_data.registered_map_sources(
+            registry, answer.country.id if answer.country is not None else None
+        )
+        return LoadedMapLayers(
+            map_data.load_map_layers(sources, country_outline=country_outline),
+            sources.attributions,
+        )
+
+    def load_preferences(path: Path) -> MapRenderPreferences:
+        presentation = load_presentation_config()
+        return MapRenderPreferences(
+            (presentation.map_text.render_title, presentation.map_text.render_description),
+            presentation.map_titles.get(path.stem),
+        )
+
+    prepare_map_file(
+        RenderMapFileRequest(
+            input_path,
+            output_path,
+            projection,
+            no_coastlines,
+            coverage_enriched,
+        ),
+        RenderMapCollaborators(
+            load_document=load_document,
+            load_boundaries=lambda answer: load_map_boundaries(answer, registry),
+            load_coastline=lambda: map_data.registered_coastline(registry),
+            citation=lambda key: map_data.citation(registry, key),
+            load_layers=load_layers,
+            load_preferences=load_preferences,
+            render_prepared=render_map.render_prepared,
+        ),
+    )
 
 
 @app.command("circle", help="Search for a population circle and render its map.")
@@ -65,7 +126,7 @@ def circle_command(
             popcircles_cli.invoke_popcircles_cli,
             load_boundaries=lambda answer: load_map_boundaries(answer, load()),
             publish_file=write_bytes_atomically,
-            render_file=render_map.render_file,
+            render_file=render_map_file,
         )
     except PopulationApplicationError as error:
         typer.echo(f"visualizer circle: {error}", err=True)
@@ -83,7 +144,7 @@ def render_map_command(
     if projection not in PROJECTIONS:
         message = f"invalid choice: {projection!r}; choose from {', '.join(PROJECTIONS)}"
         raise typer.BadParameter(message)
-    render_map.render_file(input_path, output, projection, no_coastlines=no_coastlines)
+    render_map_file(input_path, output, projection, no_coastlines=no_coastlines)
     typer.echo(output)
 
 

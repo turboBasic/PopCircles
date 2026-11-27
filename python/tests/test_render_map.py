@@ -24,6 +24,7 @@ import population_circles.maps.metadata as map_metadata_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 from population_circles import cli
+from population_circles.cli import render_map_file as render_file
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import Cap, cap
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
@@ -67,7 +68,6 @@ from population_circles.maps.render_map import (
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
     render,
-    render_file,
     title_of,
 )
 
@@ -168,7 +168,7 @@ def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(
         map_layers_module,
         "registered_map_sources",
@@ -350,7 +350,7 @@ def write_coastline_fixture(root: Path) -> Path:
 
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
-    monkeypatch.setattr(render_map_module, "load", lambda: REGISTRY)
+    monkeypatch.setattr(cli, "load", lambda: REGISTRY)
     return write_coastline_fixture(root)
 
 
@@ -941,7 +941,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
         return 0.375
 
     monkeypatch.setattr(
-        render_map_module,
+        cli,
         "load_map_boundaries",
         fixture_boundaries,
     )
@@ -1168,7 +1168,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     def selected_outline(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {"DE": box(5, 47, 15, 55)}
 
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", selected_outline)
+    monkeypatch.setattr(cli, "load_map_boundaries", selected_outline)
 
     def refuse_coastline(_registry: Registry) -> tuple[BaseGeometry, str]:
         message = "no-coastlines loaded coastline"
@@ -1244,7 +1244,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / f"map-{projection}.png"
     use_coastline_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.chdir(tmp_path)
 
     result = cli_runner.invoke(
@@ -1271,7 +1271,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     # other case here hands `citation` a literal, so a constant put back in `main` would pass them
     # all. The fixture registry carries neither committed row, so a `main` reaching for one of those
     # cannot resolve it at all.
-    monkeypatch.setattr("population_circles.maps.render_map.load", lambda: parse(TWO_ATTRIBUTED))
+    monkeypatch.setattr("population_circles.cli.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
     original_copyright = map_metadata_module.copyright_of
