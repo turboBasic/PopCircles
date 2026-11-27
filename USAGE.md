@@ -234,15 +234,20 @@ prepared resolution for a more precise selected answer when needed.
 A sweep skips features with no uniquely owned population cells at that resolution, reports each ID and
 reason on stderr, and measures the elapsed time and cropped grid for every completed feature.
 
-To add or refresh geometric territory coverage in saved circle results without rerunning population
-searches, use the Gallery's coverage-only refresh:
+For existing result documents, a normal Gallery build adds coverage in memory and writes enriched copies
+beside their maps in the Gallery output; it does not rewrite those input files just to add coverage. A
+build may also write country result documents it generates to the input corpus.
+
+To update coverage in saved circle documents without rerunning population searches, use the explicit
+Gallery refresh option:
 
 ```sh
 mise run gallery -- --input results --output build/gallery --refresh-country-coverage
 ```
 
-The refresh uses each saved circle's centre and radius with registered boundary geometry. It preserves
-population answers and omits coverage when the selected source has no polygonal area to measure.
+The refresh updates the saved input documents using each circle's centre and radius with registered
+boundary geometry. It preserves population answers and omits coverage when the selected source has no
+polygonal area to measure.
 
 ## Maps
 
