@@ -14,7 +14,9 @@ from population_circles.infrastructure.geodata.country_boundaries import (
     load_map_boundaries,
 )
 from population_circles.infrastructure.geodata.dataset_registry import load
-from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"

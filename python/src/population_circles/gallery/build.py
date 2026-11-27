@@ -28,11 +28,13 @@ from population_circles.gallery.rendering import (
 )
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.infrastructure.geodata.map_layers import registered_coastline
 from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
-from population_circles.maps.frame import ORTHOGRAPHIC
-from population_circles.maps.layers import registered_coastline
-from population_circles.maps.presentation_config import load as load_presentation_config
-from population_circles.maps.render_map import OCEAN
+from population_circles.presentation.maps.frame import ORTHOGRAPHIC
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
+from population_circles.presentation.maps.render_map import OCEAN
 
 HEADER_OCEAN_MATCH_TOLERANCE = 8
 HEADER_CROP_ASPECT_RATIO = 2

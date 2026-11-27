@@ -13,7 +13,7 @@ from shapely.geometry import LineString, Point, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.maps.frame import Frame, project
+from population_circles.presentation.maps.frame import Frame, project
 
 PLACE_LAYER = 2.85
 MAP_OUTPUT_DPI = 200

@@ -10,8 +10,13 @@ from rasterio.transform import from_origin
 from shapely.geometry import Point, box
 
 from population_circles.infrastructure.geodata.dataset_registry import TerrainRaster
-from population_circles.maps.frame import Frame
-from population_circles.maps.terrain import ELEVATION_STOPS, paint, palette, prepare_terrain
+from population_circles.presentation.maps.frame import Frame
+from population_circles.presentation.maps.terrain import (
+    ELEVATION_STOPS,
+    paint,
+    palette,
+    prepare_terrain,
+)
 
 NODATA = -9999.0
 OPAQUE = 255

@@ -6,7 +6,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[5]
 PRESENTATION_CONFIG = REPO_ROOT / "data" / "presentation.toml"
 CountryProjection = Literal[
     "plate-carree",

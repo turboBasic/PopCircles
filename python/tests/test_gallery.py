@@ -19,10 +19,10 @@ from typer.testing import CliRunner
 import population_circles.gallery.build as gallery_module
 import population_circles.gallery.country_sweep as country_sweep_module
 import population_circles.gallery.rendering as rendering_module
-import population_circles.maps.layers as map_layers_module
-import population_circles.maps.presentation_config as presentation_config_module
-import population_circles.maps.render_map as render_map_module
-import population_circles.maps.terrain as terrain_module
+import population_circles.infrastructure.geodata.map_layers as map_layers_module
+import population_circles.presentation.maps.presentation_config as presentation_config_module
+import population_circles.presentation.maps.render_map as render_map_module
+import population_circles.presentation.maps.terrain as terrain_module
 from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
@@ -36,15 +36,15 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     TerrainRaster,
     load,
 )
-from population_circles.maps.layers import (
+from population_circles.infrastructure.geodata.map_layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
     registered_coastline,
 )
-from population_circles.maps.layers import (
+from population_circles.infrastructure.geodata.map_layers import (
     load_map_layers as real_load_map_layers,
 )
-from population_circles.maps.layers import (
+from population_circles.infrastructure.geodata.map_layers import (
     registered_map_sources as real_registered_map_sources,
 )
 from test_render_map import (

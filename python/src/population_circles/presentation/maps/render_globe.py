@@ -26,8 +26,8 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     BoundaryVector,
     load,
 )
-from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
-from population_circles.maps.layers import UnregisteredDatasetError, basemap
+from population_circles.infrastructure.geodata.map_layers import UnregisteredDatasetError, basemap
+from population_circles.presentation.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 
 VIEW_SIZE = 512
 VIEW_CENTRE = VIEW_SIZE / 2

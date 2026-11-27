@@ -19,12 +19,14 @@ from population_circles.documents.result_document import Answer
 from population_circles.gallery import build as gallery_build
 from population_circles.infrastructure import popcircles_cli
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
+from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import load
-from population_circles.maps import layers as map_data
-from population_circles.maps import render_globe, render_map
-from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
-from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.presentation.maps import render_globe, render_map
+from population_circles.presentation.maps.frame import PLATE_CARREE, PROJECTIONS
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
 
 app = typer.Typer(no_args_is_help=True)
 

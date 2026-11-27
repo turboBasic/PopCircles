@@ -2,7 +2,7 @@ import hashlib
 
 import pytest
 
-from population_circles.maps.presentation_config import (
+from population_circles.presentation.maps.presentation_config import (
     PRESENTATION_CONFIG,
     load,
     parse,

@@ -18,11 +18,11 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 import population_circles.application.use_cases.territory_coverage as territory_coverage_use_case
-import population_circles.maps.labels as map_labels_module
-import population_circles.maps.layers as map_layers_module
-import population_circles.maps.metadata as map_metadata_module
-import population_circles.maps.presentation_config as presentation_config_module
-import population_circles.maps.render_map as render_map_module
+import population_circles.infrastructure.geodata.map_layers as map_layers_module
+import population_circles.presentation.maps.labels as map_labels_module
+import population_circles.presentation.maps.metadata as map_metadata_module
+import population_circles.presentation.maps.presentation_config as presentation_config_module
+import population_circles.presentation.maps.render_map as render_map_module
 from population_circles import cli
 from population_circles.cli import render_map_file as render_file
 from population_circles.documents.result_document import Answer, circle_of
@@ -41,28 +41,30 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     load,
     parse,
 )
-from population_circles.maps.frame import (
-    ORTHOGRAPHIC,
-    PLATE_CARREE,
-    CountryFrameSettings,
-    Frame,
-)
-from population_circles.maps.frame import (
-    country_frame as build_country_frame,
-)
-from population_circles.maps.frame import (
-    frame as world_frame,
-)
-from population_circles.maps.layers import (
+from population_circles.infrastructure.geodata.map_layers import (
     COASTLINE_DATASET,
     MapLayers,
     MapSources,
     citation,
     registered_coastline,
 )
-from population_circles.maps.presentation_config import CountryMap
-from population_circles.maps.presentation_config import load as load_presentation_config
-from population_circles.maps.render_map import (
+from population_circles.presentation.maps.frame import (
+    ORTHOGRAPHIC,
+    PLATE_CARREE,
+    CountryFrameSettings,
+    Frame,
+)
+from population_circles.presentation.maps.frame import (
+    country_frame as build_country_frame,
+)
+from population_circles.presentation.maps.frame import (
+    frame as world_frame,
+)
+from population_circles.presentation.maps.presentation_config import CountryMap
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
+from population_circles.presentation.maps.render_map import (
     COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
@@ -1292,7 +1294,9 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
             map_attributions,
         )
 
-    monkeypatch.setattr("population_circles.maps.metadata.copyright_of", capture_copyright)
+    monkeypatch.setattr(
+        "population_circles.presentation.maps.metadata.copyright_of", capture_copyright
+    )
 
     named = document()
     named["provenance"]["dataset"] = "second-raster"

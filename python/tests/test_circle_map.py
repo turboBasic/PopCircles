@@ -24,11 +24,11 @@ from population_circles.application.use_cases.circle_map import (
 from population_circles.documents.result_document import Answer
 from population_circles.infrastructure import popcircles_cli
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
+from population_circles.infrastructure.geodata import map_layers
 from population_circles.infrastructure.geodata.dataset_registry import Registry, load
-from population_circles.maps import layers as map_layers
-from population_circles.maps import metadata as map_metadata
-from population_circles.maps import render_map
-from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.presentation.maps import metadata as map_metadata
+from population_circles.presentation.maps import render_map
+from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_render_map import (
     DATASET,
     PNG_MAGIC,

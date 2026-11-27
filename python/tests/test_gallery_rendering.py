@@ -8,7 +8,7 @@ from shapely.geometry import box
 
 import population_circles.gallery.rendering as rendering_module
 from population_circles.documents.result_document import circle_of
-from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_gallery import (
     AVAILABLE_CPUS,
     CORPUS,
@@ -101,15 +101,15 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
     assert package / "domain" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
     assert package / "domain" / "territory_coverage.py" in rendering_module.RENDER_INPUTS
+    assert package / "infrastructure" / "geodata" / "terrain.py" in (rendering_module.RENDER_INPUTS)
     assert package / "infrastructure" / "geodata" / "country_boundaries.py" in (
         rendering_module.RENDER_INPUTS
     )
     assert package / "application" / "use_cases" / "territory_coverage.py" in (
         rendering_module.RENDER_INPUTS
     )
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (
-        rendering_module.RENDER_INPUTS
-    )
+    package_sources = CORPUS.parent / "python" / "src" / "population_circles"
+    assert package_sources / "presentation/maps/labels.py" in rendering_module.RENDER_INPUTS
     for unrelated in (
         "gallery/build.py",
         "gallery/country_sweep.py",
@@ -121,9 +121,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
             rendering_module.RENDER_INPUTS
         )
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/terrain.py" in (
-        rendering_module.RENDER_INPUTS
-    )
+    assert package_sources / "presentation/maps/terrain.py" in rendering_module.RENDER_INPUTS
 
 
 def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:

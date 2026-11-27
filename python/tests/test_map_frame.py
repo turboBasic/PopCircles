@@ -13,7 +13,7 @@ from population_circles.domain.circle_geometry import (
     polygons,
 )
 from population_circles.domain.geography import HALF_TURN_DEG, GeographicCoordinate
-from population_circles.maps.frame import (
+from population_circles.presentation.maps.frame import (
     GRATICULE_STEP_DEG,
     LIMB_SHAVE,
     ORTHOGRAPHIC,

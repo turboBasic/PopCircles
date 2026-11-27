@@ -17,11 +17,11 @@ from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.documents.result_document import Answer, circle_of
+from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry
-from population_circles.maps import layers as map_data
-from population_circles.maps.frame import PLATE_CARREE
-from population_circles.maps.metadata import (
+from population_circles.presentation.maps.frame import PLATE_CARREE
+from population_circles.presentation.maps.metadata import (
     copyright_of,
     description_of,
     exif_gps_packet,
@@ -29,7 +29,7 @@ from population_circles.maps.metadata import (
     png_metadata,
     xmp_properties,
 )
-from population_circles.maps.render_map import (
+from population_circles.presentation.maps.render_map import (
     other_countries,
     other_country_labels,
     render,
@@ -46,13 +46,14 @@ RENDER_MODULES = (
     "infrastructure/geodata/data_config.py",
     "infrastructure/geodata/dataset_registry.py",
     "gallery/rendering.py",
-    "maps/frame.py",
-    "maps/labels.py",
-    "maps/layers.py",
-    "maps/metadata.py",
-    "maps/presentation_config.py",
-    "maps/render_map.py",
-    "maps/terrain.py",
+    "presentation/maps/frame.py",
+    "presentation/maps/labels.py",
+    "infrastructure/geodata/map_layers.py",
+    "infrastructure/geodata/terrain.py",
+    "presentation/maps/metadata.py",
+    "presentation/maps/presentation_config.py",
+    "presentation/maps/render_map.py",
+    "presentation/maps/terrain.py",
 )
 RENDER_INPUTS = tuple(
     sorted(

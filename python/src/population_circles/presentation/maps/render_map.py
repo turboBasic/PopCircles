@@ -24,8 +24,9 @@ from population_circles.documents.result_document import Answer
 from population_circles.domain.circle_geometry import cap, linestrings, polygons
 from population_circles.domain.geography import GeographicCoordinate
 from population_circles.infrastructure.geodata.dataset_registry import TerrainRaster
-from population_circles.maps import metadata as map_metadata
-from population_circles.maps.frame import (
+from population_circles.infrastructure.geodata.map_layers import MapLayers
+from population_circles.presentation.maps import metadata as map_metadata
+from population_circles.presentation.maps.frame import (
     CountryFrameSettings,
     Frame,
     country_frame,
@@ -33,20 +34,19 @@ from population_circles.maps.frame import (
     graticule,
     project,
 )
-from population_circles.maps.labels import (
+from population_circles.presentation.maps.labels import (
     MAP_OUTPUT_DPI,
     PLACE_LAYER,
     draw_country_labels,
     place_city_labels,
 )
-from population_circles.maps.layers import MapLayers
-from population_circles.maps.presentation_config import (
+from population_circles.presentation.maps.presentation_config import (
     CountryMap,
 )
-from population_circles.maps.presentation_config import (
+from population_circles.presentation.maps.presentation_config import (
     load as load_presentation_config,
 )
-from population_circles.maps.terrain import prepare_terrain
+from population_circles.presentation.maps.terrain import prepare_terrain
 
 # Every figure this writes goes to a file, so an interactive backend is never wanted — and asking
 # for one is what fails on a machine with no display, rather than falling back.

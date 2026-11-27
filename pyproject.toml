@@ -81,11 +81,11 @@ ignore = [
 "python/src/population_circles/gallery/rendering.py" = [
   "T201", # render progress is Gallery command output, not incidental debug printing
 ]
-"python/src/population_circles/maps/render_globe.py" = [
+"python/src/population_circles/presentation/maps/render_globe.py" = [
   "T201", # the path a globe was written to is this command's output, not debug printing
   "S314", # parse_svg rejects DTDs and entities before ElementTree parses generated SVG files
 ]
-"python/src/population_circles/maps/render_map.py" = [
+"python/src/population_circles/presentation/maps/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
 ]
 "python/src/repo_tools/*.py" = [

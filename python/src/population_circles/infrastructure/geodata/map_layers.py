@@ -19,7 +19,9 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     SettlementVector,
     TerrainRaster,
 )
-from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
 
 COASTLINE_DATASET = coastline_dataset_key()
 

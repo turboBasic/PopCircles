@@ -6,7 +6,7 @@ import pytest
 from shapely.geometry import LineString, box
 
 from population_circles.infrastructure.geodata.dataset_registry import Registry, parse
-from population_circles.maps.layers import (
+from population_circles.infrastructure.geodata.map_layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
     citation,
@@ -14,7 +14,9 @@ from population_circles.maps.layers import (
     registered_coastline,
     registered_map_sources,
 )
-from population_circles.maps.presentation_config import load as load_presentation_config
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
 from test_render_map import (
     DATASET,
     PROSE,
