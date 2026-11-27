@@ -121,4 +121,5 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
         Path("answer.json"), Path("map.png"), "plate-carree", no_coastlines=False
     )
     render_command.assert_called_once()
-    assert gallery.call_args.args == (Path("corpus"), Path("gallery"))
+    assert gallery.call_args.args[0].corpus == Path("corpus")
+    assert gallery.call_args.args[0].output == Path("gallery")
