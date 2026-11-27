@@ -4,9 +4,10 @@ from unittest.mock import Mock
 from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
+from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases import circle_map, gallery_build
+from population_circles.application.use_cases import circle_map, gallery_build, render_map
+from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.presentation import cli
 from population_circles.presentation.maps import render_globe
 
@@ -28,10 +29,10 @@ def test_help_lists_commands() -> None:
 def test_gallery_rejects_identical_paths_with_an_actionable_cli_error(
     tmp_path: Path, monkeypatch: MonkeyPatch
 ) -> None:
-    def unused_collaborators(_runner: PopulationRunner) -> Mock:
+    def unused_collaborators() -> Mock:
         return Mock()
 
-    monkeypatch.setattr(cli, "gallery_build_collaborators", unused_collaborators)
+    monkeypatch.setattr(composition, "gallery_build_collaborators", unused_collaborators)
     path = tmp_path / "gallery"
 
     result = runner.invoke(
@@ -125,10 +126,12 @@ def test_circle_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPat
 def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> None:
     workflow = Mock()
     render_file = Mock()
+    collaborators = Mock()
     render_command = Mock(return_value=Path("globe.svg"))
     gallery = Mock(return_value=([], []))
     monkeypatch.setattr(circle_map, "search_and_render_circle_map", workflow)
-    monkeypatch.setattr(cli, "render_map_file", render_file)
+    monkeypatch.setattr(composition, "render_map_collaborators", Mock(return_value=collaborators))
+    monkeypatch.setattr(render_map, "render_file", render_file)
     monkeypatch.setattr(render_globe, "render_command", render_command)
     monkeypatch.setattr(gallery_build, "build", gallery)
 
@@ -159,7 +162,8 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
     assert options.document == Path("map.json")
     assert options.ledger == Path("map.radii.json")
     render_file.assert_called_once_with(
-        Path("answer.json"), Path("map.png"), "plate-carree", no_coastlines=False
+        RenderMapFileRequest(Path("answer.json"), Path("map.png"), "plate-carree"),
+        collaborators,
     )
     render_command.assert_called_once()
     assert gallery.call_args.args[0].corpus == Path("corpus")

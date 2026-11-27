@@ -17,6 +17,7 @@ from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
+import population_circles.application.use_cases.render_map as render_map_use_case
 import population_circles.application.use_cases.territory_coverage as territory_coverage_use_case
 import population_circles.infrastructure.geodata.map_layers as map_layers_module
 import population_circles.presentation.maps.labels as map_labels_module
@@ -24,9 +25,11 @@ import population_circles.presentation.maps.metadata as map_metadata_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.source_selection as source_selection_module
+from population_circles import composition
 from population_circles.application.use_cases.render_map import (
     MapBoundaries,
     PreparedMapRender,
+    RenderMapFileRequest,
     other_countries,
     other_country_labels,
 )
@@ -55,7 +58,6 @@ from population_circles.infrastructure.geodata.map_layers import (
     registered_coastline,
 )
 from population_circles.presentation import cli
-from population_circles.presentation.cli import render_map_file as render_file
 from population_circles.presentation.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
@@ -92,6 +94,28 @@ RADIUS_KM = 1000.0
 WORLD_POPULATION = 1_254_363_867.93
 TERRITORY_SHARE = 0.375
 EXPECTED_OFFSCREEN_CHILE_COMPONENTS = 10
+
+
+def render_file(
+    input_path: Path,
+    output_path: Path,
+    projection: str = PLATE_CARREE,
+    *,
+    no_coastlines: bool = False,
+    coverage_enriched: bool = False,
+) -> None:
+    render_map_use_case.render_file(
+        RenderMapFileRequest(
+            input_path,
+            output_path,
+            projection,
+            no_coastlines,
+            coverage_enriched,
+        ),
+        composition.render_map_collaborators(),
+    )
+
+
 CountryPresentationCase = tuple[
     str,
     tuple[float, float],
@@ -178,7 +202,7 @@ def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(
         source_selection_module,
         "registered_map_sources",
@@ -360,7 +384,7 @@ def write_coastline_fixture(root: Path) -> Path:
 
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
-    monkeypatch.setattr(cli, "load", lambda: REGISTRY)
+    monkeypatch.setattr(composition, "load", lambda: REGISTRY)
     return write_coastline_fixture(root)
 
 
@@ -951,7 +975,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
         return 0.375
 
     monkeypatch.setattr(
-        cli,
+        composition,
         "load_map_boundaries",
         fixture_boundaries,
     )
@@ -1062,7 +1086,7 @@ def test_render_file_selects_other_country_labels_only_when_names_are_available(
         return 0.5
 
     monkeypatch.setattr(
-        cli,
+        composition,
         "load_map_boundaries",
         load_boundaries,
     )
@@ -1251,7 +1275,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     def selected_outline(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {"DE": box(5, 47, 15, 55)}
 
-    monkeypatch.setattr(cli, "load_map_boundaries", selected_outline)
+    monkeypatch.setattr(composition, "load_map_boundaries", selected_outline)
 
     def refuse_coastline(_registry: Registry) -> tuple[BaseGeometry, str]:
         message = "no-coastlines loaded coastline"
@@ -1327,7 +1351,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / f"map-{projection}.png"
     use_coastline_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", empty_boundaries)
     monkeypatch.chdir(tmp_path)
 
     result = cli_runner.invoke(
@@ -1354,7 +1378,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     # other case here hands `citation` a literal, so a constant put back in `main` would pass them
     # all. The fixture registry carries neither committed row, so a `main` reaching for one of those
     # cannot resolve it at all.
-    monkeypatch.setattr("population_circles.presentation.cli.load", lambda: parse(TWO_ATTRIBUTED))
+    monkeypatch.setattr("population_circles.composition.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
     original_copyright = map_metadata_module.copyright_of

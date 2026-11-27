@@ -101,7 +101,8 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
 5. **Rendering.** Python renders published documents in a separate layer from the Rust search. Its
    `visualizer` command surface dispatches to packages organized by responsibility:
 
-   - `presentation/cli.py` owns command parsing, dispatch, and concrete collaborator composition.
+   - `presentation/cli.py` owns command parsing and dispatch; package-root `composition.py` owns
+     concrete collaborator composition for application workflows.
    - `application/use_cases/` owns population, map-file, country-sweep, and Gallery workflows.
    - `infrastructure/geodata/` owns dataset configuration, registry access, boundaries, and map
      source loading; `infrastructure/popcircles_cli.py` owns Rust process execution.
@@ -140,9 +141,9 @@ narrow exception recorded in [ADR 0020](../decisions/0020-python-calculates-terr
 
 - **Keep Python dependency direction explicit.** `domain/` imports only the standard library and
   direct geometry dependencies. `application/` imports domain values and the external result contract,
-  never infrastructure or presentation implementations. Infrastructure and presentation receive
-  application contracts from `presentation/cli.py`, the concrete composition root. Result-document
-  and application request DTOs stay at those boundaries; they are not domain models.
+  never infrastructure or presentation implementations. Package-root `composition.py` wires concrete
+  infrastructure and presentation implementations to application contracts. Result-document and
+  application request DTOs stay at those boundaries; they are not domain models.
 - **Use domain types.** Latitude, longitude, pixel index, radius, and population are different
   quantities. A bare `f64` or `usize` can hide a units error. `Row` and `Col` distinguish index axes,
   while grid operations check indices against the receiving grid; an in-range index carries no grid

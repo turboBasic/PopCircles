@@ -14,6 +14,7 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 import population_circles.application.use_cases.render_map as render_map_use_case
+from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.circle_map import (
@@ -36,6 +37,7 @@ from test_render_map import (
     empty_boundaries,
     fixture_map_layers,
     fixture_registered_map_sources,
+    render_file,
     transparent_terrain,
 )
 
@@ -44,7 +46,7 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
@@ -107,7 +109,7 @@ def run_circle_map(
         runner,
         load_boundaries=boundary_loader,
         publish_file=write_bytes_atomically,
-        render_file=cli.render_map_file,
+        render_file=render_file,
     )
 
 

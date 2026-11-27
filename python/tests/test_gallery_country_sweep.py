@@ -8,6 +8,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.application.use_cases.gallery as country_sweep_module
+from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.gallery import CountryRefresh
@@ -16,7 +17,6 @@ from population_circles.application.use_cases.gallery_build import (
 )
 from population_circles.documents.result_document import Answer
 from population_circles.infrastructure.geodata.dataset_registry import Registry
-from population_circles.presentation import cli
 from test_gallery import (
     EXPECTED_COUNTRY_CLI_CALLS,
     configured_country,
@@ -33,7 +33,7 @@ def country_documents(
     *,
     country_refresh: CountryRefresh | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
-    collaborators = cli.gallery_build_collaborators(run_population_command).country_sweep
+    collaborators = composition.gallery_build_collaborators(run_population_command).country_sweep
     return country_documents_workflow(
         run_population_command,
         corpus,
@@ -91,7 +91,7 @@ def test_country_coverage_refresh_uses_saved_answers_without_running_country_swe
             )
         }
 
-    monkeypatch.setattr(cli, "load_country_boundaries", country_boundaries)
+    monkeypatch.setattr(composition, "load_country_boundaries", country_boundaries)
 
     missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
 

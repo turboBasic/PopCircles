@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.circle_map import (
@@ -17,13 +18,13 @@ from population_circles.infrastructure.file_publishing import write_bytes_atomic
 from population_circles.infrastructure.geodata import map_layers
 from population_circles.infrastructure.geodata.dataset_registry import parse
 from population_circles.infrastructure.popcircles_cli import REPO_ROOT
-from population_circles.presentation import cli
 from population_circles.presentation.maps import render_map, source_selection
 from test_render_map import (
     PNG_MAGIC,
     empty_boundaries,
     fixture_map_layers,
     fixture_registered_map_sources,
+    render_file,
     transparent_terrain,
 )
 
@@ -34,13 +35,13 @@ def run_circle_map(options: CircleMapRequest, runner: PopulationRunner) -> None:
         runner,
         load_boundaries=lambda _answer: {},
         publish_file=write_bytes_atomically,
-        render_file=cli.render_map_file,
+        render_file=render_file,
     )
 
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(composition, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
@@ -86,7 +87,7 @@ def test_real_build_reuse_and_missing_raster(
         REPO_ROOT,
     )
     registry = parse((tmp_path / "data/registry.toml").read_text())
-    monkeypatch.setattr(cli, "load", lambda: registry)
+    monkeypatch.setattr(composition, "load", lambda: registry)
     options = CircleMapRequest(
         dataset="tiny",
         share="50",
