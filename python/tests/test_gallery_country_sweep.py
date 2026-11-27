@@ -9,9 +9,14 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.application.use_cases.gallery as country_sweep_module
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.application.use_cases.gallery_build import country_documents
+from population_circles.application.ports import PopulationRunner
+from population_circles.application.use_cases.gallery import CountryRefresh
+from population_circles.application.use_cases.gallery_build import (
+    country_documents as country_documents_workflow,
+)
 from population_circles.documents.result_document import Answer
 from population_circles.infrastructure.geodata.dataset_registry import Registry
+from population_circles.presentation import cli
 from test_gallery import (
     EXPECTED_COUNTRY_CLI_CALLS,
     configured_country,
@@ -20,6 +25,21 @@ from test_gallery import (
     swept_country,
     written,
 )
+
+
+def country_documents(
+    run_population_command: PopulationRunner,
+    corpus: Path,
+    *,
+    country_refresh: CountryRefresh | None = None,
+) -> tuple[list[str], dict[str, dict[str, Any]]]:
+    collaborators = cli.gallery_build_collaborators(run_population_command).country_sweep
+    return country_documents_workflow(
+        run_population_command,
+        corpus,
+        collaborators,
+        country_refresh=country_refresh,
+    )
 
 
 def test_a_matching_country_sweep_is_reused_without_running_the_sweep(tmp_path: Path) -> None:
@@ -71,7 +91,7 @@ def test_country_coverage_refresh_uses_saved_answers_without_running_country_swe
             )
         }
 
-    monkeypatch.setattr(country_sweep_module, "load_country_boundaries", country_boundaries)
+    monkeypatch.setattr(cli, "load_country_boundaries", country_boundaries)
 
     missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
 
@@ -257,12 +277,9 @@ def test_refresh_bypasses_a_matching_country_sweep_cache(tmp_path: Path) -> None
     assert calls[1][0:2] == ["country", "sweep"]
 
 
-def test_excluded_ids_are_omitted_from_missing_country_names(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(country_sweep_module, "excluded_country_ids", lambda: {"HK"})
+def test_excluded_ids_are_omitted_from_missing_country_names() -> None:
     countries = [configured_country("DE", "Germany"), configured_country("HK", "Hong Kong")]
     sweep = country_sweep([])
     sweep["result"]["countries_without_population_cells"] = countries
 
-    assert country_sweep_module.missing_country_names(sweep, countries) == ["Germany"]
+    assert country_sweep_module.missing_country_names(sweep, countries, {"HK"}) == ["Germany"]

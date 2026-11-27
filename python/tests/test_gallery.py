@@ -19,13 +19,22 @@ from typer.testing import CliRunner
 import population_circles.application.use_cases.gallery as country_sweep_module
 import population_circles.application.use_cases.gallery_build as gallery_module
 import population_circles.infrastructure.geodata.map_layers as map_layers_module
+import population_circles.presentation.gallery.output as gallery_output
 import population_circles.presentation.gallery.rendering as rendering_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.terrain as terrain_module
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
-from population_circles.application.use_cases.gallery_build import build
+from population_circles.application.use_cases.gallery import CountryRefresh, GalleryFigure
+from population_circles.application.use_cases.gallery_build import (
+    GalleryBuildRequest,
+    GalleryOutputRequest,
+    Skipped,
+)
+from population_circles.application.use_cases.gallery_build import (
+    build as build_workflow,
+)
 from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.infrastructure.geodata.data_config import country_boundary_dataset_key
 from population_circles.infrastructure.geodata.dataset_registry import (
@@ -54,6 +63,35 @@ from test_render_map import (
 )
 
 CORPUS = Path(__file__).resolve().parents[2] / "results"
+
+
+def build(
+    corpus: Path,
+    output: Path,
+    run_population_command: PopulationRunner,
+    *,
+    country_refresh: CountryRefresh | None = None,
+    cache_directory: Path | None = None,
+) -> tuple[list[GalleryFigure], list[Skipped]]:
+    return build_workflow(
+        GalleryBuildRequest(corpus, output, country_refresh, cache_directory),
+        cli.gallery_build_collaborators(run_population_command),
+    )
+
+
+def build_gallery_output(
+    corpus: Path,
+    sources: list[tuple[Path, dict[str, Any]]],
+    generated: dict[str, dict[str, Any]],
+    missing: list[str],
+    context: rendering_module.MapRenderContext,
+) -> tuple[list[GalleryFigure], list[Skipped]]:
+    return gallery_module.build_gallery_output(
+        GalleryOutputRequest(corpus, sources, generated, missing, context),
+        cli.gallery_build_collaborators(country_cli([], [])[0]),
+    )
+
+
 CLI_ERROR_EXIT = 2
 REFRESH_OPTION_COUNT = 2
 DATASET = "population-count-2020-30arcsec"
@@ -76,7 +114,7 @@ SMALL_MAP_COUNT = 2
 
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     registry = load()
-    monkeypatch.setattr(gallery_module, "load", lambda: registry)
+    monkeypatch.setattr(cli, "load", lambda: registry)
     monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
     path = root / registry.datasets[COASTLINE_DATASET].path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -102,7 +140,7 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
     def one_worker(count: int) -> int:
         return min(1, count)
 
-    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(
         map_layers_module,
         "registered_map_sources",
@@ -160,7 +198,7 @@ def test_header_background_crops_to_plate_carree_plot_without_white_margins(
     image.paste((100, 190, 180), (10, 35, 110, 60))
     image.save(source)
 
-    gallery_module.crop_header_background(source, target)
+    gallery_output.crop_header_background(source, target)
 
     with Image.open(target) as cropped:
         assert cropped.size == (100, 49)
@@ -179,9 +217,9 @@ def assert_built_site(output: Path) -> None:
         assert (
             abs(
                 header_background.width
-                - gallery_module.HEADER_CROP_ASPECT_RATIO * header_background.height
+                - gallery_output.HEADER_CROP_ASPECT_RATIO * header_background.height
             )
-            <= gallery_module.HEADER_CROP_ASPECT_TOLERANCE
+            <= gallery_output.HEADER_CROP_ASPECT_TOLERANCE
         )
 
 
@@ -533,7 +571,7 @@ def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     output = tmp_path / "build" / "gallery"
     countries = [configured_country("AA", "Alpha")]
     swept = [swept_country("AA", "Alpha")]
-    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
     render = Mock(wraps=render_map_module.render)
     monkeypatch.setattr(rendering_module, "render", render)
     invoke = country_cli(countries, swept)[0]
@@ -672,7 +710,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     def skip_frontend(_output: Path) -> None:
         return
 
-    monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
+    monkeypatch.setattr(gallery_output, "build_frontend", skip_frontend)
     payload = document("most-populous")
     sources = [
         (tmp_path / "alpha.json", payload),
@@ -694,7 +732,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     def no_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {}
 
-    monkeypatch.setattr(gallery_module, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
     monkeypatch.setattr(
         map_layers_module,
@@ -704,15 +742,13 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     monkeypatch.setattr(map_layers_module, "load_map_layers", real_load_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
 
-    serial, _ = gallery_module.build_gallery_output(tmp_path, sources, {}, [], serial_context)
+    serial, _ = build_gallery_output(tmp_path, sources, {}, [], serial_context)
 
     def two_workers(count: int) -> int:
         return min(2, count)
 
     monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
-    concurrent, _ = gallery_module.build_gallery_output(
-        tmp_path, sources, {}, [], concurrent_context
-    )
+    concurrent, _ = build_gallery_output(tmp_path, sources, {}, [], concurrent_context)
 
     assert [item.figure.name for item in serial] == [item.figure.name for item in concurrent]
     assert {item.figure.name: item.figure.read_bytes() for item in serial} == {
@@ -749,7 +785,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
         return
 
     monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
-    monkeypatch.setattr(gallery_module, "build_frontend", skip_frontend)
+    monkeypatch.setattr(gallery_output, "build_frontend", skip_frontend)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
     corpus = tmp_path / "corpus"
@@ -757,7 +793,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     written(corpus, "drawable.json", document("most-populous"))
     written(corpus, "unregistered.json", document("most-populous", "no-such-dataset"))
     with pytest.raises(UnregisteredDatasetError) as caught:
-        gallery_module.build_gallery_output(
+        build_gallery_output(
             corpus,
             [
                 (source, json.loads(source.read_text(encoding="utf-8")))
@@ -782,7 +818,7 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
     # Keep every committed document on the Gallery parsing and classification path; representative
     # fixtures exercise actual map rendering without redrawing the full corpus in CI.
     use_coastline_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
     render = Mock(return_value=Figure())
     monkeypatch.setattr(rendering_module, "render", render)
     output = tmp_path / "gallery"
@@ -899,7 +935,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         annotations.append(text)
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(gallery_module, "load_map_boundaries", fixture_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
 
     drawn, skipped = build(corpus, output, invoke)
@@ -1089,7 +1125,7 @@ def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPa
         ],
     )
     assert sweep.exit_code == 0
-    assert build.call_args.kwargs["country_refresh"] == "sweep"
+    assert build.call_args.args[0].country_refresh == "sweep"
 
     coverage = runner.invoke(
         cli.app,
@@ -1103,7 +1139,7 @@ def test_gallery_cli_accepts_forced_country_refresh(monkeypatch: pytest.MonkeyPa
         ],
     )
     assert coverage.exit_code == 0
-    assert build.call_args.kwargs["country_refresh"] == "coverage"
+    assert build.call_args.args[0].country_refresh == "coverage"
 
     invalid = runner.invoke(
         cli.app,

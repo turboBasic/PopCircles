@@ -1,13 +1,9 @@
 import json
-import shutil
-import subprocess
-import sys
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol, cast
 from urllib.parse import quote
-
-from PIL import Image, ImageChops
 
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases import gallery as country_sweep_module
@@ -16,119 +12,45 @@ from population_circles.application.use_cases.gallery import (
     CountryRefresh,
     CountrySweepCollaborators,
     CountrySweepRequest,
+    GalleryFigure,
     RenderJob,
 )
-from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.infrastructure.geodata.country_boundaries import (
-    load_country_boundaries,
-    load_map_boundaries,
-)
-from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
-from population_circles.infrastructure.geodata.map_layers import registered_coastline
-from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
-from population_circles.presentation.gallery.page_data import Drawn, page_data
-from population_circles.presentation.gallery.rendering import (
-    MapRenderContext,
-    render_context_digest,
-    render_documents,
-)
-from population_circles.presentation.maps.frame import ORTHOGRAPHIC
-from population_circles.presentation.maps.presentation_config import (
-    load as load_presentation_config,
-)
-from population_circles.presentation.maps.render_map import OCEAN
 
-HEADER_OCEAN_MATCH_TOLERANCE = 8
-HEADER_CROP_ASPECT_RATIO = 2
-HEADER_CROP_ASPECT_TOLERANCE = 2
+
+class GalleryRenderContext(Protocol):
+    @property
+    def output(self) -> Path: ...
+
+
+@dataclass(frozen=True)
+class GalleryBuildCollaborators:
+    run_population_command: PopulationRunner
+    prepare_render_context: Callable[[Path, Path | None], GalleryRenderContext]
+    enrich_source: Callable[[Path, dict[str, Any]], dict[str, Any]]
+    country_sweep: CountrySweepCollaborators
+    build_frontend: Callable[[Path], None]
+    write_header: Callable[[list[GalleryFigure], Path], None]
+    render_documents: Callable[
+        [list[RenderJob], GalleryRenderContext],
+        tuple[list[tuple[GalleryFigure, bool]], int, float],
+    ]
+    page_data: Callable[[Sequence[GalleryFigure], list[str]], object]
+    report: Callable[[str], None]
+
+
+@dataclass(frozen=True)
+class GalleryBuildRequest:
+    corpus: Path
+    output: Path
+    country_refresh: CountryRefresh | None = None
+    cache_directory: Path | None = None
 
 
 @dataclass(frozen=True)
 class Skipped:
     document: Path
     kind: str
-
-
-def _enrich_saved_document(document: dict[str, Any]) -> dict[str, Any]:
-    registry = load()
-    return enrich_document(
-        document,
-        load_country_boundaries=lambda answer: load_country_boundaries(answer, registry),
-        load_map_boundaries=lambda answer: load_map_boundaries(answer, registry),
-    )
-
-
-def _country_sweep_collaborators() -> CountrySweepCollaborators:
-    return CountrySweepCollaborators(
-        set(load_presentation_config().gallery.excluded_country_ids),
-        _enrich_saved_document,
-    )
-
-
-def build_frontend(output: Path) -> None:
-    assets = output / "assets"
-    if assets.is_symlink():
-        assets.unlink()
-    elif assets.is_dir():
-        shutil.rmtree(assets)
-    npm = shutil.which("npm")
-    if npm is None:
-        message = "npm is required; run this gallery build through mise"
-        raise FileNotFoundError(message)
-    subprocess.run(  # noqa: S603 — argv only; npm runs the pinned repository frontend build
-        [
-            npm,
-            "--prefix",
-            str(REPO_ROOT / "frontend"),
-            "run",
-            "build",
-            "--",
-            "--outDir",
-            str(output.resolve()),
-        ],
-        check=True,
-    )
-
-
-def crop_header_background(source: Path, target: Path) -> None:
-    with Image.open(source) as original:
-        image = original.convert("RGB")
-        ocean = Image.new("RGB", image.size, OCEAN)
-        lookup = [255 if value < HEADER_OCEAN_MATCH_TOLERANCE else 0 for value in range(256)]
-        mask = ImageChops.difference(image, ocean).convert("L").point(lookup)
-        bounds = mask.getbbox()
-        if bounds is None:
-            # shortcut: fallback assumes render's 11x6 world axes; update when those bounds change.
-            left, top, right = (
-                round(image.width * 0.113),
-                round(image.height * 0.131),
-                round(image.width * 0.887),
-            )
-            bottom = round(image.height * 0.839)
-        else:
-            left, top, right, _ = bounds
-            # The 2:1 Plate Carree frame extends beyond the ocean pixels at its land-filled edge.
-            bottom = top + round((right - left) / HEADER_CROP_ASPECT_RATIO) - 1
-        if bottom <= top or bottom > image.height:
-            raise ValueError
-        image.crop((left, top, right, bottom)).save(target)
-
-
-def write_header_background(drawn: list[Drawn], output: Path) -> None:
-    world_map = next((one.figure for one in drawn if one.country_name is None), None)
-    if world_map is not None:
-        crop_header_background(world_map, output / "header-background.png")
-
-
-def enrich_source(source: Path, payload: dict[str, Any], registry: Registry) -> dict[str, Any]:
-    answer = circle_of(payload)
-    enriched = enrich_document(payload, load_map_boundaries(answer, registry))
-    if enriched != payload:
-        source.write_text(
-            json.dumps(enriched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-    return enriched
 
 
 def render_jobs_for(
@@ -142,37 +64,45 @@ def render_jobs_for(
         else answer.caption.share
     )
     if answer.country is None and share == HALF_SHARE:
-        return job, RenderJob(source, payload, index, total, ORTHOGRAPHIC, "-orthographic")
+        return job, RenderJob(source, payload, index, total, "orthographic", "-orthographic")
     return (job,)
 
 
-def build_gallery_output(
-    corpus: Path,
-    sources: list[tuple[Path, dict[str, Any]]],
-    generated: dict[str, dict[str, Any]],
-    missing: list[str],
-    context: MapRenderContext,
-) -> tuple[list[Drawn], list[Skipped]]:
+@dataclass(frozen=True)
+class GalleryOutputRequest:
+    corpus: Path
+    sources: list[tuple[Path, dict[str, Any]]]
+    generated: dict[str, dict[str, Any]]
+    missing: list[str]
+    context: GalleryRenderContext
+
+
+def build_gallery_output(  # noqa: PLR0915 — ordered cleanup and publication steps stay explicit
+    request: GalleryOutputRequest,
+    collaborators: GalleryBuildCollaborators,
+) -> tuple[list[GalleryFigure], list[Skipped]]:
+    corpus = request.corpus
+    sources = request.sources
+    generated = request.generated
+    context = request.context
     output = context.output
-    drawn: list[Drawn] = []
+    drawn: list[GalleryFigure] = []
     skipped: list[Skipped] = []
     reused_maps = rendered_maps = 0
-    unavailable = set(missing)
-    excluded = _country_sweep_collaborators().excluded_country_ids
+    unavailable = set(request.missing)
+    excluded = collaborators.country_sweep.excluded_country_ids
     sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
     skipped.extend(excluded_sources)
     render_jobs: list[RenderJob] = []
     try:
         (output / "header-background.png").unlink(missing_ok=True)
-        build_frontend(output)
+        collaborators.build_frontend(output)
         for index, (source, source_payload) in enumerate(sources, start=1):
             envelope = Envelope.model_validate(source_payload)
             if envelope.document not in CIRCLE_KINDS and envelope.document != "country-smallest":
-                print(
+                collaborators.report(
                     f"Gallery: [{index}/{len(sources)}] skipping {source.name} "
-                    f"({envelope.document})",
-                    file=sys.stderr,
-                    flush=True,
+                    f"({envelope.document})"
                 )
                 skipped.append(Skipped(source, envelope.document))
                 if source.name in generated:
@@ -181,15 +111,13 @@ def build_gallery_output(
                         encoding="utf-8",
                     )
                 continue
-            payload = enrich_source(source, source_payload, context.registry)
+            payload = collaborators.enrich_source(source, source_payload)
             if (
                 envelope.document == "country-smallest"
                 and payload["result"]["circle"]["target"]["total"] == 0
             ):
-                print(
+                collaborators.report(
                     f"Gallery: [{index}/{len(sources)}] skipping {source.name} (zero population)",
-                    file=sys.stderr,
-                    flush=True,
                 )
                 skipped.append(Skipped(source, "zero-population country"))
                 unavailable.add(payload["result"]["country"]["name"])
@@ -209,24 +137,22 @@ def build_gallery_output(
             )
             for index, job in enumerate(render_jobs, start=1)
         ]
-        print(
+        collaborators.report(
             f"Gallery: rendering {len(render_jobs)} maps from {len(sources)} result documents",
-            file=sys.stderr,
-            flush=True,
         )
-        drawn_results, workers, render_seconds = render_documents(render_jobs, context)
+        drawn_results, workers, render_seconds = collaborators.render_documents(
+            render_jobs, context
+        )
         for drawn_map, reused in drawn_results:
             drawn.append(drawn_map)
             if reused:
                 reused_maps += 1
             else:
                 rendered_maps += 1
-        print(
+        collaborators.report(
             f"Gallery: maps used {workers} workers and took {render_seconds:.2f}s",
-            file=sys.stderr,
-            flush=True,
         )
-        write_header_background(drawn, output)
+        collaborators.write_header(drawn, output)
 
         for name, payload in generated.items():
             destination = corpus / name
@@ -234,7 +160,7 @@ def build_gallery_output(
             if destination.is_file() and same_country_answer(destination.read_bytes(), content):
                 continue
             destination.write_bytes(content)
-        data = page_data(drawn, sorted(unavailable))
+        data = collaborators.page_data(drawn, sorted(unavailable))
         (output / "gallery-data.json").write_text(
             json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
@@ -242,12 +168,10 @@ def build_gallery_output(
         (output / "index.html").unlink(missing_ok=True)
         (output / "gallery-data.json").unlink(missing_ok=True)
         raise
-    print(
+    collaborators.report(
         f"Gallery: complete ({len(drawn)} maps from {len(sources)} result documents, "
         f"{len(skipped)} skipped; "
-        f"{reused_maps} reused, {rendered_maps} rendered)",
-        file=sys.stderr,
-        flush=True,
+        f"{reused_maps} reused, {rendered_maps} rendered)"
     )
     return drawn, skipped
 
@@ -298,6 +222,7 @@ def omit_excluded_sources(
 def country_documents(
     run_population_command: PopulationRunner,
     corpus: Path,
+    collaborators: CountrySweepCollaborators,
     *,
     country_refresh: CountryRefresh | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
@@ -317,7 +242,6 @@ def country_documents(
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
-    collaborators = _country_sweep_collaborators()
     sweep = country_sweep_module.country_sweep(
         CountrySweepRequest(
             run_population_command,
@@ -325,7 +249,6 @@ def country_documents(
             selection,
             countries,
             country_refresh,
-            report_country_sweep,
             collaborators,
         )
     )
@@ -360,10 +283,8 @@ def country_documents(
         documents[filename] = document
 
     documents[sweep_filename] = country_sweep_module.stable_country_sweep(sweep)
-    print(
+    collaborators.report(
         f"Gallery: prepared {len(documents)} country result documents",
-        file=sys.stderr,
-        flush=True,
     )
     return (
         missing,
@@ -371,49 +292,26 @@ def country_documents(
     )
 
 
-def report_country_sweep(message: str) -> None:
-    print(message, file=sys.stderr, flush=True)
-
-
 def build(
-    corpus: Path,
-    output: Path,
-    run_population_command: PopulationRunner = invoke_popcircles_cli,
-    *,
-    country_refresh: CountryRefresh | None = None,
-    cache_directory: Path | None = None,
-) -> tuple[list[Drawn], list[Skipped]]:
-    # One basemap union and one registry read for the whole run, which is the only reason this is a
-    # second caller of `render` rather than a loop over `render_map.main`.
-    registry = load()
-    coastline, coastline_attribution = registered_coastline(registry)
+    request: GalleryBuildRequest,
+    collaborators: GalleryBuildCollaborators,
+) -> tuple[list[GalleryFigure], list[Skipped]]:
+    corpus = request.corpus
+    output = request.output
+    country_refresh = request.country_refresh
     output.mkdir(parents=True, exist_ok=True)
-    cache_directory = cache_directory or output.parent / ".gallery-cache"
-    try:
-        cache_directory.mkdir(parents=True, exist_ok=True)
-    except OSError:
-        cache_directory = None
-    context_digest = render_context_digest()
-    presentation = load_presentation_config()
-    render_context = MapRenderContext(
-        registry,
-        coastline,
-        coastline_attribution,
-        output,
-        cache_directory,
-        context_digest,
-        (presentation.map_text.render_title, presentation.map_text.render_description),
-        map_titles=presentation.map_titles,
-    )
+    render_context = collaborators.prepare_render_context(output, request.cache_directory)
     (output / "index.html").unlink(missing_ok=True)
     (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     if country_refresh == "coverage":
-        collaborators = _country_sweep_collaborators()
-        country_sweep_module.refresh_coverage(corpus, collaborators.enrich_saved_document)
+        country_sweep_module.refresh_coverage(
+            corpus, collaborators.country_sweep.enrich_saved_document
+        )
     missing, generated = country_documents(
-        run_population_command,
+        collaborators.run_population_command,
         corpus,
+        collaborators.country_sweep,
         country_refresh=country_refresh,
     )
 
@@ -425,9 +323,6 @@ def build(
     sources.extend((corpus / name, payload) for name, payload in generated.items())
     sources.sort(key=lambda item: item[0].name)
     return build_gallery_output(
-        corpus,
-        sources,
-        generated,
-        missing,
-        render_context,
+        GalleryOutputRequest(corpus, sources, generated, missing, render_context),
+        collaborators,
     )

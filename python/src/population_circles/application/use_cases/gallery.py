@@ -45,6 +45,7 @@ class RenderJob:
 class CountrySweepCollaborators:
     excluded_country_ids: set[str]
     enrich_saved_document: Callable[[dict[str, Any]], dict[str, Any]]
+    report: Callable[[str], None]
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,6 @@ class CountrySweepRequest:
     selection: dict[str, Any]
     countries: list[dict[str, Any]]
     refresh: CountryRefresh | None
-    report: Callable[[str], None]
     collaborators: CountrySweepCollaborators
 
 
@@ -209,8 +209,8 @@ def country_sweep(
     selection = request.selection
     countries = request.countries
     refresh = request.refresh
-    report = request.report
     collaborators = request.collaborators
+    report = collaborators.report
     filename = (
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
