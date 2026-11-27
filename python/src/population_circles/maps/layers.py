@@ -10,8 +10,8 @@ from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.data.data_config import coastline_dataset_key
-from population_circles.data.dataset_registry import (
+from population_circles.infrastructure.geodata.data_config import coastline_dataset_key
+from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
     MapContextVector,

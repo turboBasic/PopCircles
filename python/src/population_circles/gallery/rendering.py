@@ -16,9 +16,9 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.data.dataset_registry import REPO_ROOT, Registry
 from population_circles.documents.result_document import Answer, circle_of
-from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry
 from population_circles.maps import layers as map_data
 from population_circles.maps.frame import PLATE_CARREE
 from population_circles.maps.metadata import (
@@ -42,9 +42,9 @@ RENDER_MODULES = (
     "application/use_cases/territory_coverage.py",
     "domain/circle_geometry.py",
     "domain/territory_coverage.py",
-    "geography/country_boundaries.py",
-    "data/data_config.py",
-    "data/dataset_registry.py",
+    "infrastructure/geodata/country_boundaries.py",
+    "infrastructure/geodata/data_config.py",
+    "infrastructure/geodata/dataset_registry.py",
     "gallery/rendering.py",
     "maps/frame.py",
     "maps/labels.py",

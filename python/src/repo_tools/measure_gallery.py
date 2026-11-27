@@ -10,8 +10,12 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from population_circles.data.dataset_registry import REPO_ROOT, TerrainRaster, load
 from population_circles.gallery import rendering as gallery_rendering
+from population_circles.infrastructure.geodata.dataset_registry import (
+    REPO_ROOT,
+    TerrainRaster,
+    load,
+)
 from population_circles.maps import render_map
 from population_circles.maps.frame import Frame
 from population_circles.maps.layers import registered_coastline

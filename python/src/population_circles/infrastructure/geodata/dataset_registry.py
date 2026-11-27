@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # Resolved from this file's own location, the same way `render_map.py` reaches the committed
 # basemap and for the same reason — the project is installed editable, so the checkout is beside
 # the package. FU-20 covers both of these together.
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[5]
 REGISTRY = REPO_ROOT / "data" / "registry.toml"
 SHA256_HEX_LENGTH = 64
 

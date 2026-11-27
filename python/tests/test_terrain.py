@@ -9,7 +9,7 @@ from pyproj import CRS, Transformer
 from rasterio.transform import from_origin
 from shapely.geometry import Point, box
 
-from population_circles.data.dataset_registry import TerrainRaster
+from population_circles.infrastructure.geodata.dataset_registry import TerrainRaster
 from population_circles.maps.frame import Frame
 from population_circles.maps.terrain import ELEVATION_STOPS, paint, palette, prepare_terrain
 

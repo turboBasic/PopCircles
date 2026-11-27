@@ -8,12 +8,12 @@ from urllib.parse import quote
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.data.dataset_registry import load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.geography.country_boundaries import (
+from population_circles.infrastructure.geodata.country_boundaries import (
     load_country_boundaries,
     load_map_boundaries,
 )
+from population_circles.infrastructure.geodata.dataset_registry import load
 from population_circles.maps.presentation_config import load as load_presentation_config
 
 HALF_SHARE = 0.5

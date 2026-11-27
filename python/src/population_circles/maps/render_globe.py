@@ -14,18 +14,18 @@ from shapely.geometry import MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
-from population_circles.data.data_config import country_boundary_dataset_key
-from population_circles.data.dataset_registry import (
-    REPO_ROOT,
-    BoundaryVector,
-    load,
-)
 from population_circles.domain.circle_geometry import (
     cap,
     hemisphere_km,
     polygons,
 )
 from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
+from population_circles.infrastructure.geodata.data_config import country_boundary_dataset_key
+from population_circles.infrastructure.geodata.dataset_registry import (
+    REPO_ROOT,
+    BoundaryVector,
+    load,
+)
 from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 from population_circles.maps.layers import UnregisteredDatasetError, basemap
 

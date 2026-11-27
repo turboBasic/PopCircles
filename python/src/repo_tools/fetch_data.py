@@ -6,7 +6,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-from population_circles.data.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
 
 CHUNK = 1 << 20
 FIX = "mise run data:get"

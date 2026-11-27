@@ -21,14 +21,14 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.polygon import Polygon
 
 from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.data.dataset_registry import (
-    TerrainRaster,
-    load,
-)
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import cap, linestrings, polygons
 from population_circles.domain.geography import GeographicCoordinate
-from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.dataset_registry import (
+    TerrainRaster,
+    load,
+)
 from population_circles.maps import layers as map_data
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps.frame import (

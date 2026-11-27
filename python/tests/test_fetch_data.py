@@ -5,7 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from population_circles.data.dataset_registry import PopulationRaster, Registry, load, parse
+from population_circles.infrastructure.geodata.dataset_registry import (
+    PopulationRaster,
+    Registry,
+    load,
+    parse,
+)
 from repo_tools import fetch_data
 from repo_tools.fetch_data import FetchError, acquire
 

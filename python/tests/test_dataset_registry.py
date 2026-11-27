@@ -5,7 +5,7 @@ from pathlib import Path, PurePosixPath
 import pytest
 from pydantic import ValidationError
 
-from population_circles.data.dataset_registry import (
+from population_circles.infrastructure.geodata.dataset_registry import (
     REGISTRY,
     REPO_ROOT,
     BoundaryVector,

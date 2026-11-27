@@ -12,8 +12,8 @@ from population_circles.applications.circle_map import (
     CircleMapRequest,
     search_and_render_circle_map,
 )
-from population_circles.data.dataset_registry import parse
 from population_circles.documents.result_document import SweepRecords, circle_of
+from population_circles.infrastructure.geodata.dataset_registry import parse
 from population_circles.infrastructure.popcircles_cli import REPO_ROOT
 from population_circles.maps import layers as map_layers
 from population_circles.maps import render_map

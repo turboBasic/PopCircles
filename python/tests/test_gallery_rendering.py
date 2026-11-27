@@ -92,12 +92,18 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
     assert package / "gallery" / "rendering.py" in rendering_module.RENDER_INPUTS
-    assert package / "data" / "data_config.py" in rendering_module.RENDER_INPUTS
-    assert package / "data" / "dataset_registry.py" in rendering_module.RENDER_INPUTS
+    assert package / "infrastructure" / "geodata" / "data_config.py" in (
+        rendering_module.RENDER_INPUTS
+    )
+    assert package / "infrastructure" / "geodata" / "dataset_registry.py" in (
+        rendering_module.RENDER_INPUTS
+    )
     assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
     assert package / "domain" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
     assert package / "domain" / "territory_coverage.py" in rendering_module.RENDER_INPUTS
-    assert package / "geography" / "country_boundaries.py" in rendering_module.RENDER_INPUTS
+    assert package / "infrastructure" / "geodata" / "country_boundaries.py" in (
+        rendering_module.RENDER_INPUTS
+    )
     assert package / "application" / "use_cases" / "territory_coverage.py" in (
         rendering_module.RENDER_INPUTS
     )

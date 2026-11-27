@@ -24,7 +24,14 @@ import population_circles.maps.metadata as map_metadata_module
 import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 from population_circles import cli
-from population_circles.data.dataset_registry import (
+from population_circles.documents.result_document import Answer, circle_of
+from population_circles.domain.circle_geometry import Cap, cap
+from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
+from population_circles.infrastructure.geodata.country_boundaries import (
+    BoundaryIdentityError,
+    load_outline,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
     Registry,
@@ -33,10 +40,6 @@ from population_circles.data.dataset_registry import (
     load,
     parse,
 )
-from population_circles.documents.result_document import Answer, circle_of
-from population_circles.domain.circle_geometry import Cap, cap
-from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
-from population_circles.geography.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,

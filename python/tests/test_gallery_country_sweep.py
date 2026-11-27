@@ -9,9 +9,9 @@ from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery.country_sweep as country_sweep_module
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.data.dataset_registry import Registry
 from population_circles.documents.result_document import Answer
 from population_circles.gallery.build import country_documents
+from population_circles.infrastructure.geodata.dataset_registry import Registry
 from test_gallery import (
     EXPECTED_COUNTRY_CLI_CALLS,
     configured_country,

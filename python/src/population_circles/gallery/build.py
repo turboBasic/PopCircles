@@ -11,7 +11,6 @@ from PIL import Image, ImageChops
 
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.data.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.gallery import country_sweep as country_sweep_module
 from population_circles.gallery.country_sweep import (
@@ -27,7 +26,8 @@ from population_circles.gallery.rendering import (
     render_context_digest,
     render_documents,
 )
-from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
 from population_circles.maps.frame import ORTHOGRAPHIC
 from population_circles.maps.layers import registered_coastline

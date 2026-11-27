@@ -26,16 +26,16 @@ import population_circles.maps.terrain as terrain_module
 from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
-from population_circles.data.data_config import country_boundary_dataset_key
-from population_circles.data.dataset_registry import (
+from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
+from population_circles.gallery.build import build
+from population_circles.infrastructure.geodata.data_config import country_boundary_dataset_key
+from population_circles.infrastructure.geodata.dataset_registry import (
     MapContextVector,
     Registry,
     SettlementVector,
     TerrainRaster,
     load,
 )
-from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
-from population_circles.gallery.build import build
 from population_circles.maps.layers import (
     COASTLINE_DATASET,
     UnregisteredDatasetError,
