@@ -6,8 +6,8 @@ import pytest
 from PIL import Image
 from typer.testing import CliRunner
 
-from population_circles import cli
 from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
+from population_circles.presentation import cli
 from population_circles.presentation.maps import render_globe
 
 SVG = "http://www.w3.org/2000/svg"

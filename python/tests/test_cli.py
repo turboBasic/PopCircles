@@ -4,9 +4,9 @@ from unittest.mock import Mock
 from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
-from population_circles import cli
 from population_circles.application.use_cases import circle_map, gallery_build
-from population_circles.presentation.maps import render_globe, render_map
+from population_circles.presentation import cli
+from population_circles.presentation.maps import render_globe
 
 runner = CliRunner()
 INVALID_ARGUMENT_EXIT = 2
@@ -87,7 +87,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
     render_command = Mock(return_value=Path("globe.svg"))
     gallery = Mock(return_value=([], []))
     monkeypatch.setattr(circle_map, "search_and_render_circle_map", workflow)
-    monkeypatch.setattr(render_map, "render_file", render_file)
+    monkeypatch.setattr(cli, "render_map_file", render_file)
     monkeypatch.setattr(render_globe, "render_command", render_command)
     monkeypatch.setattr(gallery_build, "build", gallery)
 

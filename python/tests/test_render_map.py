@@ -23,8 +23,6 @@ import population_circles.presentation.maps.labels as map_labels_module
 import population_circles.presentation.maps.metadata as map_metadata_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
-from population_circles import cli
-from population_circles.cli import render_map_file as render_file
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import Cap, cap
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
@@ -48,6 +46,8 @@ from population_circles.infrastructure.geodata.map_layers import (
     citation,
     registered_coastline,
 )
+from population_circles.presentation import cli
+from population_circles.presentation.cli import render_map_file as render_file
 from population_circles.presentation.maps.frame import (
     ORTHOGRAPHIC,
     PLATE_CARREE,
@@ -1273,7 +1273,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     # other case here hands `citation` a literal, so a constant put back in `main` would pass them
     # all. The fixture registry carries neither committed row, so a `main` reaching for one of those
     # cannot resolve it at all.
-    monkeypatch.setattr("population_circles.cli.load", lambda: parse(TWO_ATTRIBUTED))
+    monkeypatch.setattr("population_circles.presentation.cli.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
     original_copyright = map_metadata_module.copyright_of

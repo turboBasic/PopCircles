@@ -2,25 +2,49 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 from urllib.parse import quote
 
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.infrastructure.geodata.country_boundaries import (
-    load_country_boundaries,
-    load_map_boundaries,
-)
-from population_circles.infrastructure.geodata.dataset_registry import load
-from population_circles.presentation.maps.presentation_config import (
-    load as load_presentation_config,
-)
 
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
 CountryRefresh = Literal["sweep", "coverage"]
+
+
+class GalleryFigure(Protocol):
+    @property
+    def document(self) -> Path: ...
+
+    @property
+    def figure(self) -> Path: ...
+
+    @property
+    def country_name(self) -> str | None: ...
+
+    @property
+    def country_id(self) -> str | None: ...
+
+    @property
+    def caption(self) -> object | None: ...
+
+
+@dataclass(frozen=True)
+class RenderJob:
+    source: Path
+    payload: dict[str, Any]
+    index: int
+    total: int
+    projection: str = "plate-carree"
+    figure_suffix: str = ""
+
+
+@dataclass(frozen=True)
+class CountrySweepCollaborators:
+    excluded_country_ids: set[str]
+    enrich_saved_document: Callable[[dict[str, Any]], dict[str, Any]]
 
 
 @dataclass(frozen=True)
@@ -31,10 +55,7 @@ class CountrySweepRequest:
     countries: list[dict[str, Any]]
     refresh: CountryRefresh | None
     report: Callable[[str], None]
-
-
-def excluded_country_ids() -> set[str]:
-    return set(load_presentation_config().gallery.excluded_country_ids)
+    collaborators: CountrySweepCollaborators
 
 
 def country_result_document(
@@ -85,7 +106,11 @@ def stable_country_sweep(sweep: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def missing_country_names(sweep: dict[str, Any], countries: list[dict[str, Any]]) -> list[str]:
+def missing_country_names(
+    sweep: dict[str, Any],
+    countries: list[dict[str, Any]],
+    excluded_country_ids: set[str] | None = None,
+) -> list[str]:
     expected = {country["id"]: country["name"] for country in countries}
     accounted_for: set[str] = set()
     for country in sweep["result"]["countries"]:
@@ -112,12 +137,15 @@ def missing_country_names(sweep: dict[str, Any], countries: list[dict[str, Any]]
     if accounted_for != expected.keys():
         message = "country sweep: result does not account for every configured country"
         raise ValueError(message)
-    excluded = excluded_country_ids()
+    excluded = excluded_country_ids or set()
     return [expected[country_id] for country_id in missing if country_id not in excluded]
 
 
 def cached_sweep(
-    path: Path, selection: dict[str, Any], countries: list[dict[str, Any]]
+    path: Path,
+    selection: dict[str, Any],
+    countries: list[dict[str, Any]],
+    excluded_country_ids: set[str],
 ) -> dict[str, Any] | None:
     try:
         sweep: Any = json.loads(path.read_text(encoding="utf-8"))
@@ -126,7 +154,7 @@ def cached_sweep(
         if sweep["result"]["selection"] != selection:
             return None
         swept_countries = sweep["result"]["countries"]
-        missing_country_names(sweep, countries)
+        missing_country_names(sweep, countries, excluded_country_ids)
         for country in swept_countries:
             if sum(record["share"] == HALF_SHARE for record in country["records"]) != 1:
                 return None
@@ -146,16 +174,11 @@ def report_sweep_work(sweep: dict[str, Any], report: Callable[[str], None]) -> N
     report(f"Gallery: country sweep evaluated {evaluated} radii and reused {reused}")
 
 
-def enrich_saved_document(document: dict[str, Any]) -> dict[str, Any]:
-    registry = load()
-    return enrich_document(
-        document,
-        load_country_boundaries=lambda answer: load_country_boundaries(answer, registry),
-        load_map_boundaries=lambda answer: load_map_boundaries(answer, registry),
-    )
-
-
-def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
+def coverage_sweep(
+    path: Path,
+    selection: dict[str, Any],
+    enrich_saved_document: Callable[[dict[str, Any]], dict[str, Any]],
+) -> dict[str, Any]:
     sweep = json.loads(path.read_text(encoding="utf-8"))
     if sweep.get("document") != "country-sweep":
         message = "country coverage: saved document is not a country-sweep"
@@ -166,7 +189,9 @@ def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
     return enrich_saved_document(sweep)
 
 
-def refresh_coverage(corpus: Path) -> None:
+def refresh_coverage(
+    corpus: Path, enrich_saved_document: Callable[[dict[str, Any]], dict[str, Any]]
+) -> None:
     supported = CIRCLE_KINDS | {"country-smallest", "country-sweep"}
     for path in sorted(corpus.glob("*.json")):
         document: Any = json.loads(path.read_text(encoding="utf-8"))
@@ -185,17 +210,31 @@ def country_sweep(
     countries = request.countries
     refresh = request.refresh
     report = request.report
+    collaborators = request.collaborators
     filename = (
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
-    saved = None if refresh == "sweep" else cached_sweep(corpus / filename, selection, countries)
+    saved = (
+        None
+        if refresh == "sweep"
+        else cached_sweep(
+            corpus / filename,
+            selection,
+            countries,
+            collaborators.excluded_country_ids,
+        )
+    )
     country_ids = [country["id"] for country in countries]
     if refresh == "coverage":
         if saved is None:
             message = "country coverage refresh requires a valid saved country sweep"
             raise PopulationApplicationError(message)
-        sweep = coverage_sweep(corpus / filename, selection)
+        sweep = coverage_sweep(
+            corpus / filename,
+            selection,
+            collaborators.enrich_saved_document,
+        )
         report(f"Gallery: refreshed territory coverage for {len(countries)} saved country results")
         return sweep
     if saved is not None and refresh != "sweep":

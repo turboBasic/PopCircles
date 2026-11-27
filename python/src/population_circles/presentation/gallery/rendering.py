@@ -8,7 +8,7 @@ import sys
 import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 from uuid import uuid4
 
 import matplotlib as mpl
@@ -16,6 +16,7 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
+from population_circles.application.use_cases.gallery import RenderJob
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
@@ -67,16 +68,6 @@ RENDER_INPUTS = tuple(
         key=lambda path: path.as_posix(),
     )
 )
-
-
-@dataclass(frozen=True)
-class RenderJob:
-    source: Path
-    payload: dict[str, Any]
-    index: int
-    total: int
-    projection: str = PLATE_CARREE
-    figure_suffix: str = ""
 
 
 @dataclass(frozen=True)

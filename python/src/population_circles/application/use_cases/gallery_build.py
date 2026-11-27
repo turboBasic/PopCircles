@@ -14,18 +14,22 @@ from population_circles.application.use_cases import gallery as country_sweep_mo
 from population_circles.application.use_cases.gallery import (
     HALF_SHARE,
     CountryRefresh,
+    CountrySweepCollaborators,
     CountrySweepRequest,
+    RenderJob,
 )
 from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.country_boundaries import (
+    load_country_boundaries,
+    load_map_boundaries,
+)
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
 from population_circles.infrastructure.geodata.map_layers import registered_coastline
 from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
 from population_circles.presentation.gallery.page_data import Drawn, page_data
 from population_circles.presentation.gallery.rendering import (
     MapRenderContext,
-    RenderJob,
     render_context_digest,
     render_documents,
 )
@@ -44,6 +48,22 @@ HEADER_CROP_ASPECT_TOLERANCE = 2
 class Skipped:
     document: Path
     kind: str
+
+
+def _enrich_saved_document(document: dict[str, Any]) -> dict[str, Any]:
+    registry = load()
+    return enrich_document(
+        document,
+        load_country_boundaries=lambda answer: load_country_boundaries(answer, registry),
+        load_map_boundaries=lambda answer: load_map_boundaries(answer, registry),
+    )
+
+
+def _country_sweep_collaborators() -> CountrySweepCollaborators:
+    return CountrySweepCollaborators(
+        set(load_presentation_config().gallery.excluded_country_ids),
+        _enrich_saved_document,
+    )
 
 
 def build_frontend(output: Path) -> None:
@@ -138,7 +158,7 @@ def build_gallery_output(
     skipped: list[Skipped] = []
     reused_maps = rendered_maps = 0
     unavailable = set(missing)
-    excluded = country_sweep_module.excluded_country_ids()
+    excluded = _country_sweep_collaborators().excluded_country_ids
     sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
     skipped.extend(excluded_sources)
     render_jobs: list[RenderJob] = []
@@ -297,6 +317,7 @@ def country_documents(
         f"country-sweep-{quote(selection['combination_id'], safe='')}-"
         f"{selection['resolution']}-half.json"
     )
+    collaborators = _country_sweep_collaborators()
     sweep = country_sweep_module.country_sweep(
         CountrySweepRequest(
             run_population_command,
@@ -305,13 +326,16 @@ def country_documents(
             countries,
             country_refresh,
             report_country_sweep,
+            collaborators,
         )
     )
     sweep_selection = sweep["result"]["selection"]
     if sweep_selection != listing["result"]["selection"]:
         message = "country sweep: result selection differs from the configured country list"
         raise ValueError(message)
-    missing = country_sweep_module.missing_country_names(sweep, countries)
+    missing = country_sweep_module.missing_country_names(
+        sweep, countries, collaborators.excluded_country_ids
+    )
     expected = {country["id"]: country for country in countries}
     result_ids: set[str] = set()
     documents: dict[str, dict[str, Any]] = {}
@@ -385,7 +409,8 @@ def build(
     (output / "gallery-data.json").unlink(missing_ok=True)
     corpus.mkdir(parents=True, exist_ok=True)
     if country_refresh == "coverage":
-        country_sweep_module.refresh_coverage(corpus)
+        collaborators = _country_sweep_collaborators()
+        country_sweep_module.refresh_coverage(corpus, collaborators.enrich_saved_document)
     missing, generated = country_documents(
         run_population_command,
         corpus,

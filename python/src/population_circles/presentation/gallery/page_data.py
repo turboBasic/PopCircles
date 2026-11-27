@@ -1,9 +1,12 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 from urllib.parse import quote
 
 from PIL import Image
+
+from population_circles.application.use_cases.gallery import GalleryFigure
 
 
 class SettlementCaption(TypedDict):
@@ -53,7 +56,7 @@ class PageData(TypedDict):
     countries: list[PageCountry]
 
 
-def page_figure(one: Drawn) -> PageFigure:
+def page_figure(one: GalleryFigure) -> PageFigure:
     with Image.open(one.figure) as image:
         aspect_ratio = image.width / image.height
     figure: PageFigure = {
@@ -64,13 +67,13 @@ def page_figure(one: Drawn) -> PageFigure:
         "aspect_ratio": aspect_ratio,
     }
     if one.caption is not None:
-        figure["caption"] = one.caption
+        figure["caption"] = cast(FigureCaption, one.caption)
     return figure
 
 
-def page_data(drawn: list[Drawn], missing: list[str]) -> PageData:
-    countries: dict[tuple[str, str], list[Drawn]] = {}
-    world: list[Drawn] = []
+def page_data(drawn: Sequence[GalleryFigure], missing: list[str]) -> PageData:
+    countries: dict[tuple[str, str], list[GalleryFigure]] = {}
+    world: list[GalleryFigure] = []
     for one in drawn:
         if one.country_name is None or one.country_id is None:
             world.append(one)

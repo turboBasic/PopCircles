@@ -23,7 +23,6 @@ import population_circles.presentation.gallery.rendering as rendering_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.terrain as terrain_module
-from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
 from population_circles.application.use_cases.gallery_build import build
@@ -47,6 +46,7 @@ from population_circles.infrastructure.geodata.map_layers import (
 from population_circles.infrastructure.geodata.map_layers import (
     registered_map_sources as real_registered_map_sources,
 )
+from population_circles.presentation import cli
 from test_render_map import (
     fixture_map_layers,
     fixture_registered_map_sources,
@@ -808,11 +808,12 @@ def test_the_committed_corpus_is_accounted_for_by_gallery(
         for source in committed
         if source.name in zero_population
     }
-    assert zero_population_ids <= country_sweep_module.excluded_country_ids()
+    excluded_ids = set(presentation_config_module.load().gallery.excluded_country_ids)
+    assert zero_population_ids <= excluded_ids
     assert not zero_population.intersection(one.document.name for one in drawn)
     assert any(one.country_id == "DE" for one in drawn)
     assert any(one.country_id == "CW" for one in drawn)
-    assert not any(one.country_id in country_sweep_module.excluded_country_ids() for one in drawn)
+    assert not any(one.country_id in excluded_ids for one in drawn)
     for one in drawn:
         assert one.figure.read_bytes().startswith(PNG_MAGIC)
         assert (output / one.document.name).is_file()

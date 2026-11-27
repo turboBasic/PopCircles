@@ -14,7 +14,6 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 import population_circles.application.use_cases.render_map as render_map_use_case
-from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.circle_map import (
@@ -26,6 +25,7 @@ from population_circles.infrastructure import popcircles_cli
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
 from population_circles.infrastructure.geodata import map_layers
 from population_circles.infrastructure.geodata.dataset_registry import Registry, load
+from population_circles.presentation import cli
 from population_circles.presentation.maps import metadata as map_metadata
 from population_circles.presentation.maps import render_map
 from population_circles.presentation.maps.frame import ORTHOGRAPHIC

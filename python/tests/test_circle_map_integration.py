@@ -6,7 +6,6 @@ from typing import Any
 
 import pytest
 
-from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.circle_map import (
@@ -18,6 +17,7 @@ from population_circles.infrastructure.file_publishing import write_bytes_atomic
 from population_circles.infrastructure.geodata import map_layers
 from population_circles.infrastructure.geodata.dataset_registry import parse
 from population_circles.infrastructure.popcircles_cli import REPO_ROOT
+from population_circles.presentation import cli
 from population_circles.presentation.maps import render_map
 from test_render_map import (
     PNG_MAGIC,
