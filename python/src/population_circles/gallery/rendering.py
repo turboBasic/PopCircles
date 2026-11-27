@@ -39,6 +39,7 @@ from population_circles.maps.render_map import (
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_MODULES = (
     "documents/result_document.py",
+    "application/use_cases/territory_coverage.py",
     "domain/circle_geometry.py",
     "domain/territory_coverage.py",
     "geography/country_boundaries.py",
@@ -52,7 +53,6 @@ RENDER_MODULES = (
     "maps/presentation_config.py",
     "maps/render_map.py",
     "maps/terrain.py",
-    "geography/territory_share.py",
 )
 RENDER_INPUTS = tuple(
     sorted(

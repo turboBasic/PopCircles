@@ -8,7 +8,6 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 import population_circles.gallery.country_sweep as country_sweep_module
-import population_circles.geography.territory_share as territory_share_module
 from population_circles.applications.errors import PopulationApplicationError
 from population_circles.data.dataset_registry import Registry
 from population_circles.documents.result_document import Answer
@@ -72,7 +71,7 @@ def test_country_coverage_refresh_uses_saved_answers_without_running_country_swe
             )
         }
 
-    monkeypatch.setattr(territory_share_module, "load_country_boundaries", country_boundaries)
+    monkeypatch.setattr(country_sweep_module, "load_country_boundaries", country_boundaries)
 
     missing, generated = country_documents(invoke, corpus, country_refresh="coverage")
 

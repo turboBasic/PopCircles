@@ -17,7 +17,7 @@ from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
-import population_circles.geography.territory_share as territory_share_module
+import population_circles.application.use_cases.territory_coverage as territory_coverage_use_case
 import population_circles.maps.labels as map_labels_module
 import population_circles.maps.layers as map_layers_module
 import population_circles.maps.metadata as map_metadata_module
@@ -943,7 +943,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
         fixture_boundaries,
     )
     monkeypatch.setattr(
-        territory_share_module,
+        territory_coverage_use_case,
         "territory_share",
         fixture_territory_share,
     )

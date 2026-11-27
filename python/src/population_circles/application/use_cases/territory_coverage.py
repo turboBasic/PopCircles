@@ -1,10 +1,9 @@
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import cast
 
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.data.dataset_registry import Registry, load
 from population_circles.documents.result_document import (
     Answer,
     Caption,
@@ -16,18 +15,30 @@ from population_circles.documents.result_document import (
 )
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
 from population_circles.domain.territory_coverage import NoTerritoryAreaError, territory_share
-from population_circles.geography.country_boundaries import (
-    load_country_boundaries,
-    load_map_boundaries,
-)
+
+BoundaryLoader = Callable[[Answer], Mapping[str, BaseGeometry] | None]
 
 
 @dataclass(frozen=True)
 class _Enrichment:
     document: Mapping[str, object]
     earth_radius: float
-    registry: Registry
     boundaries: Mapping[str, BaseGeometry] | None
+    load_country_boundaries: BoundaryLoader | None
+    load_map_boundaries: BoundaryLoader | None
+
+
+def _load_boundaries(
+    context: _Enrichment, answer: Answer, *, country: bool
+) -> Mapping[str, BaseGeometry] | None:
+    if context.boundaries is not None:
+        return context.boundaries
+    loader = context.load_country_boundaries if country else context.load_map_boundaries
+    if loader is None:
+        kind = "country" if country else "map"
+        message = f"{kind} boundaries were not supplied to territory coverage"
+        raise ValueError(message)
+    return loader(answer)
 
 
 def _enrich_circle(
@@ -47,28 +58,23 @@ def _enrich_circle(
             provenance=Provenance(dataset="country-result", table=None),
             country=country,
         )
-        selected_boundaries = (
-            load_country_boundaries(answer, context.registry)
-            if context.boundaries is None
-            else context.boundaries
-        )
-        if selected_boundaries is None:
+        country_boundaries = _load_boundaries(context, answer, country=True)
+        if country_boundaries is None:
             message = f"country boundary for {country.id!r} is not registered"
             raise ValueError(message)
-        geometries = [selected_boundaries[country.id]] if country.id in selected_boundaries else []
+        geometries = [country_boundaries[country.id]] if country.id in country_boundaries else []
     else:
         answer = circle_of(context.document)
-        selected_boundaries = (
-            load_map_boundaries(answer, context.registry)
-            if context.boundaries is None
-            else context.boundaries
+        loaded_boundaries = _load_boundaries(context, answer, country=False)
+        map_boundaries: Mapping[str, BaseGeometry] = (
+            loaded_boundaries if loaded_boundaries is not None else {}
         )
         geometries = (
-            [selected_boundaries[answer.country.id]]
-            if answer.country is not None and answer.country.id in selected_boundaries
+            [map_boundaries[answer.country.id]]
+            if answer.country is not None and answer.country.id in map_boundaries
             else []
             if answer.country is not None
-            else list(selected_boundaries.values())
+            else list(map_boundaries.values())
         )
     domain_circle = SphericalCircle(
         centre=GeographicCoordinate(lat=circle.centre.lat, lon=circle.centre.lon),
@@ -82,25 +88,33 @@ def _enrich_circle(
 
 
 def enrich_document(
-    document: dict[str, object], boundaries: Mapping[str, BaseGeometry] | None = None
+    document: dict[str, object],
+    boundaries: Mapping[str, BaseGeometry] | None = None,
+    *,
+    load_country_boundaries: BoundaryLoader | None = None,
+    load_map_boundaries: BoundaryLoader | None = None,
 ) -> dict[str, object]:
-    kind = Envelope.model_validate(document).document
-    registry = load()
-    earth_radius = Envelope.model_validate(document).earth_model.radius_km
+    envelope = Envelope.model_validate(document)
     result = cast(dict[str, object], document["result"])
-    context = _Enrichment(document, earth_radius, registry, boundaries)
+    context = _Enrichment(
+        document,
+        envelope.earth_model.radius_km,
+        boundaries,
+        load_country_boundaries,
+        load_map_boundaries,
+    )
 
     def enrich(
         circle_data: dict[str, object], country_data: Mapping[str, object] | None = None
     ) -> None:
         _enrich_circle(circle_data, context, country_data)
 
-    if kind == "country-sweep":
+    if envelope.document == "country-sweep":
         for country_entry in cast(list[dict[str, object]], result["countries"]):
             identity = cast(Mapping[str, object], country_entry["country"])
             for record in cast(list[dict[str, object]], country_entry["records"]):
                 enrich(cast(dict[str, object], record["circle"]), identity)
-    elif kind in {"smallest", "country-smallest"}:
+    elif envelope.document in {"smallest", "country-smallest"}:
         enrich(cast(dict[str, object], result["circle"]))
     else:
         enrich(result)

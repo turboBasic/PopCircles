@@ -5,10 +5,15 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
+from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.applications.errors import PopulationApplicationError
 from population_circles.applications.popcircles_cli import PopulationRunner
+from population_circles.data.dataset_registry import load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.geography.territory_share import enrich_document
+from population_circles.geography.country_boundaries import (
+    load_country_boundaries,
+    load_map_boundaries,
+)
 from population_circles.maps.presentation_config import load as load_presentation_config
 
 HALF_SHARE = 0.5
@@ -139,6 +144,15 @@ def report_sweep_work(sweep: dict[str, Any], report: Callable[[str], None]) -> N
     report(f"Gallery: country sweep evaluated {evaluated} radii and reused {reused}")
 
 
+def enrich_saved_document(document: dict[str, Any]) -> dict[str, Any]:
+    registry = load()
+    return enrich_document(
+        document,
+        load_country_boundaries=lambda answer: load_country_boundaries(answer, registry),
+        load_map_boundaries=lambda answer: load_map_boundaries(answer, registry),
+    )
+
+
 def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
     sweep = json.loads(path.read_text(encoding="utf-8"))
     if sweep.get("document") != "country-sweep":
@@ -147,7 +161,7 @@ def coverage_sweep(path: Path, selection: dict[str, Any]) -> dict[str, Any]:
     if sweep["result"]["selection"] != selection:
         message = "country coverage: saved sweep selection does not match configuration"
         raise ValueError(message)
-    return enrich_document(sweep)
+    return enrich_saved_document(sweep)
 
 
 def refresh_coverage(corpus: Path) -> None:
@@ -156,7 +170,7 @@ def refresh_coverage(corpus: Path) -> None:
         document: Any = json.loads(path.read_text(encoding="utf-8"))
         if Envelope.model_validate(document).document not in supported:
             continue
-        enriched = enrich_document(document)
+        enriched = enrich_saved_document(document)
         path.write_text(json.dumps(enriched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 

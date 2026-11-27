@@ -5,12 +5,12 @@ import pytest
 from shapely import make_valid
 from shapely.geometry import Polygon, box
 
+from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
 from population_circles.domain.territory_coverage import (
     equal_area_crs,
     territory_share,
 )
-from population_circles.geography.territory_share import enrich_document
 
 EARTH_RADIUS_KM = 6371.0088
 
