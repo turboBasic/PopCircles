@@ -5,9 +5,12 @@ from typing import Annotated
 import typer
 
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.applications import circle_map
+from population_circles.application.use_cases import circle_map
 from population_circles.gallery import build as gallery_build
 from population_circles.infrastructure import popcircles_cli
+from population_circles.infrastructure.file_publishing import write_bytes_atomically
+from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.dataset_registry import load
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
 
@@ -57,7 +60,13 @@ def circle_command(
         )
         raise typer.Exit(1)
     try:
-        circle_map.search_and_render_circle_map(circle_map_request)
+        circle_map.search_and_render_circle_map(
+            circle_map_request,
+            popcircles_cli.invoke_popcircles_cli,
+            load_boundaries=lambda answer: load_map_boundaries(answer, load()),
+            publish_file=write_bytes_atomically,
+            render_file=render_map.render_file,
+        )
     except PopulationApplicationError as error:
         typer.echo(f"visualizer circle: {error}", err=True)
         raise typer.Exit(1) from error

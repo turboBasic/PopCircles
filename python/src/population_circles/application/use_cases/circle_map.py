@@ -1,18 +1,30 @@
 import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import cast
+from typing import Protocol, cast
+
+from shapely.geometry.base import BaseGeometry
 
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.documents.result_document import circle_of
-from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
-from population_circles.infrastructure.geodata.dataset_registry import load
-from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
-from population_circles.maps import render_map
-from population_circles.maps.frame import PLATE_CARREE
+from population_circles.documents.result_document import Answer, circle_of
+
+BoundaryLoader = Callable[[Answer], Mapping[str, BaseGeometry]]
+FilePublisher = Callable[[Path, bytes], None]
+
+
+class CircleMapRenderer(Protocol):
+    def __call__(
+        self,
+        input_path: Path,
+        output_path: Path,
+        projection: str,
+        *,
+        no_coastlines: bool = False,
+        coverage_enriched: bool = False,
+    ) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -25,7 +37,7 @@ class CircleMapRequest:
     ledger: Path
     decimate: str = "1"
     spacing: str | None = None
-    projection: str = PLATE_CARREE
+    projection: str = "plate-carree"
     no_coastlines: bool = False
 
 
@@ -42,22 +54,9 @@ def _validate_distinct_circle_map_output_paths(options: CircleMapRequest) -> Non
                 raise PopulationApplicationError(message)
 
 
-def _write_bytes_atomically(destination: Path, content: bytes) -> None:
-    temporary: Path | None = None
-    try:
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        with NamedTemporaryFile(
-            dir=destination.parent, prefix=f".{destination.name}.", delete=False
-        ) as stream:
-            temporary = Path(stream.name)
-            stream.write(content)
-        temporary.replace(destination)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
-
-
-def _enrich_search_document_with_territory_coverage(content: bytes) -> bytes:
+def _enrich_search_document_with_territory_coverage(
+    content: bytes, load_boundaries: BoundaryLoader
+) -> bytes:
     try:
         document = json.loads(content)
     except json.JSONDecodeError:
@@ -68,14 +67,18 @@ def _enrich_search_document_with_territory_coverage(content: bytes) -> bytes:
     if payload.get("schema_version") not in {1, 2}:
         return content
     answer = circle_of(payload)
-    boundaries = load_map_boundaries(answer, load())
+    boundaries = load_boundaries(answer)
     enrich_document(payload, boundaries)
     return (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode()
 
 
 def search_and_render_circle_map(
     options: CircleMapRequest,
-    run_population_command: PopulationRunner = invoke_popcircles_cli,
+    run_population_command: PopulationRunner,
+    *,
+    load_boundaries: BoundaryLoader,
+    publish_file: FilePublisher,
+    render_file: CircleMapRenderer,
 ) -> None:
     try:
         _validate_distinct_circle_map_output_paths(options)
@@ -107,15 +110,15 @@ def search_and_render_circle_map(
         search.extend(["--spacing", options.spacing])
     result = run_population_command("search", search)
     try:
-        _write_bytes_atomically(
+        publish_file(
             options.document,
-            _enrich_search_document_with_territory_coverage(result.stdout),
+            _enrich_search_document_with_territory_coverage(result.stdout, load_boundaries),
         )
     except OSError as error:
         message = f"document publication: could not replace {options.document}: {error}"
         raise PopulationApplicationError(message) from error
     try:
-        render_map.render_file(
+        render_file(
             options.document,
             options.output,
             options.projection,
@@ -129,7 +132,7 @@ def search_and_render_circle_map(
     sidecar = options.output.with_suffix(".json")
     if sidecar.resolve() != options.document.resolve():
         try:
-            _write_bytes_atomically(options.document, sidecar.read_bytes())
+            publish_file(options.document, sidecar.read_bytes())
         except OSError as error:
             message = f"document publication: could not replace {options.document}: {error}"
             raise PopulationApplicationError(message) from error
