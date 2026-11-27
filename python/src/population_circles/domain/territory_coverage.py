@@ -194,6 +194,18 @@ def equal_area_crs(earth_radius_km: float, central_meridian: float = 0.0) -> CRS
     )
 
 
+def _share_error_bound(bound_area_km2: float, territory_area_m2: float) -> float:
+    error_bound = bound_area_km2 * METRES_PER_KM**2 / territory_area_m2
+    if not math.isfinite(error_bound):
+        message = "territory coverage error bound must be finite"
+        raise ValueError(message)
+    share_error_bound = min(1.0, error_bound)
+    if not 0.0 <= share_error_bound <= 1.0:
+        message = "territory coverage error bound must be within [0, 1]"
+        raise ValueError(message)
+    return share_error_bound
+
+
 def territory_share(circle: SphericalCircle, territories: Iterable[BaseGeometry]) -> float:
     earth_radius_km = circle.earth_radius_km
     radius_km = circle.radius_km
@@ -238,12 +250,5 @@ def territory_share(circle: SphericalCircle, territories: Iterable[BaseGeometry]
     projection_convergence_km2 = (
         projected_circle.symmetric_difference(refined_circle).area / METRES_PER_KM**2
     )
-    error_bound = (annulus_km2 + projection_convergence_km2) / territory_area
-    if not math.isfinite(error_bound):
-        message = "territory coverage error bound must be finite"
-        raise ValueError(message)
-    share_error_bound = min(1.0, error_bound)
-    if not 0.0 <= share_error_bound <= 1.0:
-        message = "territory coverage error bound must be within [0, 1]"
-        raise ValueError(message)
+    _share_error_bound(annulus_km2 + projection_convergence_km2, territory_area)
     return share

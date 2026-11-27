@@ -9,6 +9,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 import rasterio
+from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from PIL import Image
 from rasterio.transform import from_origin
@@ -96,6 +97,134 @@ def build_gallery_output(
         GalleryOutputRequest(corpus, sources, generated, missing, context),
         cli.gallery_build_collaborators(country_cli([], [])[0]),
     )
+
+
+def test_gallery_rejects_identical_input_and_output_before_creating_paths(tmp_path: Path) -> None:
+    path = tmp_path / "gallery"
+
+    with pytest.raises(PopulationApplicationError, match="non-overlapping"):
+        build_workflow(GalleryBuildRequest(path, path), Mock())
+
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("layout", ["corpus_under_output", "output_under_corpus"])
+def test_gallery_rejects_nested_input_and_output_without_mutation(
+    tmp_path: Path, layout: str
+) -> None:
+    if layout == "corpus_under_output":
+        output = tmp_path / "gallery"
+        output.mkdir()
+        (output / "keep.txt").write_text("keep", encoding="utf-8")
+        corpus = output / "assets" / "corpus"
+        corpus.mkdir(parents=True)
+    else:
+        corpus = tmp_path / "corpus"
+        corpus.mkdir()
+        output = corpus / "gallery"
+    written(corpus, "world.json", document("most-populous"))
+    source = corpus / "world.json"
+    original = source.read_bytes()
+
+    with pytest.raises(PopulationApplicationError, match="non-overlapping"):
+        build_workflow(GalleryBuildRequest(corpus, output), Mock())
+
+    assert source.read_bytes() == original
+    if layout == "corpus_under_output":
+        assert (output / "keep.txt").read_text(encoding="utf-8") == "keep"
+    else:
+        assert not output.exists()
+
+
+def test_gallery_rejects_resolved_symlink_aliases_before_mutation(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    alias = tmp_path / "corpus-alias"
+    alias.symlink_to(corpus, target_is_directory=True)
+
+    with pytest.raises(PopulationApplicationError, match="non-overlapping"):
+        build_workflow(GalleryBuildRequest(corpus, alias), Mock())
+
+    assert (corpus / "world.json").is_file()
+    assert alias.is_symlink()
+
+
+@pytest.mark.parametrize("alias_kind", ["symlink", "hardlink"])
+def test_gallery_rejects_output_document_aliases_before_mutation(
+    tmp_path: Path, alias_kind: str
+) -> None:
+    corpus = tmp_path / "corpus"
+    output = tmp_path / "gallery"
+    corpus.mkdir()
+    output.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    source = corpus / "world.json"
+    original = source.read_bytes()
+    destination = output / source.name
+    if alias_kind == "symlink":
+        destination.symlink_to(source)
+    else:
+        destination.hardlink_to(source)
+
+    with pytest.raises(PopulationApplicationError, match=r"input corpus|aliases input"):
+        build_workflow(GalleryBuildRequest(corpus, output), Mock())
+
+    assert source.read_bytes() == original
+    assert destination.is_file()
+
+
+@pytest.mark.parametrize("alias_kind", ["symlink", "hardlink"])
+def test_gallery_rejects_existing_generated_json_aliases_before_mutation(
+    tmp_path: Path, alias_kind: str
+) -> None:
+    corpus = tmp_path / "corpus"
+    output = tmp_path / "gallery"
+    corpus.mkdir()
+    output.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    source = corpus / "world.json"
+    original = source.read_bytes()
+    destination = output / "country-xx.json"
+    if alias_kind == "symlink":
+        destination.symlink_to(source)
+    else:
+        destination.hardlink_to(source)
+
+    with pytest.raises(
+        PopulationApplicationError,
+        match=r"aliases input corpus|points into the input corpus",
+    ):
+        build_workflow(GalleryBuildRequest(corpus, output), Mock())
+
+    assert source.read_bytes() == original
+    assert destination.is_file()
+
+
+@pytest.mark.parametrize("alias_kind", ["symlink", "hardlink"])
+def test_gallery_rejects_existing_generated_png_aliases_before_mutation(
+    tmp_path: Path, alias_kind: str
+) -> None:
+    corpus = tmp_path / "corpus"
+    output = tmp_path / "gallery"
+    corpus.mkdir()
+    output.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    source = corpus / "world.json"
+    original = source.read_bytes()
+    destination = output / "country-xx.png"
+    if alias_kind == "symlink":
+        destination.symlink_to(source)
+    else:
+        destination.hardlink_to(source)
+
+    with pytest.raises(
+        PopulationApplicationError, match=r"aliases input corpus|points into the input corpus"
+    ):
+        build_workflow(GalleryBuildRequest(corpus, output), Mock())
+
+    assert source.read_bytes() == original
+    assert destination.is_file()
 
 
 CLI_ERROR_EXIT = 2
@@ -603,6 +732,40 @@ def test_gallery_enrichment_keeps_original_documents_on_success_and_render_failu
     assert not (output / "gallery-data.json").exists()
 
 
+def test_gallery_closes_figure_when_saving_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_coastline_fixture(tmp_path, monkeypatch)
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    written(corpus, "world.json", document("most-populous"))
+    output = tmp_path / "gallery"
+    output.mkdir()
+    (output / "existing.txt").write_text("keep", encoding="utf-8")
+    figure = render_map_module.render(
+        circle_of(document("most-populous")), "plate-carree", coastline=None
+    )
+
+    def fail_savefig(*_args: object, **_kwargs: object) -> None:
+        message = "save failed"
+        raise PermissionError(message)
+
+    def skip_frontend(_output: Path) -> None:
+        return
+
+    monkeypatch.setattr(gallery_output, "build_frontend", skip_frontend)
+    monkeypatch.setattr(rendering_module, "render", Mock(return_value=figure))
+    monkeypatch.setattr(figure, "savefig", fail_savefig)
+
+    with pytest.raises(PermissionError, match="save failed"):
+        build(corpus, output, country_cli([], [])[0])
+
+    assert figure.number not in plt.get_fignums()
+    assert not (output / "index.html").exists()
+    assert not (output / "gallery-data.json").exists()
+    assert (output / "existing.txt").read_text(encoding="utf-8") == "keep"
+
+
 def test_a_warm_build_reuses_unchanged_map_bytes_without_rendering(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -783,6 +946,8 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     )
     monkeypatch.setattr(map_layers_module, "load_map_layers", real_load_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
+    source_identity = Mock(side_effect=AssertionError("disabled cache must not hash sources"))
+    monkeypatch.setattr(rendering_module, "source_identity", source_identity)
 
     serial, _ = build_gallery_output(tmp_path, sources, {}, [], serial_context)
 
@@ -800,6 +965,7 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
         concurrent_output / "gallery-data.json"
     ).read_bytes()
     assert "maps used 2 workers and took" in capsys.readouterr().err
+    source_identity.assert_not_called()
 
 
 def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(

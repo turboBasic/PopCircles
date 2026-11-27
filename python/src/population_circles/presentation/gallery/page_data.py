@@ -1,29 +1,27 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NotRequired, TypedDict, cast
+from typing import NotRequired, TypedDict
 from urllib.parse import quote
 
 from PIL import Image
 
-from population_circles.application.use_cases.gallery import GalleryFigure
+from population_circles.application.use_cases.gallery import (
+    FigureCaption,
+    GalleryFigure,
+    SettlementCaption,
+)
 
-
-class SettlementCaption(TypedDict):
-    name: str
-    country: str
-    distance_km: float
-
-
-class FigureCaption(TypedDict):
-    radius_km: float
-    share: float
-    population: float
-    centre_lat: float
-    centre_lon: float
-    settlement: SettlementCaption | None
-    territory_share: NotRequired[float]
-    territory_name: NotRequired[str]
+__all__ = [
+    "Drawn",
+    "FigureCaption",
+    "PageCountry",
+    "PageData",
+    "PageFigure",
+    "SettlementCaption",
+    "page_data",
+    "page_figure",
+]
 
 
 @dataclass(frozen=True)
@@ -67,7 +65,7 @@ def page_figure(one: GalleryFigure) -> PageFigure:
         "aspect_ratio": aspect_ratio,
     }
     if one.caption is not None:
-        figure["caption"] = cast(FigureCaption, one.caption)
+        figure["caption"] = one.caption
     return figure
 
 

@@ -74,7 +74,7 @@ class RenderMapCollaborators:
     render_prepared: PreparedRenderer
 
 
-def _other_countries(boundaries: MapBoundaries, answer: Answer) -> tuple[BaseGeometry, ...]:
+def other_countries(boundaries: MapBoundaries, answer: Answer) -> tuple[BaseGeometry, ...]:
     return tuple(
         geometry
         for identifier, geometry in boundaries.geometries.items()
@@ -82,7 +82,7 @@ def _other_countries(boundaries: MapBoundaries, answer: Answer) -> tuple[BaseGeo
     )
 
 
-def _other_country_labels(
+def other_country_labels(
     boundaries: MapBoundaries, answer: Answer
 ) -> tuple[tuple[BaseGeometry, str], ...]:
     if answer.country is None:
@@ -131,8 +131,8 @@ def render_file(
             projection=request.projection,
             coastline=coastline,
             country_outline=country_outline,
-            other_countries=_other_countries(boundaries, answer),
-            country_labels=_other_country_labels(boundaries, answer),
+            other_countries=other_countries(boundaries, answer),
+            country_labels=other_country_labels(boundaries, answer),
             render_text=preferences.render_text,
             map_layers=layers.drawing,
             title_label=preferences.title_label,

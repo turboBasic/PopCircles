@@ -1,18 +1,22 @@
 import math
+from collections.abc import Callable
 from dataclasses import replace
+from typing import cast
 
 import pytest
 from shapely import make_valid
 from shapely.geometry import Polygon, box
 
 from population_circles.application.use_cases.territory_coverage import enrich_document
+from population_circles.domain import territory_coverage
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
-from population_circles.domain.territory_coverage import (
-    equal_area_crs,
-    territory_share,
-)
+from population_circles.domain.territory_coverage import equal_area_crs, territory_share
 
 EARTH_RADIUS_KM = 6371.0088
+_share_error_bound = cast(
+    Callable[[float, float], float],
+    vars(territory_coverage)["_share_error_bound"],
+)
 
 
 def test_equal_area_projection_uses_the_result_sphere() -> None:
@@ -21,6 +25,18 @@ def test_equal_area_projection_uses_the_result_sphere() -> None:
     ellipsoid = projection.ellipsoid
     assert ellipsoid is not None
     assert ellipsoid.semi_major_metre == pytest.approx(EARTH_RADIUS_KM * 1000.0)
+
+
+def test_share_error_bound_uses_consistent_area_units_and_is_capped() -> None:
+    bound = _share_error_bound(122.14138565790548, 4.920667254506578e12)
+
+    assert bound == pytest.approx(2.4822118493389825e-5)
+    assert _share_error_bound(1e6, 1.0) == 1.0
+
+
+def test_share_error_bound_rejects_non_finite_values() -> None:
+    with pytest.raises(ValueError, match="must be finite"):
+        _share_error_bound(float("inf"), 1.0)
 
 
 def test_share_uses_circle_intersection_over_territory_area() -> None:

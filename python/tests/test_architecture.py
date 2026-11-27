@@ -73,12 +73,27 @@ def dependency_failures(boundary: str, imported: tuple[str, ...]) -> list[str]:
                 for contract in INFRASTRUCTURE_APPLICATION_CONTRACTS
             )
         )
+        failures.extend(
+            module for module in imported if module.startswith("population_circles.presentation")
+        )
+    elif boundary == "documents":
+        failures.extend(
+            module
+            for module in imported
+            if module.startswith(
+                (
+                    "population_circles.application",
+                    "population_circles.infrastructure",
+                    "population_circles.presentation",
+                )
+            )
+        )
     return failures
 
 
 def test_python_packages_follow_the_declared_dependency_direction() -> None:
     failures: list[str] = []
-    for boundary in ("domain", "application", "infrastructure"):
+    for boundary in ("domain", "application", "infrastructure", "documents"):
         for path in sorted((PACKAGE_ROOT / boundary).rglob("*.py")):
             failures.extend(
                 f"{path.relative_to(PACKAGE_ROOT)} imports {imported}"
@@ -102,6 +117,8 @@ def test_python_packages_follow_the_declared_dependency_direction() -> None:
         ("application", "population_circles.infrastructure.geodata.dataset_registry"),
         ("application", "population_circles.presentation.maps.render_map"),
         ("infrastructure", "population_circles.application.use_cases.render_map"),
+        ("infrastructure", "population_circles.presentation.maps.render_map"),
+        ("documents", "population_circles.infrastructure.geodata.dataset_registry"),
     ],
 )
 def test_recognized_forbidden_dependencies_fail_the_gate(boundary: str, forbidden: str) -> None:
@@ -125,6 +142,16 @@ def test_recognized_forbidden_dependencies_fail_the_gate(boundary: str, forbidde
             "infrastructure",
             "from population_circles.application import use_cases",
             "population_circles.application.use_cases",
+        ),
+        (
+            "infrastructure",
+            "from population_circles import presentation",
+            "population_circles.presentation",
+        ),
+        (
+            "documents",
+            "from population_circles import infrastructure",
+            "population_circles.infrastructure",
         ),
     ],
 )
@@ -156,6 +183,18 @@ def test_from_import_aliases_cannot_bypass_the_gate(
             ("population_circles", "infrastructure"),
             "from ..application import use_cases",
             "population_circles.application.use_cases",
+        ),
+        (
+            "infrastructure",
+            ("population_circles", "infrastructure"),
+            "from .. import presentation",
+            "population_circles.presentation",
+        ),
+        (
+            "documents",
+            ("population_circles", "documents"),
+            "from .. import infrastructure",
+            "population_circles.infrastructure",
         ),
     ],
 )

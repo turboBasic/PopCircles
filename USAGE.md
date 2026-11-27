@@ -238,6 +238,10 @@ For existing result documents, a normal Gallery build adds coverage in memory an
 beside their maps in the Gallery output; it does not rewrite those input files just to add coverage. A
 build may also write country result documents it generates to the input corpus.
 
+Use separate, non-overlapping directories for `--input` and `--output`. Directory symlinks are
+resolved; top-level output JSON/PNG, `index.html`, and `gallery-data.json` paths that alias input
+documents are rejected.
+
 To update coverage in saved circle documents without rerunning population searches, use the explicit
 Gallery refresh option:
 

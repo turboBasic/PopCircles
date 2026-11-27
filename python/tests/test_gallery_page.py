@@ -2,7 +2,18 @@ from pathlib import Path
 
 from PIL import Image
 
-from population_circles.presentation.gallery.page_data import Drawn, page_data
+from population_circles.application.use_cases.gallery import (
+    FigureCaption as ApplicationFigureCaption,
+)
+from population_circles.presentation.gallery.page_data import (
+    Drawn,
+    FigureCaption,
+    page_data,
+)
+
+
+def test_figure_caption_type_is_reexported_from_the_application_contract() -> None:
+    assert FigureCaption is ApplicationFigureCaption
 
 
 def test_gallery_data_uses_existing_country_anchors_and_map_names(tmp_path: Path) -> None:

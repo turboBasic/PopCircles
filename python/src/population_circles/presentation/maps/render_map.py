@@ -1,6 +1,6 @@
 import json
 import math
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from typing import cast
 
 import matplotlib as mpl
@@ -155,31 +155,6 @@ def title_of(answer: Answer, label: str | None = None) -> str:
         percent = f"{percentage:.{decimals}f}"
         title += f"; Circle covers {percent}% of {territory}"
     return title
-
-
-def other_countries(
-    boundaries: Mapping[str, BaseGeometry] | None, answer: Answer
-) -> list[BaseGeometry]:
-    if boundaries is None:
-        return []
-    return [
-        geometry
-        for identifier, geometry in boundaries.items()
-        if answer.country is None or identifier != answer.country.id
-    ]
-
-
-def other_country_labels(
-    boundaries: Mapping[str, BaseGeometry] | None, answer: Answer
-) -> list[tuple[BaseGeometry, str]]:
-    if boundaries is None or answer.country is None:
-        return []
-    names = cast(Mapping[str, str], getattr(boundaries, "names", {}))
-    return [
-        (geometry, names[identifier])
-        for identifier, geometry in boundaries.items()
-        if identifier != answer.country.id and identifier in names
-    ]
 
 
 def annotate(

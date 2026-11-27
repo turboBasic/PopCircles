@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 from urllib.parse import quote
 
+from population_circles.application.errors import GalleryPathError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases import gallery as country_sweep_module
 from population_circles.application.use_cases.gallery import (
@@ -51,6 +52,62 @@ class GalleryBuildRequest:
 class Skipped:
     document: Path
     kind: str
+
+
+def validate_paths(corpus: Path, output: Path) -> None:
+    corpus_root = corpus.resolve()
+    output_root = output.resolve()
+    if (
+        corpus_root == output_root
+        or corpus_root.is_relative_to(output_root)
+        or output_root.is_relative_to(corpus_root)
+    ):
+        message = "Gallery input and output must be separate, non-overlapping directories"
+        raise GalleryPathError(message)
+
+    if not corpus_root.is_dir():
+        return
+    sources = tuple(corpus_root.glob("*.json"))
+    source_identities: set[tuple[int, int]] = set()
+    for source in sources:
+        try:
+            stat = source.stat()
+        except OSError:
+            continue
+        source_identities.add((stat.st_dev, stat.st_ino))
+
+    destinations = {
+        output_root / "gallery-data.json",
+        output_root / "index.html",
+        *(
+            destination
+            for source in sources
+            for destination in (
+                output_root / source.name,
+                output_root / f"{source.stem}.png",
+                output_root / f"{source.stem}-orthographic.png",
+            )
+        ),
+    }
+    if output_root.is_dir():
+        destinations.update(output_root.glob("*.json"))
+        destinations.update(
+            destination
+            for destination in output_root.glob("*.png")
+            if destination.name != "header-background.png"
+        )
+
+    for destination in destinations:
+        if destination.is_symlink() and destination.resolve().is_relative_to(corpus_root):
+            message = f"Gallery output destination {destination} points into the input corpus"
+            raise GalleryPathError(message)
+        try:
+            stat = destination.stat()
+        except OSError:
+            continue
+        if (stat.st_dev, stat.st_ino) in source_identities:
+            message = f"Gallery output destination {destination} aliases input corpus"
+            raise GalleryPathError(message)
 
 
 def render_jobs_for(
@@ -299,6 +356,7 @@ def build[Context: GalleryRenderContext](
     corpus = request.corpus
     output = request.output
     country_refresh = request.country_refresh
+    validate_paths(corpus, output)
     output.mkdir(parents=True, exist_ok=True)
     render_context = collaborators.prepare_render_context(output, request.cache_directory)
     (output / "index.html").unlink(missing_ok=True)

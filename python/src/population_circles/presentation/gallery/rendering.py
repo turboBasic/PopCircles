@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import cast
@@ -16,12 +17,17 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.application.use_cases.gallery import RenderJob
+from population_circles.application.use_cases.gallery import FigureCaption, RenderJob
+from population_circles.application.use_cases.render_map import (
+    MapBoundaries,
+    other_countries,
+    other_country_labels,
+)
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry
-from population_circles.presentation.gallery.page_data import Drawn, FigureCaption
+from population_circles.presentation.gallery.page_data import Drawn
 from population_circles.presentation.maps import source_selection
 from population_circles.presentation.maps.frame import PLATE_CARREE
 from population_circles.presentation.maps.metadata import (
@@ -32,18 +38,15 @@ from population_circles.presentation.maps.metadata import (
     png_metadata,
     xmp_properties,
 )
-from population_circles.presentation.maps.render_map import (
-    other_countries,
-    other_country_labels,
-    render,
-    title_of,
-)
+from population_circles.presentation.maps.render_map import render, title_of
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_MODULES = (
     "documents/result_document.py",
+    "application/use_cases/render_map.py",
     "application/use_cases/territory_coverage.py",
     "domain/circle_geometry.py",
+    "domain/geography.py",
     "domain/territory_coverage.py",
     "infrastructure/geodata/country_boundaries.py",
     "infrastructure/geodata/data_config.py",
@@ -285,6 +288,10 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
     try:
         answer = circle_of(payload)
         boundaries = load_map_boundaries(answer, context.registry)
+        boundary_selection = MapBoundaries(
+            boundaries,
+            cast(Mapping[str, str], getattr(boundaries, "names", {})),
+        )
         selected = boundaries.get(answer.country.id) if answer.country is not None else None
         map_sources = source_selection.registered_map_sources(
             context.registry,
@@ -321,20 +328,18 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
         )
         payload["render_metadata"] = metadata_json_fields(answer, properties)
         outline = outline_and_credit[0] if outline_and_credit is not None else None
-        source_key = source_identity(
-            map_source_paths(map_sources, context.data_root), context.source_digests
-        )
-        cache_key = (
-            map_cache_key(
+        cache_key = None
+        if context.cache_directory is not None:
+            source_key = source_identity(
+                map_source_paths(map_sources, context.data_root), context.source_digests
+            )
+            cache_key = map_cache_key(
                 context.digest,
                 json.dumps(payload, sort_keys=True).encode() + source_key,
                 context.coastline,
                 outline,
                 projection,
             )
-            if context.cache_directory is not None
-            else None
-        )
         if (
             context.cache_directory is not None
             and cache_key is not None
@@ -374,8 +379,8 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
             projection,
             coastline=context.coastline,
             country_outline=outline,
-            other_countries=other_countries(boundaries, answer),
-            country_labels=other_country_labels(boundaries, answer),
+            other_countries=other_countries(boundary_selection, answer),
+            country_labels=other_country_labels(boundary_selection, answer),
             render_text=context.render_text,
             map_layers=map_layers,
             title_label=title_label,
@@ -385,18 +390,22 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
         # Re-raise rather than publishing a partial gallery.
         error.add_note(f"raised while rendering {source}")
         raise
-    figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-        target,
-        dpi=200,
-        metadata=png_metadata(
-            title,
-            copyright_text,
-            description,
-            properties,
-        ),
-        pil_kwargs={"exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)},
-    )
-    plt.close(figure)
+    try:
+        figure.savefig(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
+            target,
+            dpi=200,
+            metadata=png_metadata(
+                title,
+                copyright_text,
+                description,
+                properties,
+            ),
+            pil_kwargs={
+                "exif": exif_gps_packet(answer.circle.centre.lat, answer.circle.centre.lon)
+            },
+        )
+    finally:
+        plt.close(figure)
     if context.cache_directory is not None and cache_key is not None:
         store_cached_map(context.cache_directory, cache_key, target)
     # The document travels beside its figure, so the caption's link resolves on the published

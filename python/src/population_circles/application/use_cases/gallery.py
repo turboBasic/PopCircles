@@ -2,7 +2,7 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, NotRequired, Protocol, TypedDict
 from urllib.parse import quote
 
 from population_circles.application.errors import PopulationApplicationError
@@ -12,6 +12,23 @@ from population_circles.documents.result_document import CIRCLE_KINDS, Envelope,
 HALF_SHARE = 0.5
 HALF_SHARE_PERCENT = "50"
 CountryRefresh = Literal["sweep", "coverage"]
+
+
+class SettlementCaption(TypedDict):
+    name: str
+    country: str
+    distance_km: float
+
+
+class FigureCaption(TypedDict):
+    radius_km: float
+    share: float
+    population: float
+    centre_lat: float
+    centre_lon: float
+    settlement: SettlementCaption | None
+    territory_share: NotRequired[float]
+    territory_name: NotRequired[str]
 
 
 class GalleryFigure(Protocol):
@@ -28,7 +45,7 @@ class GalleryFigure(Protocol):
     def country_id(self) -> str | None: ...
 
     @property
-    def caption(self) -> object | None: ...
+    def caption(self) -> FigureCaption | None: ...
 
 
 @dataclass(frozen=True)

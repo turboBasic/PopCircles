@@ -6,7 +6,7 @@ from typing import Annotated
 import typer
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.application.errors import PopulationApplicationError
+from population_circles.application.errors import GalleryPathError, PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases import circle_map, gallery_build
 from population_circles.application.use_cases.gallery import (
@@ -288,10 +288,13 @@ def gallery_build_command(
     country_refresh = (
         "sweep" if refresh_country_sweep else "coverage" if refresh_country_coverage else None
     )
-    drawn, skipped = gallery_build.build(
-        GalleryBuildRequest(input_path, output, country_refresh),
-        gallery_build_collaborators(popcircles_cli.invoke_popcircles_cli),
-    )
+    try:
+        drawn, skipped = gallery_build.build(
+            GalleryBuildRequest(input_path, output, country_refresh),
+            gallery_build_collaborators(popcircles_cli.invoke_popcircles_cli),
+        )
+    except GalleryPathError as error:
+        raise typer.BadParameter(str(error)) from error
     for one in drawn:
         typer.echo(one.figure)
     for one in skipped:

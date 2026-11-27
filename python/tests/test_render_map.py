@@ -24,7 +24,12 @@ import population_circles.presentation.maps.metadata as map_metadata_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.source_selection as source_selection_module
-from population_circles.application.use_cases.render_map import PreparedMapRender
+from population_circles.application.use_cases.render_map import (
+    MapBoundaries,
+    PreparedMapRender,
+    other_countries,
+    other_country_labels,
+)
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import Cap, cap
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
@@ -1008,6 +1013,23 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert observed_annotations[2].startswith(VISIBLE_FOOTER)
     assert citation(REGISTRY, "etopo-2022-60s") in observed_annotations[2]
     assert observed_annotations[2].endswith("See full attribution in image metadata")
+
+
+def test_shared_map_selection_handles_world_country_and_missing_inputs() -> None:
+    geometries = {"DE": box(5, 47, 15, 55), "FR": box(-5, 42, 8, 51)}
+    named = MapBoundaries(geometries, {"DE": "Germany", "FR": "France"})
+    unnamed = MapBoundaries(geometries, {})
+    country = circle_of(country_result_document())
+    world = circle_of(document())
+
+    assert other_countries(named, country) == (geometries["FR"],)
+    assert other_country_labels(named, country) == ((geometries["FR"], "France"),)
+    assert other_countries(named, world) == tuple(geometries.values())
+    assert other_country_labels(named, world) == ()
+    assert other_countries(unnamed, country) == (geometries["FR"],)
+    assert other_country_labels(unnamed, country) == ()
+    assert other_countries(MapBoundaries({}, {}), country) == ()
+    assert other_country_labels(MapBoundaries({}, {}), country) == ()
 
 
 @pytest.mark.parametrize(
