@@ -138,6 +138,11 @@ Python coordinates workflows that combine Rust search and Python rendering
 geometric territory coverage from published circle answers and registered GISCO geometry, as the
 narrow exception recorded in [ADR 0020](../decisions/0020-python-calculates-territory-coverage.md).
 
+- **Keep Python dependency direction explicit.** `domain/` imports only the standard library and
+  direct geometry dependencies. `application/` imports domain values and the external result contract,
+  never infrastructure or presentation implementations. Infrastructure and presentation receive
+  application contracts from `presentation/cli.py`, the concrete composition root. Result-document
+  and application request DTOs stay at those boundaries; they are not domain models.
 - **Use domain types.** Latitude, longitude, pixel index, radius, and population are different
   quantities. A bare `f64` or `usize` can hide a units error. `Row` and `Col` distinguish index axes,
   while grid operations check indices against the receiving grid; an in-range index carries no grid
