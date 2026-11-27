@@ -7,7 +7,7 @@ from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, P
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.documents.result_document import Coordinate
+from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
 
 METRES_PER_KM = 1000.0
 
@@ -18,8 +18,6 @@ METRES_PER_KM = 1000.0
 QUAD_SEGS = 180
 
 TURN_DEG = 360.0
-HALF_TURN_DEG = 180.0
-POLE_LAT = 90.0
 POLES = (POLE_LAT, -POLE_LAT)
 
 # Every longitude a figure may carry, and the shape the seam is cut against.
@@ -37,14 +35,14 @@ class Cap:
     # another sphere makes PROJ shift the datum, which is a second earth model arriving by default
     # rather than by decision.
     geodetic: CRS
-    centre: Coordinate
+    centre: GeographicCoordinate
     radius_km: float
     earth_radius_km: float
 
 
 def projected_crs(
     projection: str,
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     earth_radius_km: float,
     parameters: Mapping[str, float] | None = None,
 ) -> CRS:
@@ -75,7 +73,7 @@ def hemisphere_km(earth_radius_km: float) -> float:
     return earth_radius_km * math.pi / 2.0
 
 
-def cap(centre: Coordinate, radius_km: float, earth_radius_km: float) -> Cap:
+def cap(centre: GeographicCoordinate, radius_km: float, earth_radius_km: float) -> Cap:
     return Cap(
         polygon=Point(0.0, 0.0).buffer(radius_km * METRES_PER_KM, quad_segs=QUAD_SEGS),
         source=projected_crs("aeqd", centre, earth_radius_km),
@@ -86,13 +84,13 @@ def cap(centre: Coordinate, radius_km: float, earth_radius_km: float) -> Cap:
     )
 
 
-def boundary(built: Cap) -> tuple[Coordinate, ...]:
+def boundary(built: Cap) -> tuple[GeographicCoordinate, ...]:
     # The buffer's own vertices, one transform each. Every one is a real point on the cap's boundary
     # and `radius_km` from the centre, which is the claim a test can make here and cannot make about
     # `geographic`: cutting a projected cap synthesises vertices that lie on no boundary at all.
     to_geodetic = Transformer.from_crs(built.source, built.geodetic, always_xy=True)
     return tuple(
-        Coordinate(lat=lat, lon=lon)
+        GeographicCoordinate(lat=lat, lon=lon)
         for lon, lat in (to_geodetic.transform(x, y) for x, y in built.polygon.exterior.coords)
     )
 

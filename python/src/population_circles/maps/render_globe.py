@@ -20,14 +20,12 @@ from population_circles.data.dataset_registry import (
     BoundaryVector,
     load,
 )
-from population_circles.documents.result_document import Coordinate
-from population_circles.geography.circle_geometry import (
-    HALF_TURN_DEG,
-    POLE_LAT,
+from population_circles.domain.circle_geometry import (
     cap,
     hemisphere_km,
     polygons,
 )
+from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
 from population_circles.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 from population_circles.maps.layers import UnregisteredDatasetError, basemap
 
@@ -58,7 +56,7 @@ def simplify_projected_land(land: BaseGeometry, detalization: float = 1) -> Base
     return visible.simplify(SIMPLIFY_METRES / detalization, preserve_topology=True)
 
 
-def parse_center(value: str) -> Coordinate:
+def parse_center(value: str) -> GeographicCoordinate:
     try:
         latitude, longitude = (float(part) for part in value.split(","))
     except ValueError as error:
@@ -73,11 +71,11 @@ def parse_center(value: str) -> Coordinate:
     if not math.isfinite(longitude) or not -HALF_TURN_DEG <= longitude <= HALF_TURN_DEG:
         message = "center longitude must be between -180 and 180"
         raise ValueError(message)
-    return Coordinate(lat=latitude, lon=longitude)
+    return GeographicCoordinate(lat=latitude, lon=longitude)
 
 
 def svg_land(
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     rotation_degrees: float = 0,
     detalization: float = 1,
 ) -> str:
@@ -129,7 +127,7 @@ def svg_land(
 
 
 def render_globe(
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     output: Path,
     detalization: float = 1,
     rotation_degrees: float = 0,
@@ -243,7 +241,7 @@ def render_svg_sprite(sequence_svg: Path, output: Path) -> None:
 
 
 def render_latitude_sequence(
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     output: Path,
     steps: int,
     detalization: float = 1,
@@ -271,7 +269,7 @@ def render_latitude_sequence(
         ) - HALF_TURN_DEG
         path = output.with_name(f"{prefix}-{step + 1:02}.svg")
         render_globe(
-            Coordinate(lat=centre_latitude, lon=longitude),
+            GeographicCoordinate(lat=centre_latitude, lon=longitude),
             path,
             detalization,
             rotation,
@@ -281,7 +279,7 @@ def render_latitude_sequence(
 
 @dataclass(frozen=True)
 class RenderOptions:
-    centre: Coordinate
+    centre: GeographicCoordinate
     output: Path
     output_gif: Path | None = None
     svg_sprite: bool = False

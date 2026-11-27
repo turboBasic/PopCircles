@@ -25,7 +25,8 @@ from population_circles.data.dataset_registry import (
     load,
 )
 from population_circles.documents.result_document import Answer, circle_of
-from population_circles.geography.circle_geometry import cap, linestrings, polygons
+from population_circles.domain.circle_geometry import cap, linestrings, polygons
+from population_circles.domain.geography import GeographicCoordinate
 from population_circles.geography.country_boundaries import load_map_boundaries
 from population_circles.geography.territory_share import enrich_document
 from population_circles.maps import layers as map_data
@@ -473,7 +474,8 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     if answer.country is not None and country_outline is None:
         raise MissingCountryOutlineError
     circle = answer.circle
-    built = cap(circle.centre, circle.radius_km, circle.earth_radius_km)
+    centre = GeographicCoordinate(lat=circle.centre.lat, lon=circle.centre.lon)
+    built = cap(centre, circle.radius_km, circle.earth_radius_km)
     if answer.country is not None:
         country_outline, frame_settings = country_map_display(answer.country.id, country_outline)
     else:

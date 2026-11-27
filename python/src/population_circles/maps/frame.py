@@ -17,11 +17,8 @@ from shapely.geometry import MultiLineString, Point, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from population_circles.documents.result_document import Coordinate
-from population_circles.geography.circle_geometry import (
-    HALF_TURN_DEG,
+from population_circles.domain.circle_geometry import (
     METRES_PER_KM,
-    POLE_LAT,
     QUAD_SEGS,
     WORLD,
     Cap,
@@ -30,6 +27,7 @@ from population_circles.geography.circle_geometry import (
     hemisphere_km,
     projected_crs,
 )
+from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
 
 # Shapely's stubs omit the documented interleaved=False callback and include_z=None options.
 _transform = cast(Callable[..., BaseGeometry], transform)
@@ -221,13 +219,13 @@ def country_frame(
         )
 
     coordinates = get_coordinates(country_outline)
-    centre: Coordinate | None = None
+    centre: GeographicCoordinate | None = None
     if centre is None:
         if "lat_0" in parameters and "lon_0" in parameters:
-            centre = Coordinate(lat=parameters["lat_0"], lon=parameters["lon_0"])
+            centre = GeographicCoordinate(lat=parameters["lat_0"], lon=parameters["lon_0"])
         else:
             longitudes = [math.radians(point[0]) for point in coordinates]
-            centre = type(built.centre)(
+            centre = GeographicCoordinate(
                 lat=math.fsum(point[1] for point in coordinates) / len(coordinates),
                 lon=math.degrees(
                     math.atan2(sum(map(math.sin, longitudes)), sum(map(math.cos, longitudes))),

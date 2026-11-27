@@ -4,9 +4,7 @@ import pytest
 from shapely import get_coordinates
 from shapely.geometry import MultiPolygon, Polygon, box
 
-from population_circles.documents.result_document import Coordinate
-from population_circles.geography.circle_geometry import (
-    HALF_TURN_DEG,
+from population_circles.domain.circle_geometry import (
     METRES_PER_KM,
     WORLD,
     cap,
@@ -14,6 +12,7 @@ from population_circles.geography.circle_geometry import (
     linestrings,
     polygons,
 )
+from population_circles.domain.geography import HALF_TURN_DEG, GeographicCoordinate
 from population_circles.maps.frame import (
     GRATICULE_STEP_DEG,
     LIMB_SHAVE,
@@ -28,9 +27,9 @@ from population_circles.maps.frame import (
 )
 
 EARTH_RADIUS_KM = 6371.0088
-CENTRE = Coordinate(lat=25.125, lon=79.708)
-ANTIPODE = Coordinate(lat=-CENTRE.lat, lon=CENTRE.lon - 180.0)
-SEAM = Coordinate(lat=10.0, lon=178.0)
+CENTRE = GeographicCoordinate(lat=25.125, lon=79.708)
+ANTIPODE = GeographicCoordinate(lat=-CENTRE.lat, lon=CENTRE.lon - 180.0)
+SEAM = GeographicCoordinate(lat=10.0, lon=178.0)
 RADIUS_KM = 1000.0
 SEAM_RADIUS_KM = 3000.0
 SEAM_PARTS = 2
@@ -50,7 +49,7 @@ MERIDIANS = 13
 PARALLELS = 5
 
 
-def view(projection: str, centre: Coordinate, radius_km: float) -> Frame:
+def view(projection: str, centre: GeographicCoordinate, radius_km: float) -> Frame:
     return frame(projection, cap(centre, radius_km, EARTH_RADIUS_KM))
 
 
@@ -89,7 +88,7 @@ def test_geographic_footprint_covers_a_global_orthographic_view() -> None:
 
 def test_geographic_footprint_stays_inside_a_zoomed_orthographic_view() -> None:
     outline = box(1.4, 42.4, 1.8, 42.7)
-    built = cap(Coordinate(lat=42.55, lon=1.6), 1.0, EARTH_RADIUS_KM)
+    built = cap(GeographicCoordinate(lat=42.55, lon=1.6), 1.0, EARTH_RADIUS_KM)
     country = country_frame(built, outline)
 
     footprint = country.geographic_footprint
@@ -153,7 +152,7 @@ def test_the_shave_is_a_fraction_of_the_radius_it_shortens() -> None:
     ("centre", "outline"),
     [
         (
-            Coordinate(lat=50.0, lon=10.0),
+            GeographicCoordinate(lat=50.0, lon=10.0),
             MultiPolygon(
                 [
                     box(8, 49, 10, 51),
@@ -162,18 +161,18 @@ def test_the_shave_is_a_fraction_of_the_radius_it_shortens() -> None:
             ),
         ),
         (
-            Coordinate(lat=10.0, lon=179.0),
+            GeographicCoordinate(lat=10.0, lon=179.0),
             Polygon([(170, 8), (-170, 8), (-170, 12), (170, 12), (170, 8)]),
         ),
         (
-            Coordinate(lat=82.0, lon=20.0),
+            GeographicCoordinate(lat=82.0, lon=20.0),
             box(10, 78, 30, 86),
         ),
     ],
     ids=["multipart", "antimeridian", "high-latitude"],
 )
 def test_country_frame_contains_its_projected_outline_and_circle(
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     outline: Polygon | MultiPolygon,
 ) -> None:
     built = cap(centre, 500.0, EARTH_RADIUS_KM)
@@ -187,8 +186,8 @@ def test_country_frame_contains_its_projected_outline_and_circle(
 
 
 def test_country_frame_uses_an_explicit_orthographic_centre() -> None:
-    centre = Coordinate(lat=44.0, lon=-96.0)
-    built = cap(Coordinate(lat=40.0, lon=-100.0), 500.0, EARTH_RADIUS_KM)
+    centre = GeographicCoordinate(lat=44.0, lon=-96.0)
+    built = cap(GeographicCoordinate(lat=40.0, lon=-100.0), 500.0, EARTH_RADIUS_KM)
     outline = box(-125, 25, -66, 49)
 
     view = country_frame(
@@ -207,7 +206,7 @@ def test_country_frame_uses_an_explicit_orthographic_centre() -> None:
 
 
 def test_country_frame_dissolves_outline_parts_meeting_at_the_antimeridian() -> None:
-    built = cap(Coordinate(lat=65.0, lon=179.0), 100.0, EARTH_RADIUS_KM)
+    built = cap(GeographicCoordinate(lat=65.0, lon=179.0), 100.0, EARTH_RADIUS_KM)
     outline = MultiPolygon(
         [
             Polygon([(170, 60), (179.999988, 60), (179.999988, 70), (170, 70), (170, 60)]),
@@ -234,7 +233,7 @@ def test_country_frame_dissolves_outline_parts_meeting_at_the_antimeridian() -> 
 
 
 def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
-    built = cap(Coordinate(lat=-40.0, lon=-72.0), 200.0, EARTH_RADIUS_KM)
+    built = cap(GeographicCoordinate(lat=-40.0, lon=-72.0), 200.0, EARTH_RADIUS_KM)
     outline = box(-75, -45, -70, -35)
 
     view = country_frame(built, outline, CountryFrameSettings(projection=PLATE_CARREE))
@@ -259,18 +258,18 @@ def test_country_frame_fits_a_plate_carree_outline_and_circle() -> None:
     [
         (
             "albers-equal-area",
-            Coordinate(lat=45.0, lon=-125.0),
+            GeographicCoordinate(lat=45.0, lon=-125.0),
             {"lon_0": -125.0, "lat_0": 45.0, "lat_1": 35.0, "lat_2": 60.0},
         ),
         (
             "transverse-mercator",
-            Coordinate(lat=-38.0, lon=-71.0),
+            GeographicCoordinate(lat=-38.0, lon=-71.0),
             {"lon_0": -71.0, "lat_0": -38.0, "k_0": 1.0},
         ),
     ],
 )
 def test_country_frame_applies_projection_parameters_and_exact_extent(
-    projection: str, centre: Coordinate, parameters: dict[str, float]
+    projection: str, centre: GeographicCoordinate, parameters: dict[str, float]
 ) -> None:
     built = cap(centre, 100.0, EARTH_RADIUS_KM)
     outline = box(centre.lon - 1, centre.lat - 1, centre.lon + 1, centre.lat + 1)
@@ -291,7 +290,7 @@ def test_country_frame_applies_projection_parameters_and_exact_extent(
 
 
 def test_country_frame_refuses_a_large_circle_beyond_the_horizon() -> None:
-    built = cap(Coordinate(lat=51.0, lon=10.0), 15_000.0, EARTH_RADIUS_KM)
+    built = cap(GeographicCoordinate(lat=51.0, lon=10.0), 15_000.0, EARTH_RADIUS_KM)
 
     with pytest.raises(ValueError, match="extends beyond the orthographic projection domain"):
         country_frame(built, box(9, 50, 11, 52))

@@ -39,7 +39,7 @@ from population_circles.maps.render_map import (
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_MODULES = (
     "documents/result_document.py",
-    "geography/circle_geometry.py",
+    "domain/circle_geometry.py",
     "geography/country_boundaries.py",
     "data/data_config.py",
     "data/dataset_registry.py",

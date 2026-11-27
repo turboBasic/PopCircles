@@ -34,7 +34,8 @@ from population_circles.data.dataset_registry import (
     parse,
 )
 from population_circles.documents.result_document import Answer, Circle, circle_of
-from population_circles.geography.circle_geometry import Cap, cap
+from population_circles.domain.circle_geometry import Cap, cap
+from population_circles.domain.geography import GeographicCoordinate
 from population_circles.geography.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.maps.frame import (
     ORTHOGRAPHIC,
@@ -521,7 +522,11 @@ def test_chile_extent_hides_remote_components_without_filtering_outline() -> Non
         EXPECTED_OFFSCREEN_CHILE_COMPONENTS
     )
     view = build_country_frame(
-        cap(answer.circle.centre, answer.circle.radius_km, answer.circle.earth_radius_km),
+        cap(
+            GeographicCoordinate(lat=answer.circle.centre.lat, lon=answer.circle.centre.lon),
+            answer.circle.radius_km,
+            answer.circle.earth_radius_km,
+        ),
         rendered_outline,
         frame_settings,
     )
@@ -632,7 +637,11 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
     assert country is not None
     circle = answer.circle
     view = build_country_frame(
-        cap(circle.centre, circle.radius_km, circle.earth_radius_km),
+        cap(
+            GeographicCoordinate(lat=circle.centre.lat, lon=circle.centre.lon),
+            circle.radius_km,
+            circle.earth_radius_km,
+        ),
         country,
     )
     figure = render(

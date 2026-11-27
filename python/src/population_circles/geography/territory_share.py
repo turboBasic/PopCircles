@@ -21,14 +21,14 @@ from population_circles.documents.result_document import (
     Provenance,
     circle_of,
 )
-from population_circles.geography.circle_geometry import (
+from population_circles.domain.circle_geometry import (
     METRES_PER_KM,
-    POLE_LAT,
     QUAD_SEGS,
     cap,
     geodetic_crs,
     geographic,
 )
+from population_circles.domain.geography import POLE_LAT, GeographicCoordinate
 from population_circles.geography.country_boundaries import (
     load_country_boundaries,
     load_map_boundaries,
@@ -197,7 +197,8 @@ def _project_territory(
 
 
 def cap_geometry(circle: Circle) -> BaseGeometry:
-    return geographic(cap(circle.centre, circle.radius_km, circle.earth_radius_km))
+    centre = GeographicCoordinate(lat=circle.centre.lat, lon=circle.centre.lon)
+    return geographic(cap(centre, circle.radius_km, circle.earth_radius_km))
 
 
 def _validate_centre(circle: Circle) -> None:
