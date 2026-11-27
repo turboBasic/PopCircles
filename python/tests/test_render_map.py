@@ -4,7 +4,7 @@ import re
 import socket
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, cast
 
 import numpy as np
 import pytest
@@ -24,6 +24,7 @@ import population_circles.presentation.maps.metadata as map_metadata_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.source_selection as source_selection_module
+from population_circles.application.use_cases.render_map import PreparedMapRender
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import Cap, cap
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
@@ -1032,18 +1033,37 @@ def test_render_file_selects_other_country_labels_only_when_names_are_available(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(cli, "load_map_boundaries", lambda _answer, _registry: boundaries)
-    monkeypatch.setattr(territory_coverage_use_case, "territory_share", lambda _circle, _items: 0.5)
-    prepared: list[render_map_module.PreparedMapRender] = []
-    monkeypatch.setattr(render_map_module, "render_prepared", prepared.append)
+    def load_boundaries(_answer: Answer, _registry: Registry) -> Mapping[str, BaseGeometry]:
+        return boundaries
+
+    def territory_share(_circle: SphericalCircle, _items: Iterable[BaseGeometry]) -> float:
+        return 0.5
+
+    monkeypatch.setattr(
+        cli,
+        "load_map_boundaries",
+        load_boundaries,
+    )
+    monkeypatch.setattr(
+        territory_coverage_use_case,
+        "territory_share",
+        territory_share,
+    )
+    prepared: list[object] = []
+
+    def capture_prepared(value: PreparedMapRender) -> None:
+        prepared.append(value)
+
+    monkeypatch.setattr(render_map_module, "render_prepared", capture_prepared)
     source = tmp_path / "country.json"
     source.write_text(json.dumps(country_result_document()), encoding="utf-8")
 
     render_file(source, tmp_path / "country.png", no_coastlines=True, coverage_enriched=True)
 
     assert len(prepared) == 1
-    assert prepared[0].other_countries == (boundaries["FR"],)
-    assert prepared[0].country_labels == expected_labels
+    rendered = cast(PreparedMapRender, prepared[0])
+    assert rendered.other_countries == (boundaries["FR"],)
+    assert rendered.country_labels == expected_labels
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:

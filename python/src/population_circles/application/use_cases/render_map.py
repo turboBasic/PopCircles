@@ -1,7 +1,6 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
 
 from shapely.geometry.base import BaseGeometry
 
@@ -19,6 +18,12 @@ class LoadedMapLayers:
 class MapRenderPreferences:
     render_text: tuple[bool, bool]
     title_label: str | None
+
+
+@dataclass(frozen=True)
+class MapBoundaries:
+    geometries: Mapping[str, BaseGeometry]
+    names: Mapping[str, str]
 
 
 @dataclass(frozen=True)
@@ -41,7 +46,7 @@ class PreparedMapRender:
 
 
 DocumentLoader = Callable[[Path], dict[str, object]]
-BoundaryLoader = Callable[[Answer], Mapping[str, BaseGeometry]]
+BoundaryLoader = Callable[[Answer], MapBoundaries]
 CoastlineLoader = Callable[[], tuple[BaseGeometry, str]]
 CitationLoader = Callable[[str], str]
 MapLayersLoader = Callable[[Answer, BaseGeometry | None], LoadedMapLayers]
@@ -69,26 +74,23 @@ class RenderMapCollaborators:
     render_prepared: PreparedRenderer
 
 
-def _other_countries(
-    boundaries: Mapping[str, BaseGeometry], answer: Answer
-) -> tuple[BaseGeometry, ...]:
+def _other_countries(boundaries: MapBoundaries, answer: Answer) -> tuple[BaseGeometry, ...]:
     return tuple(
         geometry
-        for identifier, geometry in boundaries.items()
+        for identifier, geometry in boundaries.geometries.items()
         if answer.country is None or identifier != answer.country.id
     )
 
 
 def _other_country_labels(
-    boundaries: Mapping[str, BaseGeometry], answer: Answer
+    boundaries: MapBoundaries, answer: Answer
 ) -> tuple[tuple[BaseGeometry, str], ...]:
     if answer.country is None:
         return ()
-    names = cast(Mapping[str, str], getattr(boundaries, "names", {}))
     return tuple(
-        (geometry, names[identifier])
-        for identifier, geometry in boundaries.items()
-        if identifier != answer.country.id and identifier in names
+        (geometry, boundaries.names[identifier])
+        for identifier, geometry in boundaries.geometries.items()
+        if identifier != answer.country.id and identifier in boundaries.names
     )
 
 
@@ -110,9 +112,11 @@ def render_file(
     preferences = collaborators.load_preferences(request.output_path)
     boundaries = collaborators.load_boundaries(answer)
     if not request.coverage_enriched:
-        document = enrich_document(document, boundaries)
+        document = enrich_document(document, boundaries.geometries)
     answer = circle_of(document)
-    country_outline = boundaries.get(answer.country.id) if answer.country is not None else None
+    country_outline = (
+        boundaries.geometries.get(answer.country.id) if answer.country is not None else None
+    )
     layers = collaborators.load_layers(answer, country_outline)
     country_boundary_attribution = None
     if answer.country is not None:

@@ -20,6 +20,7 @@ from population_circles.application.use_cases.gallery_build import (
 )
 from population_circles.application.use_cases.render_map import (
     LoadedMapLayers,
+    MapBoundaries,
     MapRenderPreferences,
     RenderMapCollaborators,
     RenderMapFileRequest,
@@ -31,6 +32,7 @@ from population_circles.infrastructure import popcircles_cli
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
 from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import (
+    CountryBoundaries,
     load_country_boundaries,
     load_map_boundaries,
 )
@@ -56,6 +58,11 @@ def render_map_file(
     coverage_enriched: bool = False,
 ) -> None:
     registry = load()
+
+    def load_render_boundaries(answer: Answer) -> MapBoundaries:
+        boundaries = load_map_boundaries(answer, registry)
+        names = boundaries.names if isinstance(boundaries, CountryBoundaries) else {}
+        return MapBoundaries(boundaries, names)
 
     def load_document(path: Path) -> dict[str, object]:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -86,7 +93,7 @@ def render_map_file(
         ),
         RenderMapCollaborators(
             load_document=load_document,
-            load_boundaries=lambda answer: load_map_boundaries(answer, registry),
+            load_boundaries=load_render_boundaries,
             load_coastline=lambda: map_data.registered_coastline(registry),
             citation=lambda key: map_data.citation(registry, key),
             load_layers=load_layers,
