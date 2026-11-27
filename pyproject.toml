@@ -78,7 +78,7 @@ ignore = [
 "python/src/population_circles/application/use_cases/gallery_build.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
-"python/src/population_circles/gallery/rendering.py" = [
+"python/src/population_circles/presentation/gallery/rendering.py" = [
   "T201", # render progress is Gallery command output, not incidental debug printing
 ]
 "python/src/population_circles/presentation/maps/render_globe.py" = [

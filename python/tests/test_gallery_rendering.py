@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 from shapely.geometry import box
 
-import population_circles.gallery.rendering as rendering_module
+import population_circles.presentation.gallery.rendering as rendering_module
 from population_circles.documents.result_document import circle_of
 from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_gallery import (
@@ -91,7 +91,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
-    assert package / "gallery" / "rendering.py" in rendering_module.RENDER_INPUTS
+    assert package / "presentation" / "gallery" / "rendering.py" in (rendering_module.RENDER_INPUTS)
     assert package / "infrastructure" / "geodata" / "data_config.py" in (
         rendering_module.RENDER_INPUTS
     )
@@ -115,7 +115,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
         "gallery/country_sweep.py",
         "application/use_cases/circle_map.py",
         "infrastructure/popcircles_cli.py",
-        "gallery/page_data.py",
+        "presentation/gallery/page_data.py",
         "render_globe.py",
     ):
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (

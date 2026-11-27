@@ -18,18 +18,17 @@ from population_circles.application.use_cases.gallery import (
 )
 from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.gallery.page_data import page_data
-from population_circles.gallery.rendering import (
-    Drawn,
+from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
+from population_circles.infrastructure.geodata.map_layers import registered_coastline
+from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
+from population_circles.presentation.gallery.page_data import Drawn, page_data
+from population_circles.presentation.gallery.rendering import (
     MapRenderContext,
     RenderJob,
     render_context_digest,
     render_documents,
 )
-from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
-from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry, load
-from population_circles.infrastructure.geodata.map_layers import registered_coastline
-from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
 from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from population_circles.presentation.maps.presentation_config import (
     load as load_presentation_config,

@@ -18,8 +18,8 @@ from typer.testing import CliRunner
 
 import population_circles.application.use_cases.gallery as country_sweep_module
 import population_circles.application.use_cases.gallery_build as gallery_module
-import population_circles.gallery.rendering as rendering_module
 import population_circles.infrastructure.geodata.map_layers as map_layers_module
+import population_circles.presentation.gallery.rendering as rendering_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
 import population_circles.presentation.maps.terrain as terrain_module

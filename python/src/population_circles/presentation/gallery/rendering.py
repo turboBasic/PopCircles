@@ -8,7 +8,7 @@ import sys
 import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any, cast
 from uuid import uuid4
 
 import matplotlib as mpl
@@ -20,6 +20,7 @@ from population_circles.documents.result_document import Answer, circle_of
 from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import load_map_boundaries
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, Registry
+from population_circles.presentation.gallery.page_data import Drawn, FigureCaption
 from population_circles.presentation.maps.frame import PLATE_CARREE
 from population_circles.presentation.maps.metadata import (
     copyright_of,
@@ -45,7 +46,7 @@ RENDER_MODULES = (
     "infrastructure/geodata/country_boundaries.py",
     "infrastructure/geodata/data_config.py",
     "infrastructure/geodata/dataset_registry.py",
-    "gallery/rendering.py",
+    "presentation/gallery/rendering.py",
     "presentation/maps/frame.py",
     "presentation/maps/labels.py",
     "infrastructure/geodata/map_layers.py",
@@ -58,7 +59,7 @@ RENDER_MODULES = (
 RENDER_INPUTS = tuple(
     sorted(
         [
-            *(Path(__file__).resolve().parents[1] / name for name in RENDER_MODULES),
+            *(Path(__file__).resolve().parents[2] / name for name in RENDER_MODULES),
             REPO_ROOT / "data" / "config.toml",
             REPO_ROOT / "data" / "presentation.toml",
             REPO_ROOT / "data" / "registry.toml",
@@ -66,32 +67,6 @@ RENDER_INPUTS = tuple(
         key=lambda path: path.as_posix(),
     )
 )
-
-
-class SettlementCaption(TypedDict):
-    name: str
-    country: str
-    distance_km: float
-
-
-class FigureCaption(TypedDict):
-    radius_km: float
-    share: float
-    population: float
-    centre_lat: float
-    centre_lon: float
-    settlement: SettlementCaption | None
-    territory_share: NotRequired[float]
-    territory_name: NotRequired[str]
-
-
-@dataclass(frozen=True)
-class Drawn:
-    document: Path
-    figure: Path
-    country_name: str | None = None
-    country_id: str | None = None
-    caption: FigureCaption | None = None
 
 
 @dataclass(frozen=True)

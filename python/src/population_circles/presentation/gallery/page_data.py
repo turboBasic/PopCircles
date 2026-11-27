@@ -1,9 +1,35 @@
+from dataclasses import dataclass
+from pathlib import Path
 from typing import NotRequired, TypedDict
 from urllib.parse import quote
 
 from PIL import Image
 
-from population_circles.gallery.rendering import Drawn, FigureCaption
+
+class SettlementCaption(TypedDict):
+    name: str
+    country: str
+    distance_km: float
+
+
+class FigureCaption(TypedDict):
+    radius_km: float
+    share: float
+    population: float
+    centre_lat: float
+    centre_lon: float
+    settlement: SettlementCaption | None
+    territory_share: NotRequired[float]
+    territory_name: NotRequired[str]
+
+
+@dataclass(frozen=True)
+class Drawn:
+    document: Path
+    figure: Path
+    country_name: str | None = None
+    country_id: str | None = None
+    caption: FigureCaption | None = None
 
 
 class PageFigure(TypedDict):
