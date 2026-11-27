@@ -6,45 +6,23 @@ from typing import Any
 
 import pytest
 
-from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases.circle_map import (
-    CircleMapRequest,
-    search_and_render_circle_map,
+from population_circles.application.use_cases.circle_result import (
+    CircleResultCollaborators,
+    CircleResultRequest,
+    search_and_publish_circle_result,
 )
 from population_circles.documents.result_document import SweepRecords, circle_of
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
-from population_circles.infrastructure.geodata import map_layers
-from population_circles.infrastructure.geodata.dataset_registry import parse
 from population_circles.infrastructure.popcircles_cli import REPO_ROOT
-from population_circles.presentation.maps import render_map, source_selection
-from test_render_map import (
-    PNG_MAGIC,
-    empty_boundaries,
-    fixture_map_layers,
-    fixture_registered_map_sources,
-    render_file,
-    transparent_terrain,
-)
 
 
-def run_circle_map(options: CircleMapRequest, runner: PopulationRunner) -> None:
-    search_and_render_circle_map(
-        options,
-        runner,
-        load_boundaries=lambda _answer: {},
-        publish_file=write_bytes_atomically,
-        render_file=render_file,
+def run_circle_result(request: CircleResultRequest, runner: PopulationRunner) -> None:
+    search_and_publish_circle_result(
+        request,
+        CircleResultCollaborators(runner, lambda _answer: {}, write_bytes_atomically),
     )
-
-
-@pytest.fixture(autouse=True)
-def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(composition, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
-    monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
-    monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
 
 def run(arguments: list[str], directory: Path) -> subprocess.CompletedProcess[bytes]:
@@ -69,7 +47,6 @@ def numeric_binary() -> Path:
 def test_real_build_reuse_and_missing_raster(
     tmp_path: Path,
     numeric_binary: Path,
-    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     run(
@@ -86,16 +63,12 @@ def test_real_build_reuse_and_missing_raster(
         ],
         REPO_ROOT,
     )
-    registry = parse((tmp_path / "data/registry.toml").read_text())
-    monkeypatch.setattr(composition, "load", lambda: registry)
-    options = CircleMapRequest(
+    request = CircleResultRequest(
         dataset="tiny",
         share="50",
         cache=tmp_path / "table",
-        output=tmp_path / "map.png",
         document=tmp_path / "map.json",
         ledger=tmp_path / "map.radii.json",
-        no_coastlines=True,
     )
     calls: list[list[str]] = []
     results: list[subprocess.CompletedProcess[bytes]] = []
@@ -120,36 +93,31 @@ def test_real_build_reuse_and_missing_raster(
         results.append(result)
         return result
 
-    run_circle_map(options, invoke)
+    run_circle_result(request, invoke)
     assert [arguments[:2] for arguments in calls[:2]] == [["table", "query"], ["table", "build"]]
-    assert options.output.read_bytes().startswith(PNG_MAGIC)
-    first = json.loads(options.document.read_bytes())
+    first = json.loads(request.document.read_bytes())
     assert first["provenance"]["dataset"] == "tiny"
     assert first["result"] == json.loads(results[-1].stdout)["result"]
-    assert first["render_metadata"]["Title"]
     assert first["result"]["circle"]["target"]["total"] == 28.0  # noqa: PLR2004 — generated cells sum
 
     (tmp_path / "data/tiny.tif").unlink()
     calls.clear()
     results.clear()
-    options.output.unlink()
     with pytest.raises(PopulationApplicationError, match="search: Rust CLI exited 3"):
-        run_circle_map(options, invoke)
+        run_circle_result(request, invoke)
     assert len(calls) == 2  # noqa: PLR2004 — cached table query then raster-dependent circle
     assert calls[0][:2] == ["table", "query"]
     assert calls[1][0] == "smallest-for-share"
-    current = options.document.read_bytes()
+    current = request.document.read_bytes()
     assert "mise run data:get" in capsys.readouterr().err
 
     for cache_file in tmp_path.glob("table.*"):
         cache_file.unlink()
     calls.clear()
-    options.output.unlink(missing_ok=True)
     with pytest.raises(PopulationApplicationError, match="table build: Rust CLI exited 3"):
-        run_circle_map(options, invoke)
+        run_circle_result(request, invoke)
     assert "mise run data:get" in capsys.readouterr().err
-    assert options.document.read_bytes() == current
-    assert not options.output.exists()
+    assert request.document.read_bytes() == current
 
 
 @pytest.mark.xdist_group(name="numeric-binary")

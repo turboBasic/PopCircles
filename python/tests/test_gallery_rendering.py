@@ -130,7 +130,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     for unrelated in (
         "gallery/build.py",
         "gallery/country_sweep.py",
-        "application/use_cases/circle_map.py",
+        "application/use_cases/circle_result.py",
         "infrastructure/popcircles_cli.py",
         "presentation/gallery/page_data.py",
         "render_globe.py",

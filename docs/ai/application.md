@@ -103,7 +103,7 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
 
    - `presentation/cli.py` owns command parsing and dispatch; package-root `composition.py` owns
      concrete collaborator composition for application workflows.
-   - `application/use_cases/` owns population, map-file, country-sweep, and Gallery workflows.
+   - `application/use_cases/` owns circle-result, map-file, country-sweep, and Gallery workflows.
    - `infrastructure/geodata/` owns dataset configuration, registry access, boundaries, and map
      source loading; `infrastructure/popcircles_cli.py` owns Rust process execution.
    - `documents/` owns the published-result contract used between search and rendering.

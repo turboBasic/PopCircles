@@ -253,33 +253,38 @@ The refresh updates the saved input documents using each circle's centre and rad
 boundary geometry. It preserves population answers and omits coverage when the selected source has no
 polygonal area to measure.
 
-## Maps
+## Circle results and maps
 
-From the checkout root, one command searches a named dataset and saves its map:
+From the checkout root, generate a circle result document:
 
 ```sh
 mise run data:get   # fetch the source raster explicitly before the first build
-mise run map -- --dataset population-count-2020-30arcsec --share 50 \
-  --decimate 10 --cache out/gpw-5arcmin --output out/half-world.png
+mise run circle -- --dataset population-count-2020-30arcsec --share 50 \
+  --decimate 10 --cache out/gpw-5arcmin --output out/half-world.json
 ```
 
-`map` checks and reuses a compatible cache, even if the source raster has since been removed. An
+`circle` checks and reuses a compatible cache, even if the source raster has since been removed. An
 absent or incompatible cache is built from the named raster; a corrupt or unreadable cache stops the
 run. No data is downloaded implicitly. Omit `--decimate` for full resolution.
 
-The image's sibling `out/half-world.json` contains this invocation's search stdout. `--document`
-selects another path. The default radii ledger is beside that document, with a `.radii.json` suffix;
-`--ledger` selects another. Image, document and ledger paths must differ. The current JSON is saved
-before rendering and retained if document validation or rendering fails, with its path in the error.
-A failed search or document write leaves an existing document untouched and draws no new image.
+The output is a standalone search result document. The default radii ledger is beside it, with a
+`.radii.json` suffix; `--ledger` selects another path. Result and ledger paths must differ. The result
+is published atomically after a successful search; a failed search or document write leaves an
+existing result untouched.
 
 Launch failures retain uv/mise's own interpreter diagnostic. Application errors name the cache probe,
-table build, search, document publication or rendering stage and preserve child diagnostics. A missing
-raster names `mise run data:get`; a rejected document names the saved JSON. On success, both image
-and document destinations are printed. This combined command requires the checkout and its Python
-plotting environment; the Rust search remains independently usable.
+table build, search or result publication stage and preserve child diagnostics. A missing raster names
+`mise run data:get`; a rejected result names the output JSON. On success, the result destination is
+printed. This command requires the checkout; the Rust search remains independently usable.
 
-The tools also work separately. Rendering reads the published search document, basemap and registry
+Render the saved result separately, choosing a projection or omitting coastlines as needed:
+
+```sh
+mise run map -- --input out/half-world.json --output out/half-world.png
+mise run map -- --input out/half-world.json --output out/globe.png --projection orthographic
+```
+
+Rendering reads the published search document, basemap and registry
 without opening the raster, table or ledger:
 
 ```sh

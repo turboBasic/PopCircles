@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -6,7 +8,8 @@ from typer.testing import CliRunner
 
 from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.application.use_cases import circle_map, gallery_build, render_map
+from population_circles.application.use_cases import circle_result, gallery_build, render_map
+from population_circles.application.use_cases.circle_result import CircleResultRequest
 from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.presentation import cli
 from population_circles.presentation.maps import render_globe
@@ -74,7 +77,7 @@ def test_circle_requires_dataset() -> None:
     assert result.exit_code == INVALID_ARGUMENT_EXIT
 
 
-def test_circle_rejects_invalid_projection() -> None:
+def test_circle_rejects_render_options() -> None:
     result = runner.invoke(
         cli.app,
         [
@@ -86,7 +89,7 @@ def test_circle_rejects_invalid_projection() -> None:
             "--cache",
             "cache",
             "--output",
-            "map.png",
+            "result.json",
             "--projection",
             "invalid",
         ],
@@ -95,10 +98,14 @@ def test_circle_rejects_invalid_projection() -> None:
     assert result.exit_code == INVALID_ARGUMENT_EXIT
 
 
-def test_circle_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPatch) -> None:
+def test_circle_uses_output_as_result_and_defaults_ledger(monkeypatch: MonkeyPatch) -> None:
     workflow = Mock()
-    monkeypatch.setattr(circle_map, "search_and_render_circle_map", workflow)
-    document = Path("other.json")
+    collaborators = Mock()
+    monkeypatch.setattr(circle_result, "search_and_publish_circle_result", workflow)
+    monkeypatch.setattr(
+        composition, "circle_result_collaborators", Mock(return_value=collaborators)
+    )
+    document = Path("result.json")
 
     result = runner.invoke(
         cli.app,
@@ -111,8 +118,6 @@ def test_circle_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPat
             "--cache",
             "cache",
             "--output",
-            "map.png",
-            "--document",
             str(document),
         ],
     )
@@ -121,16 +126,24 @@ def test_circle_overrides_set_document_and_default_ledger(monkeypatch: MonkeyPat
     options = workflow.call_args.args[0]
     assert options.document == document
     assert options.ledger == document.with_suffix(".radii.json")
+    assert workflow.call_args.args[1] is collaborators
+    assert "result: result.json" in result.output
 
 
 def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> None:
     workflow = Mock()
     render_file = Mock()
-    collaborators = Mock()
+    circle_collaborators = Mock()
+    map_collaborators = Mock()
     render_command = Mock(return_value=Path("globe.svg"))
     gallery = Mock(return_value=([], []))
-    monkeypatch.setattr(circle_map, "search_and_render_circle_map", workflow)
-    monkeypatch.setattr(composition, "render_map_collaborators", Mock(return_value=collaborators))
+    monkeypatch.setattr(circle_result, "search_and_publish_circle_result", workflow)
+    monkeypatch.setattr(
+        composition, "circle_result_collaborators", Mock(return_value=circle_collaborators)
+    )
+    monkeypatch.setattr(
+        composition, "render_map_collaborators", Mock(return_value=map_collaborators)
+    )
     monkeypatch.setattr(render_map, "render_file", render_file)
     monkeypatch.setattr(render_globe, "render_command", render_command)
     monkeypatch.setattr(gallery_build, "build", gallery)
@@ -147,7 +160,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
                 "--cache",
                 "cache",
                 "--output",
-                "map.png",
+                "result.json",
             ],
         ),
         runner.invoke(cli.app, ["map", "--input", "answer.json", "--output", "map.png"]),
@@ -159,12 +172,40 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
     options = workflow.call_args.args[0]
     assert options.dataset == "world"
     assert options.share == "50"
-    assert options.document == Path("map.json")
-    assert options.ledger == Path("map.radii.json")
+    assert options == CircleResultRequest(
+        "world", "50", Path("cache"), Path("result.json"), Path("result.radii.json")
+    )
+    assert workflow.call_args.args[1] is circle_collaborators
     render_file.assert_called_once_with(
         RenderMapFileRequest(Path("answer.json"), Path("map.png"), "plate-carree"),
-        collaborators,
+        map_collaborators,
     )
     render_command.assert_called_once()
     assert gallery.call_args.args[0].corpus == Path("corpus")
     assert gallery.call_args.args[0].output == Path("gallery")
+
+
+def test_circle_reports_child_diagnostics_without_rendering(monkeypatch: MonkeyPatch) -> None:
+    def missing(arguments: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        if "build" in arguments:
+            sys.stderr.write("missing raster; run mise run data:get\n")
+        return subprocess.CompletedProcess(arguments, 3, b"")
+
+    monkeypatch.setattr(subprocess, "run", missing)
+    result = runner.invoke(
+        cli.app,
+        [
+            "circle",
+            "--dataset",
+            "population-count-2020-30arcsec",
+            "--share",
+            "50",
+            "--cache",
+            "cache",
+            "--output",
+            "result.json",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "missing raster; run mise run data:get" in result.output
+    assert "table build: Rust CLI exited 3" in result.output

@@ -5,6 +5,7 @@ import typer
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.application.ports import PopulationRunner
+from population_circles.application.use_cases.circle_result import CircleResultCollaborators
 from population_circles.application.use_cases.gallery import (
     CountrySweepCollaborators,
     GalleryFigure,
@@ -20,6 +21,7 @@ from population_circles.application.use_cases.render_map import (
 from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.infrastructure import popcircles_cli
+from population_circles.infrastructure.file_publishing import write_bytes_atomically
 from population_circles.infrastructure.geodata import map_layers as map_data
 from population_circles.infrastructure.geodata.country_boundaries import (
     CountryBoundaries,
@@ -71,6 +73,15 @@ def render_map_collaborators() -> RenderMapCollaborators:
         load_layers=load_layers,
         load_preferences=load_preferences,
         render_prepared=render_map.render_prepared,
+    )
+
+
+def circle_result_collaborators() -> CircleResultCollaborators:
+    registry = load()
+    return CircleResultCollaborators(
+        run_population_command=popcircles_cli.invoke_popcircles_cli,
+        load_boundaries=lambda answer: load_map_boundaries(answer, registry),
+        publish_file=write_bytes_atomically,
     )
 
 
