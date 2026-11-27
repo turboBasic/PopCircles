@@ -96,6 +96,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert package / "data" / "dataset_registry.py" in rendering_module.RENDER_INPUTS
     assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
     assert package / "domain" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
+    assert package / "domain" / "territory_coverage.py" in rendering_module.RENDER_INPUTS
     assert package / "geography" / "country_boundaries.py" in rendering_module.RENDER_INPUTS
     assert package / "geography" / "territory_share.py" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (

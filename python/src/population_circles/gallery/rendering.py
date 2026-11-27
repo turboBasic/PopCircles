@@ -40,6 +40,7 @@ PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_MODULES = (
     "documents/result_document.py",
     "domain/circle_geometry.py",
+    "domain/territory_coverage.py",
     "geography/country_boundaries.py",
     "data/data_config.py",
     "data/dataset_registry.py",

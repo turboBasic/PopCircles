@@ -33,9 +33,9 @@ from population_circles.data.dataset_registry import (
     load,
     parse,
 )
-from population_circles.documents.result_document import Answer, Circle, circle_of
+from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import Cap, cap
-from population_circles.domain.geography import GeographicCoordinate
+from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
 from population_circles.geography.country_boundaries import BoundaryIdentityError, load_outline
 from population_circles.maps.frame import (
     ORTHOGRAPHIC,
@@ -932,7 +932,9 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     def fixture_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {"fixture": box(70, 15, 90, 35)}
 
-    def fixture_territory_share(_circle: Circle, _territories: Iterable[BaseGeometry]) -> float:
+    def fixture_territory_share(
+        _circle: SphericalCircle, _territories: Iterable[BaseGeometry]
+    ) -> float:
         return 0.375
 
     monkeypatch.setattr(
