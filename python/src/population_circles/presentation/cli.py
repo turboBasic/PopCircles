@@ -109,15 +109,9 @@ def gallery_build_collaborators(
             load_map_boundaries=lambda answer: load_map_boundaries(answer, registry),
         )
 
-    def enrich_source(source: Path, payload: dict[str, object]) -> dict[str, object]:
+    def enrich_source(_source: Path, payload: dict[str, object]) -> dict[str, object]:
         answer = circle_of(payload)
-        enriched = enrich_document(payload, load_map_boundaries(answer, registry))
-        if enriched != payload:
-            source.write_text(
-                json.dumps(enriched, indent=2, ensure_ascii=False) + "\n",
-                encoding="utf-8",
-            )
-        return enriched
+        return enrich_document(payload, load_map_boundaries(answer, registry))
 
     def prepare_render_context(
         output: Path, requested_cache: Path | None
