@@ -6,15 +6,15 @@ from typing import Any
 
 import pytest
 
+from population_circles.application.errors import PopulationApplicationError
 from population_circles.applications import circle_map
 from population_circles.applications.circle_map import (
     CircleMapRequest,
     search_and_render_circle_map,
 )
-from population_circles.applications.errors import PopulationApplicationError
-from population_circles.applications.popcircles_cli import REPO_ROOT
 from population_circles.data.dataset_registry import parse
 from population_circles.documents.result_document import SweepRecords, circle_of
+from population_circles.infrastructure.popcircles_cli import REPO_ROOT
 from population_circles.maps import layers as map_layers
 from population_circles.maps import render_map
 from test_render_map import (

@@ -14,14 +14,15 @@ from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
 from population_circles import cli
-from population_circles.applications import circle_map, popcircles_cli
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.applications import circle_map
 from population_circles.applications.circle_map import (
     CircleMapRequest,
     search_and_render_circle_map,
 )
-from population_circles.applications.errors import PopulationApplicationError
 from population_circles.data.dataset_registry import Registry, load
 from population_circles.documents.result_document import Answer
+from population_circles.infrastructure import popcircles_cli
 from population_circles.maps import layers as map_layers
 from population_circles.maps import metadata as map_metadata
 from population_circles.maps import render_map

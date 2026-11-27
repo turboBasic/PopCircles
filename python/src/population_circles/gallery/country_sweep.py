@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.applications.errors import PopulationApplicationError
-from population_circles.applications.popcircles_cli import PopulationRunner
 from population_circles.data.dataset_registry import load
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.geography.country_boundaries import (

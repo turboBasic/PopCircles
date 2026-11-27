@@ -24,8 +24,8 @@ import population_circles.maps.presentation_config as presentation_config_module
 import population_circles.maps.render_map as render_map_module
 import population_circles.maps.terrain as terrain_module
 from population_circles import cli
-from population_circles.applications.errors import PopulationApplicationError
-from population_circles.applications.popcircles_cli import PopulationRunner
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.application.ports import PopulationCommandResult, PopulationRunner
 from population_circles.data.data_config import country_boundary_dataset_key
 from population_circles.data.dataset_registry import (
     MapContextVector,
@@ -330,7 +330,7 @@ def country_cli(
         arguments: list[str],
         *,
         accepted_exit_codes: tuple[int, ...] = (0,),
-    ) -> subprocess.CompletedProcess[bytes]:
+    ) -> PopulationCommandResult:
         calls.append(arguments)
         output = (
             json.dumps(covered).encode()
@@ -1055,7 +1055,7 @@ def test_a_failed_sweep_does_not_replace_saved_country_results(
         arguments: list[str],
         *,
         accepted_exit_codes: tuple[int, ...] = (0,),
-    ) -> subprocess.CompletedProcess[bytes]:
+    ) -> PopulationCommandResult:
         result = list_invoke(stage, arguments, accepted_exit_codes=accepted_exit_codes)
         if arguments[1] == "sweep":
             message = f"{stage}: Rust CLI exited 1; see child diagnostic above"

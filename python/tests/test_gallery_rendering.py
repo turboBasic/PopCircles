@@ -108,7 +108,7 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
         "gallery/build.py",
         "gallery/country_sweep.py",
         "applications/circle_map.py",
-        "applications/popcircles_cli.py",
+        "infrastructure/popcircles_cli.py",
         "gallery/page_data.py",
         "render_globe.py",
     ):

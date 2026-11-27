@@ -4,15 +4,13 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import cast
 
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.application.ports import PopulationRunner
 from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.applications.errors import PopulationApplicationError
-from population_circles.applications.popcircles_cli import (
-    PopulationRunner,
-    invoke_popcircles_cli,
-)
 from population_circles.data.dataset_registry import load
 from population_circles.documents.result_document import circle_of
 from population_circles.geography.country_boundaries import load_map_boundaries
+from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
 from population_circles.maps import render_map
 from population_circles.maps.frame import PLATE_CARREE
 

@@ -4,9 +4,10 @@ from typing import Annotated
 
 import typer
 
-from population_circles.applications import circle_map, popcircles_cli
-from population_circles.applications.errors import PopulationApplicationError
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.applications import circle_map
 from population_circles.gallery import build as gallery_build
+from population_circles.infrastructure import popcircles_cli
 from population_circles.maps import render_globe, render_map
 from population_circles.maps.frame import PLATE_CARREE, PROJECTIONS
 
