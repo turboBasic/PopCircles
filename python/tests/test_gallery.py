@@ -16,8 +16,8 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
-import population_circles.gallery.build as gallery_module
-import population_circles.gallery.country_sweep as country_sweep_module
+import population_circles.application.use_cases.gallery as country_sweep_module
+import population_circles.application.use_cases.gallery_build as gallery_module
 import population_circles.gallery.rendering as rendering_module
 import population_circles.infrastructure.geodata.map_layers as map_layers_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
@@ -26,8 +26,8 @@ import population_circles.presentation.maps.terrain as terrain_module
 from population_circles import cli
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
+from population_circles.application.use_cases.gallery_build import build
 from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
-from population_circles.gallery.build import build
 from population_circles.infrastructure.geodata.data_config import country_boundary_dataset_key
 from population_circles.infrastructure.geodata.dataset_registry import (
     MapContextVector,

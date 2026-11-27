@@ -14,9 +14,9 @@ from tempfile import TemporaryDirectory
 from typing import cast
 from uuid import uuid4
 
+from population_circles.application.use_cases.gallery_build import build as build_gallery
+from population_circles.application.use_cases.gallery_build import same_country_answer
 from population_circles.documents.result_document import CIRCLE_KINDS
-from population_circles.gallery.build import build as build_gallery
-from population_circles.gallery.build import same_country_answer
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RESULTS = REPO_ROOT / "results"

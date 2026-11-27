@@ -7,7 +7,7 @@ import typer
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.application.use_cases import circle_map
+from population_circles.application.use_cases import circle_map, gallery_build
 from population_circles.application.use_cases.render_map import (
     LoadedMapLayers,
     MapRenderPreferences,
@@ -16,7 +16,6 @@ from population_circles.application.use_cases.render_map import (
 )
 from population_circles.application.use_cases.render_map import render_file as prepare_map_file
 from population_circles.documents.result_document import Answer
-from population_circles.gallery import build as gallery_build
 from population_circles.infrastructure import popcircles_cli
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
 from population_circles.infrastructure.geodata import map_layers as map_data

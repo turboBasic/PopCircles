@@ -5,8 +5,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from typer.testing import CliRunner
 
 from population_circles import cli
-from population_circles.application.use_cases import circle_map
-from population_circles.gallery import build as gallery_build
+from population_circles.application.use_cases import circle_map, gallery_build
 from population_circles.presentation.maps import render_globe, render_map
 
 runner = CliRunner()

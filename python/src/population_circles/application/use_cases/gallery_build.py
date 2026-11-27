@@ -10,14 +10,14 @@ from urllib.parse import quote
 from PIL import Image, ImageChops
 
 from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases.territory_coverage import enrich_document
-from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
-from population_circles.gallery import country_sweep as country_sweep_module
-from population_circles.gallery.country_sweep import (
+from population_circles.application.use_cases import gallery as country_sweep_module
+from population_circles.application.use_cases.gallery import (
     HALF_SHARE,
     CountryRefresh,
     CountrySweepRequest,
 )
+from population_circles.application.use_cases.territory_coverage import enrich_document
+from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 from population_circles.gallery.page_data import page_data
 from population_circles.gallery.rendering import (
     Drawn,
