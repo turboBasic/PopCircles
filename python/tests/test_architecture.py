@@ -12,21 +12,31 @@ INFRASTRUCTURE_APPLICATION_CONTRACTS = {
 }
 
 
-def imports_from_tree(tree: ast.Module) -> tuple[str, ...]:
+def imports_from_tree(tree: ast.Module, package: tuple[str, ...] = ()) -> tuple[str, ...]:
     imported: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imported.extend(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module is not None:
-            imported.append(node.module)
-            imported.extend(
-                f"{node.module}.{alias.name}" for alias in node.names if alias.name != "*"
-            )
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                parent = package[: len(package) - (node.level - 1)]
+                module = (
+                    ".".join((*parent, *node.module.split(".")))
+                    if node.module
+                    else ".".join(parent)
+                )
+            else:
+                module = node.module
+            if module is None:
+                continue
+            imported.append(module)
+            imported.extend(f"{module}.{alias.name}" for alias in node.names if alias.name != "*")
     return tuple(imported)
 
 
 def imports(path: Path) -> tuple[str, ...]:
-    return imports_from_tree(ast.parse(path.read_text(encoding="utf-8")))
+    package = ("population_circles", *path.relative_to(PACKAGE_ROOT).parts[:-1])
+    return imports_from_tree(ast.parse(path.read_text(encoding="utf-8")), package)
 
 
 def dependency_failures(boundary: str, imported: tuple[str, ...]) -> list[str]:
@@ -122,5 +132,36 @@ def test_from_import_aliases_cannot_bypass_the_gate(
     boundary: str, source: str, forbidden: str
 ) -> None:
     imported = imports_from_tree(ast.parse(source))
+
+    assert forbidden in dependency_failures(boundary, imported)
+
+
+@pytest.mark.parametrize(
+    ("boundary", "package", "source", "forbidden"),
+    [
+        (
+            "application",
+            ("population_circles", "application"),
+            "from .. import infrastructure",
+            "population_circles.infrastructure",
+        ),
+        (
+            "domain",
+            ("population_circles", "domain"),
+            "from .. import documents",
+            "population_circles.documents",
+        ),
+        (
+            "infrastructure",
+            ("population_circles", "infrastructure"),
+            "from ..application import use_cases",
+            "population_circles.application.use_cases",
+        ),
+    ],
+)
+def test_relative_imports_cannot_bypass_the_gate(
+    boundary: str, package: tuple[str, ...], source: str, forbidden: str
+) -> None:
+    imported = imports_from_tree(ast.parse(source), package)
 
     assert forbidden in dependency_failures(boundary, imported)
