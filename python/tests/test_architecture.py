@@ -12,15 +12,21 @@ INFRASTRUCTURE_APPLICATION_CONTRACTS = {
 }
 
 
-def imports(path: Path) -> tuple[str, ...]:
-    tree = ast.parse(path.read_text(encoding="utf-8"))
+def imports_from_tree(tree: ast.Module) -> tuple[str, ...]:
     imported: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imported.extend(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module is not None:
             imported.append(node.module)
+            imported.extend(
+                f"{node.module}.{alias.name}" for alias in node.names if alias.name != "*"
+            )
     return tuple(imported)
+
+
+def imports(path: Path) -> tuple[str, ...]:
+    return imports_from_tree(ast.parse(path.read_text(encoding="utf-8")))
 
 
 def dependency_failures(boundary: str, imported: tuple[str, ...]) -> list[str]:
@@ -52,7 +58,10 @@ def dependency_failures(boundary: str, imported: tuple[str, ...]) -> list[str]:
             module
             for module in imported
             if module.startswith("population_circles.application.")
-            and module not in INFRASTRUCTURE_APPLICATION_CONTRACTS
+            and not any(
+                module == contract or module.startswith(f"{contract}.")
+                for contract in INFRASTRUCTURE_APPLICATION_CONTRACTS
+            )
         )
     return failures
 
@@ -87,3 +96,31 @@ def test_python_packages_follow_the_declared_dependency_direction() -> None:
 )
 def test_recognized_forbidden_dependencies_fail_the_gate(boundary: str, forbidden: str) -> None:
     assert dependency_failures(boundary, (forbidden,)) == [forbidden]
+
+
+@pytest.mark.parametrize(
+    ("boundary", "source", "forbidden"),
+    [
+        (
+            "application",
+            "from population_circles import infrastructure",
+            "population_circles.infrastructure",
+        ),
+        (
+            "domain",
+            "from population_circles.documents import result_document",
+            "population_circles.documents.result_document",
+        ),
+        (
+            "infrastructure",
+            "from population_circles.application import use_cases",
+            "population_circles.application.use_cases",
+        ),
+    ],
+)
+def test_from_import_aliases_cannot_bypass_the_gate(
+    boundary: str, source: str, forbidden: str
+) -> None:
+    imported = imports_from_tree(ast.parse(source))
+
+    assert forbidden in dependency_failures(boundary, imported)

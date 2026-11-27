@@ -23,6 +23,7 @@ import population_circles.presentation.maps.labels as map_labels_module
 import population_circles.presentation.maps.metadata as map_metadata_module
 import population_circles.presentation.maps.presentation_config as presentation_config_module
 import population_circles.presentation.maps.render_map as render_map_module
+import population_circles.presentation.maps.source_selection as source_selection_module
 from population_circles.documents.result_document import Answer, circle_of
 from population_circles.domain.circle_geometry import Cap, cap
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
@@ -172,7 +173,7 @@ def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(
-        map_layers_module,
+        source_selection_module,
         "registered_map_sources",
         fixture_registered_map_sources,
     )

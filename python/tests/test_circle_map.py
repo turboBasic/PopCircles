@@ -27,7 +27,7 @@ from population_circles.infrastructure.geodata import map_layers
 from population_circles.infrastructure.geodata.dataset_registry import Registry, load
 from population_circles.presentation import cli
 from population_circles.presentation.maps import metadata as map_metadata
-from population_circles.presentation.maps import render_map
+from population_circles.presentation.maps import render_map, source_selection
 from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_render_map import (
     DATASET,
@@ -45,7 +45,7 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 

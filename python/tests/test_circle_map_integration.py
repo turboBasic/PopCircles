@@ -18,7 +18,7 @@ from population_circles.infrastructure.geodata import map_layers
 from population_circles.infrastructure.geodata.dataset_registry import parse
 from population_circles.infrastructure.popcircles_cli import REPO_ROOT
 from population_circles.presentation import cli
-from population_circles.presentation.maps import render_map
+from population_circles.presentation.maps import render_map, source_selection
 from test_render_map import (
     PNG_MAGIC,
     empty_boundaries,
@@ -41,7 +41,7 @@ def run_circle_map(options: CircleMapRequest, runner: PopulationRunner) -> None:
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
