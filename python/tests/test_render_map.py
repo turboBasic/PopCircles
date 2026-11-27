@@ -4,7 +4,7 @@ import re
 import socket
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, NoReturn, cast
 
 import numpy as np
 import pytest
@@ -17,14 +17,28 @@ from shapely.geometry import LineString, MultiPolygon, Point, box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
-import population_circles.geography.territory_share as territory_share_module
-import population_circles.maps.labels as map_labels_module
-import population_circles.maps.layers as map_layers_module
-import population_circles.maps.metadata as map_metadata_module
-import population_circles.maps.presentation_config as presentation_config_module
-import population_circles.maps.render_map as render_map_module
-from population_circles import cli
-from population_circles.data.dataset_registry import (
+import population_circles.application.use_cases.territory_coverage as territory_coverage_use_case
+import population_circles.infrastructure.geodata.map_layers as map_layers_module
+import population_circles.presentation.maps.labels as map_labels_module
+import population_circles.presentation.maps.metadata as map_metadata_module
+import population_circles.presentation.maps.presentation_config as presentation_config_module
+import population_circles.presentation.maps.render_map as render_map_module
+import population_circles.presentation.maps.source_selection as source_selection_module
+from population_circles.application.use_cases.render_map import (
+    MapBoundaries,
+    PreparedMapRender,
+    other_countries,
+    other_country_labels,
+)
+from population_circles.documents.result_document import Answer, circle_of
+from population_circles.domain.circle_geometry import Cap, cap
+from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
+from population_circles.infrastructure.geodata.country_boundaries import (
+    BoundaryIdentityError,
+    CountryBoundaries,
+    load_outline,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
     MapContextVector,
     Registry,
@@ -33,37 +47,37 @@ from population_circles.data.dataset_registry import (
     load,
     parse,
 )
-from population_circles.documents.result_document import Answer, Circle, circle_of
-from population_circles.geography.circle_geometry import Cap, cap
-from population_circles.geography.country_boundaries import BoundaryIdentityError, load_outline
-from population_circles.maps.frame import (
-    ORTHOGRAPHIC,
-    PLATE_CARREE,
-    CountryFrameSettings,
-    Frame,
-)
-from population_circles.maps.frame import (
-    country_frame as build_country_frame,
-)
-from population_circles.maps.frame import (
-    frame as world_frame,
-)
-from population_circles.maps.layers import (
+from population_circles.infrastructure.geodata.map_layers import (
     COASTLINE_DATASET,
     MapLayers,
     MapSources,
     citation,
     registered_coastline,
 )
-from population_circles.maps.presentation_config import CountryMap
-from population_circles.maps.presentation_config import load as load_presentation_config
-from population_circles.maps.render_map import (
+from population_circles.presentation import cli
+from population_circles.presentation.cli import render_map_file as render_file
+from population_circles.presentation.maps.frame import (
+    ORTHOGRAPHIC,
+    PLATE_CARREE,
+    CountryFrameSettings,
+    Frame,
+)
+from population_circles.presentation.maps.frame import (
+    country_frame as build_country_frame,
+)
+from population_circles.presentation.maps.frame import (
+    frame as world_frame,
+)
+from population_circles.presentation.maps.presentation_config import CountryMap
+from population_circles.presentation.maps.presentation_config import (
+    load as load_presentation_config,
+)
+from population_circles.presentation.maps.render_map import (
     COUNTRY,
     COUNTRY_LAYER,
     OUTLINE_WIDTH,
     MissingCountryOutlineError,
     render,
-    render_file,
     title_of,
 )
 
@@ -164,9 +178,9 @@ def png_info(path: Path) -> Mapping[str | tuple[int, int], Any]:
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.setattr(
-        map_layers_module,
+        source_selection_module,
         "registered_map_sources",
         fixture_registered_map_sources,
     )
@@ -346,7 +360,7 @@ def write_coastline_fixture(root: Path) -> Path:
 
 def use_coastline_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(map_layers_module, "REPO_ROOT", root)
-    monkeypatch.setattr(render_map_module, "load", lambda: REGISTRY)
+    monkeypatch.setattr(cli, "load", lambda: REGISTRY)
     return write_coastline_fixture(root)
 
 
@@ -521,7 +535,11 @@ def test_chile_extent_hides_remote_components_without_filtering_outline() -> Non
         EXPECTED_OFFSCREEN_CHILE_COMPONENTS
     )
     view = build_country_frame(
-        cap(answer.circle.centre, answer.circle.radius_km, answer.circle.earth_radius_km),
+        cap(
+            GeographicCoordinate(lat=answer.circle.centre.lat, lon=answer.circle.centre.lon),
+            answer.circle.radius_km,
+            answer.circle.earth_radius_km,
+        ),
         rendered_outline,
         frame_settings,
     )
@@ -632,7 +650,11 @@ def test_country_figure_draws_the_outline_and_circle_without_clipping(
     assert country is not None
     circle = answer.circle
     view = build_country_frame(
-        cap(circle.centre, circle.radius_km, circle.earth_radius_km),
+        cap(
+            GeographicCoordinate(lat=circle.centre.lat, lon=circle.centre.lon),
+            circle.radius_km,
+            circle.earth_radius_km,
+        ),
         country,
     )
     figure = render(
@@ -923,16 +945,18 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     def fixture_boundaries(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {"fixture": box(70, 15, 90, 35)}
 
-    def fixture_territory_share(_circle: Circle, _territories: Iterable[BaseGeometry]) -> float:
+    def fixture_territory_share(
+        _circle: SphericalCircle, _territories: Iterable[BaseGeometry]
+    ) -> float:
         return 0.375
 
     monkeypatch.setattr(
-        render_map_module,
+        cli,
         "load_map_boundaries",
         fixture_boundaries,
     )
     monkeypatch.setattr(
-        territory_share_module,
+        territory_coverage_use_case,
         "territory_share",
         fixture_territory_share,
     )
@@ -989,6 +1013,79 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     assert observed_annotations[2].startswith(VISIBLE_FOOTER)
     assert citation(REGISTRY, "etopo-2022-60s") in observed_annotations[2]
     assert observed_annotations[2].endswith("See full attribution in image metadata")
+
+
+def test_shared_map_selection_handles_world_country_and_missing_inputs() -> None:
+    geometries = {"DE": box(5, 47, 15, 55), "FR": box(-5, 42, 8, 51)}
+    named = MapBoundaries(geometries, {"DE": "Germany", "FR": "France"})
+    unnamed = MapBoundaries(geometries, {})
+    country = circle_of(country_result_document())
+    world = circle_of(document())
+
+    assert other_countries(named, country) == (geometries["FR"],)
+    assert other_country_labels(named, country) == ((geometries["FR"], "France"),)
+    assert other_countries(named, world) == tuple(geometries.values())
+    assert other_country_labels(named, world) == ()
+    assert other_countries(unnamed, country) == (geometries["FR"],)
+    assert other_country_labels(unnamed, country) == ()
+    assert other_countries(MapBoundaries({}, {}), country) == ()
+    assert other_country_labels(MapBoundaries({}, {}), country) == ()
+
+
+@pytest.mark.parametrize(
+    ("boundaries", "expected_labels"),
+    [
+        (
+            CountryBoundaries(
+                {"DE": box(5, 47, 15, 55), "FR": box(-5, 42, 8, 51)},
+                {"DE": "Germany", "FR": "France"},
+            ),
+            ((box(-5, 42, 8, 51), "France"),),
+        ),
+        (
+            {"DE": box(5, 47, 15, 55), "FR": box(-5, 42, 8, 51)},
+            (),
+        ),
+    ],
+    ids=("named-boundaries", "plain-mapping"),
+)
+def test_render_file_selects_other_country_labels_only_when_names_are_available(
+    boundaries: Mapping[str, BaseGeometry],
+    expected_labels: tuple[tuple[BaseGeometry, str], ...],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def load_boundaries(_answer: Answer, _registry: Registry) -> Mapping[str, BaseGeometry]:
+        return boundaries
+
+    def territory_share(_circle: SphericalCircle, _items: Iterable[BaseGeometry]) -> float:
+        return 0.5
+
+    monkeypatch.setattr(
+        cli,
+        "load_map_boundaries",
+        load_boundaries,
+    )
+    monkeypatch.setattr(
+        territory_coverage_use_case,
+        "territory_share",
+        territory_share,
+    )
+    prepared: list[object] = []
+
+    def capture_prepared(value: PreparedMapRender) -> None:
+        prepared.append(value)
+
+    monkeypatch.setattr(render_map_module, "render_prepared", capture_prepared)
+    source = tmp_path / "country.json"
+    source.write_text(json.dumps(country_result_document()), encoding="utf-8")
+
+    render_file(source, tmp_path / "country.png", no_coastlines=True, coverage_enriched=True)
+
+    assert len(prepared) == 1
+    rendered = cast(PreparedMapRender, prepared[0])
+    assert rendered.other_countries == (boundaries["FR"],)
+    assert rendered.country_labels == expected_labels
 
 
 def test_the_footer_artist_shows_the_approved_visible_credit() -> None:
@@ -1154,7 +1251,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     def selected_outline(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {"DE": box(5, 47, 15, 55)}
 
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", selected_outline)
+    monkeypatch.setattr(cli, "load_map_boundaries", selected_outline)
 
     def refuse_coastline(_registry: Registry) -> tuple[BaseGeometry, str]:
         message = "no-coastlines loaded coastline"
@@ -1230,7 +1327,7 @@ def test_a_complete_figure_with_a_long_settlement_needs_no_network(
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / f"map-{projection}.png"
     use_coastline_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(render_map_module, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
     monkeypatch.chdir(tmp_path)
 
     result = cli_runner.invoke(
@@ -1257,7 +1354,7 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
     # other case here hands `citation` a literal, so a constant put back in `main` would pass them
     # all. The fixture registry carries neither committed row, so a `main` reaching for one of those
     # cannot resolve it at all.
-    monkeypatch.setattr("population_circles.maps.render_map.load", lambda: parse(TWO_ATTRIBUTED))
+    monkeypatch.setattr("population_circles.presentation.cli.load", lambda: parse(TWO_ATTRIBUTED))
     drawn: list[str] = []
 
     original_copyright = map_metadata_module.copyright_of
@@ -1278,7 +1375,9 @@ def test_main_credits_the_dataset_its_document_names_and_not_a_constant(
             map_attributions,
         )
 
-    monkeypatch.setattr("population_circles.maps.metadata.copyright_of", capture_copyright)
+    monkeypatch.setattr(
+        "population_circles.presentation.maps.metadata.copyright_of", capture_copyright
+    )
 
     named = document()
     named["provenance"]["dataset"] = "second-raster"

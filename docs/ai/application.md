@@ -101,18 +101,18 @@ tags; `table/cache.rs` validates headers, publishes files atomically, and memory
 5. **Rendering.** Python renders published documents in a separate layer from the Rust search. Its
    `visualizer` command surface dispatches to packages organized by responsibility:
 
-   - `cli.py` owns command parsing and dispatch for `circle`, `map`, `globe-animation`, and `gallery`.
-   - `applications/` owns application flows and shared calls for population calculations.
-   - `data/` owns access to dataset configuration and the dataset registry.
+   - `presentation/cli.py` owns command parsing, dispatch, and concrete collaborator composition.
+   - `application/use_cases/` owns population, map-file, country-sweep, and Gallery workflows.
+   - `infrastructure/geodata/` owns dataset configuration, registry access, boundaries, and map
+     source loading; `infrastructure/popcircles_cli.py` owns Rust process execution.
    - `documents/` owns the published-result contract used between search and rendering.
-   - `geography/` owns geographic operations shared by application flows and renderers, including
-     circle geometry, boundary loading, and territory coverage.
-   - `maps/` owns map presentation, flat map rendering, and animated globe output as SVG or GIF.
-   - `gallery/` owns gallery assembly, country results, figure caching, and frontend page data.
+   - `domain/` owns validated geographic values, spherical geometry, and territory coverage.
+   - `presentation/maps/` owns map framing, rendering, metadata, and animated globe output.
+   - `presentation/gallery/` owns Gallery figure rendering, caching, output assembly, and page data.
 
    When changing code that affects Gallery map pixels, metadata, titles, or visible credits, update
-   `RENDER_MODULES` in `gallery/rendering.py` and its cache-input test. Keep modules that do not affect
-   rendered maps out of that list.
+   `RENDER_MODULES` in `presentation/gallery/rendering.py` and its cache-input test. Keep modules
+   that do not affect rendered maps out of that list.
 
    Build circles as azimuthal-equidistant buffers and pass them to PROJ's polygon transform
    ([ADR 0008](../decisions/0008-a-circle-is-projected-never-drawn.md)). Keep the buffer vertices and
@@ -138,6 +138,11 @@ Python coordinates workflows that combine Rust search and Python rendering
 geometric territory coverage from published circle answers and registered GISCO geometry, as the
 narrow exception recorded in [ADR 0020](../decisions/0020-python-calculates-territory-coverage.md).
 
+- **Keep Python dependency direction explicit.** `domain/` imports only the standard library and
+  direct geometry dependencies. `application/` imports domain values and the external result contract,
+  never infrastructure or presentation implementations. Infrastructure and presentation receive
+  application contracts from `presentation/cli.py`, the concrete composition root. Result-document
+  and application request DTOs stay at those boundaries; they are not domain models.
 - **Use domain types.** Latitude, longitude, pixel index, radius, and population are different
   quantities. A bare `f64` or `usize` can hide a units error. `Row` and `Col` distinguish index axes,
   while grid operations check indices against the receiving grid; an in-range index carries no grid

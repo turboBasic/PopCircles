@@ -20,7 +20,7 @@ post-agent-answer = "repo_tools.post_agent_answer:main"
 publish-gallery = "repo_tools.publish_gallery:main"
 release-smoke = "repo_tools.release_smoke:main"
 release-trust = "repo_tools.release_trust:main"
-visualizer = "population_circles.cli:app"
+visualizer = "population_circles.presentation.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.12,<0.14"]
@@ -70,22 +70,22 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"python/src/population_circles/cli.py" = [
+"python/src/population_circles/presentation/cli.py" = [
   "FBT002",  # Typer maps boolean CLI flags to function parameters with false defaults.
   "PLR0913", # Typer exposes each CLI option as a separate handler parameter.
   "PLR0917", # Typer invokes handlers with each parsed CLI option as an argument.
 ]
-"python/src/population_circles/gallery/build.py" = [
+"python/src/population_circles/application/use_cases/gallery_build.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
-"python/src/population_circles/gallery/rendering.py" = [
+"python/src/population_circles/presentation/gallery/rendering.py" = [
   "T201", # render progress is Gallery command output, not incidental debug printing
 ]
-"python/src/population_circles/maps/render_globe.py" = [
+"python/src/population_circles/presentation/maps/render_globe.py" = [
   "T201", # the path a globe was written to is this command's output, not debug printing
   "S314", # parse_svg rejects DTDs and entities before ElementTree parses generated SVG files
 ]
-"python/src/population_circles/maps/render_map.py" = [
+"python/src/population_circles/presentation/maps/render_map.py" = [
   "T201", # the path a figure was written to is this command's output, not debug printing
 ]
 "python/src/repo_tools/*.py" = [

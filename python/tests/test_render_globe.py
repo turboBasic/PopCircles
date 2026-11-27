@@ -6,10 +6,9 @@ import pytest
 from PIL import Image
 from typer.testing import CliRunner
 
-from population_circles import cli
-from population_circles.documents.result_document import Coordinate
-from population_circles.geography.circle_geometry import HALF_TURN_DEG, POLE_LAT
-from population_circles.maps import render_globe
+from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
+from population_circles.presentation import cli
+from population_circles.presentation.maps import render_globe
 
 SVG = "http://www.w3.org/2000/svg"
 CLI_ERROR_EXIT = 2
@@ -33,7 +32,7 @@ def test_render_latitude_sequence_crosses_poles_without_flipping(
     rendered: list[tuple[float, float, float, Path]] = []
 
     def capture_render(
-        centre: Coordinate,
+        centre: GeographicCoordinate,
         output: Path,
         _detalization: float,
         rotation: float,
@@ -43,7 +42,7 @@ def test_render_latitude_sequence_crosses_poles_without_flipping(
     monkeypatch.setattr(render_globe, "render_globe", capture_render)
 
     sequence = render_globe.render_latitude_sequence(
-        Coordinate(lat=0, lon=20),
+        GeographicCoordinate(lat=0, lon=20),
         tmp_path / "earth-globe-72.svg",
         8,
         detalization=0.5,

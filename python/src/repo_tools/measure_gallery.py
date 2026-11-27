@@ -10,13 +10,18 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from population_circles.data.dataset_registry import REPO_ROOT, TerrainRaster, load
-from population_circles.gallery import rendering as gallery_rendering
-from population_circles.maps import render_map
-from population_circles.maps.frame import Frame
-from population_circles.maps.layers import registered_coastline
-from population_circles.maps.presentation_config import map_text_rendering
-from population_circles.maps.terrain import prepare_terrain
+from population_circles.application.use_cases.gallery import RenderJob
+from population_circles.infrastructure.geodata.dataset_registry import (
+    REPO_ROOT,
+    TerrainRaster,
+    load,
+)
+from population_circles.infrastructure.geodata.map_layers import registered_coastline
+from population_circles.presentation.gallery import rendering as gallery_rendering
+from population_circles.presentation.maps import render_map
+from population_circles.presentation.maps.frame import Frame
+from population_circles.presentation.maps.presentation_config import map_text_rendering
+from population_circles.presentation.maps.terrain import prepare_terrain
 
 ids = ("FR", "NL", "CH", "CL", "JP", "BR", "NP", "CN")
 corpus = REPO_ROOT / "results"
@@ -64,7 +69,7 @@ for index, country_id in enumerate(ids, start=1):
     terrain_seconds[0] = 0.0
     started = time.perf_counter()
     drawn, reused = gallery_rendering.render_document(
-        gallery_rendering.RenderJob(source, payload, index, total), context
+        RenderJob(source, payload, index, total), context
     )
     if reused:
         raise AssertionError
@@ -86,7 +91,7 @@ for index, country_id in enumerate(ids, start=1):
     payload = json.loads(source.read_text())
     started = time.perf_counter()
     drawn, reused = gallery_rendering.render_document(
-        gallery_rendering.RenderJob(source, payload, index, total), context
+        RenderJob(source, payload, index, total), context
     )
     elapsed = time.perf_counter() - started
     warm[country_id] = {"seconds_total": round(elapsed, 3), "reused_cache": reused}

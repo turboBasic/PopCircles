@@ -156,23 +156,25 @@ Identifiers are flat, sequential and never reused.
 ### FU-20 - The renderer resolves committed data from its own source path
 
 - **Status** — `dormant` (2026-08-15): the project is installed editable, so `__file__` is in the
-  checkout and `data/` is beside it. The path is `parents[3]` of a module under
-  `python/src/population_circles/`, which is the repository root for exactly as long as that holds.
+  checkout and `data/` is at the repository root. Infrastructure geodata and presentation config
+  modules use `parents[5]`, so that depth is the repository root only
+  while the modules remain at those package locations.
 
-  **A second resolution joined the first, and one consumer of it writes** (2026-08-16, issue #57).
-  `data/dataset_registry.py`'s `REGISTRY` reaches `data/registry.toml` the same way `render_map.py`'s
-  `COASTLINE` reaches the basemap, so the count this entry sweeps for is two. `mise run data:get` then
-  resolves paths against that same root to place 428 MB, so under a wheel it would `mkdir` under
-  `site-packages` — it happens to fail loudly first, because the coastline sorts before the raster and
-  has no `fetch_url`, but the message it gives is about a damaged checkout and would be wrong. The registry is the worse of the
-  two: it is read for the attribution a figure owes, so under a wheel a figure would fail before it
-  could credit anybody.
+  **The three readers share that assumption, and one consumer writes** (2026-08-16, issue #57).
+  `infrastructure/geodata/dataset_registry.py` reaches `data/registry.toml`,
+  `infrastructure/geodata/data_config.py` reaches `data/config.toml`, and
+  `presentation/maps/presentation_config.py` reaches `data/presentation.toml`. `mise run data:get`
+  then resolves paths against the registry's root to place 428 MB, so under a wheel it would `mkdir` under
+  `site-packages` — it happens to fail loudly first, because the coastline sorts before the raster
+  and has no `fetch_url`, but the message it gives is about a damaged checkout and would be wrong.
+  The registry is the worse of the readers: it is read for the attribution a figure owes, so under a
+  wheel a figure would fail before it could credit anybody.
 - **Condition** — anything installs this project other than editable from a checkout: a `uv tool
   install`, a `uv publish`, or a workflow running an entry point out of a built wheel. Then both paths
   resolve under `site-packages`, where no `data/` sits beside the package, and each raises
   `FileNotFoundError` at read time rather than at import. The sweep is
-  `rg -n 'parents\[3\]' python/src/population_circles/`.
-- **Fix** — ship the two files as package data, or take each path as an argument defaulting to the
+  `rg -n 'parents\[5\]' python/src/population_circles/infrastructure/geodata/ python/src/population_circles/presentation/maps/presentation_config.py`.
+- **Fix** — ship the three files as package data, or take each path as an argument defaulting to the
   current location. The first duplicates committed files into the wheel and owes
   [`data/README.md`](../data/README.md) a line saying so; the second keeps one copy and moves the choice
   to the caller, which is the shape the rest of the renderer already takes. One fix covers both, and
@@ -229,9 +231,10 @@ Identifiers are flat, sequential and never reused.
   `rg -c '^fetch_url' data/registry.toml` is 1, and that row's path is gitignored and untracked.
 - **Fix** — the check reads the registry rather than grepping it and asserts both halves: every file
   matching the extension set has a row, and no file whose row carries a `fetch_url` is tracked. That means
-  a `python/src/repo_tools/` entry point reusing `population_circles.data.dataset_registry`, which is where the
-  registry is parsed — `repo_tools/fetch_data.py` is the precedent for a repo tool importing it, and
-  reusing it rather than writing a second parser is the constraint the hook's own comment raises.
+  a `python/src/repo_tools/` entry point reusing
+  `population_circles.infrastructure.geodata.dataset_registry`, which is where the registry is
+  parsed — `repo_tools/fetch_data.py` is the precedent for a repo tool importing it, and reusing it
+  rather than writing a second parser is the constraint the hook's own comment raises.
 
   **This reverses a decision the issue thread made outright**: #85 settled on a grep so the hook would stay
   the six-line `bash -c` it is, with a comment match and the coupling to taplo's `path = "…"` spelling as
@@ -770,7 +773,7 @@ Identifiers are flat, sequential and never reused.
 
 - **Status** — `closed` (2026-08-19, issue #94): the citation is keyed by the document. `report`'s
   `provenance` carries the registry key of the dataset a table was built from, read out of the cache
-  header, and `python/src/population_circles/maps/render_map.py` resolves that key rather than a constant of its
+  header, and `python/src/population_circles/presentation/maps/render_map.py` resolves that key rather than a constant of its
   own — `rg -n 'POPULATION_KEY' python/` returns nothing. Closed while still dormant: the registry carries
   one attributed row, so the Condition never fired, and what the entry guarded against is now impossible
   rather than merely absent. A document that names no dataset is refused rather than credited from a
@@ -792,7 +795,7 @@ Identifiers are flat, sequential and never reused.
   the dataset the renderer was written against rather than the one its document was answered from.
 - **Condition** — [`data/registry.toml`](../data/registry.toml) carries a second dataset **whose licence
   requires attribution**. The sweep is the count of rows with a non-empty `attribution` against the number
-  of datasets `python/src/population_circles/maps/render_map.py` can select between: one and one today. A second
+  of datasets `python/src/population_circles/presentation/maps/render_map.py` can select between: one and one today. A second
   such dataset makes the credited dataset whichever one `POPULATION_KEY` happens to name, and a figure
   rendered from the other credits the wrong source while `python/tests/test_render_map.py` still passes —
   the test compares the drawn text against that same key's row, so it stays true of the wrong entry.
@@ -812,7 +815,8 @@ Identifiers are flat, sequential and never reused.
 - **Condition** — a second field on `Circle` in
   [`python/src/population_circles/documents/result_document.py`](../python/src/population_circles/documents/result_document.py)
   is read by no caller that draws or measures. The sweep is the field list of `Circle` against what
-  `geography/circle_geometry.py` and `maps/frame.py` reference: `centre`, `radius_km` and `earth_radius_km` are the
+  `domain/circle_geometry.py` and `presentation/maps/frame.py` reference: `centre`, `radius_km` and
+  `earth_radius_km` are the
   geometry's, `population` and `share` are the caption's, and `dataset` is the credit's. A digest, a
   decimation or a table path arriving for a caption is the event.
 - **Fix** — `circle_of` returns a frozen answer carrying separate geometry, caption facts and provenance,

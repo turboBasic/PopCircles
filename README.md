@@ -86,9 +86,9 @@ instructions][usage] for setup.
 The Python application CLI is `visualizer`, with `circle`, `map`, `globe-animation`, and `gallery` commands.
 `circle` searches for a population circle and renders its map; `map` renders an existing result;
 `globe-animation` renders an animated globe as SVG or GIF; and `gallery` builds the static Gallery. Its
-`applications` coordinates search and map output; shared map presentation
-lives in `population_circles.maps`, while `population_circles.gallery` builds the static Gallery,
-country sweep, map cache and page data.
+`application` coordinates search and map output; shared map and Gallery presentation lives under
+`population_circles.presentation`, while `population_circles.infrastructure` supplies registered
+geodata and Rust process adapters.
 The [frontend reference](docs/ai/frontend.md#behaviour) defines browser interactions and links them to
 verification.
 

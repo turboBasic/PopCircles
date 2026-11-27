@@ -1,17 +1,22 @@
 import math
+from collections.abc import Callable
+from dataclasses import replace
+from typing import cast
 
 import pytest
 from shapely import make_valid
 from shapely.geometry import Polygon, box
 
-from population_circles.documents.result_document import Circle, Coordinate
-from population_circles.geography.territory_share import (
-    enrich_document,
-    equal_area_crs,
-    territory_share,
-)
+from population_circles.application.use_cases.territory_coverage import enrich_document
+from population_circles.domain import territory_coverage
+from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
+from population_circles.domain.territory_coverage import equal_area_crs, territory_share
 
 EARTH_RADIUS_KM = 6371.0088
+_share_error_bound = cast(
+    Callable[[float, float], float],
+    vars(territory_coverage)["_share_error_bound"],
+)
 
 
 def test_equal_area_projection_uses_the_result_sphere() -> None:
@@ -22,9 +27,21 @@ def test_equal_area_projection_uses_the_result_sphere() -> None:
     assert ellipsoid.semi_major_metre == pytest.approx(EARTH_RADIUS_KM * 1000.0)
 
 
+def test_share_error_bound_uses_consistent_area_units_and_is_capped() -> None:
+    bound = _share_error_bound(122.14138565790548, 4.920667254506578e12)
+
+    assert bound == pytest.approx(2.4822118493389825e-5)
+    assert _share_error_bound(1e6, 1.0) == 1.0
+
+
+def test_share_error_bound_rejects_non_finite_values() -> None:
+    with pytest.raises(ValueError, match="must be finite"):
+        _share_error_bound(float("inf"), 1.0)
+
+
 def test_share_uses_circle_intersection_over_territory_area() -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.0, lon=0.0),
         radius_km=100.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -37,19 +54,19 @@ def test_share_uses_circle_intersection_over_territory_area() -> None:
 
 def test_share_uses_the_result_sphere_for_circle_radius() -> None:
     territory = [box(-10.0, -5.0, 10.0, 5.0)]
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.0, lon=0.0),
         radius_km=1000.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
-    larger_sphere = circle.model_copy(update={"earth_radius_km": EARTH_RADIUS_KM * 2.0})
+    larger_sphere = replace(circle, earth_radius_km=EARTH_RADIUS_KM * 2.0)
 
     assert territory_share(larger_sphere, territory) < territory_share(circle, territory)
 
 
 def test_circle_larger_than_a_hemisphere_is_world_minus_its_complement() -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.0, lon=0.0),
         radius_km=15_000.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -59,8 +76,8 @@ def test_circle_larger_than_a_hemisphere_is_world_minus_its_complement() -> None
 
 
 def test_large_cap_share_uses_spherical_area_not_aeqd_disk_area() -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.0, lon=0.0),
         radius_km=9_000.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -72,8 +89,8 @@ def test_large_cap_share_uses_spherical_area_not_aeqd_disk_area() -> None:
 
 
 def test_world_union_does_not_double_count_overlapping_features() -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.0, lon=0.0),
         radius_km=100.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -85,8 +102,8 @@ def test_world_union_does_not_double_count_overlapping_features() -> None:
 
 
 def test_invalid_boundary_topology_is_repaired_without_mutating_the_source() -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.25, lon=0.5),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.25, lon=0.5),
         radius_km=100.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -113,8 +130,8 @@ def test_ring_winding_across_the_south_pole_is_clipped_validly() -> None:
             (-180, -63),
         )
     )
-    circle = Circle(
-        centre=Coordinate(lat=-75.0, lon=79.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=-75.0, lon=79.0),
         radius_km=100.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -144,8 +161,8 @@ def test_a_result_with_no_polygonal_source_area_keeps_coverage_absent() -> None:
 
 
 def test_holes_and_antimeridian_features_keep_their_land_area() -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
+    circle = SphericalCircle(
+        centre=GeographicCoordinate(lat=0.0, lon=0.0),
         radius_km=10.0,
         earth_radius_km=EARTH_RADIUS_KM,
     )
@@ -153,8 +170,10 @@ def test_holes_and_antimeridian_features_keep_their_land_area() -> None:
         box(-2.0, -2.0, 2.0, 2.0).exterior.coords,
         [box(-0.5, -0.5, 0.5, 0.5).exterior.coords],
     )
-    seam_circle = circle.model_copy(
-        update={"centre": Coordinate(lat=0.0, lon=180.0), "radius_km": 100.0}
+    seam_circle = replace(
+        circle,
+        centre=GeographicCoordinate(lat=0.0, lon=180.0),
+        radius_km=100.0,
     )
     seam_feature = Polygon(
         ((179.0, -2.0), (-179.0, -2.0), (-179.0, 2.0), (179.0, 2.0), (179.0, -2.0))
@@ -172,23 +191,19 @@ def test_invalid_circle_measurements_are_refused(
     radius_km: float,
     earth_radius_km: float,
 ) -> None:
-    circle = Circle(
-        centre=Coordinate(lat=0.0, lon=0.0),
-        radius_km=radius_km,
-        earth_radius_km=earth_radius_km,
-    )
-
     with pytest.raises(ValueError, match="radius"):
-        territory_share(circle, [box(-1.0, -1.0, 1.0, 1.0)])
+        SphericalCircle(
+            centre=GeographicCoordinate(lat=0.0, lon=0.0),
+            radius_km=radius_km,
+            earth_radius_km=earth_radius_km,
+        )
 
 
 @pytest.mark.parametrize(("lat", "lon"), [(91.0, 0.0), (0.0, 181.0)])
 def test_invalid_circle_centres_are_refused(lat: float, lon: float) -> None:
-    circle = Circle(
-        centre=Coordinate(lat=lat, lon=lon),
-        radius_km=1.0,
-        earth_radius_km=EARTH_RADIUS_KM,
-    )
-
-    with pytest.raises(ValueError, match="centre"):
-        territory_share(circle, [box(-1.0, -1.0, 1.0, 1.0)])
+    with pytest.raises(ValueError, match="coordinate"):
+        SphericalCircle(
+            centre=GeographicCoordinate(lat=lat, lon=lon),
+            radius_km=1.0,
+            earth_radius_km=EARTH_RADIUS_KM,
+        )

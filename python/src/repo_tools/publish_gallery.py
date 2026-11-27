@@ -14,9 +14,14 @@ from tempfile import TemporaryDirectory
 from typing import cast
 from uuid import uuid4
 
+from population_circles.application.use_cases.gallery_build import (
+    GalleryBuildRequest,
+    same_country_answer,
+)
+from population_circles.application.use_cases.gallery_build import build as build_gallery
 from population_circles.documents.result_document import CIRCLE_KINDS
-from population_circles.gallery.build import build as build_gallery
-from population_circles.gallery.build import same_country_answer
+from population_circles.infrastructure.popcircles_cli import invoke_popcircles_cli
+from population_circles.presentation.cli import gallery_build_collaborators
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RESULTS = REPO_ROOT / "results"
@@ -498,10 +503,13 @@ def publish(*, refresh_country_sweep: bool = False) -> None:
         shutil.copytree(RESULTS, corpus)
         try:
             build_gallery(
-                corpus,
-                staged,
-                country_refresh="sweep" if refresh_country_sweep else None,
-                cache_directory=BUILD / ".gallery-cache",
+                GalleryBuildRequest(
+                    corpus,
+                    staged,
+                    "sweep" if refresh_country_sweep else None,
+                    BUILD / ".gallery-cache",
+                ),
+                gallery_build_collaborators(invoke_popcircles_cli),
             )
         except Exception as error:
             message = f"gallery build failed: {error}"

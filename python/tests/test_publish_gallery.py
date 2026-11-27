@@ -12,6 +12,7 @@ from typing import cast
 
 import pytest
 
+from population_circles.application.use_cases.gallery_build import GalleryBuildRequest
 from repo_tools import publish_gallery as pg
 
 
@@ -141,12 +142,13 @@ def successful_build(
     seen: list[tuple[Path, bool, Path | None]] | None = None,
 ) -> Callable[..., tuple[list[object], list[object]]]:
     def build(
-        corpus: Path,
-        output: Path,
-        *,
-        country_refresh: str | None,
-        cache_directory: Path | None,
+        request: GalleryBuildRequest,
+        _collaborators: object,
     ) -> tuple[list[object], list[object]]:
+        corpus = request.corpus
+        output = request.output
+        country_refresh = request.country_refresh
+        cache_directory = request.cache_directory
         if seen is not None:
             seen.append((corpus, country_refresh == "sweep", cache_directory))
         assert (corpus / "world.json").is_file()
@@ -370,14 +372,11 @@ def test_failed_render_preserves_existing_site_and_result_documents(
     github = FakeGitHub()
 
     def fail_build(
-        corpus: Path,
-        output: Path,
-        *,
-        country_refresh: str | None,
-        cache_directory: Path | None,
+        request: GalleryBuildRequest,
+        _collaborators: object,
     ) -> None:
-        del country_refresh
-        del cache_directory
+        corpus = request.corpus
+        output = request.output
         write_json(corpus / "country-sweep-new.json", country_result("country-sweep"))
         output.mkdir()
         raise ValueError("render failed")  # noqa: EM101, TRY003

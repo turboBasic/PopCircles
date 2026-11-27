@@ -1,2 +1,0 @@
-class PopulationApplicationError(Exception):
-    pass

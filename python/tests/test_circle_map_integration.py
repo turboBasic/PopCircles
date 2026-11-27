@@ -6,17 +6,19 @@ from typing import Any
 
 import pytest
 
-from population_circles.applications import circle_map
-from population_circles.applications.circle_map import (
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.application.ports import PopulationRunner
+from population_circles.application.use_cases.circle_map import (
     CircleMapRequest,
     search_and_render_circle_map,
 )
-from population_circles.applications.errors import PopulationApplicationError
-from population_circles.applications.popcircles_cli import REPO_ROOT
-from population_circles.data.dataset_registry import parse
 from population_circles.documents.result_document import SweepRecords, circle_of
-from population_circles.maps import layers as map_layers
-from population_circles.maps import render_map
+from population_circles.infrastructure.file_publishing import write_bytes_atomically
+from population_circles.infrastructure.geodata import map_layers
+from population_circles.infrastructure.geodata.dataset_registry import parse
+from population_circles.infrastructure.popcircles_cli import REPO_ROOT
+from population_circles.presentation import cli
+from population_circles.presentation.maps import render_map, source_selection
 from test_render_map import (
     PNG_MAGIC,
     empty_boundaries,
@@ -26,11 +28,20 @@ from test_render_map import (
 )
 
 
+def run_circle_map(options: CircleMapRequest, runner: PopulationRunner) -> None:
+    search_and_render_circle_map(
+        options,
+        runner,
+        load_boundaries=lambda _answer: {},
+        publish_file=write_bytes_atomically,
+        render_file=cli.render_map_file,
+    )
+
+
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
@@ -75,8 +86,7 @@ def test_real_build_reuse_and_missing_raster(
         REPO_ROOT,
     )
     registry = parse((tmp_path / "data/registry.toml").read_text())
-    monkeypatch.setattr(render_map, "load", lambda: registry)
-    monkeypatch.setattr(circle_map, "load", lambda: registry)
+    monkeypatch.setattr(cli, "load", lambda: registry)
     options = CircleMapRequest(
         dataset="tiny",
         share="50",
@@ -109,7 +119,7 @@ def test_real_build_reuse_and_missing_raster(
         results.append(result)
         return result
 
-    search_and_render_circle_map(options, invoke)
+    run_circle_map(options, invoke)
     assert [arguments[:2] for arguments in calls[:2]] == [["table", "query"], ["table", "build"]]
     assert options.output.read_bytes().startswith(PNG_MAGIC)
     first = json.loads(options.document.read_bytes())
@@ -123,7 +133,7 @@ def test_real_build_reuse_and_missing_raster(
     results.clear()
     options.output.unlink()
     with pytest.raises(PopulationApplicationError, match="search: Rust CLI exited 3"):
-        search_and_render_circle_map(options, invoke)
+        run_circle_map(options, invoke)
     assert len(calls) == 2  # noqa: PLR2004 — cached table query then raster-dependent circle
     assert calls[0][:2] == ["table", "query"]
     assert calls[1][0] == "smallest-for-share"
@@ -135,7 +145,7 @@ def test_real_build_reuse_and_missing_raster(
     calls.clear()
     options.output.unlink(missing_ok=True)
     with pytest.raises(PopulationApplicationError, match="table build: Rust CLI exited 3"):
-        search_and_render_circle_map(options, invoke)
+        run_circle_map(options, invoke)
     assert "mise run data:get" in capsys.readouterr().err
     assert options.document.read_bytes() == current
     assert not options.output.exists()

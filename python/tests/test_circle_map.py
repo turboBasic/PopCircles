@@ -13,19 +13,22 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
-from population_circles import cli
-from population_circles.applications import circle_map, popcircles_cli
-from population_circles.applications.circle_map import (
+import population_circles.application.use_cases.render_map as render_map_use_case
+from population_circles.application.errors import PopulationApplicationError
+from population_circles.application.ports import PopulationRunner
+from population_circles.application.use_cases.circle_map import (
     CircleMapRequest,
     search_and_render_circle_map,
 )
-from population_circles.applications.errors import PopulationApplicationError
-from population_circles.data.dataset_registry import Registry, load
 from population_circles.documents.result_document import Answer
-from population_circles.maps import layers as map_layers
-from population_circles.maps import metadata as map_metadata
-from population_circles.maps import render_map
-from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.infrastructure import popcircles_cli
+from population_circles.infrastructure.file_publishing import write_bytes_atomically
+from population_circles.infrastructure.geodata import map_layers
+from population_circles.infrastructure.geodata.dataset_registry import Registry, load
+from population_circles.presentation import cli
+from population_circles.presentation.maps import metadata as map_metadata
+from population_circles.presentation.maps import render_map, source_selection
+from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_render_map import (
     DATASET,
     PNG_MAGIC,
@@ -41,9 +44,8 @@ CUSTOM_EARTH_RADIUS_KM = 7000.0
 
 @pytest.fixture(autouse=True)
 def use_empty_boundary_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(render_map, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(circle_map, "load_map_boundaries", empty_boundaries)
-    monkeypatch.setattr(map_layers, "registered_map_sources", fixture_registered_map_sources)
+    monkeypatch.setattr(cli, "load_map_boundaries", empty_boundaries)
+    monkeypatch.setattr(source_selection, "registered_map_sources", fixture_registered_map_sources)
     monkeypatch.setattr(map_layers, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map, "prepare_terrain", transparent_terrain)
 
@@ -88,10 +90,31 @@ class Children:
         return result
 
 
+def boundary_loader(_answer: Answer) -> dict[str, BaseGeometry]:
+    return {}
+
+
+def intersecting_boundary_loader(answer: Answer) -> dict[str, BaseGeometry]:
+    return intersecting_boundaries(answer, load())
+
+
+def run_circle_map(
+    options: CircleMapRequest,
+    runner: PopulationRunner = popcircles_cli.invoke_popcircles_cli,
+) -> None:
+    search_and_render_circle_map(
+        options,
+        runner,
+        load_boundaries=boundary_loader,
+        publish_file=write_bytes_atomically,
+        render_file=cli.render_map_file,
+    )
+
+
 def test_reuse_forwards_every_parameter_and_draws_this_document(options: CircleMapRequest) -> None:
     options = replace(options, decimate="10", spacing="4", projection=ORTHOGRAPHIC)
     children = Children([0, 0])
-    search_and_render_circle_map(options, children)
+    run_circle_map(options, children)
     common = ["--dataset", DATASET, "--cache", str(options.cache), "--decimate", "10"]
     assert children.calls == [
         ["table", "query", *common],
@@ -120,7 +143,7 @@ def test_a_failed_probe_never_builds_or_renders(options: CircleMapRequest, code:
     options.document.write_text("older document")
     children = Children([code])
     with pytest.raises(PopulationApplicationError, match="cache probe: Rust CLI exited"):
-        search_and_render_circle_map(options, children)
+        run_circle_map(options, children)
     assert len(children.calls) == 1
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
@@ -128,7 +151,7 @@ def test_a_failed_probe_never_builds_or_renders(options: CircleMapRequest, code:
 
 def test_only_a_missing_or_incompatible_probe_builds(options: CircleMapRequest) -> None:
     children = Children([3, 0, 0])
-    search_and_render_circle_map(options, children)
+    run_circle_map(options, children)
     common = ["--dataset", DATASET, "--cache", str(options.cache), "--decimate", "1"]
     assert children.calls == [
         ["table", "query", *common],
@@ -149,7 +172,7 @@ def test_failed_build_or_search_keeps_the_previous_document(
     options.document.write_text("older document")
     children = Children(codes)
     with pytest.raises(PopulationApplicationError, match=f"{stage}: Rust CLI exited"):
-        search_and_render_circle_map(options, children)
+        run_circle_map(options, children)
     assert len(children.calls) == len(codes)
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
@@ -161,7 +184,7 @@ def test_rejected_documents_are_retained_and_never_drawn(
 ) -> None:
     options.document.write_text("older document")
     with pytest.raises(PopulationApplicationError, match=r"render:.*") as caught:
-        search_and_render_circle_map(options, Children([0, 0], payload))
+        run_circle_map(options, Children([0, 0], payload))
     assert str(options.document) in str(caught.value)
     assert options.document.read_bytes() == payload
     assert not options.output.exists()
@@ -174,9 +197,13 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
     if override:
         options = replace(options, document=options.document.parent / "nested" / "answer.json")
 
-    monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
     monkeypatch.setattr(
-        render_map,
+        sys.modules[__name__],
+        "boundary_loader",
+        intersecting_boundary_loader,
+    )
+    monkeypatch.setattr(
+        render_map_use_case,
         "enrich_document",
         Mock(side_effect=AssertionError("pre-enriched document should not be recalculated")),
     )
@@ -185,7 +212,7 @@ def test_a_render_failure_keeps_this_runs_enriched_document(
         PopulationApplicationError,
         match=r"unsupported projection.*current search document retained",
     ) as caught:
-        search_and_render_circle_map(replace(options, projection="unknown"), children)
+        run_circle_map(replace(options, projection="unknown"), children)
     assert str(options.document) in str(caught.value)
     published = json.loads(options.document.read_bytes())
     assert published["provenance"]["dataset"] == DATASET
@@ -203,10 +230,14 @@ def test_save_failure_closes_the_figure_and_retains_the_document(
         raise OSError(message)
 
     monkeypatch.setattr(Figure, "savefig", fail)
-    monkeypatch.setattr(circle_map, "load_map_boundaries", intersecting_boundaries)
+    monkeypatch.setattr(
+        sys.modules[__name__],
+        "boundary_loader",
+        intersecting_boundary_loader,
+    )
     children = Children([0, 0])
     with pytest.raises(PopulationApplicationError, match="render: cannot save figure"):
-        search_and_render_circle_map(options, children)
+        run_circle_map(options, children)
     assert "territory_share" in json.loads(options.document.read_bytes())["result"]
     assert plt.get_fignums() == before
 
@@ -222,7 +253,7 @@ def test_draw_failure_closes_the_figure(
 
     monkeypatch.setattr(render_map, "draw", fail)
     with pytest.raises(PopulationApplicationError, match="render: cannot draw geometry"):
-        search_and_render_circle_map(options, Children([0, 0]))
+        run_circle_map(options, Children([0, 0]))
     assert plt.get_fignums() == before
 
 
@@ -248,7 +279,7 @@ def test_colliding_destinations_are_refused_before_children(
         PopulationApplicationError,
         match="destinations: image, document and ledger must differ",
     ):
-        search_and_render_circle_map(options, children)
+        run_circle_map(options, children)
     assert children.calls == []
 
 
@@ -264,7 +295,7 @@ def test_publication_failure_preserves_the_existing_document(
 
     monkeypatch.setattr(Path, "replace", fail)
     with pytest.raises(PopulationApplicationError, match=r"document publication:.*replace denied"):
-        search_and_render_circle_map(options, Children([0, 0]))
+        run_circle_map(options, Children([0, 0]))
     assert options.document.read_text() == "older document"
     assert not options.output.exists()
     assert list(options.document.parent.glob(f".{options.document.name}.*")) == []
@@ -282,7 +313,7 @@ def test_missing_executable_reports_the_launch_stage(
         PopulationApplicationError,
         match="cache probe: could not launch Rust CLI: missing mise",
     ):
-        search_and_render_circle_map(options)
+        run_circle_map(options)
 
 
 def test_invoke_popcircles_cli_runs_from_checkout_and_inherits_stderr(
@@ -391,7 +422,7 @@ def test_success_uses_the_documents_credit_and_earth_model(
     monkeypatch.setattr(map_metadata, "copyright_of", capture_copyright)
     payload = document()
     payload["earth_model"]["radius_km"] = CUSTOM_EARTH_RADIUS_KM
-    search_and_render_circle_map(options, Children([0, 0], json.dumps(payload).encode()))
+    run_circle_map(options, Children([0, 0], json.dumps(payload).encode()))
     assert render_spy.call_args is not None
     render_answer = render_spy.call_args.args[0]
     assert isinstance(render_answer, Answer)

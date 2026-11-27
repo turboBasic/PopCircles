@@ -5,10 +5,15 @@ from unittest.mock import Mock
 
 import pytest
 from shapely.geometry import box
+from shapely.geometry.base import BaseGeometry
 
-import population_circles.gallery.rendering as rendering_module
+import population_circles.infrastructure.geodata.map_layers as map_layers_module
+import population_circles.presentation.gallery.rendering as rendering_module
+import population_circles.presentation.maps.source_selection as source_selection_module
+from population_circles.application.use_cases.gallery import RenderJob
 from population_circles.documents.result_document import circle_of
-from population_circles.maps.frame import ORTHOGRAPHIC
+from population_circles.infrastructure.geodata.dataset_registry import load as load_registry
+from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_gallery import (
     AVAILABLE_CPUS,
     CORPUS,
@@ -21,9 +26,14 @@ from test_gallery import (
     WORLD_TERRITORY_SHARE,
     document,
 )
-from test_render_map import country_result_document
+from test_render_map import country_result_document, fixture_registered_map_sources
 
 RENDER_WORKER_COUNT = rendering_module.render_worker_count
+
+
+def test_render_documents_rejects_invalid_context_before_rendering() -> None:
+    with pytest.raises(TypeError, match="Gallery render context must be MapRenderContext"):
+        rendering_module.render_documents([], object())
 
 
 def test_figure_caption_includes_country_and_world_answers() -> None:
@@ -91,30 +101,44 @@ def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
     assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
-    assert package / "gallery" / "rendering.py" in rendering_module.RENDER_INPUTS
-    assert package / "data" / "data_config.py" in rendering_module.RENDER_INPUTS
-    assert package / "data" / "dataset_registry.py" in rendering_module.RENDER_INPUTS
-    assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
-    assert package / "geography" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
-    assert package / "geography" / "country_boundaries.py" in rendering_module.RENDER_INPUTS
-    assert package / "geography" / "territory_share.py" in rendering_module.RENDER_INPUTS
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/labels.py" in (
+    assert package / "presentation" / "gallery" / "rendering.py" in (rendering_module.RENDER_INPUTS)
+    assert package / "infrastructure" / "geodata" / "data_config.py" in (
         rendering_module.RENDER_INPUTS
     )
+    assert package / "presentation" / "maps" / "source_selection.py" in (
+        rendering_module.RENDER_INPUTS
+    )
+    assert package / "infrastructure" / "geodata" / "dataset_registry.py" in (
+        rendering_module.RENDER_INPUTS
+    )
+    assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
+    assert package / "application" / "use_cases" / "render_map.py" in (
+        rendering_module.RENDER_INPUTS
+    )
+    assert package / "domain" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
+    assert package / "domain" / "geography.py" in rendering_module.RENDER_INPUTS
+    assert package / "domain" / "territory_coverage.py" in rendering_module.RENDER_INPUTS
+    assert package / "infrastructure" / "geodata" / "terrain.py" in (rendering_module.RENDER_INPUTS)
+    assert package / "infrastructure" / "geodata" / "country_boundaries.py" in (
+        rendering_module.RENDER_INPUTS
+    )
+    assert package / "application" / "use_cases" / "territory_coverage.py" in (
+        rendering_module.RENDER_INPUTS
+    )
+    package_sources = CORPUS.parent / "python" / "src" / "population_circles"
+    assert package_sources / "presentation/maps/labels.py" in rendering_module.RENDER_INPUTS
     for unrelated in (
         "gallery/build.py",
         "gallery/country_sweep.py",
-        "applications/circle_map.py",
-        "applications/popcircles_cli.py",
-        "gallery/page_data.py",
+        "application/use_cases/circle_map.py",
+        "infrastructure/popcircles_cli.py",
+        "presentation/gallery/page_data.py",
         "render_globe.py",
     ):
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
             rendering_module.RENDER_INPUTS
         )
-    assert CORPUS.parent / "python" / "src" / "population_circles" / "maps/terrain.py" in (
-        rendering_module.RENDER_INPUTS
-    )
+    assert package_sources / "presentation/maps/terrain.py" in rendering_module.RENDER_INPUTS
 
 
 def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -153,6 +177,37 @@ def test_map_source_identity_hashes_file_contents(tmp_path: Path) -> None:
     assert rendering_module.map_cache_key("context", first, coastline, outline) != (
         rendering_module.map_cache_key("context", updated, coastline, outline)
     )
+
+
+def test_render_without_cache_skips_hashing_but_surfaces_source_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    context = rendering_module.MapRenderContext(
+        load_registry(), box(-20, -10, 20, 10), "fixture", tmp_path, None, "fixture"
+    )
+    load_sources = Mock(side_effect=PermissionError("source read denied"))
+    source_identity = Mock(side_effect=AssertionError("disabled cache must not hash sources"))
+
+    def no_boundaries(*_args: object) -> dict[str, BaseGeometry]:
+        return {}
+
+    monkeypatch.setattr(rendering_module, "load_map_boundaries", no_boundaries)
+    monkeypatch.setattr(
+        source_selection_module,
+        "registered_map_sources",
+        fixture_registered_map_sources,
+    )
+    monkeypatch.setattr(map_layers_module, "load_map_layers", load_sources)
+    monkeypatch.setattr(rendering_module, "source_identity", source_identity)
+
+    with pytest.raises(PermissionError, match="source read denied"):
+        rendering_module.render_document(
+            RenderJob(tmp_path / "world.json", document("most-populous"), 1, 1),
+            context,
+        )
+
+    source_identity.assert_not_called()
+    load_sources.assert_called_once()
 
 
 @pytest.mark.parametrize(

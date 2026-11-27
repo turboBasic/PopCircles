@@ -4,10 +4,8 @@ import pytest
 from pyproj import Geod
 from shapely.geometry.polygon import Polygon
 
-from population_circles.documents.result_document import Coordinate
-from population_circles.geography.circle_geometry import (
+from population_circles.domain.circle_geometry import (
     METRES_PER_KM,
-    POLE_LAT,
     QUAD_SEGS,
     Cap,
     boundary,
@@ -16,17 +14,18 @@ from population_circles.geography.circle_geometry import (
     geographic,
     polygons,
 )
+from population_circles.domain.geography import POLE_LAT, GeographicCoordinate
 
 EARTH_RADIUS_KM = 6371.0088
 
 # The five cases the drawing primitive was chosen on: a cap crossing the seam, one over each pole,
 # one holding both, and one crossing nothing. The last is the only one that round-trips, which is
 # why it is here.
-SEAM = Coordinate(lat=10.0, lon=178.0)
-NORTH = Coordinate(lat=78.0, lon=20.0)
-SOUTH = Coordinate(lat=-80.0, lon=-170.0)
-WHOLE = Coordinate(lat=25.125, lon=79.708)
-CLEAN = Coordinate(lat=30.0, lon=100.0)
+SEAM = GeographicCoordinate(lat=10.0, lon=178.0)
+NORTH = GeographicCoordinate(lat=78.0, lon=20.0)
+SOUTH = GeographicCoordinate(lat=-80.0, lon=-170.0)
+WHOLE = GeographicCoordinate(lat=25.125, lon=79.708)
+CLEAN = GeographicCoordinate(lat=30.0, lon=100.0)
 
 SEAM_RADIUS_KM = 3000.0
 NORTH_RADIUS_KM = 3000.0
@@ -75,7 +74,7 @@ SEAM_LON = 180.0
 CUT_SLACK_KM = 0.01
 
 
-def great_circle_km(a: Coordinate, b: Coordinate) -> float:
+def great_circle_km(a: GeographicCoordinate, b: GeographicCoordinate) -> float:
     # Written here rather than imported: a vertex checked against the same code that placed it is
     # not checked. This is the haversine on the sphere `geodesy.rs` owns, which is the model the
     # document under test published.
@@ -86,7 +85,7 @@ def great_circle_km(a: Coordinate, b: Coordinate) -> float:
     return 2.0 * EARTH_RADIUS_KM * math.asin(math.sqrt(chord))
 
 
-def built(centre: Coordinate, radius_km: float) -> Cap:
+def built(centre: GeographicCoordinate, radius_km: float) -> Cap:
     return cap(centre, radius_km, EARTH_RADIUS_KM)
 
 
@@ -105,7 +104,7 @@ def drawn(shape: Cap) -> tuple[Polygon, ...]:
 
 @pytest.mark.parametrize(("centre", "radius_km"), CASES, ids=CASE_IDS)
 def test_every_boundary_vertex_is_the_radius_from_the_centre(
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     radius_km: float,
 ) -> None:
     ring = boundary(built(centre, radius_km))
@@ -144,7 +143,7 @@ def test_a_cap_crossing_the_antimeridian_is_drawn_in_two_parts() -> None:
     ids=POLE_CASE_IDS,
 )
 def test_a_cap_over_a_pole_is_closed_at_that_pole(
-    centre: Coordinate,
+    centre: GeographicCoordinate,
     radius_km: float,
     pole: float,
     far_lat: float,
@@ -180,7 +179,7 @@ def test_a_cap_holding_both_poles_is_the_world_less_what_it_misses() -> None:
     assert len(parts[0].interiors) == 1
     assert parts[0].bounds == (-SEAM_LON, -POLE_LAT, SEAM_LON, POLE_LAT)
     for lon, lat in parts[0].interiors[0].coords:
-        assert great_circle_km(WHOLE, Coordinate(lat=lat, lon=lon)) == pytest.approx(
+        assert great_circle_km(WHOLE, GeographicCoordinate(lat=lat, lon=lon)) == pytest.approx(
             WHOLE_RADIUS_KM,
             abs=1e-6,
         )
@@ -194,16 +193,21 @@ def test_a_cap_crossing_nothing_synthesises_no_vertex() -> None:
     assert len(rings(parts[0])) == RING_VERTICES
     assert parts[0].bounds == pytest.approx((65.130, 0.322, 134.870, 59.678), abs=1e-3)
     for lon, lat in rings(parts[0]):
-        assert great_circle_km(CLEAN, Coordinate(lat=lat, lon=lon)) == pytest.approx(
+        assert great_circle_km(CLEAN, GeographicCoordinate(lat=lat, lon=lon)) == pytest.approx(
             CLEAN_RADIUS_KM,
             abs=1e-6,
         )
 
 
 @pytest.mark.parametrize(("centre", "radius_km"), CASES, ids=CASE_IDS)
-def test_no_drawn_vertex_lies_outside_the_cap(centre: Coordinate, radius_km: float) -> None:
+def test_no_drawn_vertex_lies_outside_the_cap(
+    centre: GeographicCoordinate, radius_km: float
+) -> None:
     # The one distance claim that survives synthesised vertices. Asserting each is *at* the radius
     # would fail on precisely the cases this primitive exists to get right.
     for polygon in drawn(built(centre, radius_km)):
         for lon, lat in rings(polygon):
-            assert great_circle_km(centre, Coordinate(lat=lat, lon=lon)) <= radius_km + CUT_SLACK_KM
+            assert (
+                great_circle_km(centre, GeographicCoordinate(lat=lat, lon=lon))
+                <= radius_km + CUT_SLACK_KM
+            )
