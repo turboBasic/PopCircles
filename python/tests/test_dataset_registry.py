@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import hashlib
 import struct
 from pathlib import Path, PurePosixPath

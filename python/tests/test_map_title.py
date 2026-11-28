@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import pytest
 
 from population_circles.documents.result_document import Answer, circle_of

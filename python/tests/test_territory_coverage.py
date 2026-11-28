@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import math
 from collections.abc import Callable
 from dataclasses import replace

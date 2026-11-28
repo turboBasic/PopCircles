@@ -332,7 +332,7 @@ class _SweepRecord(_Smallest):
     model_config = _CONFIG
 
 
-class _SweepRecords(BaseModel):
+class _SweepRecords(BaseModel):  # pyright: ignore[reportUnusedClass]
     model_config = _CONFIG
 
     records: list[_SweepRecord]

@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from pathlib import Path

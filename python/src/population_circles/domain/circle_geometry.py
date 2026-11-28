@@ -84,7 +84,7 @@ def cap(centre: GeographicCoordinate, radius_km: float, earth_radius_km: float) 
     )
 
 
-def _boundary(built: Cap) -> tuple[GeographicCoordinate, ...]:
+def _boundary(built: Cap) -> tuple[GeographicCoordinate, ...]:  # pyright: ignore[reportUnusedFunction]
     # The buffer's own vertices, one transform each. Every one is a real point on the cap's boundary
     # and `radius_km` from the centre, which is the claim a test can make here and cannot make about
     # `geographic`: cutting a projected cap synthesises vertices that lie on no boundary at all.

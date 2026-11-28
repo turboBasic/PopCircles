@@ -189,7 +189,7 @@ def load_map_boundaries(
     return _registered_boundaries(dataset, root)
 
 
-def _load_outline(
+def _load_outline(  # pyright: ignore[reportUnusedFunction]
     answer: Answer, registry: Registry, root: Path = REPO_ROOT
 ) -> BaseGeometry | None:
     boundaries = load_country_boundaries(answer, registry, root)
