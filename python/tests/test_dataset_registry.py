@@ -6,7 +6,9 @@ import pytest
 from pydantic import ValidationError
 
 from population_circles.infrastructure.geodata.dataset_registry import (
-    REGISTRY,
+    _REGISTRY as REGISTRY,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
     BoundaryVector,
     MapContextVector,
@@ -14,7 +16,9 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     SettlementVector,
     TerrainRaster,
     load,
-    parse,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
+    _parse as parse,
 )
 
 # The bit pattern crates/popcircles/src/raster.rs asserts of its own GPW_NODATA, in a unit test that

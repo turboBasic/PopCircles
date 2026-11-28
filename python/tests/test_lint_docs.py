@@ -172,7 +172,7 @@ impl Document for Circle { const KIND: &'static str = "circle"; }
 """
     python = """
 SCHEMA_VERSION = 2
-DocumentKind = Literal["circle"]
+_DocumentKind = Literal["circle"]
 """
     assert lint_docs.document_contract_findings(rust, python) == []
     findings = lint_docs.document_contract_findings(
@@ -189,7 +189,7 @@ def test_document_contract_requires_matching_schema_versions() -> None:
 pub const SCHEMA_VERSION: u32 = 2;
 impl Document for Circle { const KIND: &'static str = "circle"; }
 """
-    python = 'SCHEMA_VERSION = 3\nDocumentKind = Literal["circle"]'
+    python = 'SCHEMA_VERSION = 3\n_DocumentKind = Literal["circle"]'
     assert lint_docs.document_contract_findings(rust, python) == [
         "schema versions differ: Rust 2, Python 3"
     ]

@@ -131,7 +131,7 @@ def _dissolve_projected_outline(outline: BaseGeometry, source: BaseGeometry) -> 
     return unary_union(outline)
 
 
-def plate_carree(built: Cap) -> Frame:
+def _plate_carree(built: Cap) -> Frame:
     return Frame(
         crs=built.geodetic,
         to_frame=Transformer.from_crs(built.geodetic, built.geodetic, always_xy=True),
@@ -142,7 +142,7 @@ def plate_carree(built: Cap) -> Frame:
     )
 
 
-def orthographic(built: Cap) -> Frame:
+def _orthographic(built: Cap) -> Frame:
     # The circle reaches this frame through the projection it was built in rather than through
     # longitude and latitude: the geographic form carries a cut down the ±180 meridian, and that
     # meridian is not an edge of an orthographic figure, so drawing that form strokes a seam across
@@ -183,7 +183,7 @@ def country_frame(
         )
         raise ValueError(message)
     if projection == PLATE_CARREE:
-        world = plate_carree(built)
+        world = _plate_carree(built)
         circle = world.circle
         if not all(
             math.isfinite(value)
@@ -324,9 +324,9 @@ def country_frame(
 
 def frame(projection: str, built: Cap) -> Frame:
     if projection == ORTHOGRAPHIC:
-        return orthographic(built)
+        return _orthographic(built)
     if projection == PLATE_CARREE:
-        return plate_carree(built)
+        return _plate_carree(built)
     message = f"unsupported projection {projection!r}; choose from {', '.join(PROJECTIONS)}"
     raise ValueError(message)
 
@@ -340,7 +340,7 @@ def project(view: Frame, geometry: BaseGeometry) -> BaseGeometry:
     )
 
 
-def trace(start: int, stop: int) -> list[int]:
+def _trace(start: int, stop: int) -> list[int]:
     return [*range(start, stop, GRATICULE_TRACE_DEG), stop]
 
 
@@ -348,11 +348,11 @@ def graticule() -> MultiLineString:
     # No parallel at either pole: one is a single point, and the meridians already meet on it.
     lat_limit, lon_limit = int(POLE_LAT), int(HALF_TURN_DEG)
     meridians = [
-        [(float(lon), float(lat)) for lat in trace(-lat_limit, lat_limit)]
+        [(float(lon), float(lat)) for lat in _trace(-lat_limit, lat_limit)]
         for lon in range(-lon_limit, lon_limit + 1, GRATICULE_STEP_DEG)
     ]
     parallels = [
-        [(float(lon), float(lat)) for lon in trace(-lon_limit, lon_limit)]
+        [(float(lon), float(lat)) for lon in _trace(-lon_limit, lon_limit)]
         for lat in range(-lat_limit + GRATICULE_STEP_DEG, lat_limit, GRATICULE_STEP_DEG)
     ]
     return MultiLineString(meridians + parallels)

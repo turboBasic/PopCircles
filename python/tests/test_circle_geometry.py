@@ -8,11 +8,15 @@ from population_circles.domain.circle_geometry import (
     METRES_PER_KM,
     QUAD_SEGS,
     Cap,
-    boundary,
     cap,
-    enclosed_poles,
     geographic,
     polygons,
+)
+from population_circles.domain.circle_geometry import (
+    _boundary as boundary,
+)
+from population_circles.domain.circle_geometry import (
+    _enclosed_poles as enclosed_poles,
 )
 from population_circles.domain.geography import POLE_LAT, GeographicCoordinate
 

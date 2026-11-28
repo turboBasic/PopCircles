@@ -13,6 +13,24 @@ import population_circles.presentation.maps.source_selection as source_selection
 from population_circles.application.use_cases.country_sweep import RenderJob
 from population_circles.documents.result_document import circle_of
 from population_circles.infrastructure.geodata.dataset_registry import load as load_registry
+from population_circles.presentation.gallery.rendering import (
+    _RENDER_INPUTS as RENDER_INPUTS,
+)
+from population_circles.presentation.gallery.rendering import (
+    _figure_caption as figure_caption,
+)
+from population_circles.presentation.gallery.rendering import (
+    _map_cache_key as map_cache_key,
+)
+from population_circles.presentation.gallery.rendering import (
+    _render_document as render_document,
+)
+from population_circles.presentation.gallery.rendering import (
+    _render_worker_count as render_worker_count,
+)
+from population_circles.presentation.gallery.rendering import (
+    _source_identity as source_identity_for_cache,
+)
 from population_circles.presentation.maps.frame import ORTHOGRAPHIC
 from test_gallery import (
     AVAILABLE_CPUS,
@@ -28,7 +46,7 @@ from test_gallery import (
 )
 from test_render_map import country_result_document, fixture_registered_map_sources
 
-RENDER_WORKER_COUNT = rendering_module.render_worker_count
+RENDER_WORKER_COUNT = render_worker_count
 
 
 def test_render_documents_rejects_invalid_context_before_rendering() -> None:
@@ -37,7 +55,7 @@ def test_render_documents_rejects_invalid_context_before_rendering() -> None:
 
 
 def test_figure_caption_includes_country_and_world_answers() -> None:
-    caption = rendering_module.figure_caption(circle_of(country_result_document()))
+    caption = figure_caption(circle_of(country_result_document()))
 
     assert caption == {
         "radius_km": 200.0,
@@ -48,13 +66,13 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
         "settlement": None,
     }
 
-    world = rendering_module.figure_caption(circle_of(document("most-populous")))
+    world = figure_caption(circle_of(document("most-populous")))
     assert world["radius_km"] == WORLD_RADIUS_KM
     assert world["share"] == WORLD_SHARE
     assert world["population"] == WORLD_POPULATION
     assert "territory_share" not in world
 
-    world_with_territory = rendering_module.figure_caption(
+    world_with_territory = figure_caption(
         circle_of(document("most-populous", territory_share=WORLD_TERRITORY_SHARE))
     )
     assert world_with_territory.get("territory_share") == WORLD_TERRITORY_SHARE
@@ -62,83 +80,58 @@ def test_figure_caption_includes_country_and_world_answers() -> None:
 
     country = country_result_document()
     country["result"]["circle"]["territory_share"] = COUNTRY_TERRITORY_SHARE
-    assert (
-        rendering_module.figure_caption(circle_of(country)).get("territory_share")
-        == COUNTRY_TERRITORY_SHARE
-    )
-    assert rendering_module.figure_caption(circle_of(country)).get("territory_name") == "Germany"
+    assert figure_caption(circle_of(country)).get("territory_share") == COUNTRY_TERRITORY_SHARE
+    assert figure_caption(circle_of(country)).get("territory_name") == "Germany"
 
 
 def test_map_cache_key_changes_for_each_render_input_category() -> None:
     coastline = box(-20, -10, 20, 10)
     outline = box(-5, -5, 5, 5)
-    base = rendering_module.map_cache_key("context", b"document", coastline, outline)
+    base = map_cache_key("context", b"document", coastline, outline)
 
-    assert base != rendering_module.map_cache_key(
-        "changed context", b"document", coastline, outline
-    )
-    assert base != rendering_module.map_cache_key(
-        "context", b"changed document", coastline, outline
-    )
-    assert base != rendering_module.map_cache_key(
-        "context", b"document", box(-1, -1, 1, 1), outline
-    )
-    assert base != rendering_module.map_cache_key(
-        "context", b"document", coastline, box(-1, -1, 1, 1)
-    )
-    assert base != rendering_module.map_cache_key(
-        "context", b"document", coastline, outline, ORTHOGRAPHIC
-    )
+    assert base != map_cache_key("changed context", b"document", coastline, outline)
+    assert base != map_cache_key("context", b"changed document", coastline, outline)
+    assert base != map_cache_key("context", b"document", box(-1, -1, 1, 1), outline)
+    assert base != map_cache_key("context", b"document", coastline, box(-1, -1, 1, 1))
+    assert base != map_cache_key("context", b"document", coastline, outline, ORTHOGRAPHIC)
 
 
 def test_render_cache_inputs_exclude_tool_task_configuration() -> None:
     package = CORPUS.parent / "python" / "src" / "population_circles"
-    python_sources = [path for path in rendering_module.RENDER_INPUTS if path.suffix == ".py"]
+    python_sources = [path for path in RENDER_INPUTS if path.suffix == ".py"]
     assert all(path.is_file() for path in python_sources)
     assert all(path.is_relative_to(package) for path in python_sources)
-    assert CORPUS.parent / "mise.toml" not in rendering_module.RENDER_INPUTS
-    assert CORPUS.parent / "pyproject.toml" not in rendering_module.RENDER_INPUTS
-    assert CORPUS.parent / "uv.lock" not in rendering_module.RENDER_INPUTS
-    assert CORPUS.parent / "data" / "presentation.toml" in rendering_module.RENDER_INPUTS
-    assert CORPUS.parent / "data" / "registry.toml" in rendering_module.RENDER_INPUTS
-    assert package / "presentation" / "gallery" / "rendering.py" in (rendering_module.RENDER_INPUTS)
-    assert package / "infrastructure" / "geodata" / "data_config.py" in (
-        rendering_module.RENDER_INPUTS
-    )
-    assert package / "presentation" / "maps" / "source_selection.py" in (
-        rendering_module.RENDER_INPUTS
-    )
-    assert package / "infrastructure" / "geodata" / "dataset_registry.py" in (
-        rendering_module.RENDER_INPUTS
-    )
-    assert package / "documents" / "result_document.py" in rendering_module.RENDER_INPUTS
-    assert package / "application" / "use_cases" / "render_map.py" in (
-        rendering_module.RENDER_INPUTS
-    )
-    assert package / "domain" / "circle_geometry.py" in rendering_module.RENDER_INPUTS
-    assert package / "domain" / "geography.py" in rendering_module.RENDER_INPUTS
-    assert package / "domain" / "territory_coverage.py" in rendering_module.RENDER_INPUTS
-    assert package / "infrastructure" / "geodata" / "terrain.py" in (rendering_module.RENDER_INPUTS)
-    assert package / "infrastructure" / "geodata" / "country_boundaries.py" in (
-        rendering_module.RENDER_INPUTS
-    )
-    assert package / "application" / "use_cases" / "territory_coverage.py" in (
-        rendering_module.RENDER_INPUTS
-    )
+    assert CORPUS.parent / "mise.toml" not in RENDER_INPUTS
+    assert CORPUS.parent / "pyproject.toml" not in RENDER_INPUTS
+    assert CORPUS.parent / "uv.lock" not in RENDER_INPUTS
+    assert CORPUS.parent / "data" / "presentation.toml" in RENDER_INPUTS
+    assert CORPUS.parent / "data" / "registry.toml" in RENDER_INPUTS
+    assert package / "presentation" / "gallery" / "rendering.py" in (RENDER_INPUTS)
+    assert package / "infrastructure" / "geodata" / "data_config.py" in (RENDER_INPUTS)
+    assert package / "presentation" / "maps" / "source_selection.py" in (RENDER_INPUTS)
+    assert package / "infrastructure" / "geodata" / "dataset_registry.py" in (RENDER_INPUTS)
+    assert package / "documents" / "result_document.py" in RENDER_INPUTS
+    assert package / "application" / "use_cases" / "render_map.py" in (RENDER_INPUTS)
+    assert package / "domain" / "circle_geometry.py" in RENDER_INPUTS
+    assert package / "domain" / "geography.py" in RENDER_INPUTS
+    assert package / "domain" / "territory_coverage.py" in RENDER_INPUTS
+    assert package / "infrastructure" / "geodata" / "terrain.py" in (RENDER_INPUTS)
+    assert package / "infrastructure" / "geodata" / "country_boundaries.py" in (RENDER_INPUTS)
+    assert package / "application" / "use_cases" / "territory_coverage.py" in (RENDER_INPUTS)
     package_sources = CORPUS.parent / "python" / "src" / "population_circles"
-    assert package_sources / "presentation/maps/labels.py" in rendering_module.RENDER_INPUTS
+    assert package_sources / "presentation/maps/labels.py" in RENDER_INPUTS
     for unrelated in (
-        "gallery/build.py",
-        "gallery/country_sweep.py",
+        "application/use_cases/build_gallery.py",
+        "application/use_cases/country_sweep.py",
         "application/use_cases/circle_result.py",
         "infrastructure/popcircles_cli.py",
         "presentation/gallery/page_data.py",
-        "render_globe.py",
+        "animated_globe.py",
     ):
         assert CORPUS.parent / "python" / "src" / "population_circles" / unrelated not in (
-            rendering_module.RENDER_INPUTS
+            RENDER_INPUTS
         )
-    assert package_sources / "presentation/maps/terrain.py" in rendering_module.RENDER_INPUTS
+    assert package_sources / "presentation/maps/terrain.py" in RENDER_INPUTS
 
 
 def test_render_context_includes_rasterio_version(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -155,7 +148,7 @@ def test_render_context_hashes_source_and_configuration_files(
 ) -> None:
     source = tmp_path / "renderer.py"
     source.write_text("first", encoding="utf-8")
-    monkeypatch.setattr(rendering_module, "RENDER_INPUTS", (source,))
+    monkeypatch.setattr(rendering_module, "_RENDER_INPUTS", (source,))
     first = rendering_module.render_context_digest()
 
     source.write_text("second", encoding="utf-8")
@@ -166,16 +159,16 @@ def test_render_context_hashes_source_and_configuration_files(
 def test_map_source_identity_hashes_file_contents(tmp_path: Path) -> None:
     source = tmp_path / "terrain.tif"
     source.write_bytes(b"first terrain")
-    first = rendering_module.source_identity((source,), {})
+    first = source_identity_for_cache((source,), {})
 
     source.write_bytes(b"updated terrain")
 
-    updated = rendering_module.source_identity((source,), {})
+    updated = source_identity_for_cache((source,), {})
     assert updated != first
     coastline = box(-20, -10, 20, 10)
     outline = box(-5, -5, 5, 5)
-    assert rendering_module.map_cache_key("context", first, coastline, outline) != (
-        rendering_module.map_cache_key("context", updated, coastline, outline)
+    assert map_cache_key("context", first, coastline, outline) != (
+        map_cache_key("context", updated, coastline, outline)
     )
 
 
@@ -198,10 +191,10 @@ def test_render_without_cache_skips_hashing_but_surfaces_source_errors(
         fixture_registered_map_sources,
     )
     monkeypatch.setattr(map_layers_module, "load_map_layers", load_sources)
-    monkeypatch.setattr(rendering_module, "source_identity", source_identity)
+    monkeypatch.setattr(rendering_module, "_source_identity", source_identity)
 
     with pytest.raises(PermissionError, match="source read denied"):
-        rendering_module.render_document(
+        render_document(
             RenderJob(tmp_path / "world.json", document("most-populous"), 1, 1),
             context,
         )
@@ -215,8 +208,8 @@ def test_render_without_cache_skips_hashing_but_surfaces_source_errors(
     [
         ("terrain-checksum", "terrain sha256 = 111", "terrain sha256 = 222"),
         ("context-checksum", "roads sha256 = 111", "roads sha256 = 222"),
-        ("palette", "ELEVATION_STOPS = low", "ELEVATION_STOPS = high"),
-        ("illumination", "HILLSHADE_ALPHA = 0.34", "HILLSHADE_ALPHA = 0.35"),
+        ("palette", "_ELEVATION_STOPS = low", "_ELEVATION_STOPS = high"),
+        ("illumination", "_HILLSHADE_ALPHA = 0.34", "_HILLSHADE_ALPHA = 0.35"),
         ("renderer", "circle below roads", "circle above roads"),
     ],
 )
@@ -229,20 +222,17 @@ def test_map_cache_key_changes_when_terrain_inputs_or_presentation_change(
 ) -> None:
     source = tmp_path / f"{source_kind}.txt"
     source.write_text(before, encoding="utf-8")
-    monkeypatch.setattr(rendering_module, "RENDER_INPUTS", (source,))
+    monkeypatch.setattr(rendering_module, "_RENDER_INPUTS", (source,))
     coastline = box(-20, -10, 20, 10)
     outline = box(-5, -5, 5, 5)
     context = rendering_module.render_context_digest()
-    cached_key = rendering_module.map_cache_key(context, b"document", coastline, outline)
-    assert rendering_module.map_cache_key(context, b"document", coastline, outline) == cached_key
+    cached_key = map_cache_key(context, b"document", coastline, outline)
+    assert map_cache_key(context, b"document", coastline, outline) == cached_key
 
     source.write_text(after, encoding="utf-8")
     updated_context = rendering_module.render_context_digest()
 
-    assert (
-        rendering_module.map_cache_key(updated_context, b"document", coastline, outline)
-        != cached_key
-    )
+    assert map_cache_key(updated_context, b"document", coastline, outline) != cached_key
 
 
 def test_render_worker_count_is_capped_at_two(monkeypatch: pytest.MonkeyPatch) -> None:

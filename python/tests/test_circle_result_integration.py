@@ -13,7 +13,8 @@ from population_circles.application.use_cases.circle_result import (
     CircleResultRequest,
     search_and_publish_circle_result,
 )
-from population_circles.documents.result_document import SweepRecords, circle_of
+from population_circles.documents.result_document import _SweepRecords as SweepRecords
+from population_circles.documents.result_document import circle_of
 from population_circles.infrastructure.file_publishing import write_bytes_atomically
 from population_circles.infrastructure.popcircles_cli import REPO_ROOT
 

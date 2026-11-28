@@ -58,7 +58,9 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     load,
 )
 from population_circles.infrastructure.geodata.map_layers import (
-    COASTLINE_DATASET,
+    _COASTLINE_DATASET as COASTLINE_DATASET,
+)
+from population_circles.infrastructure.geodata.map_layers import (
     UnregisteredDatasetError,
     registered_coastline,
 )
@@ -66,7 +68,23 @@ from population_circles.infrastructure.geodata.map_layers import (
     load_map_layers as real_load_map_layers,
 )
 from population_circles.presentation import cli
+from population_circles.presentation.gallery.output import (
+    _HEADER_CROP_ASPECT_RATIO as HEADER_CROP_ASPECT_RATIO,
+)
+from population_circles.presentation.gallery.output import (
+    _HEADER_CROP_ASPECT_TOLERANCE as HEADER_CROP_ASPECT_TOLERANCE,
+)
+from population_circles.presentation.gallery.output import (
+    _crop_header_background as crop_header_background,
+)
 from population_circles.presentation.gallery.page_data import Drawn
+from population_circles.presentation.gallery.rendering import (
+    _render_document as render_document_for_gallery,
+)
+from population_circles.presentation.maps.presentation_config import (
+    _PRESENTATION_CONFIG as PRESENTATION_CONFIG,
+)
+from population_circles.presentation.maps.render_map import _annotate as annotate_helper
 from population_circles.presentation.maps.source_selection import (
     registered_map_sources as real_registered_map_sources,
 )
@@ -288,7 +306,7 @@ def keep_gallery_tests_serial_by_default(monkeypatch: pytest.MonkeyPatch) -> Non
         "registered_map_sources",
         fixture_registered_map_sources,
     )
-    monkeypatch.setattr(rendering_module, "render_worker_count", one_worker)
+    monkeypatch.setattr(rendering_module, "_render_worker_count", one_worker)
     monkeypatch.setattr(rendering_module, "load_map_boundaries", fixture_boundaries)
     monkeypatch.setattr(map_layers_module, "load_map_layers", fixture_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", transparent_terrain)
@@ -340,7 +358,7 @@ def test_header_background_crops_to_plate_carree_plot_without_white_margins(
     image.paste((100, 190, 180), (10, 35, 110, 60))
     image.save(source)
 
-    gallery_output.crop_header_background(source, target)
+    crop_header_background(source, target)
 
     with Image.open(target) as cropped:
         assert cropped.size == (100, 49)
@@ -357,11 +375,8 @@ def assert_built_site(output: Path) -> None:
     assert (output / "gallery-data.json").is_file()
     with Image.open(output / "header-background.png") as header_background:
         assert (
-            abs(
-                header_background.width
-                - gallery_output.HEADER_CROP_ASPECT_RATIO * header_background.height
-            )
-            <= gallery_output.HEADER_CROP_ASPECT_TOLERANCE
+            abs(header_background.width - HEADER_CROP_ASPECT_RATIO * header_background.height)
+            <= HEADER_CROP_ASPECT_TOLERANCE
         )
 
 
@@ -625,7 +640,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
     basemap_paths: list[Path] = []
     annotations: list[str] = []
     current_basemap = map_layers_module.basemap
-    current_annotate = render_map_module.annotate
+    current_annotate = annotate_helper
 
     def capture_basemap(path: Path) -> BaseGeometry:
         basemap_paths.append(path)
@@ -638,7 +653,7 @@ def test_a_renderable_document_is_drawn_and_an_unrenderable_one_is_named(
         current_annotate(figure, y, text, size, alignment)
 
     monkeypatch.setattr(map_layers_module, "basemap", capture_basemap)
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(render_map_module, "_annotate", capture_annotate)
 
     drawn, skipped = build(corpus, tmp_path / "gallery", country_cli([], [])[0])
 
@@ -717,7 +732,7 @@ def test_gallery_enrichment_keeps_original_documents_on_success_and_render_failu
     assert {name: (corpus / name).read_bytes() for name in original_documents} == original_documents
     successful_copy = json.loads((successful_output / "first.json").read_text(encoding="utf-8"))
     assert successful_copy["result"]["territory_share"] == 0.0
-    render_document = rendering_module.render_document
+    render_document = render_document_for_gallery
 
     def fail_second(
         job: RenderJob, context: rendering_module.MapRenderContext
@@ -727,7 +742,7 @@ def test_gallery_enrichment_keeps_original_documents_on_success_and_render_failu
             raise RuntimeError(message)
         return render_document(job, context)
 
-    monkeypatch.setattr(rendering_module, "render_document", fail_second)
+    monkeypatch.setattr(rendering_module, "_render_document", fail_second)
     output = tmp_path / "gallery"
     with pytest.raises(RuntimeError, match="second render failed"):
         build(corpus, output, country_cli([], [])[0])
@@ -830,15 +845,15 @@ def test_map_text_rendering_change_misses_the_gallery_map_cache(
     config_root = tmp_path / "config-root"
     config_path = config_root / "data" / "presentation.toml"
     config_path.parent.mkdir(parents=True)
-    settings = presentation_config_module.PRESENTATION_CONFIG.read_text(encoding="utf-8")
+    settings = PRESENTATION_CONFIG.read_text(encoding="utf-8")
     config_path.write_text(
         settings.replace("render_title = true", "render_title = false").replace(
             "render_description = true", "render_description = false"
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
-    monkeypatch.setattr(rendering_module, "RENDER_INPUTS", (config_path,))
+    monkeypatch.setattr(presentation_config_module, "_PRESENTATION_CONFIG", config_path)
+    monkeypatch.setattr(rendering_module, "_RENDER_INPUTS", (config_path,))
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     written(corpus, "world.json", document("most-populous"))
@@ -954,14 +969,14 @@ def test_serial_and_concurrent_gallery_maps_are_identical(
     monkeypatch.setattr(map_layers_module, "load_map_layers", real_load_map_layers)
     monkeypatch.setattr(render_map_module, "prepare_terrain", terrain_module.prepare_terrain)
     source_identity = Mock(side_effect=AssertionError("disabled cache must not hash sources"))
-    monkeypatch.setattr(rendering_module, "source_identity", source_identity)
+    monkeypatch.setattr(rendering_module, "_source_identity", source_identity)
 
     serial, _ = build_gallery_output(tmp_path, sources, {}, [], serial_context)
 
     def two_workers(count: int) -> int:
         return min(2, count)
 
-    monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(rendering_module, "_render_worker_count", two_workers)
     concurrent, _ = build_gallery_output(tmp_path, sources, {}, [], concurrent_context)
 
     assert [item.figure.name for item in serial] == [item.figure.name for item in concurrent]
@@ -999,7 +1014,7 @@ def test_a_document_that_fails_to_draw_publishes_no_gallery_at_all(
     def skip_frontend(_output: Path) -> None:
         return
 
-    monkeypatch.setattr(rendering_module, "render_worker_count", two_workers)
+    monkeypatch.setattr(rendering_module, "_render_worker_count", two_workers)
     monkeypatch.setattr(gallery_output, "build_frontend", skip_frontend)
     # The box this pins is "fails the build rather than publishing a gallery with a hole in it", so
     # what it asserts is the absence of the page: a collected failure would have written one.
@@ -1142,7 +1157,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
     (output / zero_result_name).write_text("stale", encoding="utf-8")
     (output / zero_result_name.replace(".json", ".png")).write_bytes(b"stale")
     annotations: list[str] = []
-    current_annotate = render_map_module.annotate
+    current_annotate = annotate_helper
 
     def capture_annotate(
         figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
@@ -1151,7 +1166,7 @@ def test_one_batched_sweep_publishes_each_country_result_and_names_missing_count
         current_annotate(figure, y, text, size, alignment)
 
     monkeypatch.setattr(composition, "load_map_boundaries", fixture_boundaries)
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(render_map_module, "_annotate", capture_annotate)
 
     drawn, skipped = build(corpus, output, invoke)
 

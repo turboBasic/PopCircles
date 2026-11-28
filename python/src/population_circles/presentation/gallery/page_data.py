@@ -7,21 +7,13 @@ from urllib.parse import quote
 from PIL import Image
 
 from population_circles.application.use_cases.country_sweep import (
-    FigureCaption,
+    FigureCaption as _FigureCaption,
+)
+from population_circles.application.use_cases.country_sweep import (
     GalleryFigure,
-    SettlementCaption,
 )
 
-__all__ = [
-    "Drawn",
-    "FigureCaption",
-    "PageCountry",
-    "PageData",
-    "PageFigure",
-    "SettlementCaption",
-    "page_data",
-    "page_figure",
-]
+__all__ = ["Drawn", "page_data"]
 
 
 @dataclass(frozen=True)
@@ -30,34 +22,34 @@ class Drawn:
     figure: Path
     country_name: str | None = None
     country_id: str | None = None
-    caption: FigureCaption | None = None
+    caption: _FigureCaption | None = None
 
 
-class PageFigure(TypedDict):
+class _PageFigure(TypedDict):
     map: str
     document: str
     country_id: str | None
     alt: str
     aspect_ratio: float
-    caption: NotRequired[FigureCaption]
+    caption: NotRequired[_FigureCaption]
 
 
-class PageCountry(TypedDict):
+class _PageCountry(TypedDict):
     name: str
     anchor: str
-    figures: list[PageFigure]
+    figures: list[_PageFigure]
     missing: bool
 
 
-class PageData(TypedDict):
-    world: list[PageFigure]
-    countries: list[PageCountry]
+class _PageData(TypedDict):
+    world: list[_PageFigure]
+    countries: list[_PageCountry]
 
 
-def page_figure(one: GalleryFigure) -> PageFigure:
+def _page_figure(one: GalleryFigure) -> _PageFigure:
     with Image.open(one.figure) as image:
         aspect_ratio = image.width / image.height
-    figure: PageFigure = {
+    figure: _PageFigure = {
         "map": one.figure.name,
         "document": one.document.name,
         "country_id": one.country_id,
@@ -69,7 +61,7 @@ def page_figure(one: GalleryFigure) -> PageFigure:
     return figure
 
 
-def page_data(drawn: Sequence[GalleryFigure], missing: list[str]) -> PageData:
+def page_data(drawn: Sequence[GalleryFigure], missing: list[str]) -> _PageData:
     countries: dict[tuple[str, str], list[GalleryFigure]] = {}
     world: list[GalleryFigure] = []
     for one in drawn:
@@ -79,11 +71,11 @@ def page_data(drawn: Sequence[GalleryFigure], missing: list[str]) -> PageData:
             countries.setdefault((one.country_name, one.country_id), []).append(one)
 
     ordered = sorted(countries.items(), key=lambda item: (item[0][0].casefold(), item[0][1]))
-    page_countries: list[PageCountry] = [
+    page_countries: list[_PageCountry] = [
         {
             "name": name,
             "anchor": f"country-result-{quote(identifier, safe='')}",
-            "figures": [page_figure(figure) for figure in figures],
+            "figures": [_page_figure(figure) for figure in figures],
             "missing": False,
         }
         for (name, identifier), figures in ordered
@@ -98,4 +90,4 @@ def page_data(drawn: Sequence[GalleryFigure], missing: list[str]) -> PageData:
         for name in missing
     )
     page_countries.sort(key=lambda country: (country["name"].casefold(), country["anchor"]))
-    return {"world": [page_figure(one) for one in world], "countries": page_countries}
+    return {"world": [_page_figure(one) for one in world], "countries": page_countries}

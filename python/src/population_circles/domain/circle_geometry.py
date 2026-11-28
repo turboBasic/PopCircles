@@ -17,8 +17,8 @@ METRES_PER_KM = 1000.0
 # can show. Raising it costs vertices in every drawn polygon and buys nothing visible.
 QUAD_SEGS = 180
 
-TURN_DEG = 360.0
-POLES = (POLE_LAT, -POLE_LAT)
+_TURN_DEG = 360.0
+_POLES = (POLE_LAT, -POLE_LAT)
 
 # Every longitude a figure may carry, and the shape the seam is cut against.
 WORLD = box(-HALF_TURN_DEG, -POLE_LAT, HALF_TURN_DEG, POLE_LAT)
@@ -84,7 +84,7 @@ def cap(centre: GeographicCoordinate, radius_km: float, earth_radius_km: float) 
     )
 
 
-def boundary(built: Cap) -> tuple[GeographicCoordinate, ...]:
+def _boundary(built: Cap) -> tuple[GeographicCoordinate, ...]:
     # The buffer's own vertices, one transform each. Every one is a real point on the cap's boundary
     # and `radius_km` from the centre, which is the claim a test can make here and cannot make about
     # `geographic`: cutting a projected cap synthesises vertices that lie on no boundary at all.
@@ -95,17 +95,17 @@ def boundary(built: Cap) -> tuple[GeographicCoordinate, ...]:
     )
 
 
-def enclosed_poles(built: Cap) -> tuple[float, ...]:
+def _enclosed_poles(built: Cap) -> tuple[float, ...]:
     # Asked of the cap in its own projection, where containment is a point in a disc, rather than
     # derived from the ring's winding: the two-pole case winds like the no-pole one and is the case
     # that needs telling apart.
     to_source = Transformer.from_crs(built.geodetic, built.source, always_xy=True)
     return tuple(
-        pole for pole in POLES if built.polygon.contains(Point(to_source.transform(0.0, pole)))
+        pole for pole in _POLES if built.polygon.contains(Point(to_source.transform(0.0, pole)))
     )
 
 
-def turns(ring: list[tuple[float, float]]) -> list[int]:
+def _turns(ring: list[tuple[float, float]]) -> list[int]:
     # How many whole turns of longitude the walk has taken by each vertex, counted as an integer so
     # that a copy shifted by one turn lands bit-identically on the next copy's seam. Adding 360.0 to
     # an already-shifted coordinate does not, and the two copies then fail to merge along the edge
@@ -150,12 +150,12 @@ def geographic(built: Cap) -> BaseGeometry:
     # *antipode*, bounding the one region the cap does not cover.
     to_geodetic = Transformer.from_crs(built.source, built.geodetic, always_xy=True)
     ring = [to_geodetic.transform(x, y) for x, y in built.polygon.exterior.coords]
-    counted = turns(ring)
-    poles = enclosed_poles(built)
+    counted = _turns(ring)
+    poles = _enclosed_poles(built)
 
     def copy(shift: int) -> Polygon:
         walk = [
-            (lon + TURN_DEG * (turn + shift), lat)
+            (lon + _TURN_DEG * (turn + shift), lat)
             for (lon, lat), turn in zip(ring, counted, strict=True)
         ]
         if len(poles) == 1:
@@ -167,4 +167,4 @@ def geographic(built: Cap) -> BaseGeometry:
     # single copy would have kept.
     tiled = unary_union([copy(-1), copy(0), copy(1)])
     drawn = tiled.intersection(WORLD)
-    return WORLD.difference(drawn) if len(poles) == len(POLES) else drawn
+    return WORLD.difference(drawn) if len(poles) == len(_POLES) else drawn

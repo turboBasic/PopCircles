@@ -8,9 +8,9 @@ from population_circles.application.use_cases.country_sweep import GalleryFigure
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT
 from population_circles.presentation.maps.render_map import OCEAN
 
-HEADER_OCEAN_MATCH_TOLERANCE = 8
-HEADER_CROP_ASPECT_RATIO = 2
-HEADER_CROP_ASPECT_TOLERANCE = 2
+_HEADER_OCEAN_MATCH_TOLERANCE = 8
+_HEADER_CROP_ASPECT_RATIO = 2
+_HEADER_CROP_ASPECT_TOLERANCE = 2
 
 
 def build_frontend(output: Path) -> None:
@@ -38,11 +38,11 @@ def build_frontend(output: Path) -> None:
     )
 
 
-def crop_header_background(source: Path, target: Path) -> None:
+def _crop_header_background(source: Path, target: Path) -> None:
     with Image.open(source) as original:
         image = original.convert("RGB")
         ocean = Image.new("RGB", image.size, OCEAN)
-        lookup = [255 if value < HEADER_OCEAN_MATCH_TOLERANCE else 0 for value in range(256)]
+        lookup = [255 if value < _HEADER_OCEAN_MATCH_TOLERANCE else 0 for value in range(256)]
         mask = ImageChops.difference(image, ocean).convert("L").point(lookup)
         bounds = mask.getbbox()
         if bounds is None:
@@ -56,7 +56,7 @@ def crop_header_background(source: Path, target: Path) -> None:
         else:
             left, top, right, _ = bounds
             # The 2:1 Plate Carree frame extends beyond the ocean pixels at its land-filled edge.
-            bottom = top + round((right - left) / HEADER_CROP_ASPECT_RATIO) - 1
+            bottom = top + round((right - left) / _HEADER_CROP_ASPECT_RATIO) - 1
         if bottom <= top or bottom > image.height:
             raise ValueError
         image.crop((left, top, right, bottom)).save(target)
@@ -65,4 +65,4 @@ def crop_header_background(source: Path, target: Path) -> None:
 def write_header_background(drawn: list[GalleryFigure], output: Path) -> None:
     world_map = next((one.figure for one in drawn if one.country_name is None), None)
     if world_map is not None:
-        crop_header_background(world_map, output / "header-background.png")
+        _crop_header_background(world_map, output / "header-background.png")

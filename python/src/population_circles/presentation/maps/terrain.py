@@ -9,12 +9,12 @@ from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT
 from population_circles.infrastructure.geodata.terrain import TerrainFrame, load_terrain
 from population_circles.presentation.maps.frame import Frame
 
-HILLSHADE_AZIMUTH = 315
-HILLSHADE_ALTITUDE = 45
-HILLSHADE_ALPHA = 0.34
-NEGATIVE_ELEVATION_STOP: tuple[float, tuple[int, int, int]] = (-100, (238, 241, 208))
+_HILLSHADE_AZIMUTH = 315
+_HILLSHADE_ALTITUDE = 45
+_HILLSHADE_ALPHA = 0.34
+_NEGATIVE_ELEVATION_STOP: tuple[float, tuple[int, int, int]] = (-100, (238, 241, 208))
 
-ELEVATION_STOPS: tuple[tuple[float, tuple[int, int, int]], ...] = (
+_ELEVATION_STOPS: tuple[tuple[float, tuple[int, int, int]], ...] = (
     (0, (229, 238, 196)),
     (100, (220, 235, 184)),
     (250, (204, 226, 160)),
@@ -33,10 +33,10 @@ ELEVATION_STOPS: tuple[tuple[float, tuple[int, int, int]], ...] = (
 )
 
 
-def palette() -> tuple[LinearSegmentedColormap, Normalize]:
-    minimum, maximum = NEGATIVE_ELEVATION_STOP[0], ELEVATION_STOPS[-1][0]
+def _palette() -> tuple[LinearSegmentedColormap, Normalize]:
+    minimum, maximum = _NEGATIVE_ELEVATION_STOP[0], _ELEVATION_STOPS[-1][0]
     scale = Normalize(vmin=minimum, vmax=maximum, clip=True)
-    stops = (NEGATIVE_ELEVATION_STOP, *ELEVATION_STOPS)
+    stops = (_NEGATIVE_ELEVATION_STOP, *_ELEVATION_STOPS)
     colours = LinearSegmentedColormap.from_list(
         "popcircles-terrain",
         [(scale(elevation), tuple(channel / 255 for channel in rgb)) for elevation, rgb in stops],
@@ -45,17 +45,17 @@ def palette() -> tuple[LinearSegmentedColormap, Normalize]:
     return colours, scale
 
 
-def paint(
+def _paint(
     elevation: NDArray[np.float32],
     valid: NDArray[np.bool_],
     bounds: tuple[float, float, float, float],
 ) -> NDArray[np.uint8]:
     rgba = np.zeros((*elevation.shape, 4), dtype=np.uint8)
-    colours, scale = palette()
+    colours, scale = _palette()
     rgba[valid] = np.rint(colours(scale(elevation[valid])) * 255).astype(np.uint8)
 
     xmin, ymin, xmax, ymax = bounds
-    shade = LightSource(azdeg=HILLSHADE_AZIMUTH, altdeg=HILLSHADE_ALTITUDE).hillshade(
+    shade = LightSource(azdeg=_HILLSHADE_AZIMUTH, altdeg=_HILLSHADE_ALTITUDE).hillshade(
         np.where(valid, elevation, 0.0),
         vert_exag=1.0,
         dx=(xmax - xmin) / elevation.shape[1],
@@ -63,8 +63,8 @@ def paint(
         fraction=1.0,
     )
     rgba[valid, :3] = np.rint(
-        rgba[valid, :3].astype(np.float32) * (1 - HILLSHADE_ALPHA)
-        + shade[valid, None] * 255 * HILLSHADE_ALPHA
+        rgba[valid, :3].astype(np.float32) * (1 - _HILLSHADE_ALPHA)
+        + shade[valid, None] * 255 * _HILLSHADE_ALPHA
     ).astype(np.uint8)
     return rgba
 
@@ -82,4 +82,4 @@ def prepare_terrain(
         root=root,
         include_below_sea_level=include_below_sea_level,
     )
-    return paint(loaded.elevation, loaded.valid, loaded.padded_bounds)[1:-1, 1:-1], loaded.bounds
+    return _paint(loaded.elevation, loaded.valid, loaded.padded_bounds)[1:-1, 1:-1], loaded.bounds

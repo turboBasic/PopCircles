@@ -16,7 +16,7 @@ from population_circles.documents.result_document import (
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
 from population_circles.domain.territory_coverage import NoTerritoryAreaError, territory_share
 
-BoundaryLoader = Callable[[Answer], Mapping[str, BaseGeometry] | None]
+_BoundaryLoader = Callable[[Answer], Mapping[str, BaseGeometry] | None]
 
 
 @dataclass(frozen=True)
@@ -24,8 +24,8 @@ class _Enrichment:
     document: Mapping[str, object]
     earth_radius: float
     boundaries: Mapping[str, BaseGeometry] | None
-    load_country_boundaries: BoundaryLoader | None
-    load_map_boundaries: BoundaryLoader | None
+    load_country_boundaries: _BoundaryLoader | None
+    load_map_boundaries: _BoundaryLoader | None
 
 
 def _load_boundaries(
@@ -91,8 +91,8 @@ def enrich_document(
     document: dict[str, object],
     boundaries: Mapping[str, BaseGeometry] | None = None,
     *,
-    load_country_boundaries: BoundaryLoader | None = None,
-    load_map_boundaries: BoundaryLoader | None = None,
+    load_country_boundaries: _BoundaryLoader | None = None,
+    load_map_boundaries: _BoundaryLoader | None = None,
 ) -> dict[str, object]:
     envelope = Envelope.model_validate(document)
     result = cast(dict[str, object], document["result"])

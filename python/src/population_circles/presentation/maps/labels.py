@@ -17,10 +17,10 @@ from population_circles.presentation.maps.frame import Frame, project
 
 PLACE_LAYER = 2.85
 MAP_OUTPUT_DPI = 200
-MIN_COUNTRY_LABEL_LAND_SHARE = 0.001
-COUNTRY_LABEL_WRAP_WIDTH = 12
-COUNTRY_LABEL_WRAP_MIN_LENGTH = 16
-COUNTRY_LABEL_OUTLINE_PX = 2
+_MIN_COUNTRY_LABEL_LAND_SHARE = 0.001
+_COUNTRY_LABEL_WRAP_WIDTH = 12
+_COUNTRY_LABEL_WRAP_MIN_LENGTH = 16
+_COUNTRY_LABEL_OUTLINE_PX = 2
 
 
 def place_city_labels(
@@ -162,14 +162,14 @@ def draw_country_labels(
     countries_with_share = [
         (visible.area / land_area, visible, name, anchor)
         for visible, name, anchor in countries
-        if land_area > 0 and visible.area / land_area >= MIN_COUNTRY_LABEL_LAND_SHARE
+        if land_area > 0 and visible.area / land_area >= _MIN_COUNTRY_LABEL_LAND_SHARE
     ]
     countries_with_share.sort(key=lambda country: (-country[0], country[2]))
     placed: list[Bbox] = []
     for _, visible, name, anchor in countries_with_share:
         label = axes.annotate(  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
-            textwrap.fill(name, width=COUNTRY_LABEL_WRAP_WIDTH)
-            if len(name) >= COUNTRY_LABEL_WRAP_MIN_LENGTH
+            textwrap.fill(name, width=_COUNTRY_LABEL_WRAP_WIDTH)
+            if len(name) >= _COUNTRY_LABEL_WRAP_MIN_LENGTH
             else name,
             (anchor.x, anchor.y),
             xytext=(0, 0),
@@ -180,7 +180,7 @@ def draw_country_labels(
             color="#454545",
             path_effects=[
                 path_effects.withStroke(
-                    linewidth=72 * COUNTRY_LABEL_OUTLINE_PX / MAP_OUTPUT_DPI,
+                    linewidth=72 * _COUNTRY_LABEL_OUTLINE_PX / MAP_OUTPUT_DPI,
                     foreground="white",
                 ),
             ],

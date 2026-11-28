@@ -6,29 +6,29 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-REPO_ROOT = Path(__file__).resolve().parents[5]
-PRESENTATION_CONFIG = REPO_ROOT / "data" / "presentation.toml"
-CountryProjection = Literal[
+_REPO_ROOT = Path(__file__).resolve().parents[5]
+_PRESENTATION_CONFIG = _REPO_ROOT / "data" / "presentation.toml"
+_CountryProjection = Literal[
     "plate-carree",
     "orthographic",
     "albers-equal-area",
     "transverse-mercator",
 ]
-DefaultProjection = Literal["plate-carree", "orthographic"]
-ExtentUnits = Literal["metres", "degrees"]
-CountryId = Annotated[str, Field(pattern=r"^[A-Z]{2,3}$")]
-PROJECTION_PARAMETERS: dict[str, frozenset[str]] = {
+_DefaultProjection = Literal["plate-carree", "orthographic"]
+_ExtentUnits = Literal["metres", "degrees"]
+_CountryId = Annotated[str, Field(pattern=r"^[A-Z]{2,3}$")]
+_PROJECTION_PARAMETERS: dict[str, frozenset[str]] = {
     "plate-carree": frozenset(),
     "orthographic": frozenset({"lon_0", "lat_0"}),
     "albers-equal-area": frozenset({"lon_0", "lat_0", "lat_1", "lat_2"}),
     "transverse-mercator": frozenset({"lon_0", "lat_0", "k_0"}),
 }
-OPTIONAL_PROJECTION_PARAMETERS: frozenset[str] = frozenset({"x_0", "y_0"})
-MIN_LATITUDE = -90
-MAX_LATITUDE = 90
-MIN_LONGITUDE = -180
-MAX_LONGITUDE = 180
-MIN_SCALE_FACTOR = 0.0
+_OPTIONAL_PROJECTION_PARAMETERS: frozenset[str] = frozenset({"x_0", "y_0"})
+_MIN_LATITUDE = -90
+_MAX_LATITUDE = 90
+_MIN_LONGITUDE = -180
+_MAX_LONGITUDE = 180
+_MIN_SCALE_FACTOR = 0.0
 
 
 class _Model(BaseModel):
@@ -36,12 +36,12 @@ class _Model(BaseModel):
 
 
 def _validate_projection_parameters(
-    projection: CountryProjection, parameters: dict[str, float]
+    projection: _CountryProjection, parameters: dict[str, float]
 ) -> None:
-    required = PROJECTION_PARAMETERS[projection]
+    required = _PROJECTION_PARAMETERS[projection]
     actual = frozenset(parameters)
     allowed = required | (
-        OPTIONAL_PROJECTION_PARAMETERS if projection != "plate-carree" else frozenset[str]()
+        _OPTIONAL_PROJECTION_PARAMETERS if projection != "plate-carree" else frozenset[str]()
     )
     missing = required - actual
     unknown = actual - allowed
@@ -56,15 +56,15 @@ def _validate_projection_parameters(
         raise ValueError(message)
     for name in ("lat_0", "lat_1", "lat_2"):
         value = parameters.get(name)
-        if value is not None and not MIN_LATITUDE <= value <= MAX_LATITUDE:
-            message = f"{name} must be between {MIN_LATITUDE} and {MAX_LATITUDE} degrees"
+        if value is not None and not _MIN_LATITUDE <= value <= _MAX_LATITUDE:
+            message = f"{name} must be between {_MIN_LATITUDE} and {_MAX_LATITUDE} degrees"
             raise ValueError(message)
     lon_0 = parameters.get("lon_0")
-    if lon_0 is not None and not MIN_LONGITUDE <= lon_0 <= MAX_LONGITUDE:
-        message = f"lon_0 must be between {MIN_LONGITUDE} and {MAX_LONGITUDE} degrees"
+    if lon_0 is not None and not _MIN_LONGITUDE <= lon_0 <= _MAX_LONGITUDE:
+        message = f"lon_0 must be between {_MIN_LONGITUDE} and {_MAX_LONGITUDE} degrees"
         raise ValueError(message)
     k_0 = parameters.get("k_0")
-    if k_0 is not None and k_0 <= MIN_SCALE_FACTOR:
+    if k_0 is not None and k_0 <= _MIN_SCALE_FACTOR:
         message = "k_0 must be positive"
         raise ValueError(message)
     if projection == "albers-equal-area" and parameters["lat_1"] == -parameters["lat_2"]:
@@ -78,7 +78,7 @@ class MapText(_Model):
 
 
 class Gallery(_Model):
-    excluded_country_ids: list[CountryId]
+    excluded_country_ids: list[_CountryId]
 
     @field_validator("excluded_country_ids")
     @classmethod
@@ -91,11 +91,11 @@ class Gallery(_Model):
 
 class MapSources(_Model):
     terrain_default: Annotated[str, Field(min_length=1)]
-    terrain_overrides: dict[CountryId, Annotated[str, Field(min_length=1)]] = Field(
+    terrain_overrides: dict[_CountryId, Annotated[str, Field(min_length=1)]] = Field(
         default_factory=dict,
     )
     terrain_overlays: dict[
-        CountryId,
+        _CountryId,
         Annotated[list[Annotated[str, Field(min_length=1)]], Field(min_length=1)],
     ] = Field(default_factory=dict)
     lakes: Annotated[str, Field(min_length=1)]
@@ -105,7 +105,7 @@ class MapSources(_Model):
 
 
 class MapExtent(_Model):
-    units: ExtentUnits
+    units: _ExtentUnits
     x_min: float
     y_min: float
     x_max: float
@@ -125,7 +125,7 @@ class MapExtent(_Model):
 
 
 class CountryMap(_Model):
-    projection: CountryProjection
+    projection: _CountryProjection
     projection_parameters: dict[str, float] = Field(default_factory=dict)
     extent: MapExtent | None = None
 
@@ -145,7 +145,7 @@ class PresentationConfig(_Model):
     map_titles: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
     gallery: Gallery
     map_sources: MapSources
-    country_maps: dict[str, CountryMap | DefaultProjection]
+    country_maps: dict[str, CountryMap | _DefaultProjection]
 
     @model_validator(mode="after")
     def valid_country_map_keys(self) -> Self:
@@ -170,7 +170,7 @@ class PresentationConfig(_Model):
         return value
 
     @property
-    def default_projection(self) -> DefaultProjection:
+    def default_projection(self) -> _DefaultProjection:
         value = self.country_maps["default_projection"]
         if not isinstance(value, str) or value not in ("orthographic", "plate-carree"):
             message = "country_maps.default_projection must be a projection"
@@ -178,7 +178,7 @@ class PresentationConfig(_Model):
         return value
 
 
-def parse(text: str, *, source: Path = PRESENTATION_CONFIG) -> PresentationConfig:
+def _parse(text: str, *, source: Path = _PRESENTATION_CONFIG) -> PresentationConfig:
     try:
         return PresentationConfig.model_validate(tomllib.loads(text))
     except (TypeError, ValidationError, tomllib.TOMLDecodeError) as error:
@@ -194,7 +194,7 @@ def parse(text: str, *, source: Path = PRESENTATION_CONFIG) -> PresentationConfi
 
 
 def load() -> PresentationConfig:
-    return parse(PRESENTATION_CONFIG.read_text(encoding="utf-8"))
+    return _parse(_PRESENTATION_CONFIG.read_text(encoding="utf-8"))
 
 
 def map_text_rendering() -> tuple[bool, bool]:

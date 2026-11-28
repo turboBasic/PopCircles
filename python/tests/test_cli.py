@@ -12,7 +12,7 @@ from population_circles.application.use_cases import build_gallery, circle_resul
 from population_circles.application.use_cases.circle_result import CircleResultRequest
 from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.presentation import cli
-from population_circles.presentation.maps import render_globe
+from population_circles.presentation.maps import animated_globe
 
 runner = CliRunner()
 INVALID_ARGUMENT_EXIT = 2
@@ -145,7 +145,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
         composition, "render_map_collaborators", Mock(return_value=map_collaborators)
     )
     monkeypatch.setattr(render_map, "render_file", render_file)
-    monkeypatch.setattr(render_globe, "render_command", render_command)
+    monkeypatch.setattr(animated_globe, "render_command", render_command)
     monkeypatch.setattr(build_gallery, "build", gallery)
 
     results = [

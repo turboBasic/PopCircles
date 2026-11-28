@@ -358,7 +358,7 @@ def python_document_contract(source: str) -> tuple[int | None, set[str]]:
         if target.id == "SCHEMA_VERSION":
             value = ast.literal_eval(node.value)
             python_version = value if isinstance(value, int) else None
-        elif target.id == "DocumentKind" and isinstance(node.value, ast.Subscript):
+        elif target.id.lstrip("_") == "DocumentKind" and isinstance(node.value, ast.Subscript):
             python_kinds = {
                 item.value
                 for item in ast.walk(node.value.slice)
