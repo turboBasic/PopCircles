@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import hashlib
 from pathlib import Path
 
@@ -12,9 +15,15 @@ from shapely.geometry import Point, box
 from population_circles.infrastructure.geodata.dataset_registry import TerrainRaster
 from population_circles.presentation.maps.frame import Frame
 from population_circles.presentation.maps.terrain import (
-    ELEVATION_STOPS,
-    paint,
-    palette,
+    _ELEVATION_STOPS as ELEVATION_STOPS,
+)
+from population_circles.presentation.maps.terrain import (
+    _paint as paint,
+)
+from population_circles.presentation.maps.terrain import (
+    _palette as palette,
+)
+from population_circles.presentation.maps.terrain import (
     prepare_terrain,
 )
 

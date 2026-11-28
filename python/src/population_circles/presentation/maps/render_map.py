@@ -53,37 +53,37 @@ from population_circles.presentation.maps.terrain import prepare_terrain
 mpl.use("Agg")
 
 
-class MissingCountryOutlineError(ValueError):
+class _MissingCountryOutlineError(ValueError):
     def __init__(self) -> None:
         super().__init__("country result rendering requires its registered boundary outline")
 
 
 # Bottom to top: coastlines, country fills, graticule, circle, its centre, and the frame's own
 # outline last so no fill reaching the limb draws over it.
-COASTLINE_LAYER = 2
-COUNTRY_LAYER = 2.5
-GRATICULE_LAYER = 2.75
-WATER_LAYER = 2.6
-ROAD_LAYER = 2.65
-MIN_WORLD_CITY_POPULATION = 5_000_000
-CIRCLE_LAYER = 3
+_COASTLINE_LAYER = 2
+_COUNTRY_LAYER = 2.5
+_GRATICULE_LAYER = 2.75
+_WATER_LAYER = 2.6
+_ROAD_LAYER = 2.65
+_MIN_WORLD_CITY_POPULATION = 5_000_000
+_CIRCLE_LAYER = 3
 OCEAN = "#DFFFFD"
-COUNTRY = "#65CBC1"
-CONTEXT_COUNTRY_FILL = "#F4F4F4"
-LAKE = "#9BD8E5"
-RIVER = "#65B7CE"
-ROAD = "#B56F52"
-OUTLINE_WIDTH = 0.6
-CENTRE_LAYER = 4
-HORIZON_LAYER = 5
-TERRAIN_LAYER = 1
-COUNTRY_FILL_ALPHA = 0.14
-MAP_OUTPUT_WIDTH = 11.0 * MAP_OUTPUT_DPI
-MAP_OUTPUT_HEIGHT = 6.0 * MAP_OUTPUT_DPI
-MAP_OUTPUT_AREA = MAP_OUTPUT_WIDTH * MAP_OUTPUT_HEIGHT
+_COUNTRY = "#65CBC1"
+_CONTEXT_COUNTRY_FILL = "#F4F4F4"
+_LAKE = "#9BD8E5"
+_RIVER = "#65B7CE"
+_ROAD = "#B56F52"
+_OUTLINE_WIDTH = 0.6
+_CENTRE_LAYER = 4
+_HORIZON_LAYER = 5
+_TERRAIN_LAYER = 1
+_COUNTRY_FILL_ALPHA = 0.14
+_MAP_OUTPUT_WIDTH = 11.0 * MAP_OUTPUT_DPI
+_MAP_OUTPUT_HEIGHT = 6.0 * MAP_OUTPUT_DPI
+_MAP_OUTPUT_AREA = _MAP_OUTPUT_WIDTH * _MAP_OUTPUT_HEIGHT
 
 
-def compound(polygon: Polygon) -> DrawPath:
+def _compound(polygon: Polygon) -> DrawPath:
     # Exterior first and every hole after it, in one path: a cap holding both poles covers the world
     # bar one region, and that region is a hole rather than a second part.
     return DrawPath.make_compound_path(
@@ -92,32 +92,32 @@ def compound(polygon: Polygon) -> DrawPath:
     )
 
 
-def fill_circle(axes: Axes, geometry: BaseGeometry) -> None:
+def _fill_circle(axes: Axes, geometry: BaseGeometry) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
             PathPatch(
-                compound(polygon),
+                _compound(polygon),
                 facecolor="crimson",
                 edgecolor="darkred",
                 alpha=0.45,
                 linewidth=0.8,
-                zorder=CIRCLE_LAYER,
+                zorder=_CIRCLE_LAYER,
             ),
         )
 
 
-def outline(
+def _outline(
     axes: Axes,
     geometry: BaseGeometry,
-    layer: float = HORIZON_LAYER,
+    layer: float = _HORIZON_LAYER,
     *,
     facecolor: str = "none",
-    linewidth: float = OUTLINE_WIDTH,
+    linewidth: float = _OUTLINE_WIDTH,
 ) -> None:
     for polygon in polygons(geometry):
         axes.add_patch(
             PathPatch(
-                compound(polygon),
+                _compound(polygon),
                 facecolor=facecolor,
                 edgecolor="0.4",
                 linewidth=linewidth,
@@ -126,7 +126,7 @@ def outline(
         )
 
 
-def stroke(axes: Axes, geometry: BaseGeometry, colour: str, width: float, layer: float) -> None:
+def _stroke(axes: Axes, geometry: BaseGeometry, colour: str, width: float, layer: float) -> None:
     axes.add_collection(
         LineCollection(
             [list(line.coords) for line in linestrings(geometry)],
@@ -157,7 +157,7 @@ def title_of(answer: Answer, label: str | None = None) -> str:
     return title
 
 
-def annotate(
+def _annotate(
     figure: Figure,
     y: float,
     text: str,
@@ -177,22 +177,22 @@ def annotate(
     )
 
 
-def figure_size(
+def _figure_size(
     bounds: tuple[float, float, float, float], *, country_map: bool
 ) -> tuple[float, float]:
     if not country_map:
         return 11.0, 6.0
     west, south, east, north = bounds
     aspect = (east - west) / (north - south)
-    width = math.sqrt(MAP_OUTPUT_AREA * aspect)
-    height = math.sqrt(MAP_OUTPUT_AREA / aspect)
-    if width > MAP_OUTPUT_WIDTH:
-        width = MAP_OUTPUT_WIDTH
+    width = math.sqrt(_MAP_OUTPUT_AREA * aspect)
+    height = math.sqrt(_MAP_OUTPUT_AREA / aspect)
+    if width > _MAP_OUTPUT_WIDTH:
+        width = _MAP_OUTPUT_WIDTH
         height = width / aspect
     return width / MAP_OUTPUT_DPI, height / MAP_OUTPUT_DPI
 
 
-def wrap_to_width(figure: Figure, text: str, size: float) -> str:
+def _wrap_to_width(figure: Figure, text: str, size: float) -> str:
     canvas = cast(FigureCanvasAgg, figure.canvas)
     renderer = canvas.get_renderer()
     font = FontProperties(size=size)
@@ -230,14 +230,14 @@ def _projected_context(
     return projected
 
 
-def draw_context(
+def _draw_context(
     axes: Axes,
     view: Frame,
     layers: MapLayers,
     country_clip: BaseGeometry | None,
 ) -> None:
     lake_paths = [
-        compound(polygon)
+        _compound(polygon)
         for geometry in _projected_context(view, layers.lakes, country_clip)
         for polygon in polygons(geometry)
     ]
@@ -245,15 +245,15 @@ def draw_context(
         axes.add_patch(
             PathPatch(
                 DrawPath.make_compound_path(*lake_paths),
-                facecolor=LAKE,
-                edgecolor=RIVER,
+                facecolor=_LAKE,
+                edgecolor=_RIVER,
                 linewidth=0.25,
-                zorder=WATER_LAYER,
+                zorder=_WATER_LAYER,
             ),
         )
     for geometries, colour, width, layer in (
-        (layers.rivers, RIVER, 0.45, WATER_LAYER),
-        (layers.roads if country_clip is not None else (), ROAD, 0.65, ROAD_LAYER),
+        (layers.rivers, _RIVER, 0.45, _WATER_LAYER),
+        (layers.roads if country_clip is not None else (), _ROAD, 0.65, _ROAD_LAYER),
     ):
         lines = [
             line
@@ -262,7 +262,7 @@ def draw_context(
             if not line.is_empty
         ]
         if lines:
-            stroke(
+            _stroke(
                 axes,
                 MultiLineString([list(line.coords) for line in lines]),
                 colour,
@@ -272,7 +272,7 @@ def draw_context(
     if country_clip is not None:
         places = [place for place in layers.places if country_clip.covers(place[0])][:10]
     else:
-        places = [place for place in layers.places if place[2] >= MIN_WORLD_CITY_POPULATION]
+        places = [place for place in layers.places if place[2] >= _MIN_WORLD_CITY_POPULATION]
     if places:
         labels: list[tuple[Text, float, float, bool]] = []
         for geometry, name, _, capital in places:
@@ -301,7 +301,7 @@ def draw_context(
         place_city_labels(axes, labels)
 
 
-def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are distinct display inputs
+def _draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are distinct display inputs
     axes: Axes,
     view: Frame,
     coastline: BaseGeometry | None,
@@ -310,23 +310,23 @@ def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are dist
     country_clip: BaseGeometry | None = None,
     country_labels: Sequence[tuple[BaseGeometry, str]] = (),
 ) -> None:
-    stroke(axes, project(view, graticule()), "0.75", 0.3, GRATICULE_LAYER)
+    _stroke(axes, project(view, graticule()), "0.75", 0.3, _GRATICULE_LAYER)
     if coastline is not None:
-        stroke(axes, project(view, coastline), "dimgrey", 0.5, COASTLINE_LAYER)
+        _stroke(axes, project(view, coastline), "dimgrey", 0.5, _COASTLINE_LAYER)
     country_paths: list[DrawPath] = []
     for geometry in other_countries:
         projected = project(view, geometry)
         if all(math.isfinite(value) for point in get_coordinates(projected) for value in point):
-            country_paths.extend(compound(polygon) for polygon in polygons(projected))
+            country_paths.extend(_compound(polygon) for polygon in polygons(projected))
     if country_paths:
         axes.add_patch(
             PathPatch(
                 DrawPath.make_compound_path(*country_paths),
-                facecolor=(COUNTRY if view.country_outline is None else CONTEXT_COUNTRY_FILL),
-                alpha=COUNTRY_FILL_ALPHA if view.country_outline is None else 1.0,
+                facecolor=(_COUNTRY if view.country_outline is None else _CONTEXT_COUNTRY_FILL),
+                alpha=_COUNTRY_FILL_ALPHA if view.country_outline is None else 1.0,
                 edgecolor="0.4",
-                linewidth=OUTLINE_WIDTH,
-                zorder=COUNTRY_LAYER,
+                linewidth=_OUTLINE_WIDTH,
+                zorder=_COUNTRY_LAYER,
             ),
         )
     if country_labels:
@@ -335,21 +335,21 @@ def draw(  # noqa: PLR0913, PLR0917 — map layers and country clipping are dist
         for polygon in polygons(view.country_outline):
             axes.add_patch(
                 PathPatch(
-                    compound(polygon),
-                    facecolor=COUNTRY,
-                    alpha=COUNTRY_FILL_ALPHA,
+                    _compound(polygon),
+                    facecolor=_COUNTRY,
+                    alpha=_COUNTRY_FILL_ALPHA,
                     edgecolor="0.4",
                     linewidth=1,
-                    zorder=COUNTRY_LAYER,
+                    zorder=_COUNTRY_LAYER,
                 ),
             )
     if map_layers is not None:
-        draw_context(axes, view, map_layers, country_clip)
-    fill_circle(axes, view.circle)
-    outline(axes, view.horizon)
+        _draw_context(axes, view, map_layers, country_clip)
+    _fill_circle(axes, view.circle)
+    _outline(axes, view.horizon)
 
 
-def fill_ocean(axes: Axes, view: Frame) -> None:
+def _fill_ocean(axes: Axes, view: Frame) -> None:
     west, south, east, north = view.horizon.bounds
     draw_image = cast(Callable[..., AxesImage], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
     ocean = draw_image(
@@ -358,12 +358,12 @@ def fill_ocean(axes: Axes, view: Frame) -> None:
         zorder=0,
     )
     horizon = DrawPath.make_compound_path(
-        *(compound(polygon) for polygon in polygons(view.horizon))
+        *(_compound(polygon) for polygon in polygons(view.horizon))
     )
     ocean.set_clip_path(PathPatch(horizon, transform=axes.transData))
 
 
-def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an independent map layer
+def _draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an independent map layer
     axes: Axes,
     view: Frame,
     coastline: BaseGeometry | None,
@@ -372,7 +372,7 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
     country_clip: BaseGeometry | None,
     country_labels: Sequence[tuple[BaseGeometry, str]],
 ) -> None:
-    fill_ocean(axes, view)
+    _fill_ocean(axes, view)
     if map_layers is not None:
         draw_image = cast(Callable[..., AxesImage], axes.imshow)  # pyright: ignore[reportUnknownMemberType] — Matplotlib kwargs: Unknown
         west, south, east, north = view.horizon.bounds
@@ -400,13 +400,13 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
                 extent=(west, east, south, north),
                 origin="upper",
                 interpolation="bilinear",
-                zorder=TERRAIN_LAYER,
+                zorder=_TERRAIN_LAYER,
             )
 
         def clip_to_country(image: AxesImage) -> None:
             if country_clip is None or view.country_outline is None:
                 return
-            paths = [compound(polygon) for polygon in polygons(view.country_outline)]
+            paths = [_compound(polygon) for polygon in polygons(view.country_outline)]
             if paths:
                 image.set_clip_path(
                     PathPatch(
@@ -423,7 +423,7 @@ def draw_map_layers(  # noqa: PLR0913, PLR0917 — each argument describes an in
         else:
             terrain = draw_terrain(map_layers.sources.terrain)
         clip_to_country(terrain)
-    draw(axes, view, coastline, other_countries, map_layers, country_clip, country_labels)
+    _draw(axes, view, coastline, other_countries, map_layers, country_clip, country_labels)
 
 
 def render(  # noqa: PLR0913 — distinct geometry and display inputs stay explicit
@@ -440,12 +440,12 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     title_label: str | None = None,
 ) -> Figure:
     if answer.country is not None and country_outline is None:
-        raise MissingCountryOutlineError
+        raise _MissingCountryOutlineError
     circle = answer.circle
     centre = GeographicCoordinate(lat=circle.centre.lat, lon=circle.centre.lon)
     built = cap(centre, circle.radius_km, circle.earth_radius_km)
     if answer.country is not None:
-        country_outline, frame_settings = country_map_display(answer.country.id, country_outline)
+        country_outline, frame_settings = _country_map_display(answer.country.id, country_outline)
     else:
         frame_settings = None
     view = (
@@ -457,7 +457,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
     centre = view.to_frame.transform(circle.centre.lon, circle.centre.lat)
 
     figure = plt.figure(  # pyright: ignore[reportUnknownMemberType] — matplotlib **kwargs: Unknown
-        figsize=figure_size(view.horizon.bounds, country_map=answer.country is not None),
+        figsize=_figure_size(view.horizon.bounds, country_map=answer.country is not None),
     )
     try:
         title = title_of(answer, title_label)
@@ -465,16 +465,16 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         canvas = cast(FigureCanvasAgg, figure.canvas)
         header_bottom = 0.985
         if render_text[0]:
-            annotate(figure, 0.985, wrap_to_width(figure, title, 12.0), 12.0, "top")
+            _annotate(figure, 0.985, _wrap_to_width(figure, title, 12.0), 12.0, "top")
             canvas.draw()
             header_bottom = figure.texts[-1].get_window_extent(canvas.get_renderer()).y0
             header_bottom /= figure.bbox.height
         if render_text[1]:
             description_top = header_bottom - 0.015 if render_text[0] else 0.985
-            annotate(
+            _annotate(
                 figure,
                 description_top,
-                wrap_to_width(figure, map_metadata.description_of(answer), 7.0),
+                _wrap_to_width(figure, map_metadata.description_of(answer), 7.0),
                 7.0,
                 "top",
             )
@@ -494,7 +494,7 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
         west, south, east, north = view.horizon.bounds
         axes.set_xlim(west, east)
         axes.set_ylim(south, north)
-        draw_map_layers(
+        _draw_map_layers(
             axes,
             view,
             coastline,
@@ -509,20 +509,20 @@ def render(  # noqa: PLR0913 — distinct geometry and display inputs stay expli
             marker="+",
             color="black",
             markersize=9,
-            zorder=CENTRE_LAYER,
+            zorder=_CENTRE_LAYER,
         )
-        annotate(figure, 0.04, wrap_to_width(figure, footer, 6.5), 6.5, "bottom")
+        _annotate(figure, 0.04, _wrap_to_width(figure, footer, 6.5), 6.5, "bottom")
     except BaseException:
         plt.close(figure)
         raise
     return figure
 
 
-def country_map_display(
+def _country_map_display(
     country_id: str, outline: BaseGeometry | None
 ) -> tuple[BaseGeometry, CountryFrameSettings]:
     if outline is None:
-        raise MissingCountryOutlineError
+        raise _MissingCountryOutlineError
     config = load_presentation_config()
     settings = config.country_maps.get(country_id)
     if not isinstance(settings, CountryMap):

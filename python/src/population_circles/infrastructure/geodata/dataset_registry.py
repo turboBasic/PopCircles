@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # basemap and for the same reason — the project is installed editable, so the checkout is beside
 # the package. FU-20 covers both of these together.
 REPO_ROOT = Path(__file__).resolve().parents[5]
-REGISTRY = REPO_ROOT / "data" / "registry.toml"
-SHA256_HEX_LENGTH = 64
+_REGISTRY = REPO_ROOT / "data" / "registry.toml"
+_SHA256_HEX_LENGTH = 64
 
 # `extra="forbid"` where `result_document.py` uses `extra="ignore"`, and the difference is which
 # side of a boundary the producer sits on. That file consumes a format Rust writes and grows
@@ -61,7 +61,7 @@ class PopulationRaster(_Dataset):
             message = "derived population source must name both its dataset and SHA-256"
             raise ValueError(message)
         if self.derived_from_sha256 is not None and (
-            len(self.derived_from_sha256) != SHA256_HEX_LENGTH
+            len(self.derived_from_sha256) != _SHA256_HEX_LENGTH
             or any(char not in "0123456789abcdef" for char in self.derived_from_sha256)
         ):
             message = (
@@ -144,7 +144,7 @@ class MapContextVector(_Dataset):
 
 # Discriminated on `kind` so a raster without a grid does not construct, rather than every reader
 # re-checking that the eight grid fields are present.
-Dataset = Annotated[
+_DatasetType = Annotated[
     PopulationRaster | TerrainRaster | BoundaryVector | SettlementVector | MapContextVector,
     Field(discriminator="kind"),
 ]
@@ -153,7 +153,7 @@ Dataset = Annotated[
 class Registry(BaseModel):
     model_config = _CONFIG
 
-    datasets: Mapping[str, Dataset]
+    datasets: Mapping[str, _DatasetType]
 
     @model_validator(mode="after")
     def _key_is_the_filename_stem(self) -> Self:
@@ -173,10 +173,10 @@ class Registry(BaseModel):
         return self
 
 
-def parse(text: str) -> Registry:
+def _parse(text: str) -> Registry:
     return Registry.model_validate(tomllib.loads(text))
 
 
 @functools.cache
 def load() -> Registry:
-    return parse(REGISTRY.read_text(encoding="utf-8"))
+    return _parse(_REGISTRY.read_text(encoding="utf-8"))

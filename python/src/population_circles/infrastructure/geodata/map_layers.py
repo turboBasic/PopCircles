@@ -20,7 +20,7 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     TerrainRaster,
 )
 
-COASTLINE_DATASET = coastline_dataset_key()
+_COASTLINE_DATASET = coastline_dataset_key()
 
 
 class UnregisteredDatasetError(ValueError):
@@ -155,7 +155,7 @@ def _context_geometries(
         if major_roads and (
             properties.get("sov_a3") == "XNR"
             or not isinstance(properties.get("min_zoom"), (int, float))
-            or properties["min_zoom"] > MAX_ROAD_MIN_ZOOM
+            or properties["min_zoom"] > _MAX_ROAD_MIN_ZOOM
         ):
             continue
         raw_geometry = feature["geometry"]
@@ -200,7 +200,7 @@ def _selected_places(path: Path) -> tuple[tuple[Point, str, int, bool], ...]:
     for feature in features:
         properties = feature["properties"]
         capital = properties["FEATURECLA"] == "Admin-0 capital"
-        if properties.get("POP_MAX", 0) < MIN_PLACE_POPULATION and not capital:
+        if properties.get("POP_MAX", 0) < _MIN_PLACE_POPULATION and not capital:
             continue
         geometry = shape(feature["geometry"])
         if isinstance(geometry, Point):
@@ -227,9 +227,9 @@ def citation(registry: Registry, key: str) -> str:
     return dataset.attribution
 
 
-MIN_PLACE_POPULATION = 100_000
+_MIN_PLACE_POPULATION = 100_000
 
-MAX_ROAD_MIN_ZOOM = 4
+_MAX_ROAD_MIN_ZOOM = 4
 
 
 @cache

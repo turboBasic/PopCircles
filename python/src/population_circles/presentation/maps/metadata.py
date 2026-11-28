@@ -8,10 +8,10 @@ from PIL.TiffImagePlugin import IFDRational
 
 from population_circles.documents.result_document import Answer
 
-MINUTES_PER_DEGREE = 60
+_MINUTES_PER_DEGREE = 60
 
 
-def footer_text() -> str:
+def _footer_text() -> str:
     return (
         "© Andrii Melnyk, 2026, https://github.com/turboBasic/PopCircles · "
         "© EuroGeographics for the administrative boundaries"
@@ -20,7 +20,7 @@ def footer_text() -> str:
 
 def visible_credits(map_attributions: Sequence[tuple[str, str]]) -> str:
     additions = [f"{name} data: {attribution}" for name, attribution in map_attributions]
-    return " · ".join((footer_text(), *additions, "See full attribution in image metadata"))
+    return " · ".join((_footer_text(), *additions, "See full attribution in image metadata"))
 
 
 def copyright_of(
@@ -73,8 +73,8 @@ def xmp_properties(
         properties["countryCode"] = answer.country.id
     settlement = answer.caption.settlement
     place: dict[str, object] = {
-        "exif:GPSLatitude": gps_coordinate(circle.centre.lat, "N", "S"),
-        "exif:GPSLongitude": gps_coordinate(circle.centre.lon, "E", "W"),
+        "exif:GPSLatitude": _gps_coordinate(circle.centre.lat, "N", "S"),
+        "exif:GPSLongitude": _gps_coordinate(circle.centre.lon, "E", "W"),
     }
     if answer.country is not None:
         place["Iptc4xmpExt:CountryName"] = answer.country.name
@@ -99,10 +99,10 @@ def xmp_properties(
     return {name: value for name, value in properties.items() if value is not None}
 
 
-def gps_coordinate(value: float, positive: str, negative: str) -> str:
+def _gps_coordinate(value: float, positive: str, negative: str) -> str:
     degrees = int(abs(value))
-    minutes = round((abs(value) - degrees) * MINUTES_PER_DEGREE, 5)
-    if minutes == MINUTES_PER_DEGREE:
+    minutes = round((abs(value) - degrees) * _MINUTES_PER_DEGREE, 5)
+    if minutes == _MINUTES_PER_DEGREE:
         degrees += 1
         minutes = 0
     hemisphere = positive if value >= 0 else negative
@@ -159,7 +159,7 @@ def _xmp_scalar(
     description.set(f"{{{namespaces[prefix]}}}{local_name}", str(value))
 
 
-def xmp_packet(properties: Mapping[str, object]) -> str:
+def _xmp_packet(properties: Mapping[str, object]) -> str:
     namespaces = {
         "x": "adobe:ns:meta/",
         "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -209,11 +209,11 @@ def metadata_json_fields(
         "Description": description,
         "Copyright": copyright_text,
         "XML:com.adobe.xmp": dict(properties),
-        "EXIF:GPSInfo": exif_gps_values(answer.circle.centre.lat, answer.circle.centre.lon),
+        "EXIF:GPSInfo": _exif_gps_values(answer.circle.centre.lat, answer.circle.centre.lon),
     }
 
 
-def exif_gps_values(latitude: float, longitude: float) -> dict[str, object]:
+def _exif_gps_values(latitude: float, longitude: float) -> dict[str, object]:
     def dms(value: float) -> list[list[int]]:
         total = round(abs(value) * 3_600_000)
         degrees, remainder = divmod(total, 3_600_000)
@@ -231,7 +231,7 @@ def exif_gps_values(latitude: float, longitude: float) -> dict[str, object]:
 
 
 def exif_gps_packet(latitude: float, longitude: float) -> bytes:
-    values = exif_gps_values(latitude, longitude)
+    values = _exif_gps_values(latitude, longitude)
     gps = {
         ExifTags.GPS.GPSVersionID: bytes(cast(list[int], values["GPSVersionID"])),
         ExifTags.GPS.GPSLatitudeRef: cast(str, values["GPSLatitudeRef"]),
@@ -261,7 +261,7 @@ def png_metadata(
         "Title": title,
         "Description": description,
         "Copyright": copyright_text,
-        "XML:com.adobe.xmp": xmp_packet(
+        "XML:com.adobe.xmp": _xmp_packet(
             {name: value for name, value in properties.items() if value is not None}
         ),
     }

@@ -6,12 +6,12 @@ import typer
 
 from population_circles import composition
 from population_circles.application.errors import GalleryPathError, PopulationApplicationError
-from population_circles.application.use_cases import circle_result, gallery_build, render_map
+from population_circles.application.use_cases import build_gallery, circle_result, render_map
+from population_circles.application.use_cases.build_gallery import GalleryBuildRequest
 from population_circles.application.use_cases.circle_result import CircleResultRequest
-from population_circles.application.use_cases.gallery_build import GalleryBuildRequest
 from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.infrastructure import popcircles_cli
-from population_circles.presentation.maps import render_globe
+from population_circles.presentation.maps import animated_globe
 from population_circles.presentation.maps.frame import PLATE_CARREE, PROJECTIONS
 
 app = typer.Typer(no_args_is_help=True)
@@ -87,7 +87,7 @@ def render_globe_command(
     detalization: Annotated[float, typer.Option()] = 1,
 ) -> None:
     try:
-        centre = render_globe.parse_center(center)
+        centre = animated_globe.parse_center(center)
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
     if not math.isfinite(detalization) or detalization <= 0:
@@ -100,8 +100,8 @@ def render_globe_command(
         message = "--svg-sprite requires --latitude-steps"
         raise typer.BadParameter(message)
     try:
-        rendered = render_globe.render_command(
-            render_globe.RenderOptions(
+        rendered = animated_globe.render_command(
+            animated_globe.RenderOptions(
                 centre,
                 output,
                 output_gif,
@@ -110,7 +110,7 @@ def render_globe_command(
                 detalization,
             )
         )
-    except render_globe.GifRenderError as error:
+    except animated_globe.GifRenderError as error:
         raise typer.BadParameter(str(error)) from error
     if rendered is not None:
         typer.echo(rendered)
@@ -130,7 +130,7 @@ def gallery_build_command(
         "sweep" if refresh_country_sweep else "coverage" if refresh_country_coverage else None
     )
     try:
-        drawn, skipped = gallery_build.build(
+        drawn, skipped = build_gallery.build(
             GalleryBuildRequest(input_path, output, country_refresh),
             composition.gallery_build_collaborators(),
         )

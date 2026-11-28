@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from population_circles.application.use_cases.gallery import RenderJob
+from population_circles.application.use_cases.country_sweep import RenderJob
 from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
     TerrainRaster,
@@ -68,9 +68,10 @@ for index, country_id in enumerate(ids, start=1):
     payload = json.loads(source.read_text())
     terrain_seconds[0] = 0.0
     started = time.perf_counter()
-    drawn, reused = gallery_rendering.render_document(
-        RenderJob(source, payload, index, total), context
+    rendered, _, _ = gallery_rendering.render_documents(
+        [RenderJob(source, payload, index, total)], context
     )
+    drawn, reused = rendered[0]
     if reused:
         raise AssertionError
     elapsed = time.perf_counter() - started
@@ -90,9 +91,10 @@ for index, country_id in enumerate(ids, start=1):
     source = next(corpus.glob(f"country-*-{country_id}-half.json"))
     payload = json.loads(source.read_text())
     started = time.perf_counter()
-    drawn, reused = gallery_rendering.render_document(
-        RenderJob(source, payload, index, total), context
+    rendered, _, _ = gallery_rendering.render_documents(
+        [RenderJob(source, payload, index, total)], context
     )
+    drawn, reused = rendered[0]
     elapsed = time.perf_counter() - started
     warm[country_id] = {"seconds_total": round(elapsed, 3), "reused_cache": reused}
     if not reused:

@@ -75,7 +75,7 @@ ignore = [
   "PLR0913", # Typer exposes each CLI option as a separate handler parameter.
   "PLR0917", # Typer invokes handlers with each parsed CLI option as an argument.
 ]
-"python/src/population_circles/application/use_cases/gallery_build.py" = [
+"python/src/population_circles/application/use_cases/build_gallery.py" = [
   "T201", # what was drawn and what was skipped is this command's output, not debug printing
 ]
 "python/src/population_circles/presentation/gallery/rendering.py" = [

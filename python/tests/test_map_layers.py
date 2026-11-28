@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import json
 import re
 from pathlib import Path
@@ -5,9 +8,16 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, box
 
-from population_circles.infrastructure.geodata.dataset_registry import Registry, parse
+from population_circles.infrastructure.geodata.dataset_registry import (
+    Registry,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
+    _parse as parse,
+)
 from population_circles.infrastructure.geodata.map_layers import (
-    COASTLINE_DATASET,
+    _COASTLINE_DATASET as COASTLINE_DATASET,
+)
+from population_circles.infrastructure.geodata.map_layers import (
     UnregisteredDatasetError,
     citation,
     load_map_layers,

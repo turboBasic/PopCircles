@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import math
 from collections.abc import Callable
 from dataclasses import replace
@@ -10,7 +13,12 @@ from shapely.geometry import Polygon, box
 from population_circles.application.use_cases.territory_coverage import enrich_document
 from population_circles.domain import territory_coverage
 from population_circles.domain.geography import GeographicCoordinate, SphericalCircle
-from population_circles.domain.territory_coverage import equal_area_crs, territory_share
+from population_circles.domain.territory_coverage import (
+    _equal_area_crs as equal_area_crs,
+)
+from population_circles.domain.territory_coverage import (
+    territory_share,
+)
 
 EARTH_RADIUS_KM = 6371.0088
 _share_error_bound = cast(

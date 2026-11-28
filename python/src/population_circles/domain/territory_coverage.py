@@ -22,10 +22,10 @@ from population_circles.domain.geography import (
     SphericalCircle,
 )
 
-MAX_SOURCE_SEGMENT_DEG = 0.01
-GEOGRAPHIC_CUT_SLACK_KM = 0.01
-SHARE_NUMERICAL_TOLERANCE = 1e-12
-WORLD = box(-HALF_TURN_DEG, -POLE_LAT, HALF_TURN_DEG, POLE_LAT)
+_MAX_SOURCE_SEGMENT_DEG = 0.01
+_GEOGRAPHIC_CUT_SLACK_KM = 0.01
+_SHARE_NUMERICAL_TOLERANCE = 1e-12
+_WORLD = box(-HALF_TURN_DEG, -POLE_LAT, HALF_TURN_DEG, POLE_LAT)
 
 
 class NoTerritoryAreaError(ValueError):
@@ -88,7 +88,7 @@ def _world_parts(geometry: BaseGeometry, central_meridian: float) -> tuple[Polyg
             holes.append([(lon + shift, lat) for lon, lat in hole])
         unwrapped = Polygon(exterior, holes)
         for offset in (-360.0, 0.0, 360.0):
-            clipped = translate(unwrapped, xoff=offset).intersection(WORLD)
+            clipped = translate(unwrapped, xoff=offset).intersection(_WORLD)
             if isinstance(clipped, Polygon):
                 parts.append(clipped)
             elif isinstance(clipped, MultiPolygon):
@@ -105,7 +105,7 @@ def _project_points(
 def _project_polygon(
     polygon: Polygon,
     transformer: Transformer,
-    max_segment_degrees: float = MAX_SOURCE_SEGMENT_DEG,
+    max_segment_degrees: float = _MAX_SOURCE_SEGMENT_DEG,
 ) -> Polygon:
     densified = segmentize(polygon, max_segment_length=max_segment_degrees)
     exterior = _project_points(
@@ -132,12 +132,12 @@ def _projected_circle(
     circle: SphericalCircle,
     transformer: Transformer,
     central_meridian: float,
-    max_segment_degrees: float = MAX_SOURCE_SEGMENT_DEG,
+    max_segment_degrees: float = _MAX_SOURCE_SEGMENT_DEG,
 ) -> BaseGeometry:
     earth_radius_km = circle.earth_radius_km
     hemisphere_km = math.pi * earth_radius_km / 2.0
     if circle.radius_km <= hemisphere_km:
-        parts = _world_parts(cap_geometry(circle), central_meridian)
+        parts = _world_parts(_cap_geometry(circle), central_meridian)
         return unary_union(
             [_project_polygon(part, transformer, max_segment_degrees) for part in parts]
         )
@@ -151,7 +151,7 @@ def _projected_circle(
         radius_km=math.pi * earth_radius_km - circle.radius_km,
         earth_radius_km=earth_radius_km,
     )
-    complement_parts = _world_parts(cap_geometry(complement), central_meridian)
+    complement_parts = _world_parts(_cap_geometry(complement), central_meridian)
     excluded = unary_union(
         [_project_polygon(part, transformer, max_segment_degrees) for part in complement_parts]
     )
@@ -183,11 +183,11 @@ def _project_territory(
     return [part for part in projected if not part.is_empty]
 
 
-def cap_geometry(circle: SphericalCircle) -> BaseGeometry:
+def _cap_geometry(circle: SphericalCircle) -> BaseGeometry:
     return geographic(cap(circle.centre, circle.radius_km, circle.earth_radius_km))
 
 
-def equal_area_crs(earth_radius_km: float, central_meridian: float = 0.0) -> CRS:
+def _equal_area_crs(earth_radius_km: float, central_meridian: float = 0.0) -> CRS:
     return CRS.from_proj4(
         f"+proj=moll +lon_0={central_meridian} +R={earth_radius_km * METRES_PER_KM} "
         "+units=m +no_defs",
@@ -214,7 +214,7 @@ def territory_share(circle: SphericalCircle, territories: Iterable[BaseGeometry]
     if radius_km > hemisphere_km:
         central_meridian += 180.0
     central_meridian = (central_meridian + 180.0) % 360.0 - 180.0
-    crs = equal_area_crs(earth_radius_km)
+    crs = _equal_area_crs(earth_radius_km)
     to_equal_area = Transformer.from_crs(geodetic_crs(earth_radius_km), crs, always_xy=True)
     territory_parts = [
         part
@@ -229,12 +229,12 @@ def territory_share(circle: SphericalCircle, territories: Iterable[BaseGeometry]
 
     projected_circle = _projected_circle(circle, to_equal_area, central_meridian)
     refined_circle = _projected_circle(
-        circle, to_equal_area, central_meridian, MAX_SOURCE_SEGMENT_DEG / 2.0
+        circle, to_equal_area, central_meridian, _MAX_SOURCE_SEGMENT_DEG / 2.0
     )
     share = land.intersection(projected_circle).area / territory_area
-    if math.isclose(share, 0.0, abs_tol=SHARE_NUMERICAL_TOLERANCE):
+    if math.isclose(share, 0.0, abs_tol=_SHARE_NUMERICAL_TOLERANCE):
         share = 0.0
-    elif math.isclose(share, 1.0, abs_tol=SHARE_NUMERICAL_TOLERANCE):
+    elif math.isclose(share, 1.0, abs_tol=_SHARE_NUMERICAL_TOLERANCE):
         share = 1.0
     if not math.isfinite(share) or not 0.0 <= share <= 1.0:
         message = "territory coverage must be finite and within [0, 1]"
@@ -242,7 +242,7 @@ def territory_share(circle: SphericalCircle, territories: Iterable[BaseGeometry]
 
     boundary_radius_km = min(radius_km, math.pi * earth_radius_km - radius_km)
     sagitta_km = (
-        boundary_radius_km * (1.0 - math.cos(math.pi / (4 * QUAD_SEGS))) + GEOGRAPHIC_CUT_SLACK_KM
+        boundary_radius_km * (1.0 - math.cos(math.pi / (4 * QUAD_SEGS))) + _GEOGRAPHIC_CUT_SLACK_KM
     )
     angle = boundary_radius_km / earth_radius_km
     inner_angle = max(0.0, angle - sagitta_km / earth_radius_km)

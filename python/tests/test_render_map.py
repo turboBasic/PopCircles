@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import hashlib
 import json
 import re
@@ -39,7 +42,9 @@ from population_circles.domain.geography import GeographicCoordinate, SphericalC
 from population_circles.infrastructure.geodata.country_boundaries import (
     BoundaryIdentityError,
     CountryBoundaries,
-    load_outline,
+)
+from population_circles.infrastructure.geodata.country_boundaries import (
+    _load_outline as load_outline,
 )
 from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
@@ -48,10 +53,14 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     SettlementVector,
     TerrainRaster,
     load,
-    parse,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
+    _parse as parse,
 )
 from population_circles.infrastructure.geodata.map_layers import (
-    COASTLINE_DATASET,
+    _COASTLINE_DATASET as COASTLINE_DATASET,
+)
+from population_circles.infrastructure.geodata.map_layers import (
     MapLayers,
     MapSources,
     citation,
@@ -70,15 +79,50 @@ from population_circles.presentation.maps.frame import (
 from population_circles.presentation.maps.frame import (
     frame as world_frame,
 )
+from population_circles.presentation.maps.presentation_config import (
+    _PRESENTATION_CONFIG as PRESENTATION_CONFIG,
+)
 from population_circles.presentation.maps.presentation_config import CountryMap
 from population_circles.presentation.maps.presentation_config import (
     load as load_presentation_config,
 )
 from population_circles.presentation.maps.render_map import (
-    COUNTRY,
-    COUNTRY_LAYER,
-    OUTLINE_WIDTH,
-    MissingCountryOutlineError,
+    _CENTRE_LAYER as CENTRE_LAYER,
+)
+from population_circles.presentation.maps.render_map import (
+    _CIRCLE_LAYER as CIRCLE_LAYER,
+)
+from population_circles.presentation.maps.render_map import (
+    _COUNTRY as COUNTRY,
+)
+from population_circles.presentation.maps.render_map import (
+    _COUNTRY_LAYER as COUNTRY_LAYER,
+)
+from population_circles.presentation.maps.render_map import (
+    _OUTLINE_WIDTH as OUTLINE_WIDTH,
+)
+from population_circles.presentation.maps.render_map import (
+    _ROAD_LAYER as ROAD_LAYER,
+)
+from population_circles.presentation.maps.render_map import (
+    _TERRAIN_LAYER as TERRAIN_LAYER,
+)
+from population_circles.presentation.maps.render_map import (
+    _WATER_LAYER as WATER_LAYER,
+)
+from population_circles.presentation.maps.render_map import (
+    _annotate as annotate_helper,
+)
+from population_circles.presentation.maps.render_map import (
+    _country_map_display as country_map_display_helper,
+)
+from population_circles.presentation.maps.render_map import (
+    _figure_size as figure_size_helper,
+)
+from population_circles.presentation.maps.render_map import (
+    _MissingCountryOutlineError as MissingCountryOutlineError,
+)
+from population_circles.presentation.maps.render_map import (
     render,
     title_of,
 )
@@ -510,7 +554,7 @@ def test_country_render_rejects_an_invalid_presentation_config(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = tmp_path / "presentation.toml"
-    settings = presentation_config_module.PRESENTATION_CONFIG.read_text(encoding="utf-8")
+    settings = PRESENTATION_CONFIG.read_text(encoding="utf-8")
     config_path.write_text(
         settings.replace(
             '[country_maps.US]\nprojection = "orthographic"',
@@ -518,7 +562,7 @@ def test_country_render_rejects_an_invalid_presentation_config(
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(presentation_config_module, "PRESENTATION_CONFIG", config_path)
+    monkeypatch.setattr(presentation_config_module, "_PRESENTATION_CONFIG", config_path)
     payload = country_result_document()
     payload["result"]["country"]["id"] = "US"
     payload["result"]["circle"]["centre"] = {"lat": 44.0, "lon": -96.0}
@@ -552,7 +596,7 @@ def test_chile_extent_hides_remote_components_without_filtering_outline() -> Non
     assert isinstance(outline, MultiPolygon)
     assert settings.extent is not None
     assert settings.extent.units == "degrees"
-    rendered_outline, frame_settings = render_map_module.country_map_display("CL", outline)
+    rendered_outline, frame_settings = country_map_display_helper("CL", outline)
     assert rendered_outline is outline
     assert frame_settings.extent is not None
     assert sum(component.bounds[2] < frame_settings.extent[0] for component in outline.geoms) == (
@@ -595,7 +639,7 @@ def test_world_render_uses_its_frame_without_country_presentation(
         raise AssertionError(message)
 
     monkeypatch.setattr(render_map_module, "frame", capture_frame)
-    monkeypatch.setattr(render_map_module, "country_map_display", refuse_country_display)
+    monkeypatch.setattr(render_map_module, "_country_map_display", refuse_country_display)
     monkeypatch.setattr(render_map_module, "country_frame", refuse_country_display)
     figure = render(circle_of(document()), projection, coastline=None)
     try:
@@ -727,7 +771,7 @@ def test_country_figure_shows_only_the_approved_visible_footer(
     boundary_credit = citation(REGISTRY, answer.country.boundary_dataset)
     coastline, _ = registered_coastline(REGISTRY)
     footer_calls: list[tuple[float, str, float]] = []
-    current_annotate = render_map_module.annotate
+    current_annotate = annotate_helper
 
     def capture_annotate(
         figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
@@ -736,7 +780,7 @@ def test_country_figure_shows_only_the_approved_visible_footer(
             footer_calls.append((y, alignment, size))
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(render_map_module, "_annotate", capture_annotate)
     figure = render(
         answer,
         ORTHOGRAPHIC,
@@ -925,22 +969,19 @@ def test_map_layers_render_in_order_below_circle_and_centre(
         axes = figure.axes[0]
         assert [image.get_zorder() for image in axes.images] == [
             0,
-            render_map_module.TERRAIN_LAYER,
+            TERRAIN_LAYER,
         ]
         assert axes.images[1].get_clip_path() is not None
         assert prepared == [sources.terrain_overlays]
-        assert any(patch.get_zorder() == render_map_module.WATER_LAYER for patch in axes.patches)
-        assert any(
-            collection.get_zorder() == render_map_module.ROAD_LAYER
-            for collection in axes.collections
-        )
+        assert any(patch.get_zorder() == WATER_LAYER for patch in axes.patches)
+        assert any(collection.get_zorder() == ROAD_LAYER for collection in axes.collections)
         assert any(
             collection.get_zorder() == map_labels_module.PLACE_LAYER
             for collection in axes.collections
         )
         assert any(text.get_text() == "Example" for text in axes.texts)
-        assert any(patch.get_zorder() == render_map_module.CIRCLE_LAYER for patch in axes.patches)
-        assert any(line.get_zorder() == render_map_module.CENTRE_LAYER for line in axes.lines)
+        assert any(patch.get_zorder() == CIRCLE_LAYER for patch in axes.patches)
+        assert any(line.get_zorder() == CENTRE_LAYER for line in axes.lines)
         assert layers.root == REPO_ROOT
     finally:
         plt.close(figure)
@@ -988,7 +1029,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
     source_document = territory_document()
     source.write_text(json.dumps(source_document), encoding="utf-8")
     annotations: list[str] = []
-    original_annotate = render_map_module.annotate
+    original_annotate = annotate_helper
 
     def capture_annotate(
         figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
@@ -996,7 +1037,7 @@ def test_render_file_uses_registered_coastline_and_credits_world_figures_once(
         annotations.append(text)
         original_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(render_map_module, "_annotate", capture_annotate)
     basemap_paths: list[Path] = []
     current_basemap = map_layers_module.basemap
 
@@ -1177,10 +1218,10 @@ def test_the_raster_title_uses_the_rounded_radius_share_population_and_centre() 
 
 
 def test_country_map_image_dimensions_preserve_area_and_cap_wide_maps() -> None:
-    landscape = render_map_module.figure_size((0.0, 0.0, 11 / 6, 1.0), country_map=True)
-    portrait = render_map_module.figure_size((0.0, 0.0, 0.5, 1.0), country_map=True)
-    extra_wide = render_map_module.figure_size((0.0, 0.0, 3.0, 1.0), country_map=True)
-    world = render_map_module.figure_size((0.0, 0.0, 0.5, 1.0), country_map=False)
+    landscape = figure_size_helper((0.0, 0.0, 11 / 6, 1.0), country_map=True)
+    portrait = figure_size_helper((0.0, 0.0, 0.5, 1.0), country_map=True)
+    extra_wide = figure_size_helper((0.0, 0.0, 3.0, 1.0), country_map=True)
+    world = figure_size_helper((0.0, 0.0, 0.5, 1.0), country_map=False)
 
     assert (landscape[0] * 200, landscape[1] * 200) == pytest.approx((2200, 1200))
     assert portrait[0] / portrait[1] == pytest.approx(0.5)
@@ -1262,7 +1303,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
     source.write_text(json.dumps(payload), encoding="utf-8")
     output = tmp_path / "country.png"
     annotations: list[str] = []
-    current_annotate = render_map_module.annotate
+    current_annotate = annotate_helper
 
     def capture_annotate(
         figure: Figure, y: float, text: str, size: float, alignment: str = "baseline"
@@ -1270,7 +1311,7 @@ def test_country_renderer_uses_attribution_carried_by_the_selected_combination(
         annotations.append(" ".join(text.split()))
         current_annotate(figure, y, text, size, alignment)
 
-    monkeypatch.setattr(render_map_module, "annotate", capture_annotate)
+    monkeypatch.setattr(render_map_module, "_annotate", capture_annotate)
 
     def selected_outline(_answer: Answer, _registry: Registry) -> dict[str, BaseGeometry]:
         return {"DE": box(5, 47, 15, 55)}

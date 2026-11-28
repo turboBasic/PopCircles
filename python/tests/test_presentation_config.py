@@ -1,11 +1,18 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import hashlib
 
 import pytest
 
 from population_circles.presentation.maps.presentation_config import (
-    PRESENTATION_CONFIG,
+    _PRESENTATION_CONFIG as PRESENTATION_CONFIG,
+)
+from population_circles.presentation.maps.presentation_config import (
+    _parse as parse,
+)
+from population_circles.presentation.maps.presentation_config import (
     load,
-    parse,
 )
 
 EXPECTED_EXCLUDED_COUNTRY_COUNT = 48

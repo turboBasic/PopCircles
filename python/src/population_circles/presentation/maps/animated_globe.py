@@ -29,31 +29,31 @@ from population_circles.infrastructure.geodata.dataset_registry import (
 from population_circles.infrastructure.geodata.map_layers import UnregisteredDatasetError, basemap
 from population_circles.presentation.maps.frame import LIMB_SHAVE, ORTHOGRAPHIC, frame, project
 
-VIEW_SIZE = 512
-VIEW_CENTRE = VIEW_SIZE / 2
-GLOBE_RADIUS = 240
+_VIEW_SIZE = 512
+_VIEW_CENTRE = _VIEW_SIZE / 2
+_GLOBE_RADIUS = 240
 # The rendered projection is normalized to the globe, so its sphere radius has no visual effect.
-PROJECTION_RADIUS_KM = 1.0
-OUTPUT_SIZE = 200
-MIN_GIF_FRAMES = 2
-PIXEL_METRES = PROJECTION_RADIUS_KM * 1000 / GLOBE_RADIUS * VIEW_SIZE / OUTPUT_SIZE
-MIN_TOPOLOGY_AREA = PIXEL_METRES**2
-SIMPLIFY_METRES = PIXEL_METRES
-SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+_PROJECTION_RADIUS_KM = 1.0
+_OUTPUT_SIZE = 200
+_MIN_GIF_FRAMES = 2
+_PIXEL_METRES = _PROJECTION_RADIUS_KM * 1000 / _GLOBE_RADIUS * _VIEW_SIZE / _OUTPUT_SIZE
+_MIN_TOPOLOGY_AREA = _PIXEL_METRES**2
+_SIMPLIFY_METRES = _PIXEL_METRES
+_SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 
 
-def simplify_projected_land(land: BaseGeometry, detalization: float = 1) -> BaseGeometry:
+def _simplify_projected_land(land: BaseGeometry, detalization: float = 1) -> BaseGeometry:
     visible = MultiPolygon(
         [
             Polygon(
                 polygon.exterior,
-                [ring for ring in polygon.interiors if Polygon(ring).area >= MIN_TOPOLOGY_AREA],
+                [ring for ring in polygon.interiors if Polygon(ring).area >= _MIN_TOPOLOGY_AREA],
             )
             for polygon in polygons(land)
-            if polygon.area >= MIN_TOPOLOGY_AREA
+            if polygon.area >= _MIN_TOPOLOGY_AREA
         ],
     )
-    return visible.simplify(SIMPLIFY_METRES / detalization, preserve_topology=True)
+    return visible.simplify(_SIMPLIFY_METRES / detalization, preserve_topology=True)
 
 
 def parse_center(value: str) -> GeographicCoordinate:
@@ -74,7 +74,7 @@ def parse_center(value: str) -> GeographicCoordinate:
     return GeographicCoordinate(lat=latitude, lon=longitude)
 
 
-def svg_land(
+def _svg_land(
     centre: GeographicCoordinate,
     rotation_degrees: float = 0,
     detalization: float = 1,
@@ -85,15 +85,15 @@ def svg_land(
     if not isinstance(dataset, BoundaryVector):
         raise UnregisteredDatasetError(dataset_key)
     land = basemap(dataset.file(REPO_ROOT))
-    limb = hemisphere_km(PROJECTION_RADIUS_KM) * (1.0 - LIMB_SHAVE)
-    view = frame(ORTHOGRAPHIC, cap(centre, limb, PROJECTION_RADIUS_KM))
-    land = simplify_projected_land(project(view, land), detalization)
-    radius_metres = PROJECTION_RADIUS_KM * 1000
+    limb = hemisphere_km(_PROJECTION_RADIUS_KM) * (1.0 - LIMB_SHAVE)
+    view = frame(ORTHOGRAPHIC, cap(centre, limb, _PROJECTION_RADIUS_KM))
+    land = _simplify_projected_land(project(view, land), detalization)
+    radius_metres = _PROJECTION_RADIUS_KM * 1000
 
     def coordinate(x: float, y: float) -> tuple[float, float]:
         return (
-            VIEW_CENTRE + x / radius_metres * GLOBE_RADIUS,
-            VIEW_CENTRE - y / radius_metres * GLOBE_RADIUS,
+            _VIEW_CENTRE + x / radius_metres * _GLOBE_RADIUS,
+            _VIEW_CENTRE - y / radius_metres * _GLOBE_RADIUS,
         )
 
     def project_polygon(polygon: Polygon) -> str:
@@ -110,15 +110,15 @@ def svg_land(
 
     paths = "\n".join(f'    <path d="{project_polygon(polygon)}"/>' for polygon in polygons(land))
     rotation = (
-        f' transform="rotate({rotation_degrees:g} {VIEW_CENTRE:g} {VIEW_CENTRE:g})"'
+        f' transform="rotate({rotation_degrees:g} {_VIEW_CENTRE:g} {_VIEW_CENTRE:g})"'
         if rotation_degrees % 360
         else ""
     )
     return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VIEW_SIZE} {VIEW_SIZE}">\n'
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_VIEW_SIZE} {_VIEW_SIZE}">\n'
         f"  <metadata>{escape(dataset.attribution)}</metadata>\n"
-        f'  <circle cx="{VIEW_CENTRE:g}" cy="{VIEW_CENTRE:g}" '
-        f'r="{GLOBE_RADIUS}" fill="#016DB8"/>\n'
+        f'  <circle cx="{_VIEW_CENTRE:g}" cy="{_VIEW_CENTRE:g}" '
+        f'r="{_GLOBE_RADIUS}" fill="#016DB8"/>\n'
         f'  <g{rotation} fill="#4CDD9F" fill-rule="evenodd">\n'
         f"{paths}\n"
         "  </g>\n"
@@ -126,7 +126,7 @@ def svg_land(
     )
 
 
-def render_globe(
+def _render_globe(
     centre: GeographicCoordinate,
     output: Path,
     detalization: float = 1,
@@ -136,18 +136,18 @@ def render_globe(
         message = "detalization must be finite and greater than zero"
         raise ValueError(message)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(svg_land(centre, rotation_degrees, detalization), encoding="utf-8")
+    output.write_text(_svg_land(centre, rotation_degrees, detalization), encoding="utf-8")
 
 
-def parse_svg(path: Path) -> ET.Element:
+def _parse_svg(path: Path) -> ET.Element:
     source = path.read_text(encoding="utf-8")
     if re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", source, re.IGNORECASE):
         message = "SVG document types and entities are not supported"
         raise ValueError(message)
-    return ET.fromstring(source)
+    return ET.fromstring(source)  # noqa: S314 — input is generated SVG; declarations are refused above.
 
 
-def render_gif(
+def _render_gif(
     output: Path,
     sequence_svg: Path | None = None,
     *,
@@ -167,14 +167,14 @@ def render_gif(
             ),
             key=lambda path: int(path.stem.removeprefix(f"{prefix}-")),
         )
-        if len(frames) < MIN_GIF_FRAMES:
+        if len(frames) < _MIN_GIF_FRAMES:
             message = f"Need at least two numbered SVG frames matching {prefix}-<step>.svg"
             raise ValueError(message)
         sources: Sequence[Path | ET.Element] = frames
     elif svg_sprite is not None and sequence_svg is None:
-        sprite = parse_svg(svg_sprite)
-        symbols = sprite.findall(f"{{{SVG_NAMESPACE}}}symbol")
-        if len(symbols) < MIN_GIF_FRAMES:
+        sprite = _parse_svg(svg_sprite)
+        symbols = sprite.findall(f"{{{_SVG_NAMESPACE}}}symbol")
+        if len(symbols) < _MIN_GIF_FRAMES:
             message = "Need at least two SVG symbols in the sprite"
             raise ValueError(message)
         sources = symbols
@@ -189,7 +189,7 @@ def render_gif(
             png = resvg_py.svg_to_bytes(svg_path=str(source), width=200, height=200)
         else:
             root = ET.Element(
-                f"{{{SVG_NAMESPACE}}}svg",
+                f"{{{_SVG_NAMESPACE}}}svg",
                 {"viewBox": source.attrib["viewBox"]},
             )
             root.extend(source)
@@ -206,7 +206,7 @@ def render_gif(
     )
 
 
-def render_svg_sprite(sequence_svg: Path, output: Path) -> None:
+def _render_svg_sprite(sequence_svg: Path, output: Path) -> None:
     match = re.fullmatch(r"(.+)-(\d+)\.svg", sequence_svg.name)
     if match is None:
         message = "SVG output must be numbered, for example earth-globe-24.svg"
@@ -220,27 +220,27 @@ def render_svg_sprite(sequence_svg: Path, output: Path) -> None:
         ),
         key=lambda path: int(path.stem.removeprefix(f"{prefix}-")),
     )
-    root = ET.Element(f"{{{SVG_NAMESPACE}}}svg")
+    root = ET.Element(f"{{{_SVG_NAMESPACE}}}svg")
     attribution = None
     for index, path in enumerate(frames, start=1):
-        frame = parse_svg(path)
+        frame = _parse_svg(path)
         if attribution is None:
-            attribution = frame.find(f"{{{SVG_NAMESPACE}}}metadata")
+            attribution = frame.find(f"{{{_SVG_NAMESPACE}}}metadata")
             if attribution is not None:
-                root.append(ET.Element(f"{{{SVG_NAMESPACE}}}metadata"))
+                root.append(ET.Element(f"{{{_SVG_NAMESPACE}}}metadata"))
                 root[-1].text = attribution.text
         symbol = ET.SubElement(
             root,
-            f"{{{SVG_NAMESPACE}}}symbol",
+            f"{{{_SVG_NAMESPACE}}}symbol",
             {"id": f"frame-{index:02}", "viewBox": frame.attrib["viewBox"]},
         )
-        symbol.extend(child for child in frame if child.tag != f"{{{SVG_NAMESPACE}}}metadata")
-    ET.register_namespace("", SVG_NAMESPACE)
+        symbol.extend(child for child in frame if child.tag != f"{{{_SVG_NAMESPACE}}}metadata")
+    ET.register_namespace("", _SVG_NAMESPACE)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(ET.tostring(root, encoding="unicode") + "\n", encoding="utf-8")
 
 
-def render_latitude_sequence(
+def _render_latitude_sequence(
     centre: GeographicCoordinate,
     output: Path,
     steps: int,
@@ -268,7 +268,7 @@ def render_latitude_sequence(
             2 * HALF_TURN_DEG
         ) - HALF_TURN_DEG
         path = output.with_name(f"{prefix}-{step + 1:02}.svg")
-        render_globe(
+        _render_globe(
             GeographicCoordinate(lat=centre_latitude, lon=longitude),
             path,
             detalization,
@@ -302,25 +302,25 @@ def render_command(
     detalization = options.detalization
     sequence_svg: Path | None = output
     if latitude_steps is None:
-        render_globe(centre, output, detalization)
+        _render_globe(centre, output, detalization)
     elif svg_sprite:
         with tempfile.TemporaryDirectory() as directory:
-            sequence_svg = render_latitude_sequence(
+            sequence_svg = _render_latitude_sequence(
                 centre,
                 Path(directory) / output.name,
                 latitude_steps,
                 detalization,
             )
-            render_svg_sprite(sequence_svg, output)
+            _render_svg_sprite(sequence_svg, output)
         sequence_svg = None
     else:
-        sequence_svg = render_latitude_sequence(centre, output, latitude_steps, detalization)
+        sequence_svg = _render_latitude_sequence(centre, output, latitude_steps, detalization)
     if output_gif:
         try:
             if svg_sprite:
-                render_gif(output_gif, svg_sprite=output)
+                _render_gif(output_gif, svg_sprite=output)
             else:
-                render_gif(output_gif, sequence_svg)
+                _render_gif(output_gif, sequence_svg)
         except (OSError, ValueError) as error:
             raise GifRenderError(str(error)) from error
     return output if svg_sprite else sequence_svg

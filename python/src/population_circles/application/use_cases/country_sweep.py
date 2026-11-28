@@ -10,7 +10,7 @@ from population_circles.application.ports import PopulationRunner
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 
 HALF_SHARE = 0.5
-HALF_SHARE_PERCENT = "50"
+_HALF_SHARE_PERCENT = "50"
 CountryRefresh = Literal["sweep", "coverage"]
 
 
@@ -158,7 +158,7 @@ def missing_country_names(
     return [expected[country_id] for country_id in missing if country_id not in excluded]
 
 
-def cached_sweep(
+def _cached_sweep(
     path: Path,
     selection: dict[str, Any],
     countries: list[dict[str, Any]],
@@ -181,7 +181,7 @@ def cached_sweep(
     return sweep
 
 
-def report_sweep_work(sweep: dict[str, Any], report: Callable[[str], None]) -> None:
+def _report_sweep_work(sweep: dict[str, Any], report: Callable[[str], None]) -> None:
     evaluated = reused = 0
     for country in sweep["result"]["countries"]:
         for record in country["records"]:
@@ -191,7 +191,7 @@ def report_sweep_work(sweep: dict[str, Any], report: Callable[[str], None]) -> N
     report(f"Gallery: country sweep evaluated {evaluated} radii and reused {reused}")
 
 
-def coverage_sweep(
+def _coverage_sweep(
     path: Path,
     selection: dict[str, Any],
     enrich_saved_document: Callable[[dict[str, Any]], dict[str, Any]],
@@ -235,7 +235,7 @@ def country_sweep(
     saved = (
         None
         if refresh == "sweep"
-        else cached_sweep(
+        else _cached_sweep(
             corpus / filename,
             selection,
             countries,
@@ -247,7 +247,7 @@ def country_sweep(
         if saved is None:
             message = "country coverage refresh requires a valid saved country sweep"
             raise PopulationApplicationError(message)
-        sweep = coverage_sweep(
+        sweep = _coverage_sweep(
             corpus / filename,
             selection,
             collaborators.enrich_saved_document,
@@ -268,9 +268,9 @@ def country_sweep(
         "--resolution",
         str(selection["resolution"]),
         "--from",
-        HALF_SHARE_PERCENT,
+        _HALF_SHARE_PERCENT,
         "--to",
-        HALF_SHARE_PERCENT,
+        _HALF_SHARE_PERCENT,
         "--step",
         "1",
     ]
@@ -282,5 +282,5 @@ def country_sweep(
     if result.get("document") != "country-sweep":
         message = "country sweep: Rust CLI returned a document other than country-sweep"
         raise ValueError(message)
-    report_sweep_work(result, report)
+    _report_sweep_work(result, report)
     return result

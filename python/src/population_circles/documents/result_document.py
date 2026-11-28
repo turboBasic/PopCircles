@@ -11,7 +11,7 @@ SCHEMA_VERSION = 2
 
 # The published `Document::KIND` values. Held as a Literal so an unrecognised kind is a schema
 # refusal naming `document`, not a KeyError three frames later.
-DocumentKind = Literal[
+_DocumentKind = Literal[
     "distance",
     "grid",
     "table-build",
@@ -54,14 +54,14 @@ class MissingTableError(ValueError):
         )
 
 
-class Coordinate(BaseModel):
+class _Coordinate(BaseModel):
     model_config = _CONFIG
 
     lat: float
     lon: float
 
 
-class EarthModel(BaseModel):
+class _EarthModel(BaseModel):
     model_config = _CONFIG
 
     model: Literal["sphere"]
@@ -71,7 +71,7 @@ class EarthModel(BaseModel):
 class Circle(BaseModel):
     model_config = _CONFIG
 
-    centre: Coordinate
+    centre: _Coordinate
     radius_km: float
     earth_radius_km: float
 
@@ -94,7 +94,7 @@ class CountryIdentity(BaseModel):
     boundary_digest: Annotated[str, Field(pattern=r"^[0-9a-fA-F]{64}$")]
 
 
-class CountrySource(BaseModel):
+class _CountrySource(BaseModel):
     model_config = _CONFIG
 
     name: Annotated[str, Field(min_length=1)]
@@ -102,16 +102,16 @@ class CountrySource(BaseModel):
     attribution: Annotated[str, Field(min_length=1)] | None = None
 
 
-class CountrySelection(BaseModel):
+class _CountrySelection(BaseModel):
     model_config = _CONFIG
 
     combination_id: Annotated[str, Field(min_length=1)]
     resolution: Annotated[int, Field(gt=0)]
-    population_source: CountrySource
-    boundary_source: CountrySource
+    population_source: _CountrySource
+    boundary_source: _CountrySource
 
 
-class Settlement(BaseModel):
+class _Settlement(BaseModel):
     model_config = _CONFIG
 
     name: Annotated[str, Field(min_length=1)]
@@ -120,7 +120,7 @@ class Settlement(BaseModel):
     short_form: bool
 
 
-class CountryBreakdownEntry(BaseModel):
+class _CountryBreakdownEntry(BaseModel):
     model_config = _CONFIG
 
     id: Annotated[str, Field(min_length=1, pattern=r"\S")]
@@ -150,7 +150,7 @@ class _CountryGrid(BaseModel):
     spans_full_turn: bool
 
 
-class CountryBreakdownProvenance(BaseModel):
+class _CountryBreakdownProvenance(BaseModel):
     model_config = _CONFIG
 
     boundary_dataset: Annotated[str, Field(min_length=1)]
@@ -165,19 +165,19 @@ class CountryBreakdownProvenance(BaseModel):
     aggregation_order_version: Annotated[int, Field(gt=0)]
 
 
-class CountryReconciliation(BaseModel):
+class _CountryReconciliation(BaseModel):
     model_config = _CONFIG
 
     unassigned_population: Annotated[float, Field(ge=0, allow_inf_nan=False)]
     bound_persons: Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
 
-class CountryBreakdown(BaseModel):
+class _CountryBreakdown(BaseModel):
     model_config = _CONFIG
 
-    entries: list[CountryBreakdownEntry]
-    reconciliation: CountryReconciliation
-    provenance: CountryBreakdownProvenance
+    entries: list[_CountryBreakdownEntry]
+    reconciliation: _CountryReconciliation
+    provenance: _CountryBreakdownProvenance
 
     @model_validator(mode="after")
     def _entry_ids_are_unique(self) -> Self:
@@ -194,8 +194,8 @@ class Caption(BaseModel):
     population: float
     share: float
     territory_share: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
-    settlement: Settlement | None = None
-    country_breakdown: CountryBreakdown | None = None
+    settlement: _Settlement | None = None
+    country_breakdown: _CountryBreakdown | None = None
 
 
 class Answer(BaseModel):
@@ -205,7 +205,7 @@ class Answer(BaseModel):
     caption: Caption
     provenance: Provenance
     country: CountryIdentity | None = None
-    selection: CountrySelection | None = None
+    selection: _CountrySelection | None = None
 
 
 class _DocumentProvenance(BaseModel):
@@ -225,8 +225,8 @@ class Envelope(BaseModel):
     model_config = _CONFIG
 
     schema_version: Annotated[int, Field(le=SCHEMA_VERSION)]
-    document: DocumentKind
-    earth_model: EarthModel
+    document: _DocumentKind
+    earth_model: _EarthModel
     # Absent from a document whose command read no cached table, which is every kind this reader
     # refuses anyway.
     provenance: _DocumentProvenance | None = None
@@ -240,13 +240,13 @@ class _Payload(BaseModel, ABC):
 
 
 class _Measured(_Payload):
-    centre: Coordinate
+    centre: _Coordinate
     radius_km: float
     population: float
     share_of_total: float
     territory_share: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
-    nearest_settlement: Settlement | None = None
-    country_breakdown: CountryBreakdown | None = None
+    nearest_settlement: _Settlement | None = None
+    country_breakdown: _CountryBreakdown | None = None
 
     def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
         return Answer(
@@ -269,13 +269,13 @@ class _Measured(_Payload):
 class _Smallest(BaseModel):
     model_config = _CONFIG
 
-    centre: Coordinate
+    centre: _Coordinate
     radius_km: float
     population: float
     share_achieved: float
     territory_share: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
-    nearest_settlement: Settlement | None = None
-    country_breakdown: CountryBreakdown | None = None
+    nearest_settlement: _Settlement | None = None
+    country_breakdown: _CountryBreakdown | None = None
 
 
 class _Searched(_Payload):
@@ -303,7 +303,7 @@ class _CountrySearched(_Payload):
     country: CountryIdentity
     population_dataset: Annotated[str, Field(min_length=1)]
     decimation: Annotated[int, Field(gt=0)]
-    selection: CountrySelection | None = None
+    selection: _CountrySelection | None = None
     circle: _Smallest
 
     def as_answer(self, earth_radius_km: float, provenance: Provenance) -> Answer:
@@ -332,7 +332,7 @@ class _SweepRecord(_Smallest):
     model_config = _CONFIG
 
 
-class SweepRecords(BaseModel):
+class _SweepRecords(BaseModel):  # pyright: ignore[reportUnusedClass]
     model_config = _CONFIG
 
     records: list[_SweepRecord]

@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 from typing import Any
 
 import pytest
@@ -9,9 +12,11 @@ from population_circles.documents.result_document import (
     Circle,
     MissingDatasetError,
     MissingTableError,
-    SweepRecords,
     UnsupportedDocumentError,
     circle_of,
+)
+from population_circles.documents.result_document import (
+    _SweepRecords as SweepRecords,
 )
 
 # Every fixture below is a dictionary, never a file: the renderer's input is one JSON path and its

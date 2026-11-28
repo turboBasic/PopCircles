@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from pathlib import Path
@@ -8,7 +11,19 @@ from typer.testing import CliRunner
 
 from population_circles.domain.geography import HALF_TURN_DEG, POLE_LAT, GeographicCoordinate
 from population_circles.presentation import cli
-from population_circles.presentation.maps import render_globe
+from population_circles.presentation.maps import animated_globe
+from population_circles.presentation.maps.animated_globe import (
+    _parse_svg as parse_svg,
+)
+from population_circles.presentation.maps.animated_globe import (
+    _render_gif as render_gif,
+)
+from population_circles.presentation.maps.animated_globe import (
+    _render_latitude_sequence as render_latitude_sequence,
+)
+from population_circles.presentation.maps.animated_globe import (
+    _render_svg_sprite as render_svg_sprite,
+)
 
 SVG = "http://www.w3.org/2000/svg"
 CLI_ERROR_EXIT = 2
@@ -39,9 +54,9 @@ def test_render_latitude_sequence_crosses_poles_without_flipping(
     ) -> None:
         rendered.append((centre.lat, centre.lon, rotation, output))
 
-    monkeypatch.setattr(render_globe, "render_globe", capture_render)
+    monkeypatch.setattr(animated_globe, "_render_globe", capture_render)
 
-    sequence = render_globe.render_latitude_sequence(
+    sequence = render_latitude_sequence(
         GeographicCoordinate(lat=0, lon=20),
         tmp_path / "earth-globe-72.svg",
         8,
@@ -76,7 +91,7 @@ def test_render_latitude_sequence_crosses_poles_without_flipping(
 @pytest.mark.parametrize("latitude", [-90, 90])
 def test_center_rejects_poles(latitude: float) -> None:
     with pytest.raises(ValueError, match="center latitude cannot be -90 or 90"):
-        render_globe.parse_center(f"{latitude},20")
+        animated_globe.parse_center(f"{latitude},20")
 
 
 def test_render_svg_sprite_preserves_frames_and_shared_attribution(tmp_path: Path) -> None:
@@ -84,7 +99,7 @@ def test_render_svg_sprite_preserves_frames_and_shared_attribution(tmp_path: Pat
     write_frame(tmp_path / "globe-02.svg", "#4CDD9F")
     output = tmp_path / "globe.svg"
 
-    render_globe.render_svg_sprite(tmp_path / "globe-02.svg", output)
+    render_svg_sprite(tmp_path / "globe-02.svg", output)
 
     root = ET.parse(output).getroot()
     symbols = root.findall(f"{{{SVG}}}symbol")
@@ -113,7 +128,7 @@ def test_render_gif_requires_exactly_one_source(
     svg_sprite: Path | None,
 ) -> None:
     with pytest.raises(ValueError, match="exactly one"):
-        render_globe.render_gif(
+        render_gif(
             tmp_path / "out.gif",
             sequence_svg,
             svg_sprite=svg_sprite,
@@ -148,7 +163,7 @@ def test_render_gif_preserves_source_frame_order(
         second = tmp_path / "globe-02.svg"
         write_frame(first, "#111111")
         write_frame(second, "#222222")
-        render_globe.render_gif(tmp_path / "out.gif", second)
+        render_gif(tmp_path / "out.gif", second)
         assert calls == [str(first), str(second)]
     else:
         sprite = tmp_path / "globe.svg"
@@ -158,7 +173,7 @@ def test_render_gif_preserves_source_frame_order(
             '<circle fill="#222222"/></symbol></svg>',
             encoding="utf-8",
         )
-        render_globe.render_gif(tmp_path / "out.gif", svg_sprite=sprite)
+        render_gif(tmp_path / "out.gif", svg_sprite=sprite)
         assert 'fill="#111111"' in calls[0]
         assert 'fill="#222222"' in calls[1]
 
@@ -178,7 +193,7 @@ def test_renderer_value_error_keeps_runtime_failure_status(
         message = "bad registered boundary"
         raise ValueError(message)
 
-    monkeypatch.setattr(render_globe, "render_globe", fail)
+    monkeypatch.setattr(animated_globe, "_render_globe", fail)
 
     result = CliRunner().invoke(
         cli.app,
@@ -197,4 +212,4 @@ def test_parse_svg_rejects_entities(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError, match="entities"):
-        render_globe.parse_svg(svg)
+        parse_svg(svg)

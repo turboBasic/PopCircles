@@ -1,3 +1,6 @@
+# pyright: reportPrivateUsage=false
+# These tests intentionally exercise private implementation details.
+
 import io
 import sys
 from collections.abc import Callable
@@ -9,7 +12,9 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     PopulationRaster,
     Registry,
     load,
-    parse,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
+    _parse as parse,
 )
 from repo_tools import fetch_data
 from repo_tools.fetch_data import FetchError, acquire

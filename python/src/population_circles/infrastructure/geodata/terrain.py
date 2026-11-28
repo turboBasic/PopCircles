@@ -19,11 +19,11 @@ from shapely.geometry.base import BaseGeometry
 from population_circles.domain.circle_geometry import polygons
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT, TerrainRaster
 
-TARGET_HEIGHT = 1440
-MIN_WIDTH = 720
-MAX_WIDTH = 1800
-GEOGRAPHIC_CRS = CRS.from_epsg(4326)
-DESTINATION_NODATA = -99999.0
+_TARGET_HEIGHT = 1440
+_MIN_WIDTH = 720
+_MAX_WIDTH = 1800
+_GEOGRAPHIC_CRS = CRS.from_epsg(4326)
+_DESTINATION_NODATA = -99999.0
 
 
 @dataclass(frozen=True)
@@ -90,8 +90,8 @@ def load_terrain(
         message = "at least one terrain source is required"
         raise ValueError(message)
     xmin, ymin, xmax, ymax = frame.bounds
-    width = max(MIN_WIDTH, min(MAX_WIDTH, round(TARGET_HEIGHT * (xmax - xmin) / (ymax - ymin))))
-    height = TARGET_HEIGHT
+    width = max(_MIN_WIDTH, min(_MAX_WIDTH, round(_TARGET_HEIGHT * (xmax - xmin) / (ymax - ymin))))
+    height = _TARGET_HEIGHT
     pixel_width = (xmax - xmin) / width
     pixel_height = (ymax - ymin) / height
     padded_bounds = (
@@ -101,7 +101,7 @@ def load_terrain(
         ymax + pixel_height,
     )
     destination_transform = from_bounds(*padded_bounds, width + 2, height + 2)
-    elevation = np.full((height + 2, width + 2), DESTINATION_NODATA, dtype=np.float32)
+    elevation = np.full((height + 2, width + 2), _DESTINATION_NODATA, dtype=np.float32)
     paths = [dataset.file(root) for dataset in datasets]
     for path in paths:
         if not path.is_file():
@@ -115,7 +115,7 @@ def load_terrain(
         source_crs = cast(CRS | None, sources[0].crs) or CRS.from_epsg(datasets[0].epsg)
         footprint_bounds = [
             transform_bounds(
-                GEOGRAPHIC_CRS,
+                _GEOGRAPHIC_CRS,
                 source_crs,
                 *part.bounds,
                 densify_pts=41,
@@ -144,7 +144,7 @@ def load_terrain(
             mosaic, mosaic_transform = merge(
                 sources,
                 bounds=source_bounds,
-                nodata=DESTINATION_NODATA,
+                nodata=_DESTINATION_NODATA,
                 dtype="float32",
                 method="first",
             )
@@ -153,15 +153,15 @@ def load_terrain(
                 destination=elevation,
                 src_transform=mosaic_transform,
                 src_crs=source_crs,
-                src_nodata=DESTINATION_NODATA,
+                src_nodata=_DESTINATION_NODATA,
                 dst_transform=destination_transform,
                 dst_crs=destination_crs,
-                dst_nodata=DESTINATION_NODATA,
+                dst_nodata=_DESTINATION_NODATA,
                 resampling=Resampling.bilinear,
                 init_dest_nodata=False,
             )
 
-    valid = np.isfinite(elevation) & (elevation != DESTINATION_NODATA)
+    valid = np.isfinite(elevation) & (elevation != _DESTINATION_NODATA)
     if not include_below_sea_level:
         valid &= elevation > 0
     return LoadedTerrain(elevation, valid, padded_bounds, frame.bounds)
