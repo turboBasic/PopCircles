@@ -7,14 +7,14 @@ import pytest
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
-import population_circles.application.use_cases.gallery as country_sweep_module
+import population_circles.application.use_cases.country_sweep as country_sweep_module
 from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases.gallery import CountryRefresh
-from population_circles.application.use_cases.gallery_build import (
-    country_documents as country_documents_workflow,
+from population_circles.application.use_cases.build_gallery import (
+    _country_documents as country_documents_workflow,
 )
+from population_circles.application.use_cases.country_sweep import CountryRefresh
 from population_circles.documents.result_document import Answer
 from population_circles.infrastructure.geodata.dataset_registry import Registry
 from test_gallery import (

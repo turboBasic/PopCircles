@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from population_circles.application.use_cases.gallery import (
+from population_circles.application.use_cases.country_sweep import (
     FigureCaption as ApplicationFigureCaption,
 )
 from population_circles.presentation.gallery.page_data import (

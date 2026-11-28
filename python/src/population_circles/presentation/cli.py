@@ -6,9 +6,9 @@ import typer
 
 from population_circles import composition
 from population_circles.application.errors import GalleryPathError, PopulationApplicationError
-from population_circles.application.use_cases import circle_result, gallery_build, render_map
+from population_circles.application.use_cases import build_gallery, circle_result, render_map
+from population_circles.application.use_cases.build_gallery import GalleryBuildRequest
 from population_circles.application.use_cases.circle_result import CircleResultRequest
-from population_circles.application.use_cases.gallery_build import GalleryBuildRequest
 from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.infrastructure import popcircles_cli
 from population_circles.presentation.maps import render_globe
@@ -130,7 +130,7 @@ def gallery_build_command(
         "sweep" if refresh_country_sweep else "coverage" if refresh_country_coverage else None
     )
     try:
-        drawn, skipped = gallery_build.build(
+        drawn, skipped = build_gallery.build(
             GalleryBuildRequest(input_path, output, country_refresh),
             composition.gallery_build_collaborators(),
         )

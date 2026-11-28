@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from population_circles.application.use_cases.gallery import RenderJob
+from population_circles.application.use_cases.country_sweep import RenderJob
 from population_circles.infrastructure.geodata.dataset_registry import (
     REPO_ROOT,
     TerrainRaster,

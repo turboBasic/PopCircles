@@ -7,8 +7,8 @@ from urllib.parse import quote
 
 from population_circles.application.errors import GalleryPathError
 from population_circles.application.ports import PopulationRunner
-from population_circles.application.use_cases import gallery as country_sweep_module
-from population_circles.application.use_cases.gallery import (
+from population_circles.application.use_cases import country_sweep as country_sweep_module
+from population_circles.application.use_cases.country_sweep import (
     HALF_SHARE,
     CountryRefresh,
     CountrySweepCollaborators,
@@ -19,13 +19,13 @@ from population_circles.application.use_cases.gallery import (
 from population_circles.documents.result_document import CIRCLE_KINDS, Envelope, circle_of
 
 
-class GalleryRenderContext(Protocol):
+class _GalleryRenderContext(Protocol):
     @property
     def output(self) -> Path: ...
 
 
 @dataclass(frozen=True)
-class GalleryBuildCollaborators[Context: GalleryRenderContext]:
+class GalleryBuildCollaborators[Context: _GalleryRenderContext]:
     run_population_command: PopulationRunner
     prepare_render_context: Callable[[Path, Path | None], Context]
     enrich_source: Callable[[Path, dict[str, Any]], dict[str, Any]]
@@ -54,7 +54,7 @@ class Skipped:
     kind: str
 
 
-def validate_paths(corpus: Path, output: Path) -> None:
+def _validate_paths(corpus: Path, output: Path) -> None:
     corpus_root = corpus.resolve()
     output_root = output.resolve()
     if (
@@ -110,7 +110,7 @@ def validate_paths(corpus: Path, output: Path) -> None:
             raise GalleryPathError(message)
 
 
-def render_jobs_for(
+def _render_jobs_for(
     source: Path, payload: dict[str, Any], index: int, total: int
 ) -> tuple[RenderJob, ...]:
     job = RenderJob(source, payload, index, total)
@@ -126,7 +126,7 @@ def render_jobs_for(
 
 
 @dataclass(frozen=True)
-class GalleryOutputRequest[Context: GalleryRenderContext]:
+class _GalleryOutputRequest[Context: _GalleryRenderContext]:
     corpus: Path
     sources: list[tuple[Path, dict[str, Any]]]
     generated: dict[str, dict[str, Any]]
@@ -134,8 +134,8 @@ class GalleryOutputRequest[Context: GalleryRenderContext]:
     context: Context
 
 
-def build_gallery_output[Context: GalleryRenderContext](  # noqa: PLR0915 — ordered cleanup and publication steps stay explicit
-    request: GalleryOutputRequest[Context],
+def _build_gallery_output[Context: _GalleryRenderContext](  # noqa: PLR0915 — ordered cleanup and publication steps stay explicit
+    request: _GalleryOutputRequest[Context],
     collaborators: GalleryBuildCollaborators[Context],
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
     corpus = request.corpus
@@ -148,7 +148,7 @@ def build_gallery_output[Context: GalleryRenderContext](  # noqa: PLR0915 — or
     reused_maps = rendered_maps = 0
     unavailable = set(request.missing)
     excluded = collaborators.country_sweep.excluded_country_ids
-    sources, excluded_sources = omit_excluded_sources(sources, output, excluded)
+    sources, excluded_sources = _omit_excluded_sources(sources, output, excluded)
     skipped.extend(excluded_sources)
     render_jobs: list[RenderJob] = []
     try:
@@ -181,7 +181,7 @@ def build_gallery_output[Context: GalleryRenderContext](  # noqa: PLR0915 — or
                 (output / source.name).unlink(missing_ok=True)
                 (output / f"{source.stem}.png").unlink(missing_ok=True)
                 continue
-            render_jobs.extend(render_jobs_for(source, payload, index, len(sources)))
+            render_jobs.extend(_render_jobs_for(source, payload, index, len(sources)))
 
         render_jobs = [
             RenderJob(
@@ -261,7 +261,7 @@ def same_country_answer(existing: bytes, generated: bytes) -> bool:
         return previous == current
 
 
-def omit_excluded_sources(
+def _omit_excluded_sources(
     sources: list[tuple[Path, dict[str, Any]]], output: Path, excluded: set[str]
 ) -> tuple[list[tuple[Path, dict[str, Any]]], list[Skipped]]:
     rendered: list[tuple[Path, dict[str, Any]]] = []
@@ -276,7 +276,7 @@ def omit_excluded_sources(
     return rendered, skipped
 
 
-def country_documents(
+def _country_documents(
     run_population_command: PopulationRunner,
     corpus: Path,
     collaborators: CountrySweepCollaborators,
@@ -349,14 +349,14 @@ def country_documents(
     )
 
 
-def build[Context: GalleryRenderContext](
+def build[Context: _GalleryRenderContext](
     request: GalleryBuildRequest,
     collaborators: GalleryBuildCollaborators[Context],
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
     corpus = request.corpus
     output = request.output
     country_refresh = request.country_refresh
-    validate_paths(corpus, output)
+    _validate_paths(corpus, output)
     output.mkdir(parents=True, exist_ok=True)
     render_context = collaborators.prepare_render_context(output, request.cache_directory)
     (output / "index.html").unlink(missing_ok=True)
@@ -366,7 +366,7 @@ def build[Context: GalleryRenderContext](
         country_sweep_module.refresh_coverage(
             corpus, collaborators.country_sweep.enrich_saved_document
         )
-    missing, generated = country_documents(
+    missing, generated = _country_documents(
         collaborators.run_population_command,
         corpus,
         collaborators.country_sweep,
@@ -380,7 +380,7 @@ def build[Context: GalleryRenderContext](
     ]
     sources.extend((corpus / name, payload) for name, payload in generated.items())
     sources.sort(key=lambda item: item[0].name)
-    return build_gallery_output(
-        GalleryOutputRequest(corpus, sources, generated, missing, render_context),
+    return _build_gallery_output(
+        _GalleryOutputRequest(corpus, sources, generated, missing, render_context),
         collaborators,
     )

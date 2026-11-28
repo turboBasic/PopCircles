@@ -17,7 +17,7 @@ from matplotlib import font_manager
 from matplotlib import pyplot as plt
 from shapely.geometry.base import BaseGeometry
 
-from population_circles.application.use_cases.gallery import FigureCaption, RenderJob
+from population_circles.application.use_cases.country_sweep import FigureCaption, RenderJob
 from population_circles.application.use_cases.render_map import (
     MapBoundaries,
     other_countries,
@@ -386,7 +386,7 @@ def render_document(job: RenderJob, context: MapRenderContext) -> tuple[Drawn, b
             title_label=title_label,
         )
     except Exception as error:
-        # The early-built page is removed by `build_gallery_output` if a map fails.
+        # The early-built page is removed by `_build_gallery_output` if a map fails.
         # Re-raise rather than publishing a partial gallery.
         error.add_note(f"raised while rendering {source}")
         raise

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops
 
-from population_circles.application.use_cases.gallery import GalleryFigure
+from population_circles.application.use_cases.country_sweep import GalleryFigure
 from population_circles.infrastructure.geodata.dataset_registry import REPO_ROOT
 from population_circles.presentation.maps.render_map import OCEAN
 

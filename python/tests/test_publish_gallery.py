@@ -12,7 +12,7 @@ from typing import cast
 
 import pytest
 
-from population_circles.application.use_cases.gallery_build import GalleryBuildRequest
+from population_circles.application.use_cases.build_gallery import GalleryBuildRequest
 from repo_tools import publish_gallery as pg
 
 

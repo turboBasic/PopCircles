@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from PIL import Image
 
-from population_circles.application.use_cases.gallery import (
+from population_circles.application.use_cases.country_sweep import (
     FigureCaption,
     GalleryFigure,
     SettlementCaption,

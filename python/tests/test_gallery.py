@@ -17,8 +17,8 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 from typer.testing import CliRunner
 
-import population_circles.application.use_cases.gallery as country_sweep_module
-import population_circles.application.use_cases.gallery_build as gallery_module
+import population_circles.application.use_cases.build_gallery as gallery_module
+import population_circles.application.use_cases.country_sweep as country_sweep_module
 import population_circles.infrastructure.geodata.map_layers as map_layers_module
 import population_circles.presentation.gallery.output as gallery_output
 import population_circles.presentation.gallery.rendering as rendering_module
@@ -29,18 +29,24 @@ import population_circles.presentation.maps.terrain as terrain_module
 from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
 from population_circles.application.ports import PopulationCommandResult, PopulationRunner
-from population_circles.application.use_cases.gallery import (
+from population_circles.application.use_cases.build_gallery import (
+    GalleryBuildRequest,
+    Skipped,
+    _GalleryOutputRequest,
+)
+from population_circles.application.use_cases.build_gallery import (
+    _build_gallery_output as build_gallery_output_workflow,
+)
+from population_circles.application.use_cases.build_gallery import (
+    _render_jobs_for as render_jobs_for_workflow,
+)
+from population_circles.application.use_cases.build_gallery import (
+    build as build_workflow,
+)
+from population_circles.application.use_cases.country_sweep import (
     CountryRefresh,
     GalleryFigure,
     RenderJob,
-)
-from population_circles.application.use_cases.gallery_build import (
-    GalleryBuildRequest,
-    GalleryOutputRequest,
-    Skipped,
-)
-from population_circles.application.use_cases.gallery_build import (
-    build as build_workflow,
 )
 from population_circles.documents.result_document import CIRCLE_KINDS, Answer, circle_of
 from population_circles.infrastructure.geodata.data_config import country_boundary_dataset_key
@@ -94,8 +100,8 @@ def build_gallery_output(
     missing: list[str],
     context: rendering_module.MapRenderContext,
 ) -> tuple[list[GalleryFigure], list[Skipped]]:
-    return gallery_module.build_gallery_output(
-        GalleryOutputRequest(corpus, sources, generated, missing, context),
+    return build_gallery_output_workflow(
+        _GalleryOutputRequest(corpus, sources, generated, missing, context),
         composition.gallery_build_collaborators(country_cli([], [])[0]),
     )
 
@@ -1090,7 +1096,7 @@ def test_world_half_target_adds_orthographic_gallery_map() -> None:
 
     assert answer.caption.share != country_sweep_module.HALF_SHARE
     assert payload["result"]["circle"]["target"]["share"] == country_sweep_module.HALF_SHARE
-    assert [job.figure_suffix for job in gallery_module.render_jobs_for(source, payload, 1, 1)] == [
+    assert [job.figure_suffix for job in render_jobs_for_workflow(source, payload, 1, 1)] == [
         "",
         "-orthographic",
     ]

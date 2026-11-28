@@ -5,13 +5,13 @@ import typer
 from shapely.geometry.base import BaseGeometry
 
 from population_circles.application.ports import PopulationRunner
+from population_circles.application.use_cases.build_gallery import GalleryBuildCollaborators
 from population_circles.application.use_cases.circle_result import CircleResultCollaborators
-from population_circles.application.use_cases.gallery import (
+from population_circles.application.use_cases.country_sweep import (
     CountrySweepCollaborators,
     GalleryFigure,
     RenderJob,
 )
-from population_circles.application.use_cases.gallery_build import GalleryBuildCollaborators
 from population_circles.application.use_cases.render_map import (
     LoadedMapLayers,
     MapBoundaries,

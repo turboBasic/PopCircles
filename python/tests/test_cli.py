@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from population_circles import composition
 from population_circles.application.errors import PopulationApplicationError
-from population_circles.application.use_cases import circle_result, gallery_build, render_map
+from population_circles.application.use_cases import build_gallery, circle_result, render_map
 from population_circles.application.use_cases.circle_result import CircleResultRequest
 from population_circles.application.use_cases.render_map import RenderMapFileRequest
 from population_circles.presentation import cli
@@ -57,7 +57,7 @@ def test_gallery_preserves_application_error_reporting_for_workflow_failures(
     def fail_build(*_args: object, **_kwargs: object) -> None:
         raise error
 
-    monkeypatch.setattr(gallery_build, "build", fail_build)
+    monkeypatch.setattr(build_gallery, "build", fail_build)
 
     result = runner.invoke(
         cli.app,
@@ -146,7 +146,7 @@ def test_handlers_dispatch_to_existing_entrypoints(monkeypatch: MonkeyPatch) -> 
     )
     monkeypatch.setattr(render_map, "render_file", render_file)
     monkeypatch.setattr(render_globe, "render_command", render_command)
-    monkeypatch.setattr(gallery_build, "build", gallery)
+    monkeypatch.setattr(build_gallery, "build", gallery)
 
     results = [
         runner.invoke(

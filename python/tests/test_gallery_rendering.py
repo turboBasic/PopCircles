@@ -10,7 +10,7 @@ from shapely.geometry.base import BaseGeometry
 import population_circles.infrastructure.geodata.map_layers as map_layers_module
 import population_circles.presentation.gallery.rendering as rendering_module
 import population_circles.presentation.maps.source_selection as source_selection_module
-from population_circles.application.use_cases.gallery import RenderJob
+from population_circles.application.use_cases.country_sweep import RenderJob
 from population_circles.documents.result_document import circle_of
 from population_circles.infrastructure.geodata.dataset_registry import load as load_registry
 from population_circles.presentation.maps.frame import ORTHOGRAPHIC
