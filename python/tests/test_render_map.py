@@ -50,7 +50,9 @@ from population_circles.infrastructure.geodata.dataset_registry import (
     SettlementVector,
     TerrainRaster,
     load,
-    parse,
+)
+from population_circles.infrastructure.geodata.dataset_registry import (
+    _parse as parse,
 )
 from population_circles.infrastructure.geodata.map_layers import (
     _COASTLINE_DATASET as COASTLINE_DATASET,

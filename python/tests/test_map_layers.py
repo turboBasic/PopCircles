@@ -25,11 +25,9 @@ from population_circles.presentation.maps.presentation_config import (
 )
 from population_circles.presentation.maps.source_selection import registered_map_sources
 from test_render_map import (
-    _REGISTRY as REGISTRY,
-)
-from test_render_map import (
     DATASET,
     PROSE,
+    REGISTRY,
     TWO_ATTRIBUTED,
     fixture_map_sources,
     normalised,
