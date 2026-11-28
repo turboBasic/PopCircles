@@ -12,7 +12,7 @@ node = "26.13.1"
 # runs no postinstall. `aqua:anomalyco/opencode` fetches the platform binary directly. Pinned exactly,
 # where most tools here take `latest` — this one decides what a workflow does, not whether a file is
 # formatted, so a moving version would produce a run nobody could reproduce.
-opencode = "2.3.2"
+opencode = "2.4.1"
 "pipx:lizard" = "1.26.1"
 prek = "0.5.11"
 python = "3.15.2"
